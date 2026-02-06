@@ -183,17 +183,21 @@ The coordinator uses 1.5% of context. A 12-week veteran agent uses 4.4%. That le
 
 ## Growing the Team
 
+### Adding Members
+
 ```
 > I need a DevOps person.
 ```
 
 Squad generates a new agent, seeds them with project context and existing decisions. Immediately productive.
 
+### Removing Members
+
 ```
 > Remove the designer — we're past that phase.
 ```
 
-Knowledge preserved in `.ai-team/agents/_alumni/`. Nothing lost.
+Agents aren't deleted. Their charter and history move to `.ai-team/agents/_alumni/`. Knowledge preserved, nothing lost. If you need them back later, they remember everything.
 
 ---
 
