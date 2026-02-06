@@ -227,5 +227,5 @@ See [Quick Start](#quick-start) for the one-liner.
 
 🟣 **Early access.** Private. Actively building.
 
-Built by the [Beacon](https://github.com/bradygaster/beacon) team — the first Squad-powered product.
+Built by the Beacon team — the first Squad-powered product.
 Conceived by [@bradygaster](https://github.com/bradygaster).
