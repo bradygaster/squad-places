@@ -125,11 +125,21 @@ By week 4, your agents know your conventions, your preferences, your architectur
 
 ### The Key Insight
 
-Each agent gets its **own context window**. No shared bloat. The coordinator is ~5KB. Each agent loads only its charter + history. This means:
+Each agent gets its **own context window**. The coordinator is thin. Each agent loads only its charter + history. No shared bloat.
 
-- **Agents think clearly** — no competing instructions
-- **Context stays focused** — each agent sees only what it needs
-- **The team scales** — adding members doesn't slow anyone down
+### Context Window Budget
+
+Real numbers. No hand-waving.
+
+| What | Tokens | % of 128K context | When |
+|------|--------|-------------------|------|
+| **Coordinator** (squad.agent.md) | ~1,900 | 1.5% | Every message |
+| **Agent at Week 1** (charter + seed) | ~850 | 0.7% | When spawned |
+| **Agent at Week 4** (+ 15 learnings, 8 decisions) | ~1,900 | 1.5% | When spawned |
+| **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~5,600 | 4.4% | When spawned |
+| **Remaining for actual work** | **~120,000** | **94%** | Always |
+
+The coordinator uses 1.5% of context. A 12-week veteran agent uses 4.4%. That leaves **94% of the context window for reasoning about your code** — not for remembering who it is.
 
 ### Memory Architecture
 
