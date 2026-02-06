@@ -54,15 +54,8 @@ git init
 ### 2. Install Squad
 
 ```bash
-npx @bradygaster/create-squad
+npx bradygaster/squad
 ```
-
-That's it. Two files land in your project:
-
-| What | Where | Purpose |
-|------|-------|---------|
-| `squad.agent.md` | `.github/agents/` | The coordinator |
-| `templates/` | `.ai-team-templates/` | Format guides for team generation |
 
 ### 3. Open Copilot and go
 
@@ -200,7 +193,7 @@ The Coordinator enforces this. No self-review of rejected work.
 ## Install
 
 ```bash
-npx @bradygaster/create-squad
+npx bradygaster/squad
 ```
 
 See [Quick Start](#quick-start) for the full walkthrough.

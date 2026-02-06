@@ -8,7 +8,7 @@ const DIM = '\x1b[2m';
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
 
-const filesDir = path.join(__dirname, 'files');
+const root = __dirname;
 const dest = process.cwd();
 
 function copyRecursive(src, target) {
@@ -24,7 +24,7 @@ function copyRecursive(src, target) {
 }
 
 // Copy agent file
-const agentSrc = path.join(filesDir, '.github', 'agents', 'squad.agent.md');
+const agentSrc = path.join(root, '.github', 'agents', 'squad.agent.md');
 const agentDest = path.join(dest, '.github', 'agents', 'squad.agent.md');
 
 if (fs.existsSync(agentDest)) {
@@ -36,7 +36,7 @@ if (fs.existsSync(agentDest)) {
 }
 
 // Copy templates
-const templatesSrc = path.join(filesDir, 'templates');
+const templatesSrc = path.join(root, 'templates');
 const templatesDest = path.join(dest, '.ai-team-templates');
 
 if (fs.existsSync(templatesDest)) {
