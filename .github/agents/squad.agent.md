@@ -74,6 +74,14 @@ Read `.ai-team/team.md` (roster) and `.ai-team/routing.md` (routing).
 | Quick factual question | Answer directly (no spawn) |
 | Ambiguous | Pick the most likely agent; say who you chose |
 
+### Orchestration Logging
+
+Before spawning any agent, the Coordinator MUST append an entry to the orchestration log
+(`.ai-team/orchestration-log.md`, seeded from `.ai-team-templates/orchestration-log.md`).
+
+Each entry records: agent routed, why chosen, files authorized to read, files to produce.
+Update the Outcome field after the agent completes. See the template for the full format.
+
 ### How to Spawn an Agent
 
 Use the `task` tool (`agent_type: "general-purpose"`):
@@ -115,7 +123,9 @@ prompt: |
 
 After each substantial agent response:
 
-1. **Spawn Scribe** (silently, in background):
+1. **Update orchestration log:** Set the Outcome field in `.ai-team/orchestration-log.md`.
+
+2. **Spawn Scribe** (silently, in background):
 ```
 prompt: |
   You are the Scribe. Read .ai-team/agents/scribe/charter.md.
@@ -132,7 +142,7 @@ prompt: |
   Never speak to the user. Never appear in output.
 ```
 
-2. **Show activity:** `🔧 River working...` → `📋 Scribe recording`
+3. **Show activity:** `🔧 River working...` → `📋 Scribe recording`
 
 ### Adding Team Members
 
@@ -162,7 +172,9 @@ If the user wants to remove someone:
 | `.ai-team/routing.md` | **Authoritative routing.** Work assignment rules. | Squad (Coordinator) | Squad (Coordinator) |
 | `.ai-team/agents/{name}/charter.md` | **Authoritative agent identity.** Per-agent role and boundaries. | Squad (Coordinator) at creation; agent may not self-modify | Owning agent only |
 | `.ai-team/agents/{name}/history.md` | **Derived / append-only.** Personal learnings. Never authoritative for enforcement. | Owning agent (append only), Scribe (cross-agent updates) | Owning agent only |
+| `.ai-team/orchestration-log.md` | **Derived / append-only.** Agent routing evidence. Never edited after write. | Squad (Coordinator) — append only | All agents (read-only) |
 | `.ai-team/log/` | **Derived / append-only.** Session logs. Diagnostic archive. Never edited after write. | Scribe | All agents (read-only) |
+| `.ai-team-templates/` | **Reference.** Format guides for runtime files. Not authoritative for enforcement. | Squad (Coordinator) at init | Squad (Coordinator) |
 
 **Rules:**
 1. If this file (`squad.agent.md`) and any other file conflict, this file wins.
@@ -210,7 +222,10 @@ When an artifact is **rejected** by a Reviewer:
 
 ## Multi-Agent Artifact Format
 
-When multiple agents contribute to a final artifact (document, analysis, design):
+When multiple agents contribute to a final artifact (document, analysis, design),
+use the format defined in `.ai-team-templates/run-output.md`. The assembled result
+must include: termination condition, constraint budgets, reviewer verdicts (if any),
+and the raw agent outputs appendix.
 
 The assembled result goes at the top. Below it, include:
 
@@ -224,7 +239,7 @@ The assembled result goes at the top. Below it, include:
 {Paste agent's verbatim response here, unedited}
 ```
 
-This appendix is for diagnostic integrity. Do not edit, summarize, or polish the raw outputs. The Coordinator may not rewrite raw agent outputs; it may only paste them verbatim and assemble the final artifact above.
+This appendix is for diagnostic integrity. Do not edit, summarize, or polish the raw outputs. The Coordinator may not rewrite raw agent outputs; it may only paste them verbatim and assemble the final artifact above. See `.ai-team-templates/raw-agent-output.md` for the full appendix rules.
 
 ---
 
