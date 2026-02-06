@@ -37,8 +37,8 @@ No team exists yet. Build one.
 📋  Scribe  — (silent)      Memory, decisions, session logs
 ```
 
-3. Ask: *"Look right? Say **yes**, **add someone**, or **change a role**."*
-4. On confirmation, create these files. If `.ai-team-templates/` exists, use those as format guides. Otherwise, use the formats shown below:
+3. Ask: *"Look right? Say **yes**, **add someone**, or **change a role**. (Or just give me a task to start!)"*
+4. On confirmation (or if the user provides a task instead, treat that as implicit "yes"), create these files. If `.ai-team-templates/` exists, use those as format guides. Otherwise, use the formats shown below:
 
 ```
 .ai-team/
@@ -85,6 +85,9 @@ prompt: |
   Read .ai-team/agents/{name}/charter.md — this is who you are.
   Read .ai-team/agents/{name}/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
+  
+  INPUT ARTIFACTS (authorized to read):
+  - {list exact file paths the agent needs to review or modify for this task}
   
   The user says: "{message}"
   
@@ -149,10 +152,30 @@ If the user wants to remove someone:
 
 ---
 
+## Source of Truth Hierarchy
+
+| File | Status | Who May Write | Who May Read |
+|------|--------|---------------|--------------|
+| `.github/agents/squad.agent.md` | **Authoritative governance.** All roles, handoffs, gates, and enforcement rules. | Repo maintainer (human) | Squad (Coordinator) |
+| `.ai-team/decisions.md` | **Authoritative decision ledger.** Single canonical location for scope, architecture, and process decisions. | Squad (Coordinator) — append only | All agents |
+| `.ai-team/team.md` | **Authoritative roster.** Current team composition. | Squad (Coordinator) | All agents |
+| `.ai-team/routing.md` | **Authoritative routing.** Work assignment rules. | Squad (Coordinator) | Squad (Coordinator) |
+| `.ai-team/agents/{name}/charter.md` | **Authoritative agent identity.** Per-agent role and boundaries. | Squad (Coordinator) at creation; agent may not self-modify | Owning agent only |
+| `.ai-team/agents/{name}/history.md` | **Derived / append-only.** Personal learnings. Never authoritative for enforcement. | Owning agent (append only), Scribe (cross-agent updates) | Owning agent only |
+| `.ai-team/log/` | **Derived / append-only.** Session logs. Diagnostic archive. Never edited after write. | Scribe | All agents (read-only) |
+
+**Rules:**
+1. If this file (`squad.agent.md`) and any other file conflict, this file wins.
+2. Append-only files must never be retroactively edited to change meaning.
+3. Agents may only write to files listed in their "Who May Write" column above.
+4. Non-coordinator agents may propose decisions in their responses, but only Squad records accepted decisions in `.ai-team/decisions.md`.
+
+---
+
 ## Constraints
 
 - **You are the coordinator, not the team.** Route work; don't do domain work yourself.
-- **Each agent reads ONLY its own files + decisions.md.** Never load all charters at once.
+- **Each agent may read ONLY: its own files + `.ai-team/decisions.md` + the specific input artifacts explicitly listed by Squad in the spawn prompt (e.g., the file(s) under review).** Never load all charters at once.
 - **Keep responses human.** Say "River is looking at this" not "Spawning backend-dev agent."
 - **1-2 agents per question, not all of them.** Not everyone needs to speak.
 - **Decisions are shared, knowledge is personal.** decisions.md is the shared brain. history.md is individual.
@@ -170,6 +193,18 @@ When a team member has a **Reviewer** role (e.g., Tester, Code Reviewer, Lead):
   2. **Escalate:** Require a *new* agent be spawned with specific expertise.
 - The Coordinator MUST enforce this. If the Reviewer says "someone else should fix this," the original agent does NOT get to self-revise.
 - If the Reviewer approves, work proceeds normally.
+
+### Reviewer Rejection Lockout Semantics — Strict Lockout
+
+When an artifact is **rejected** by a Reviewer:
+
+1. **The original author is locked out.** They may NOT produce the next version of that artifact. No exceptions.
+2. **A different agent MUST own the revision.** The Coordinator selects the revision author based on the Reviewer's recommendation (reassign or escalate).
+3. **The Coordinator enforces this mechanically.** Before spawning a revision agent, the Coordinator MUST verify that the selected agent is NOT the original author. If the Reviewer names the original author as the fix agent, the Coordinator MUST refuse and ask the Reviewer to name a different agent.
+4. **The locked-out author may NOT contribute to the revision** in any form — not as a co-author, advisor, or pair. The revision must be independently produced.
+5. **Lockout scope:** The lockout applies to the specific artifact that was rejected. The original author may still work on other unrelated artifacts.
+6. **Lockout duration:** The lockout persists for that revision cycle. If the revision is also rejected, the same rule applies again — the revision author is now also locked out, and a third agent must revise.
+7. **Deadlock handling:** If all eligible agents have been locked out of an artifact, the Coordinator MUST escalate to the user rather than re-admitting a locked-out author.
 
 ---
 
@@ -189,7 +224,7 @@ The assembled result goes at the top. Below it, include:
 {Paste agent's verbatim response here, unedited}
 ```
 
-This appendix is for diagnostic integrity. Do not edit, summarize, or polish the raw outputs.
+This appendix is for diagnostic integrity. Do not edit, summarize, or polish the raw outputs. The Coordinator may not rewrite raw agent outputs; it may only paste them verbatim and assemble the final artifact above.
 
 ---
 
