@@ -53,31 +53,16 @@ git init
 
 ### 2. Install Squad
 
-<details>
-<summary><strong>macOS / Linux</strong></summary>
-
 ```bash
-gh repo clone bradygaster/squad /tmp/squad -- --depth 1 \
-  && mkdir -p .github/agents \
-  && cp /tmp/squad/.github/agents/squad.agent.md .github/agents/ \
-  && cp -r /tmp/squad/templates .ai-team-templates \
-  && rm -rf /tmp/squad
+npx @bradygaster/create-squad
 ```
 
-</details>
+That's it. Two files land in your project:
 
-<details>
-<summary><strong>Windows (PowerShell)</strong></summary>
-
-```powershell
-gh repo clone bradygaster/squad $env:TEMP\squad -- --depth 1
-mkdir -Force .github\agents | Out-Null
-Copy-Item $env:TEMP\squad\.github\agents\squad.agent.md .github\agents\
-Copy-Item -Recurse $env:TEMP\squad\templates .ai-team-templates
-Remove-Item -Recurse -Force $env:TEMP\squad
-```
-
-</details>
+| What | Where | Purpose |
+|------|-------|---------|
+| `squad.agent.md` | `.github/agents/` | The coordinator |
+| `templates/` | `.ai-team-templates/` | Format guides for team generation |
 
 ### 3. Open Copilot and go
 
@@ -214,12 +199,11 @@ The Coordinator enforces this. No self-review of rejected work.
 
 ## Install
 
-| What | Where | Purpose |
-|------|-------|---------|
-| `squad.agent.md` | `.github/agents/` | The coordinator + init |
-| `templates/` | `.ai-team-templates/` | Format guides for team generation |
+```bash
+npx @bradygaster/create-squad
+```
 
-See [Quick Start](#quick-start) for the one-liner.
+See [Quick Start](#quick-start) for the full walkthrough.
 
 ---
 

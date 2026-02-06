@@ -1,0 +1,25 @@
+{
+  "name": "@bradygaster/create-squad",
+  "version": "0.1.0",
+  "description": "Add an AI agent team to any project",
+  "bin": {
+    "create-squad": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "files/**/*"
+  ],
+  "keywords": [
+    "ai",
+    "agents",
+    "copilot",
+    "squad",
+    "team"
+  ],
+  "author": "bradygaster",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bradygaster/squad"
+  }
+}
