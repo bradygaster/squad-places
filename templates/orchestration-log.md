@@ -1,10 +1,8 @@
-# Orchestration Log
+# Orchestration Log Entry
 
-> Filled in by the Coordinator for every agent spawn. Append each entry below.
+> One file per agent spawn. Saved to `.ai-team/orchestration-log/{timestamp}-{agent-name}.md`
 
 ---
-
-## Entry Template
 
 ### {timestamp} — {task summary}
 
@@ -12,6 +10,8 @@
 |-------|-------|
 | **Agent routed** | {Name} ({Role}) |
 | **Why chosen** | {Routing rationale — what in the request matched this agent} |
+| **Mode** | {`background` / `sync`} |
+| **Why this mode** | {Brief reason — e.g., "No hard data dependencies" or "User needs to approve architecture"} |
 | **Files authorized to read** | {Exact file paths the agent was told to read} |
 | **File(s) agent must produce** | {Exact file paths the agent is expected to create or modify} |
 | **Outcome** | {Completed / Rejected by {Reviewer} / Escalated} |
@@ -20,7 +20,7 @@
 
 ## Rules
 
-1. **One entry per agent spawn.** If two agents are spawned for one request, log two entries.
+1. **One file per agent spawn.** Named `{timestamp}-{agent-name}.md`.
 2. **Log BEFORE spawning.** The entry must exist before the agent runs.
 3. **Update outcome AFTER the agent completes.** Fill in the Outcome field.
 4. **Never delete or edit past entries.** Append-only.

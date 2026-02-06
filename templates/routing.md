@@ -16,8 +16,9 @@ How to decide who handles what.
 
 ## Rules
 
-1. **One agent per question** unless the work clearly spans domains.
-2. **Scribe always runs** after substantial work. Never needs explicit routing.
+1. **Eager by default** — spawn all agents who could usefully start work, including anticipatory downstream work.
+2. **Scribe always runs** after substantial work, always as `mode: "background"`. Never blocks.
 3. **Quick facts → coordinator answers directly.** Don't spawn an agent for "what port does the server run on?"
 4. **When two agents could handle it**, pick the one whose domain is the primary concern.
-5. **"Team, ..." → huddle.** Spawn 2-3 relevant agents for their perspectives.
+5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
+6. **Anticipate downstream work.** If a feature is being built, spawn the tester to write test cases from requirements simultaneously.

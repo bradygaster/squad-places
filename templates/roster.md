@@ -20,6 +20,7 @@
 
 ## Project Context
 
+- **Owner:** {user name} ({user email})
 - **Stack:** {languages, frameworks, tools}
 - **Description:** {what the project does, in one sentence}
 - **Created:** {date}

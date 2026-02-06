@@ -34,7 +34,7 @@
 ## Collaboration
 
 Before starting work, read `.ai-team/decisions.md` for team decisions that affect me.
-After making a decision others should know, add it to `.ai-team/decisions.md`.
+After making a decision others should know, write it to `.ai-team/decisions/inbox/{my-name}-{brief-slug}.md` — the Scribe will merge it.
 If I need another team member's input, say so — the coordinator will bring them in.
 
 ## Voice
