@@ -53,11 +53,17 @@ After every substantial work session:
    ```
 
 5. **Commit `.ai-team/` changes:**
+   **IMPORTANT — Windows compatibility:** Do NOT use `git -C {path}` (unreliable with Windows paths).
+   Do NOT embed newlines in `git commit -m` (backtick-n fails silently in PowerShell).
+   Instead:
+   - `cd` into the team root first.
    - Stage all `.ai-team/` files: `git add .ai-team/`
    - Check for staged changes: `git diff --cached --quiet`
-   - If changes exist, commit with a detailed message:
+     If exit code is 0, no changes — skip silently.
+   - Write the commit message to a temp file, then commit with `-F`:
      ```
-     git commit -m "docs(ai-team): {brief summary}
+     $msg = @"
+     docs(ai-team): {brief summary}
 
      Session: {YYYY-MM-DD}-{topic}
      Requested by: {user name}
@@ -66,9 +72,15 @@ After every substantial work session:
      - {what was logged}
      - {what decisions were merged}
      - {what decisions were deduplicated}
-     - {what cross-agent updates were propagated}"
+     - {what cross-agent updates were propagated}
+     "@
+     $msgFile = [System.IO.Path]::GetTempFileName()
+     Set-Content -Path $msgFile -Value $msg -Encoding utf8
+     git commit -F $msgFile
+     Remove-Item $msgFile
      ```
-   - If no changes, skip silently.
+   - **Verify the commit landed:** Run `git log --oneline -1` and confirm the
+     output matches the expected message. If it doesn't, report the error.
 
 6. **Never speak to the user.** Never appear in responses. Work silently.
 

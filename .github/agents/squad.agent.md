@@ -454,23 +454,35 @@ prompt: |
      to each affected agent's history.md:
      "📌 Team update ({date}): {decision summary} — decided by {Name}"
   
-  5. Commit all `.ai-team/` changes from {team_root}:
-     - Stage: `git -C {team_root} add .ai-team/`
-     - Check if there are staged changes: `git -C {team_root} diff --cached --quiet`
-     - If changes exist, commit with a detailed message:
+  5. Commit all `.ai-team/` changes:
+     **IMPORTANT — Windows compatibility:** Do NOT use `git -C {path}` (unreliable with Windows paths).
+     Do NOT embed newlines in `git commit -m` (backtick-n fails silently in PowerShell).
+     Instead:
+     - `cd` into {team_root} first.
+     - Stage: `git add .ai-team/`
+     - Check if there are staged changes: `git diff --cached --quiet`
+       If exit code is 0, no changes — skip the commit silently.
+     - Write the commit message to a temp file, then commit with `-F`:
        ```
-       git -C {team_root} commit -m "docs(ai-team): {brief summary}
-       
+       $msg = @"
+       docs(ai-team): {brief summary}
+
        Session: {YYYY-MM-DD}-{topic}
        Requested by: {current user name}
-       
+
        Changes:
        - {logged session to .ai-team/log/...}
        - {merged N decision(s) from inbox into decisions.md}
        - {propagated updates to N agent history file(s)}
-       - {list any other .ai-team/ files changed}"
+       - {list any other .ai-team/ files changed}
+       "@
+       $msgFile = [System.IO.Path]::GetTempFileName()
+       Set-Content -Path $msgFile -Value $msg -Encoding utf8
+       git commit -F $msgFile
+       Remove-Item $msgFile
        ```
-     - If no changes, skip the commit silently.
+     - **Verify the commit landed:** Run `git log --oneline -1` and confirm the
+       output matches the expected message. If it doesn't, report the error.
   
   Never speak to the user. Never appear in output.
 ```
