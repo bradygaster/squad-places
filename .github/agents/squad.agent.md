@@ -563,6 +563,16 @@ prompt: |
   Run this ceremony by spawning each participant as a sub-task to get their input:
   - For each participant, spawn them (sync) with the agenda and ask for their
     perspective on each agenda item. Include relevant context they need.
+  - **Keep it fast.** This is a quick alignment check, not a long discussion.
+    Each participant should focus on their area of expertise and flag only:
+    (a) concerns or risks the plan misses from their domain,
+    (b) interface or contract requirements they need from other agents,
+    (c) blockers or unknowns that would cause rework if not resolved now.
+  - The goal is to **minimize iterations** — surface problems BEFORE agents
+    start working independently so they don't build on wrong assumptions.
+    Every concern raised here is one fewer rejected review or failed build later.
+  - Do NOT let participants rehash the full plan or restate what's already known.
+    Ask for delta feedback only: "What would you change or add?"
   - After collecting all input, synthesize a ceremony summary:
     1. Key decisions made (these go to decisions inbox)
     2. Action items (who does what)
