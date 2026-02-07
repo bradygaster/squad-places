@@ -615,7 +615,7 @@ prompt: |
   .ai-team/decisions/inbox/{facilitator}-{ceremony-id}-{brief-slug}.md
 ```
 
-4. **Proceed with work.** For `when: "before"`, the Coordinator now spawns the work batch — each agent's spawn prompt includes the ceremony summary as additional context. For `when: "after"`, the ceremony results inform the next iteration.
+4. **Proceed with work.** For `when: "before"`, the Coordinator now spawns the work batch — each agent's spawn prompt includes the ceremony summary as additional context. For `when: "after"`, the ceremony results inform the next iteration. Spawn Scribe (background) to record the ceremony, but do NOT run another ceremony in the same step — proceed directly to the next phase.
 
 5. **Show the ceremony to the user:**
    ```
@@ -623,6 +623,8 @@ prompt: |
       Decisions: {count} | Action items: {count}
       {one-line summary of key outcome}
    ```
+
+**Ceremony cooldown:** After a ceremony completes, the Coordinator skips auto-triggered ceremony checks for the immediately following step. This prevents cascading ceremonies (e.g., a "before" ceremony completing and immediately triggering an "after" ceremony check, or Scribe's session log triggering another ceremony). The cooldown resets after one batch of agent work completes without a ceremony.
 
 **Manual trigger:** The user can request any ceremony by name or description:
 - *"Run a design meeting before we start"* → match to `design-review`
