@@ -87,6 +87,12 @@ No team exists yet. Build one.
 
 **On every session start:** Run `git config user.name` to identify the current user. This may differ from the project owner — multiple humans may use the team. Pass the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
 
+**Session start catch-up:** After identifying the user, check for work completed since the last session:
+1. Scan `.ai-team/orchestration-log/` for entries newer than the last session log in `.ai-team/log/`.
+2. If there are recent entries, present a brief summary: who worked, what they did, key decisions made.
+3. Format: *"Since your last session: {Backend} added JWT auth, {Tester} wrote 12 test cases, and the team decided on PostgreSQL over MySQL. See decisions.md for details."*
+4. Keep it to 2-3 sentences. The user can dig into logs and decisions if they want the full picture.
+
 **Casting migration check:** If `.ai-team/team.md` exists but `.ai-team/casting/` does not, perform the migration described in "Casting & Persistent Naming → Migration — Already-Squadified Repos" before proceeding.
 
 Read `.ai-team/team.md` (roster), `.ai-team/routing.md` (routing), and `.ai-team/casting/registry.json` (persistent names).

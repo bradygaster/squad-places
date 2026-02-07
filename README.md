@@ -90,27 +90,27 @@ Squad proposes a team — each member named from a persistent thematic cast. You
 
 ---
 
-## Your Team Grows With Your Project
+## Agents Work in Parallel — You Catch Up When You're Ready
 
-Squad agents aren't stateless assistants. They accumulate project-specific knowledge over time.
+Squad doesn't work on a human schedule. When you give a task, the coordinator launches every agent that can usefully start — simultaneously. Frontend, backend, tests, architecture — all at once.
 
-| | 🌱 Week 1 | 🌿 Week 4 | 🌳 Week 12 |
-|---|-----------|-----------|------------|
-| ⚛️ **Frontend** | React project structure | + Component library, routing, state patterns | + Design system, perf patterns, a11y |
-| 🔧 **Backend** | Express + Postgres stack | + JWT auth, rate limiting, SQL preferences | + Caching, migrations, monitoring |
-| 🏗️ **Lead** | Project scope, team roster | + Architecture decisions, trade-offs | + Full project history, risk areas, tech debt |
-| 🧪 **Tester** | Test framework chosen | + Integration test patterns, edge cases | + Regression patterns, CI pipeline, coverage gaps |
-| 📋 **Scribe** | First session logged | 12 sessions, 8 decisions | 47 decisions, full searchable archive |
+```
+You: "Team, build the login page"
 
-**How it works:**
+  🏗️ Lead — analyzing requirements...          ⎤
+  ⚛️ Frontend — building login form...          ⎥ all launched
+  🔧 Backend — setting up auth endpoints...     ⎥ in parallel
+  🧪 Tester — writing test cases from spec...   ⎥
+  📋 Scribe — logging everything...             ⎦
+```
 
-- Every time an agent does work, it writes lasting learnings to its `history.md`
-- A silent **Scribe** propagates cross-team decisions — when one agent chooses JWT, the others find out
-- `decisions.md` is the shared brain — every agent reads it before working
-- Session logs in `log/` create a searchable archive of everything that happened
-- Each agent gets a **persistent name** from a thematic cast — names stick across sessions and clones
+When agents finish, the coordinator immediately chains follow-up work — tests reveal edge cases, the backend agent picks them up, no waiting for you to ask. If you step away, a breadcrumb trail is waiting when you get back:
 
-By week 4, your agents know your conventions, your preferences, your architecture. They stop asking questions they've already answered. They start making suggestions informed by your project's actual history.
+- **`decisions.md`** — every decision any agent made, merged by Scribe
+- **`orchestration-log/`** — what was spawned, why, and what happened
+- **`log/`** — full session history, searchable
+
+**Knowledge compounds across sessions.** Every time an agent works, it writes lasting learnings to its `history.md`. After a few sessions, agents know your conventions, your preferences, your architecture. They stop asking questions they've already answered.
 
 **And it's all in git.** Anyone who clones your repo gets the team — with all their accumulated knowledge.
 
