@@ -15,7 +15,7 @@ These are small enough that a team can ship them in a single session. Good for s
 ### 1. CLI Pomodoro Timer
 
 ```
-I'm building a cross-platform CLI pomodoro timer in Go. It should support:
+I'm building a cross-platform CLI pomodoro timer in Python. It should support:
 - Configurable work/break intervals with sensible defaults (25/5/15)
 - A persistent stats tracker that logs completed sessions to a local JSON file
 - Desktop notifications on macOS, Windows, and Linux
@@ -213,31 +213,46 @@ These push coordination, memory, and team size. Multiple rounds of work, cross-c
 ### 10. Legacy .NET-to-Azure Migration
 
 ```
-I have a legacy enterprise application spread across 4 folders (simulating 4 repos):
-- /frontend — ASP.NET Web Forms (.NET Framework 4.8) with jQuery, server-side rendering
-- /api — WCF services (.NET Framework 4.8) with SOAP endpoints, Entity Framework 6, SQL Server
-- /batch — Windows Service (.NET Framework 4.8) that runs nightly batch jobs reading from file shares
-- /shared — Shared class library with domain models, used by all three above
+I have a legacy .NET Framework application that needs to be migrated to Azure. Clone these two repos to start:
+
+1. https://github.com/bradygaster/ProductCatalogApp — ASP.NET MVC (.NET Framework) web app with:
+   - Product catalog with shopping cart functionality
+   - WCF service (SOAP) for product data access
+   - In-memory product repository
+   - Order submission to MSMQ (Message Queue)
+   - jQuery-based frontend
+
+2. https://github.com/bradygaster/IncomingOrderProcessor — Windows Service that:
+   - Monitors MSMQ for incoming orders
+   - Processes and logs orders from the queue
+   - Runs continuously as a background service
 
 The migration target:
-- /frontend → Blazor Server (.NET 8) on Azure App Service
-- /api → ASP.NET Core Minimal APIs (.NET 8) on Azure Container Apps, Entity Framework Core, Azure SQL
-- /batch → Azure Functions with Timer triggers (.NET 8)
-- /shared → .NET 8 class library, published as a NuGet package
-- Infrastructure: Bicep templates for all Azure resources
-- CI/CD: GitHub Actions workflows for each service
+- ProductCatalogApp → ASP.NET Core MVC (.NET 10) or Blazor on Azure App Service
+  - Replace WCF SOAP service with ASP.NET Core Web API (REST)
+  - Keep in-memory repository initially, but structure for Azure SQL migration
+  - Replace MSMQ with Azure Service Bus queues
+  - Modernize frontend (keep MVC or migrate to Blazor)
+- IncomingOrderProcessor → Azure Functions (.NET 8) with Service Bus trigger
+  - Convert Windows Service to serverless function
+  - Trigger on Service Bus queue messages
+  - Maintain same order processing logic
+- Shared models → .NET 10 class library used by both services
+- Infrastructure: Bicep templates for App Service, Function App, Service Bus namespace and queue
+- CI/CD: GitHub Actions workflows for both services
+- Local dev: docker-compose or Aspire for running everything locally
 
 Migration rules:
-- Preserve all business logic — no behavior changes in the migration
-- WCF SOAP endpoints get REST equivalents with the same contracts
-- Entity Framework 6 mappings convert to EF Core with minimal schema changes
-- Batch jobs become timer-triggered Azure Functions with the same schedule
-- All services must work locally with docker-compose before Azure deployment
+- Preserve all business logic — orders must flow identically
+- WCF SOAP contracts become REST APIs with the same data structures
+- MSMQ queue becomes Azure Service Bus queue with compatible message format
+- The Windows Service becomes a Service Bus-triggered Azure Function
+- All services must work locally before Azure deployment
 
-I need a big team for this. One agent per migration target, plus an architect who owns the migration strategy, a shared-library agent, an infrastructure agent for Bicep/GitHub Actions, and a tester who validates behavioral equivalence. Set up the team and start with the migration plan — the architect should go first, then everyone else works in parallel.
+I need a migration team: one agent for the web app migration, one for the WCF-to-API conversion, one for the Windows Service-to-Functions migration, one for shared models, one for Azure infrastructure (Bicep), one for CI/CD, and a tester who validates that orders flow end-to-end correctly. Set up the team and start with the migration plan.
 ```
 
-**What it demonstrates:** The largest, most realistic Squad scenario. 7-8 agents working a genuine enterprise migration. The architect must go first (sync) to establish the migration strategy, then everyone fans out. Cross-cutting decisions (connection strings, auth strategy, shared model changes) propagate via Scribe. The tester writes equivalence tests from the old code's behavior before the new code is written. Agents accumulate deep knowledge about their specific migration target across multiple rounds.
+**What it demonstrates:** The most realistic Squad scenario — migrating actual legacy .NET Framework code to modern Azure. The team must understand existing WCF patterns, MSMQ messaging, Windows Services, and translate them to Azure-native equivalents (REST APIs, Service Bus, Functions). Shows true enterprise migration challenges: agents analyze unfamiliar code, preserve business logic while modernizing infrastructure, coordinate on message formats and shared models, and validate behavioral equivalence across the migration.
 
 ---
 
@@ -332,19 +347,55 @@ I want one agent on dungeon generation, one on combat + enemy AI, one on items +
 ### 15. Real-Time Collaborative Whiteboard
 
 ```
-Build a real-time collaborative whiteboard app. Think Excalidraw but simpler. Tech stack: React + TypeScript frontend, Node.js backend, WebSocket.
+Build a real-time collaborative whiteboard app using React Flow for the node/shape editor. Think Miro or Excalidraw but simpler. Tech stack: React + TypeScript + React Flow frontend, Node.js backend, WebSocket.
 
 Features:
-- Drawing tools: freehand, rectangle, ellipse, line, arrow, text
-- Color picker, stroke width, fill/no-fill
-- Select, move, resize, delete shapes
-- Real-time sync: multiple users see each other's cursors and drawings via WebSocket
+- Built on React Flow (https://reactflow.dev/) for drag-and-drop node-based editing
+- Shape library: rectangles, circles, text nodes, sticky notes, arrows/edges connecting shapes
+- Drag-and-drop: users can drag shapes from a palette onto the canvas, drag to reposition, drag handles to resize
+- Color picker, stroke width, fill color, background color per shape
+- Connect shapes with arrows (React Flow edges) — drag from one shape to another
+- Select multiple shapes (bounding box selection), move/delete/style as a group
+- Real-time sync: multiple users see each other's cursors and edits via WebSocket
 - Rooms: shareable URL creates a room, anyone with the link can join
 - Undo/redo per user (each user has their own undo stack)
-- Export to PNG and SVG
-- Persistence: save whiteboard state to PostgreSQL, auto-save every 30 seconds
+- Export to PNG and SVG (React Flow has built-in export utilities)
+- Persistence: save canvas state (nodes, edges, viewport) to PostgreSQL, auto-save every 30 seconds
 
-I want a frontend agent owning the canvas rendering and drawing tools, a networking agent owning the WebSocket sync and conflict resolution (CRDT or OT), a backend agent owning rooms and persistence, and a tester writing Playwright tests for multi-user scenarios. Set up the team and build it.
+I want a frontend agent owning the React Flow integration and drag-and-drop interactions, a networking agent owning the WebSocket sync and conflict resolution (CRDT or OT for canvas state), a backend agent owning rooms and persistence, and a tester writing Playwright tests for multi-user drag-and-drop scenarios. Set up the team and build it.
 ```
 
-**What it demonstrates:** A project where the networking/sync agent and the frontend agent must closely coordinate on the data model for shapes and operations. The backend agent can work independently on rooms and persistence. The tester writes multi-context Playwright tests (two browsers in one test) to validate real-time sync — a direct showcase of Playwright's multi-page testing capabilities.
+**What it demonstrates:** A project where the networking/sync agent and the frontend agent must closely coordinate on the React Flow data model (nodes, edges, viewport state). The frontend agent leverages React Flow's built-in drag-and-drop and handles, while the networking agent syncs changes across users. The backend agent can work independently on rooms and persistence. The tester writes multi-context Playwright tests (two browsers in one test) to validate real-time drag-and-drop sync — a direct showcase of Playwright's multi-page testing and React Flow's powerful node-based editor capabilities.
+
+---
+
+### 16. Multiplayer Dice Roller — Bar Games PWA
+
+```
+Build a mobile-first Progressive Web App for rolling dice with friends at a bar. The vibe: tapping your phone on a virtual green velvet table, realistic 3D dice tumbling across the screen. Tech stack: React + TypeScript, Three.js (or React Three Fiber), Node.js + WebSocket backend, PostgreSQL.
+
+Features:
+- Mobile-first responsive design: works perfectly on phones, tablets, and desktop
+- PWA: installable on home screen, works offline (cached dice rolls when disconnected, sync when back online)
+- Double-tap gesture: tap the screen twice anywhere to roll the dice — they bounce and tumble realistically across a green velvet table
+- 3D dice physics: use Three.js or React Three Fiber for realistic dice with physics simulation (gravity, bounce, spin, settle)
+- Customizable dice: choose number of dice (1-10), die type (d6, d10, d12, d20), color schemes
+- Real-time multiplayer: 
+  - Create a room with a shareable 6-digit code or QR code
+  - Friends join the same room via code or QR scan
+  - Everyone sees everyone's rolls in real-time with player names
+  - Room chat for banter and trash talk
+- Game modes with score tracking:
+  - Freeroll: just roll, no rules, all rolls logged
+  - Yahtzee: automated scoring, tracks categories, end-of-game leaderboard
+  - Liar's Dice: player declarations, challenge system, elimination rounds
+  - Custom: define your own scoring rules (high roll wins, sum target, etc.)
+- Score history: view roll history for the session, replay animations, export session log as JSON
+- Sound effects: dice clatter, table bounce (mute toggle)
+- Haptic feedback on mobile: vibrate on roll, on settle
+- Night mode: dark UI with brighter dice for late-night bar sessions
+
+I want one agent on the Three.js 3D dice rendering and physics, one agent on the mobile PWA setup and touch gesture handling, one agent on the real-time multiplayer backend (rooms, WebSocket, score sync), one agent on game logic (different game modes, scoring rules, turn management), and a tester writing mobile Playwright tests for touch gestures and multiplayer roll sync. Set up the team and build it.
+```
+
+**What it demonstrates:** A mobile-first project where agents specialize by concern: 3D graphics, touch UX, real-time networking, and game logic. The 3D agent and the gesture agent must coordinate on the tap-to-roll trigger and animation states. The game logic and networking agents share data models for scores and turns. The PWA requirements (offline support, install prompt) and mobile testing (touch events, multi-device Playwright tests) showcase Squad handling production mobile app concerns. This is also a fun, visual demo — you can actually play dice games with the finished product.
