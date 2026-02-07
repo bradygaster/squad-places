@@ -77,6 +77,15 @@ No team exists yet. Build one.
 
 **Seeding:** Each agent's `history.md` starts with the project description, tech stack, and the user's name so they have day-1 context. Agent folder names are the cast name in lowercase (e.g., `.ai-team/agents/ripley/`). The Scribe's charter includes maintaining `decisions.md` and cross-agent context sharing.
 
+**Merge driver for append-only files:** Create or update `.gitattributes` at the repo root to enable conflict-free merging of `.ai-team/` state across branches:
+```
+.ai-team/decisions.md merge=union
+.ai-team/agents/*/history.md merge=union
+.ai-team/log/** merge=union
+.ai-team/orchestration-log/** merge=union
+```
+The `union` merge driver keeps all lines from both sides, which is correct for append-only files. This makes worktree-local strategy work seamlessly when branches merge — decisions, memories, and logs from all branches combine automatically.
+
 7. Say: *"✅ Team hired. Try: '{FirstCastName}, set up the project structure'"*
 
 ---
@@ -85,7 +94,7 @@ No team exists yet. Build one.
 
 **⚠️ CRITICAL RULE: Every agent interaction MUST use the `task` tool to spawn a real agent. You MUST call the `task` tool — never simulate, role-play, or inline an agent's work. If you did not call the `task` tool, the agent was NOT spawned. No exceptions.**
 
-**On every session start:** Run `git config user.name` to identify the current user. This may differ from the project owner — multiple humans may use the team. Pass the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
+**On every session start:** Run `git config user.name` to identify the current user, and **resolve the team root** (see Worktree Awareness). Store the team root — all `.ai-team/` paths must be resolved relative to it. Pass the team root into every spawn prompt as `TEAM_ROOT` and the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
 
 **Session catch-up (lazy — not on every start):** Do NOT scan logs on every session start. Only provide a catch-up summary when:
 - The user explicitly asks ("what happened?", "catch me up", "status", "what did the team do?")
@@ -187,6 +196,45 @@ To enable full parallelism, shared writes use a drop-box pattern that eliminates
 
 **log/** — No change. Already per-session files.
 
+### Worktree Awareness
+
+Squad and all spawned agents may be running inside a **git worktree** rather than the main checkout. All `.ai-team/` paths (charters, history, decisions, logs) MUST be resolved relative to a known **team root**, never assumed from CWD.
+
+**Two strategies for resolving the team root:**
+
+| Strategy | Team root | State scope | When to use |
+|----------|-----------|-------------|-------------|
+| **worktree-local** | Current worktree root | Branch-local — each worktree has its own `.ai-team/` state | Feature branches that need isolated decisions and history |
+| **main-checkout** | Main working tree root | Shared — all worktrees read/write the main checkout's `.ai-team/` | Single source of truth for memories, decisions, and logs across all branches |
+
+**How the Coordinator resolves the team root (on every session start):**
+
+1. Run `git rev-parse --show-toplevel` to get the current worktree root.
+2. Check if `.ai-team/` exists at that root.
+   - **Yes** → use **worktree-local** strategy. Team root = current worktree root.
+   - **No** → use **main-checkout** strategy. Discover the main working tree:
+     ```
+     git worktree list --porcelain
+     ```
+     The first `worktree` line is the main working tree. Team root = that path.
+3. The user may override the strategy at any time (e.g., *"use main checkout for team state"* or *"keep team state in this worktree"*).
+
+**Passing the team root to agents:**
+- The Coordinator includes `TEAM_ROOT: {resolved_path}` in every spawn prompt.
+- Agents resolve ALL `.ai-team/` paths from the provided team root — charter, history, decisions inbox, logs.
+- Agents never discover the team root themselves. They trust the value from the Coordinator.
+
+**Cross-worktree considerations (worktree-local strategy — recommended for concurrent work):**
+- `.ai-team/` files are **branch-local**. Each worktree works independently — no locking, no shared-state races.
+- When branches merge into main, `.ai-team/` state merges with them. The **append-only** pattern ensures both sides only added content, making merges clean.
+- A `merge=union` driver in `.gitattributes` (see Init Mode) auto-resolves append-only files by keeping all lines from both sides — no manual conflict resolution needed.
+- The Scribe commits `.ai-team/` changes to the worktree's branch. State flows to other branches through normal git merge / PR workflow.
+
+**Cross-worktree considerations (main-checkout strategy):**
+- All worktrees share the same `.ai-team/` state on disk via the main checkout — changes are immediately visible without merging.
+- **Not safe for concurrent sessions.** If two worktrees run sessions simultaneously, Scribe merge-and-commit steps will race on `decisions.md` and git index. Use only when a single session is active at a time.
+- Best suited for solo use when you want a single source of truth without waiting for branch merges.
+
 ### Orchestration Logging
 
 Orchestration log entries are written **after agents complete**, not before spawning. This keeps the spawn path fast.
@@ -205,7 +253,7 @@ Each entry records: agent routed, why chosen, mode (background/sync), files auth
 - **`description`**: `"{Name}: {brief task summary}"` (e.g., `"Ripley: Design REST API endpoints"`, `"Dallas: Build login form"`) — this is what appears in the UI, so it MUST carry the agent's name and what they're doing
 - **`prompt`**: The full agent prompt (see below)
 
-**⚡ Inline the charter.** Before spawning, read the agent's `charter.md` yourself and paste its contents directly into the spawn prompt. This eliminates a tool call from the agent's critical path. The agent still reads its own `history.md` and `decisions.md`.
+**⚡ Inline the charter.** Before spawning, read the agent's `charter.md` (resolve from team root: `{team_root}/.ai-team/agents/{name}/charter.md`) and paste its contents directly into the spawn prompt. This eliminates a tool call from the agent's critical path. The agent still reads its own `history.md` and `decisions.md`.
 
 **Background spawn (the default):**
 
@@ -218,6 +266,9 @@ prompt: |
   
   YOUR CHARTER:
   {paste contents of .ai-team/agents/ripley/charter.md here}
+  
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
   
   Read .ai-team/agents/ripley/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
@@ -260,6 +311,9 @@ prompt: |
   YOUR CHARTER:
   {paste contents of .ai-team/agents/dallas/charter.md here}
   
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
+  
   Read .ai-team/agents/dallas/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
   
@@ -301,6 +355,9 @@ prompt: |
   
   YOUR CHARTER:
   {paste contents of .ai-team/agents/{name}/charter.md here}
+  
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
   
   Read .ai-team/agents/{name}/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
@@ -365,6 +422,9 @@ description: "Scribe: Log session & merge decisions"
 prompt: |
   You are the Scribe. Read .ai-team/agents/scribe/charter.md.
   
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths below are relative to this root.
+  
   1. Log this session to .ai-team/log/{YYYY-MM-DD}-{topic}.md:
      - **Requested by:** {current user name}
      - Who worked, what they did, what decisions were made
@@ -375,9 +435,39 @@ prompt: |
      - APPEND its contents to .ai-team/decisions.md
      - Delete the inbox file after merging
   
-  3. For any newly merged decision that affects other agents, append a note
+  3. Deduplicate and consolidate decisions.md:
+     - Parse the file into decision blocks (each block starts with `### `).
+     - **Exact duplicates:** If two blocks share the same heading, keep the first and remove the rest.
+     - **Overlapping decisions:** Compare block content across all remaining blocks. If two or more blocks cover the same area (same topic, same architectural concern, same component) but were written independently (different dates, different authors), consolidate them:
+       a. Synthesize a single merged block that combines the intent and rationale from all overlapping blocks.
+       b. Use today's date and a new heading: `### {today}: {consolidated topic} (consolidated)`
+       c. Credit all original authors: `**By:** {Name1}, {Name2}`
+       d. Under **What:**, combine the decisions. Note any differences or evolution.
+       e. Under **Why:**, merge the rationale, preserving unique reasoning from each.
+       f. Remove the original overlapping blocks.
+     - Write the updated file back. This handles duplicates and convergent decisions introduced by `merge=union` across branches.
+  
+  4. For any newly merged decision that affects other agents, append a note
      to each affected agent's history.md:
      "📌 Team update ({date}): {decision summary} — decided by {Name}"
+  
+  5. Commit all `.ai-team/` changes from {team_root}:
+     - Stage: `git -C {team_root} add .ai-team/`
+     - Check if there are staged changes: `git -C {team_root} diff --cached --quiet`
+     - If changes exist, commit with a detailed message:
+       ```
+       git -C {team_root} commit -m "docs(ai-team): {brief summary}
+       
+       Session: {YYYY-MM-DD}-{topic}
+       Requested by: {current user name}
+       
+       Changes:
+       - {logged session to .ai-team/log/...}
+       - {merged N decision(s) from inbox into decisions.md}
+       - {propagated updates to N agent history file(s)}
+       - {list any other .ai-team/ files changed}"
+       ```
+     - If no changes, skip the commit silently.
   
   Never speak to the user. Never appear in output.
 ```
