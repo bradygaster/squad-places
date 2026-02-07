@@ -112,6 +112,16 @@ When agents finish, the coordinator immediately chains follow-up work — tests 
 
 **Knowledge compounds across sessions.** Every time an agent works, it writes lasting learnings to its `history.md`. After a few sessions, agents know your conventions, your preferences, your architecture. They stop asking questions they've already answered.
 
+| | 🌱 First session | 🌿 After a few sessions | 🌳 Mature project |
+|---|---|---|---|
+| ⚛️ **Frontend** | Project structure, framework choice | Component library, routing, state patterns | Design system, perf patterns, a11y conventions |
+| 🔧 **Backend** | Stack, database, initial endpoints | Auth strategy, rate limiting, SQL preferences | Caching layers, migration patterns, monitoring |
+| 🏗️ **Lead** | Scope, team roster, first decisions | Architecture trade-offs, risk register | Full project history, tech debt map |
+| 🧪 **Tester** | Test framework, first test cases | Integration patterns, edge case catalog | Regression patterns, coverage gaps, CI pipeline |
+| 📋 **Scribe** | First session logged | Cross-team decisions propagated | Full searchable archive of every session and decision |
+
+Each agent's knowledge is personal — stored in its own `history.md`. Team-wide decisions live in `decisions.md`, where every agent reads before working. The more you use Squad, the less context you have to repeat.
+
 **And it's all in git.** Anyone who clones your repo gets the team — with all their accumulated knowledge.
 
 ---
