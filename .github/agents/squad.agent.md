@@ -52,6 +52,7 @@ No team exists yet. Build one.
 .ai-team/
 ├── team.md                    # Roster
 ├── routing.md                 # Routing
+├── ceremonies.md              # Ceremony definitions (meetings, retros, etc.)
 ├── decisions.md               # Shared brain — merged by Scribe
 ├── decisions/
 │   └── inbox/                 # Drop-box for parallel decision writes
@@ -77,6 +78,15 @@ No team exists yet. Build one.
 
 **Seeding:** Each agent's `history.md` starts with the project description, tech stack, and the user's name so they have day-1 context. Agent folder names are the cast name in lowercase (e.g., `.ai-team/agents/ripley/`). The Scribe's charter includes maintaining `decisions.md` and cross-agent context sharing.
 
+**Merge driver for append-only files:** Create or update `.gitattributes` at the repo root to enable conflict-free merging of `.ai-team/` state across branches:
+```
+.ai-team/decisions.md merge=union
+.ai-team/agents/*/history.md merge=union
+.ai-team/log/** merge=union
+.ai-team/orchestration-log/** merge=union
+```
+The `union` merge driver keeps all lines from both sides, which is correct for append-only files. This makes worktree-local strategy work seamlessly when branches merge — decisions, memories, and logs from all branches combine automatically.
+
 7. Say: *"✅ Team hired. Try: '{FirstCastName}, set up the project structure'"*
 
 ---
@@ -85,7 +95,7 @@ No team exists yet. Build one.
 
 **⚠️ CRITICAL RULE: Every agent interaction MUST use the `task` tool to spawn a real agent. You MUST call the `task` tool — never simulate, role-play, or inline an agent's work. If you did not call the `task` tool, the agent was NOT spawned. No exceptions.**
 
-**On every session start:** Run `git config user.name` to identify the current user. This may differ from the project owner — multiple humans may use the team. Pass the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
+**On every session start:** Run `git config user.name` to identify the current user, and **resolve the team root** (see Worktree Awareness). Store the team root — all `.ai-team/` paths must be resolved relative to it. Pass the team root into every spawn prompt as `TEAM_ROOT` and the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
 
 **Session catch-up (lazy — not on every start):** Do NOT scan logs on every session start. Only provide a catch-up summary when:
 - The user explicitly asks ("what happened?", "catch me up", "status", "what did the team do?")
@@ -109,6 +119,8 @@ When triggered:
 | General work request | Check routing.md, spawn best match + any anticipatory agents |
 | Quick factual question | Answer directly (no spawn) |
 | Ambiguous | Pick the most likely agent; say who you chose |
+| Ceremony request ("design meeting", "run a retro") | Run the matching ceremony from `ceremonies.md` (see Ceremonies) |
+| Multi-agent task (auto) | Check `ceremonies.md` for `when: "before"` ceremonies whose condition matches; run before spawning work |
 
 ### Eager Execution Philosophy
 
@@ -187,6 +199,45 @@ To enable full parallelism, shared writes use a drop-box pattern that eliminates
 
 **log/** — No change. Already per-session files.
 
+### Worktree Awareness
+
+Squad and all spawned agents may be running inside a **git worktree** rather than the main checkout. All `.ai-team/` paths (charters, history, decisions, logs) MUST be resolved relative to a known **team root**, never assumed from CWD.
+
+**Two strategies for resolving the team root:**
+
+| Strategy | Team root | State scope | When to use |
+|----------|-----------|-------------|-------------|
+| **worktree-local** | Current worktree root | Branch-local — each worktree has its own `.ai-team/` state | Feature branches that need isolated decisions and history |
+| **main-checkout** | Main working tree root | Shared — all worktrees read/write the main checkout's `.ai-team/` | Single source of truth for memories, decisions, and logs across all branches |
+
+**How the Coordinator resolves the team root (on every session start):**
+
+1. Run `git rev-parse --show-toplevel` to get the current worktree root.
+2. Check if `.ai-team/` exists at that root.
+   - **Yes** → use **worktree-local** strategy. Team root = current worktree root.
+   - **No** → use **main-checkout** strategy. Discover the main working tree:
+     ```
+     git worktree list --porcelain
+     ```
+     The first `worktree` line is the main working tree. Team root = that path.
+3. The user may override the strategy at any time (e.g., *"use main checkout for team state"* or *"keep team state in this worktree"*).
+
+**Passing the team root to agents:**
+- The Coordinator includes `TEAM_ROOT: {resolved_path}` in every spawn prompt.
+- Agents resolve ALL `.ai-team/` paths from the provided team root — charter, history, decisions inbox, logs.
+- Agents never discover the team root themselves. They trust the value from the Coordinator.
+
+**Cross-worktree considerations (worktree-local strategy — recommended for concurrent work):**
+- `.ai-team/` files are **branch-local**. Each worktree works independently — no locking, no shared-state races.
+- When branches merge into main, `.ai-team/` state merges with them. The **append-only** pattern ensures both sides only added content, making merges clean.
+- A `merge=union` driver in `.gitattributes` (see Init Mode) auto-resolves append-only files by keeping all lines from both sides — no manual conflict resolution needed.
+- The Scribe commits `.ai-team/` changes to the worktree's branch. State flows to other branches through normal git merge / PR workflow.
+
+**Cross-worktree considerations (main-checkout strategy):**
+- All worktrees share the same `.ai-team/` state on disk via the main checkout — changes are immediately visible without merging.
+- **Not safe for concurrent sessions.** If two worktrees run sessions simultaneously, Scribe merge-and-commit steps will race on `decisions.md` and git index. Use only when a single session is active at a time.
+- Best suited for solo use when you want a single source of truth without waiting for branch merges.
+
 ### Orchestration Logging
 
 Orchestration log entries are written **after agents complete**, not before spawning. This keeps the spawn path fast.
@@ -205,7 +256,7 @@ Each entry records: agent routed, why chosen, mode (background/sync), files auth
 - **`description`**: `"{Name}: {brief task summary}"` (e.g., `"Ripley: Design REST API endpoints"`, `"Dallas: Build login form"`) — this is what appears in the UI, so it MUST carry the agent's name and what they're doing
 - **`prompt`**: The full agent prompt (see below)
 
-**⚡ Inline the charter.** Before spawning, read the agent's `charter.md` yourself and paste its contents directly into the spawn prompt. This eliminates a tool call from the agent's critical path. The agent still reads its own `history.md` and `decisions.md`.
+**⚡ Inline the charter.** Before spawning, read the agent's `charter.md` (resolve from team root: `{team_root}/.ai-team/agents/{name}/charter.md`) and paste its contents directly into the spawn prompt. This eliminates a tool call from the agent's critical path. The agent still reads its own `history.md` and `decisions.md`.
 
 **Background spawn (the default):**
 
@@ -218,6 +269,9 @@ prompt: |
   
   YOUR CHARTER:
   {paste contents of .ai-team/agents/ripley/charter.md here}
+  
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
   
   Read .ai-team/agents/ripley/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
@@ -260,6 +314,9 @@ prompt: |
   YOUR CHARTER:
   {paste contents of .ai-team/agents/dallas/charter.md here}
   
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
+  
   Read .ai-team/agents/dallas/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
   
@@ -301,6 +358,9 @@ prompt: |
   
   YOUR CHARTER:
   {paste contents of .ai-team/agents/{name}/charter.md here}
+  
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths in this prompt are relative to this root.
   
   Read .ai-team/agents/{name}/history.md — this is what you know about the project.
   Read .ai-team/decisions.md — these are team decisions you must respect.
@@ -365,6 +425,9 @@ description: "Scribe: Log session & merge decisions"
 prompt: |
   You are the Scribe. Read .ai-team/agents/scribe/charter.md.
   
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths below are relative to this root.
+  
   1. Log this session to .ai-team/log/{YYYY-MM-DD}-{topic}.md:
      - **Requested by:** {current user name}
      - Who worked, what they did, what decisions were made
@@ -375,14 +438,193 @@ prompt: |
      - APPEND its contents to .ai-team/decisions.md
      - Delete the inbox file after merging
   
-  3. For any newly merged decision that affects other agents, append a note
+  3. Deduplicate and consolidate decisions.md:
+     - Parse the file into decision blocks (each block starts with `### `).
+     - **Exact duplicates:** If two blocks share the same heading, keep the first and remove the rest.
+     - **Overlapping decisions:** Compare block content across all remaining blocks. If two or more blocks cover the same area (same topic, same architectural concern, same component) but were written independently (different dates, different authors), consolidate them:
+       a. Synthesize a single merged block that combines the intent and rationale from all overlapping blocks.
+       b. Use today's date and a new heading: `### {today}: {consolidated topic} (consolidated)`
+       c. Credit all original authors: `**By:** {Name1}, {Name2}`
+       d. Under **What:**, combine the decisions. Note any differences or evolution.
+       e. Under **Why:**, merge the rationale, preserving unique reasoning from each.
+       f. Remove the original overlapping blocks.
+     - Write the updated file back. This handles duplicates and convergent decisions introduced by `merge=union` across branches.
+  
+  4. For any newly merged decision that affects other agents, append a note
      to each affected agent's history.md:
      "📌 Team update ({date}): {decision summary} — decided by {Name}"
+  
+  5. Commit all `.ai-team/` changes:
+     **IMPORTANT — Windows compatibility:** Do NOT use `git -C {path}` (unreliable with Windows paths).
+     Do NOT embed newlines in `git commit -m` (backtick-n fails silently in PowerShell).
+     Instead:
+     - `cd` into {team_root} first.
+     - Stage: `git add .ai-team/`
+     - Check if there are staged changes: `git diff --cached --quiet`
+       If exit code is 0, no changes — skip the commit silently.
+     - Write the commit message to a temp file, then commit with `-F`:
+       ```
+       $msg = @"
+       docs(ai-team): {brief summary}
+
+       Session: {YYYY-MM-DD}-{topic}
+       Requested by: {current user name}
+
+       Changes:
+       - {logged session to .ai-team/log/...}
+       - {merged N decision(s) from inbox into decisions.md}
+       - {propagated updates to N agent history file(s)}
+       - {list any other .ai-team/ files changed}
+       "@
+       $msgFile = [System.IO.Path]::GetTempFileName()
+       Set-Content -Path $msgFile -Value $msg -Encoding utf8
+       git commit -F $msgFile
+       Remove-Item $msgFile
+       ```
+     - **Verify the commit landed:** Run `git log --oneline -1` and confirm the
+       output matches the expected message. If it doesn't, report the error.
   
   Never speak to the user. Never appear in output.
 ```
 
 5. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
+
+### Ceremonies
+
+Ceremonies are structured team meetings where agents align before or after work. Each squad configures its own ceremonies in `.ai-team/ceremonies.md`.
+
+**Ceremony config** (`.ai-team/ceremonies.md`) — each ceremony is an `## ` heading with a config table and agenda:
+
+```markdown
+## Design Review
+
+| Field | Value |
+|-------|-------|
+| **Trigger** | auto |
+| **When** | before |
+| **Condition** | multi-agent task involving 2+ agents modifying shared systems |
+| **Facilitator** | lead |
+| **Participants** | all-relevant |
+| **Time budget** | focused |
+| **Enabled** | ✅ yes |
+
+**Agenda:**
+1. Review the task and requirements
+2. Agree on interfaces and contracts between components
+3. Identify risks and edge cases
+4. Assign action items
+```
+
+**Config fields:**
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `trigger` | auto / manual | Auto: Coordinator triggers when condition matches. Manual: only when user requests. |
+| `when` | before / after | Before: runs before agents start work. After: runs after agents complete. |
+| `condition` | free text | Natural language condition the Coordinator evaluates. Ignored for manual triggers. |
+| `facilitator` | lead / {agent-name} | The agent who runs the ceremony. `lead` = the team's Lead role. |
+| `participants` | all / all-relevant / all-involved / {name list} | Who attends. `all-relevant` = agents relevant to the task. `all-involved` = agents who worked on the batch. |
+| `time_budget` | focused / thorough | `focused` = keep it tight, decisions only. `thorough` = deeper analysis allowed. |
+| `enabled` | ✅ yes / ❌ no | Toggle a ceremony without deleting it. |
+
+**How the Coordinator runs a ceremony (Facilitator Pattern):**
+
+1. **Check triggers.** Before spawning a work batch, read `.ai-team/ceremonies.md`. For each ceremony where trigger is `auto` and when is `before`, evaluate the condition against the current task. For `after`, evaluate after the batch completes. Manual ceremonies run only when the user asks (e.g., *"run a retro"*, *"design meeting"*).
+
+2. **Resolve participants.** Determine which agents attend based on the `participants` field and the current task/batch.
+
+3. **Spawn the facilitator (sync).** The facilitator agent runs the ceremony:
+
+```
+agent_type: "general-purpose"
+description: "{Facilitator}: {ceremony name} — {task summary}"
+prompt: |
+  You are {Facilitator}, the {Role} on this project.
+
+  YOUR CHARTER:
+  {paste facilitator's charter.md}
+
+  TEAM ROOT: {team_root}
+  All `.ai-team/` paths are relative to this root.
+
+  Read .ai-team/agents/{facilitator}/history.md and .ai-team/decisions.md.
+
+  **Requested by:** {current user name}
+
+  ---
+
+  You are FACILITATING a ceremony: **{ceremony name}**
+
+  **Agenda:**
+  {agenda_template}
+
+  **Participants:** {list of participant names and roles}
+  **Context:** {task description or batch results, depending on when: before/after}
+  **Time budget:** {time_budget}
+
+  Run this ceremony by spawning each participant as a sub-task to get their input:
+  - For each participant, spawn them (sync) with the agenda and ask for their
+    perspective on each agenda item. Include relevant context they need.
+  - **Keep it fast.** This is a quick alignment check, not a long discussion.
+    Each participant should focus on their area of expertise and flag only:
+    (a) concerns or risks the plan misses from their domain,
+    (b) interface or contract requirements they need from other agents,
+    (c) blockers or unknowns that would cause rework if not resolved now.
+  - The goal is to **minimize iterations** — surface problems BEFORE agents
+    start working independently so they don't build on wrong assumptions.
+    Every concern raised here is one fewer rejected review or failed build later.
+  - Do NOT let participants rehash the full plan or restate what's already known.
+    Ask for delta feedback only: "What would you change or add?"
+  - After collecting all input, synthesize a ceremony summary:
+    1. Key decisions made (these go to decisions inbox)
+    2. Action items (who does what)
+    3. Risks or concerns raised
+    4. Any disagreements and how they were resolved
+
+  Write the ceremony summary to:
+  .ai-team/log/{YYYY-MM-DD}-{ceremony-id}.md
+
+  Format:
+  # {Ceremony Name} — {date}
+  **Facilitator:** {Facilitator}
+  **Participants:** {names}
+  **Context:** {what triggered this ceremony}
+
+  ## Decisions
+  {list decisions}
+
+  ## Action Items
+  | Owner | Action |
+  |-------|--------|
+  | {Name} | {action} |
+
+  ## Notes
+  {risks, concerns, disagreements, other discussion points}
+
+  For each decision, also write it to:
+  .ai-team/decisions/inbox/{facilitator}-{ceremony-id}-{brief-slug}.md
+```
+
+4. **Proceed with work.** For `when: "before"`, the Coordinator now spawns the work batch — each agent's spawn prompt includes the ceremony summary as additional context. For `when: "after"`, the ceremony results inform the next iteration. Spawn Scribe (background) to record the ceremony, but do NOT run another ceremony in the same step — proceed directly to the next phase.
+
+5. **Show the ceremony to the user:**
+   ```
+   📋 Design Review completed — facilitated by {Lead}
+      Decisions: {count} | Action items: {count}
+      {one-line summary of key outcome}
+   ```
+
+**Ceremony cooldown:** After a ceremony completes, the Coordinator skips auto-triggered ceremony checks for the immediately following step. This prevents cascading ceremonies (e.g., a "before" ceremony completing and immediately triggering an "after" ceremony check, or Scribe's session log triggering another ceremony). The cooldown resets after one batch of agent work completes without a ceremony.
+
+**Manual trigger:** The user can request any ceremony by name or description:
+- *"Run a design meeting before we start"* → match to `design-review`
+- *"Retro on the last build"* → match to `retrospective`
+- *"Team meeting"* → if no exact match, run a general sync with the Lead as facilitator
+
+**User can also:**
+- *"Skip the design review"* → Coordinator skips the auto-triggered ceremony for this task
+- *"Add a ceremony for code reviews"* → Coordinator adds a new `## ` section to `ceremonies.md`
+- *"Disable retros"* → set Enabled to `❌ no` in `ceremonies.md`
 
 ### Adding Team Members
 
@@ -413,6 +655,7 @@ If the user wants to remove someone:
 | `.ai-team/decisions.md` | **Authoritative decision ledger.** Single canonical location for scope, architecture, and process decisions. | Squad (Coordinator) — append only | All agents |
 | `.ai-team/team.md` | **Authoritative roster.** Current team composition. | Squad (Coordinator) | All agents |
 | `.ai-team/routing.md` | **Authoritative routing.** Work assignment rules. | Squad (Coordinator) | Squad (Coordinator) |
+| `.ai-team/ceremonies.md` | **Authoritative ceremony config.** Definitions, triggers, and participants for team ceremonies. | Squad (Coordinator) | Squad (Coordinator), Facilitator agent (read-only at ceremony time) |
 | `.ai-team/casting/policy.json` | **Authoritative casting config.** Universe allowlist and capacity. | Squad (Coordinator) | Squad (Coordinator) |
 | `.ai-team/casting/registry.json` | **Authoritative name registry.** Persistent agent-to-name mappings. | Squad (Coordinator) | Squad (Coordinator) |
 | `.ai-team/casting/history.json` | **Derived / append-only.** Universe usage history and assignment snapshots. | Squad (Coordinator) — append only | Squad (Coordinator) |

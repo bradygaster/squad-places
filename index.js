@@ -43,6 +43,36 @@ fs.mkdirSync(inboxDir, { recursive: true });
 fs.mkdirSync(orchLogDir, { recursive: true });
 fs.mkdirSync(castingDir, { recursive: true });
 
+// Copy default ceremonies config
+const ceremoniesDest = path.join(dest, '.ai-team', 'ceremonies.md');
+if (!fs.existsSync(ceremoniesDest)) {
+  const ceremoniesSrc = path.join(root, 'templates', 'ceremonies.md');
+  fs.copyFileSync(ceremoniesSrc, ceremoniesDest);
+  console.log(`${GREEN}✓${RESET} .ai-team/ceremonies.md`);
+} else {
+  console.log(`${DIM}ceremonies.md already exists — skipping${RESET}`);
+}
+
+// Append merge=union rules for append-only .ai-team/ files
+const gitattributes = path.join(dest, '.gitattributes');
+const unionRules = [
+  '.ai-team/decisions.md merge=union',
+  '.ai-team/agents/*/history.md merge=union',
+  '.ai-team/log/** merge=union',
+  '.ai-team/orchestration-log/** merge=union',
+];
+const existing = fs.existsSync(gitattributes) ? fs.readFileSync(gitattributes, 'utf8') : '';
+const missing = unionRules.filter(rule => !existing.includes(rule));
+if (missing.length) {
+  const block = (existing && !existing.endsWith('\n') ? '\n' : '')
+    + '# Squad: union merge for append-only team state files\n'
+    + missing.join('\n') + '\n';
+  fs.appendFileSync(gitattributes, block);
+  console.log(`${GREEN}✓${RESET} .gitattributes (merge=union rules)`);
+} else {
+  console.log(`${DIM}.gitattributes merge rules already present — skipping${RESET}`);
+}
+
 // Copy templates
 const templatesSrc = path.join(root, 'templates');
 const templatesDest = path.join(dest, '.ai-team-templates');
