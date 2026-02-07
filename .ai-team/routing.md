@@ -11,6 +11,7 @@ How to decide who handles what.
 | DevRel, demos, messaging, open source polish | McManus | READMEs, demo scripts, amplifying the message, community engagement |
 | Core implementation, tooling, runtime | Fenster | Coordinator logic, spawning system, casting engine, file operations |
 | Testing, quality, edge cases | Hockney | Breaking parallel spawning, reviewer gates, casting overflow scenarios |
+| Copilot SDK optimization, platform alignment | Kujan | Copilot CLI patterns, tool usage, SDK opportunity assessment |
 | Code review | Keaton | Review PRs, check quality, architectural consistency |
 | Session logging | Scribe | Automatic — never needs routing |
 
