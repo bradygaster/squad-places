@@ -138,15 +138,17 @@ graph TB
 
 Real numbers. No hand-waving.
 
-| What | Tokens | % of 128K context | When |
-|------|--------|-------------------|------|
-| **Coordinator** (squad.agent.md) | ~1,900 | 1.5% | Every message |
-| **Agent at Week 1** (charter + seed) | ~850 | 0.7% | When spawned |
-| **Agent at Week 4** (+ 15 learnings, 8 decisions) | ~1,900 | 1.5% | When spawned |
-| **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~5,600 | 4.4% | When spawned |
-| **Remaining for actual work** | **~120,000** | **94%** | Always |
+Both Claude Sonnet 4 and Claude Opus 4 have a **200K token** standard context window. Each agent runs in its own window, so the coordinator is the only shared overhead.
 
-The coordinator uses 1.5% of context. A 12-week veteran agent uses 4.4%. That leaves **94% of the context window for reasoning about your code** — not for remembering who it is.
+| What | Tokens | % of 200K context | When |
+|------|--------|--------------------|------|
+| **Coordinator** (squad.agent.md) | ~13,200 | 6.6% | Every message |
+| **Agent at Week 1** (charter + seed history + decisions) | ~1,250 | 0.6% | When spawned |
+| **Agent at Week 4** (+ 15 learnings, 8 decisions) | ~3,300 | 1.7% | When spawned |
+| **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~9,000 | 4.5% | When spawned |
+| **Remaining for actual work** | **~187,000** | **93%+** | Always |
+
+The coordinator uses 6.6% of context. A 12-week veteran agent uses 4.5% — but in **its own window**, not yours. That leaves **93%+ of the coordinator's context for reasoning about your code**, and each spawned agent gets nearly its entire 200K window for the actual task.
 
 ### Memory Architecture
 
