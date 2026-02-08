@@ -312,7 +312,7 @@ No new dependencies. `index.js` stays under 150 lines. Aligns with Proposal 008'
 
 ---
 
-# Fenster — Sprint Plan 009 Implementation Review
+### Fenster — Sprint Plan 009 Implementation Review
 
 **Author:** Fenster (Core Dev)
 **Date:** 2026-02-09
@@ -525,7 +525,7 @@ With re-sequencing: **12 days total, high confidence.** Without: **10 days, medi
 
 ---
 
-# Decision: Test Sequence and Sprint Placement
+### Decision: Test Sequence and Sprint Placement
 
 **Author:** Hockney (Tester)
 **Date:** 2026-02-09
@@ -724,7 +724,7 @@ Compare: A's portable state == B's state
 
 ---
 
-# Decision: Proposal Lifecycle Amendment
+### Decision: Proposal Lifecycle Amendment
 
 **From:** Keaton (Lead)  
 **Date:** 2026-02-09  
@@ -778,7 +778,7 @@ Proposal 009 is architecturally sound but **mis-sequenced for trust**. Brady sai
 
 ---
 
-# Decision: Skills System — Agent Skills Standard + MCP Tool Declarations
+### Decision: Skills System — Agent Skills Standard + MCP Tool Declarations
 
 **By:** Verbal  
 **Date:** 2026-02-09  
@@ -800,7 +800,7 @@ Proposal 009 is architecturally sound but **mis-sequenced for trust**. Brady sai
 
 ---
 
-# Decision: Sprint 0 Story Arc Identified
+### Decision: Sprint 0 Story Arc Identified
 
 **By:** McManus (DevRel)
 **Date:** 2026-02-09
@@ -824,3 +824,66 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 ## Working doc
 
 `docs/devrel/sprint-0-story.md` — McManus's internal reference for all storytelling around this arc.
+
+### 2026-02-09: decisions.md Formatting Cleanup
+**By:** Kujan (Copilot SDK Expert)
+**What:** Audit found formatting issues in decisions.md — wrong heading levels and mixed line endings. Five review dumps from Fenster, Hockney, Keaton, Verbal, and McManus were merged with top-level `# ` headings instead of `### ` entries; all converted. File had 806 CRLF and 20 LF-only endings; normalized to LF. Recommends adding `*.md text eol=lf` to `.gitattributes`.
+**Why:** decisions.md is read by every agent. Inconsistent formatting and heading levels cause parsing confusion and merge artifacts.
+**Status:** DECIDED — changes applied directly.
+
+### 2026-02-09: Scribe resilience — template fix + inbox-driven spawn
+**By:** Verbal
+**What:** Two related fixes shipped:
+1. **Template patch:** Scribe spawn template in `squad.agent.md` was the only template missing the `⚠️ RESPONSE ORDER` instruction. Fixed. Also cleaned contaminated content in Verbal's history.md (Proposal 016 entry had Proposal 010's details).
+2. **Cascade fix:** Added inbox-driven Scribe spawn to squad.agent.md "After Agent Work" section. Coordinator now checks `.ai-team/decisions/inbox/` for files BEFORE deciding whether to spawn Scribe. If inbox has files, Scribe spawns regardless of agent response status. Created `.ai-team/agents/scribe/history.md` — Scribe was the only agent without memory.
+**Why:** Scribe is the most vulnerable agent to the silent success bug (does nothing but tool calls). The cascade: silent success → Scribe not spawned → inbox accumulates → decisions.md stale → team diverges. Fix triggers on artifacts (files), not responses (agent output).
+**Scope:** squad.agent.md (4 lines changed), new file scribe/history.md.
+
+### 2026-02-09: P0 bug audit — shared state integrity findings (consolidated)
+**By:** Keaton (Lead), Fenster (Core Dev), Hockney (Tester)
+**What:** Three independent audits converged on the same findings:
+1. **Drop-box pipeline broken:** Up to 12 inbox files accumulated unmerged across sessions. Scribe was either never spawned or silent-failed. This is the silent success bug manifesting in team infrastructure.
+2. **Scribe had no history.md** — lost to the silent success bug. Every spawn started from scratch. (Now fixed by Verbal.)
+3. **Orchestration log is dead** — zero entries written despite 20+ agent spawns across 4+ sessions.
+4. **Demo script ACT 7 missing** — McManus flagged, now restored (see separate decision).
+5. **P015 mitigations don't reach existing users** — `index.js` skip-if-exists blocks fixes from pre-existing installs. Upgrade subcommand is the delivery mechanism (now shipped by Fenster).
+6. **decisions.md had raw review dumps** (lines 315-826) not formatted as decisions.
+7. **Phantom references** in Verbal's history and session log (`003-casting-system.md` vs actual `003-copilot-platform-optimization.md`).
+**The cascade pattern:** Silent success bug → Scribe not spawned → inbox accumulates → decisions.md stale → agents work with incomplete context → more divergence. This is not just a display bug — it's a shared state corruption vector.
+**Required actions (most now completed):**
+- ✅ Merge orphaned inbox files (this session)
+- ✅ Inbox-driven Scribe spawn added to coordinator
+- ✅ Scribe's history.md created
+- ⬜ Orchestration log: implement or remove from charter
+- ⬜ Add `npm test` to CI when pipeline is set up
+
+### 2026-02-09: V1 Test Suite Shipped
+**By:** Hockney (Tester)
+**What:** Shipped first test suite. 12 tests, 3 suites, zero external dependencies. Framework: `node:test` + `node:assert/strict` (Node 22 built-ins). Location: `test/index.test.js`. Run: `npm test`. Result: 12/12 pass.
+**What's tested:** copyRecursive (4 tests), Init happy path (4 tests), Re-init idempotency (4 tests).
+**What's NOT tested:** Export/import (blocked on P008), Upgrade (blocked on P011), Error handling (none exists), Symlinks/permissions.
+**Action required:**
+- Fenster: When `require.main === module` guard is added to `index.js`, update tests to import `copyRecursive` directly.
+- Keaton: Consider adding `npm test` to CI.
+
+### 2026-02-09: Demo Script ACT 7 — Identified Missing and Restored
+**By:** McManus (DevRel)
+**What:** ACT 7 was missing from `docs/demo-script.md` — script jumped from ACT 6 (5:30–6:30) to ACT 8 (7:30–8:00), leaving 60 seconds of dead air. KEY THEMES table referenced ACT 7 three times (history.md, decisions.md on screen, second wave). Likely a silent success bug casualty. McManus reconstructed and inserted **ACT 7 — THE ARTIFACTS & SECOND WAVE (6:30–7:30)** covering: decisions.md on screen, history.md on screen, second wave fan-out demonstrating faster re-launch. Demo script is now recordable end-to-end.
+**Source material:** Proposal 004 BEAT 7, KEY THEMES reference table, existing demo script format.
+
+### 2026-02-09: Upgrade Subcommand Shipped
+**By:** Fenster (Core Dev)
+**What:** Implemented `upgrade` subcommand in `index.js`. Running `npx create-squad upgrade` now overwrites Squad-owned files (`squad.agent.md`, `.ai-team-templates/`) to bring existing installs forward. Added `--help`, `-h`, `help`, `--version`, `-v` support.
+**File ownership enforced:** Squad-owned (overwrite on upgrade): `.github/agents/squad.agent.md`, `.ai-team-templates/`. User-owned (never touched): `.ai-team/`. Additive-only: inbox, orchestration-log, casting dirs.
+**Not in this pass:** No backup-before-overwrite, no version detection, no migration framework — deferred per Proposal 011's phased approach.
+**Why:** Pre-P015 users are stuck on coordinator instructions without RESPONSE ORDER and silent success detection. The upgrade subcommand is the delivery mechanism for these fixes.
+
+### 2026-02-09: Background agent timeout best practices documented
+**By:** Kujan (Copilot SDK Expert)
+**What:** Created `docs/platform/background-agent-timeouts.md` — best practices covering the `read_agent` default timeout problem (30s default vs 45-120s real work), response order issue, and file-verification detection pattern. Key numbers: 30s default timeout, 45-120s real agent work time, 300s safe ceiling.
+**Why:** The 30s default was causing ~40% of agents to appear failed when still working. Doc captures hard-won knowledge for future builders.
+
+### 2026-02-09: P015 mitigations don't reach pre-existing installations
+**By:** Kujan (Copilot SDK Expert)
+**What:** `index.js` line 30-31 skips overwriting `squad.agent.md` if it already exists. Pre-P015 users still have the old coordinator without RESPONSE ORDER, silent success detection, or `read_agent` timeout guidance (~40% silent success rate). The `npx create-squad upgrade` path (now shipped by Fenster) is the delivery mechanism.
+**Why:** P015 mitigations only effective for new installations. Existing installations remain vulnerable until they run `npx create-squad upgrade`. This is now the primary reason to publicize the upgrade subcommand.

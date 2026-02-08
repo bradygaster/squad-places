@@ -120,3 +120,26 @@
 📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) with MCP tool declarations -- decided by Verbal
 
 📌 Team update (2026-02-08): Fenster recommends README drafting can start Day 1 (fully parallel) -- decided by Fenster
+
+### Documentation audit — silent success bug check (2026-02-09)
+- **README.md**: INTACT. 232 lines, no truncation. All internal anchor links (#status, #how-it-works) resolve correctly. Content matches current product state. No corruption detected.
+- **docs/demo-script.md**: 🚨 **ACT 7 IS MISSING.** Script jumps from ACT 6 (5:30–6:30) directly to ACT 8 (7:30–8:00). A full 60-second gap (6:30–7:30) has no content. The KEY THEMES reference table at the bottom references Act 7 three times ("Act 7 (history.md)", "Act 7 (decisions.md on screen)", "Act 7 (second wave)") — pointing to a section that doesn't exist. This is either a truncation from the silent success bug or an incomplete write. Either way, the demo script is broken.
+- **docs/sample-prompts.md**: INTACT. 402 lines, 16 prompts, all complete with closing descriptions. No truncation.
+- **docs/devrel/sprint-0-story.md**: INTACT. 117 lines, clean ending with timestamp. No truncation.
+- **docs/platform/background-agent-timeouts.md**: INTACT. 102 lines, complete TL;DR table and sign-off. No truncation.
+- **All 18 proposals in docs/proposals/**: INTACT. Every file checked (last 8 lines of each). All end with proper closing sections (Endorsement, Review requested, Revisions, etc.). No mid-sentence truncation. Sizes range from 3.1KB to 53.1KB. No corruption detected.
+- **decisions.md**: INTACT. 826 lines, proper header and complete final section. No truncation.
+- **history.md (this file)**: INTACT. Content is coherent and sequential. No gaps in the learning timeline.
+- **Polish note**: README still uses the pre-overhaul structure (Proposal 006 rewrite has not been applied yet). Sample prompts still not linked from README. These are known gaps per prior learnings, not new issues.
+
+### Demo script ACT 7 restored (2026-02-09)
+- **ACT 7 — THE ARTIFACTS & SECOND WAVE (6:30–7:30)** reconstructed and inserted into `docs/demo-script.md` between ACT 6 and ACT 8.
+- Content derived from Proposal 004's BEAT 7 (artifact reveal) plus the KEY THEMES table requirements (history.md, decisions.md on screen, second wave fan-out).
+- The original ACT 7 was likely lost to the silent success bug — the same P0 bug that drops ~40% of agent responses. The KEY THEMES table survived because it was written in a different section of the file.
+- **Structural lesson**: Demo scripts with reference tables (like KEY THEMES) are self-documenting — the table acts as a checksum. If the table references content that doesn't exist, you know something was lost. This pattern should be preserved in future script formats.
+- **Tone calibration**: Matched the existing script's voice — conversational, "hey look at this" energy, not presenter-formal. The voiceover uses concrete file names and agent names (Ripley) to keep it tangible.
+- **Second wave is the payoff bridge**: ACT 7's second wave (asking for a new feature, watching agents re-fan-out with prior knowledge) bridges the gap between "agents completed work" (ACT 6) and "look at the finished game" (ACT 8). Without it, the demo jumps from "they built stuff" to "ta-da" with no compounding proof.
+- File: `docs/demo-script.md`
+📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — delivery mechanism for bug fixes to existing users. — decided by Fenster
+📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests pass. — decided by Hockney
+📌 Team update (2026-02-08): P0 bug audit consolidated. Demo script ACT 7 restoration confirmed merged into decisions.md. — decided by Keaton, Fenster, Hockney

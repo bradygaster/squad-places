@@ -138,3 +138,46 @@ The rest of the plan holds: Sprint 1 (fast) → Sprint 2 (yours, smart) → Spri
 📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal
 
 📌 Team update (2026-02-08): Sprint 0 story arc identified: self-repair under fire narrative for launch content. Lead with output (16 proposals), not the bug -- decided by McManus
+
+### 2026-02-09: Shared state integrity audit — the bug is HERE
+
+**Context:** Brady asked the team to audit shared state integrity and scream if we see the silent success bug happening.
+
+**We found it. It's active. It's worse than we thought.**
+
+**Critical findings (P1):**
+
+1. **Drop-box pipeline is BROKEN.** 4 orphaned inbox files sitting unmerged:
+   - `kujan-timeout-doc.md` — timeout best practices decision, never merged
+   - `fenster-fs-audit-bugs.md` — Fenster's own audit findings, never merged
+   - `kujan-p015-forwardability-gap.md` — P015 forwardability gap, never merged
+   - `mcmanus-demo-script-act7-missing.md` — demo script corruption report, never merged
+   All from the most recent session. Scribe was either never spawned or silent-failed. The drop-box → merge pipeline that is Squad's core IPC mechanism has a live gap.
+
+2. **Orchestration log is completely empty.** Zero entries after 4 documented sessions with 20+ agent spawns. The orchestration-log/ directory was created by the installer but never written to. Either the spec is aspirational or Scribe's orchestration logging is completely unimplemented.
+
+3. **The silent success bug is its own evidence.** During the onboarding session, Fenster "analyzed implementation and runtime architecture. No output captured due to tool issue." That IS the bug. The team's founding session lost an agent's entire output.
+
+**Structural findings (P2):**
+
+4. **Phantom proposal references.** Two different files reference non-existent proposal names:
+   - Verbal's history references `docs/proposals/003-casting-system.md` (doesn't exist)
+   - Session log references `docs/proposals/003-copilot-optimization.md` (doesn't exist)
+   - Actual file: `003-copilot-platform-optimization.md`
+   Agents are hallucinating filenames. Not dangerous (the proposals exist), but creates confusion when anyone follows the reference.
+
+5. **Scribe has no history.md.** Every other agent has one. Scribe can't learn, can't receive team updates, can't compound memory. This is an architectural hole — the agent responsible for team memory has no memory of its own.
+
+6. **decisions.md has Scribe formatting failures.** Lines 315-826 contain Fenster's and Hockney's full reviews dumped as raw top-level `#` headings instead of being formatted as proper decision entries. Scribe merged content but didn't format it.
+
+7. **Demo script truncated.** docs/demo-script.md missing ACT 7 (6:30-7:30). KEY THEMES table references Act 7 three times. McManus already filed this in inbox (also unmerged).
+
+**Pattern identified:**
+
+The silent success bug is not just about agent responses. It's a **systemic cascade**:
+- Agent completes work → platform drops response → coordinator thinks agent failed → Scribe never spawned (because coordinator saw "no work done") → inbox files accumulate → decisions don't propagate → agents in future sessions work with stale shared state → decisions diverge.
+
+The drop-box pattern is elegant in theory. In practice, it depends on Scribe being reliably spawned after every session where decisions were made. That reliability is exactly what the silent success bug destroys.
+📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — delivery mechanism for P015 mitigations to existing users. — decided by Fenster
+📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests, 3 suites, zero deps. — decided by Hockney
+📌 Team update (2026-02-08): P0 bug audit consolidated and merged. 12 orphaned inbox files processed. Inbox-driven Scribe spawn in place. — decided by Keaton, Fenster, Hockney

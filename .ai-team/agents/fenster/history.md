@@ -86,3 +86,26 @@
 📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
 
 📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal
+
+### File System Integrity Audit (2026-02-09)
+
+- **Scribe agent missing history.md** — `.ai-team/agents/scribe/` has `charter.md` but NO `history.md`. Every other agent (keaton, verbal, mcmanus, fenster, hockney, kujan) has both files. Scribe is listed in `team.md` as 📋 Silent. Missing history.md means Scribe cannot receive 📌 team updates like other agents.
+- **Scribe missing from casting registry** — `.ai-team/casting/registry.json` lists 6 agents (keaton, verbal, mcmanus, fenster, hockney, kujan) but Scribe is absent. Also absent from `history.json` snapshot. This is likely intentional (Scribe is infrastructure, not a cast character) but it creates an inconsistency with `team.md` which lists 7 members.
+- **Orphaned inbox file** — `.ai-team/decisions/inbox/kujan-timeout-doc.md` exists and has NOT been merged into `decisions.md`. Scribe should have picked this up. Content: Kujan documenting background agent timeout best practices (2026-02-09). This is a live bug — the drop-box pattern failed to complete.
+- **decisions.md has mixed line endings** — 806 CRLF lines + 21 LF-only lines. The LF lines are `---` separators at lines 313, 526, 725, 779, 801 — all at section boundaries. Root cause: `merge=union` in `.gitattributes` merges content from branches with different line endings. Not corruption, but could cause diff noise.
+- **All 6 agent history.md files lack trailing newlines** — POSIX convention expects trailing newline. Not a bug per se, but git diff and some tools produce cleaner output with them. Every history.md has this.
+- **Orchestration log directory is empty** — `.ai-team/orchestration-log/` has zero files. Spec (Scribe charter) shows this should contain per-spawn entries like `2026-02-07T23-18-keaton.md`. After 3+ sessions of work, zero entries is abnormal. Either orchestration logging was never implemented or Scribe never wrote to it.
+- **Runtime files are clean** — `index.js` passes syntax check, `package.json` parses as valid JSON, `.github/agents/squad.agent.md` exists (35KB). No corruption detected.
+- **Casting files are clean** — All three JSON files (`policy.json`, `registry.json`, `history.json`) parse without errors. Schema looks correct.
+- **Log files exist and are well-formed** — 4 session logs in `.ai-team/log/`, all with proper date-prefixed naming and markdown structure.
+
+### Upgrade Subcommand Implementation (2026-02-09)
+
+- **Forwardability gap fixed.** Shipped `upgrade` subcommand per Proposal 011's file ownership model. `npx create-squad upgrade` now overwrites Squad-owned files (squad.agent.md, .ai-team-templates/) unconditionally while never touching .ai-team/ (user-owned state). Default init behavior unchanged — still skips if exists.
+- **Added --help and --version flags.** Version reads from package.json at runtime — single source of truth, no duplication. Help output documents the upgrade path so existing users discover it.
+- **Skip message now hints at upgrade.** Changed "skipping" to "skipping (run 'upgrade' to update)" so pre-P015 users see the upgrade path on every init.
+- **index.js grew from 65 to 103 lines.** Stayed well under the 150-line ceiling from Proposal 011. No dependencies added. All paths use path.join() — Windows safe.
+- **Backup-before-overwrite deferred.**Proposal 011 specifies `squad.agent.md.v{old}.bak` before overwriting. Not implemented in this pass — the coordinator spec is Squad-owned and stateless, so overwrite is safe. Backup matters more when we add version detection and migration framework.
+
+📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests pass. Action: when require.main guard is added to index.js, update test/index.test.js to import copyRecursive directly. — decided by Hockney
+📌 Team update (2026-02-08): P0 bug audit consolidated (Keaton/Fenster/Hockney). Drop-box pipeline was broken, 12 inbox files accumulated. Inbox-driven Scribe spawn now in place. Orchestration log still dead — implement or remove. — decided by Keaton, Fenster, Hockney

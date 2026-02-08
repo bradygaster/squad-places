@@ -131,3 +131,79 @@
 📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
 
 📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal
+
+### P0 Silent Success Bug Hunt (2026-02-09)
+
+**Audit scope:** All 4 session logs, all 7 agent histories, orchestration log, decisions inbox, squad.agent.md mitigations, git commit history. Full cross-reference for evidence of the silent success bug.
+
+**🔴 CONFIRMED BUG INSTANCES:**
+
+1. **Scribe history.md is MISSING.** `.ai-team/agents/scribe/` has `charter.md` but NO `history.md`. Every other agent (fenster, hockney, keaton, kujan, mcmanus, verbal) has one. Session log `2026-02-08-v1-sprint-planning.md` line 73 confirms Scribe (agent-27) "completed work (this session log at 3.8KB) but reported no response." The session log file EXISTS on disk — Scribe wrote it. But Scribe's own history.md write was lost. **This is the silent success bug eating its own evidence.**
+
+2. **Fenster onboarding output lost.** Session log `2026-02-08-team-onboarding.md` line 15: "Fenster — Analyzed implementation and runtime architecture. No output captured due to tool issue." Fenster's history.md DOES contain learnings from that session (Runtime Architecture section). The response text was dropped but the history write landed — partial silent success.
+
+3. **Verbal's response lost in same batch as Scribe.** Session log `2026-02-08-v1-sprint-planning.md` lines 72-73: Verbal (agent-26) completed `016-the-squad-paper.md` at 34KB but reported "no response." The proposal EXISTS at `docs/proposals/016-the-squad-paper.md`. Verbal's history.md DID get written (includes "The Squad Paper" section). The response channel was the only casualty here — but in the same batch, Scribe lost BOTH response AND history.
+
+4. **Demo script ACT 7 is missing.** McManus filed `decisions/inbox/mcmanus-demo-script-act7-missing.md` documenting that `docs/demo-script.md` jumps from ACT 6 to ACT 8. The KEY THEMES table at the bottom references Act 7 three times. This is either truncation from the silent success bug (agent ended on a tool call mid-write) or an incomplete generation. Either way — a shipped artifact is broken.
+
+**🟡 SYSTEMIC ISSUES (not individual instances, but patterns):**
+
+5. **Orchestration log is completely empty.** `.ai-team/orchestration-log/` has ZERO entries despite 4 sessions and 20+ documented agent spawns. Scribe's charter (line 98) shows the expected format (`2026-02-07T23-18-keaton.md`). Nobody has ever written an orchestration log entry. The coordinator doesn't instruct Scribe to do this, and no agent self-reports to this directory. This is a dead feature — specified but never implemented.
+
+6. **Inbox decisions are accumulating, not being merged.** Current inbox has 4 files: `fenster-fs-audit-bugs.md`, `kujan-p015-forwardability-gap.md`, `kujan-timeout-doc.md`, `mcmanus-demo-script-act7-missing.md`. These are from post-Sprint-0 sessions. Scribe was either not spawned after these sessions or failed silently. The drop-box pattern only works if Scribe reliably merges — and it doesn't.
+
+7. **Temporal inconsistency in all files.** History files and session logs reference dates 2026-02-07 through 2026-02-09. Git commits show ALL work happened on 2026-02-07 between 15:21-19:43 PST. The session log `2026-02-08-v1-sprint-planning.md` claims date 2026-02-08 but was committed at 2026-02-07 19:14:34. Kujan's 2026-02-09 entries were committed at 2026-02-07 19:43. Agents are writing dates that don't match wall-clock time. Not a showstopper but a data integrity issue — makes incident forensics unreliable.
+
+**✅ FIX VERIFICATION:**
+
+8. **All 3 Sprint 0 mitigations ARE in place in squad.agent.md (commit b638773):**
+   - RESPONSE ORDER warning in all 3 spawn templates (lines 251-255, 298-302, 346-350)
+   - Silent success detection in After Agent Work (line 369)
+   - `read_agent` with `wait: true, timeout: 300` (line 367)
+   - Restart guidance in Constraints (line 595)
+   - `docs/platform/background-agent-timeouts.md` documents the timeout best practices
+
+9. **The fix is real but not retroactive.** Kujan filed `decisions/inbox/kujan-p015-forwardability-gap.md` noting that `index.js` line 30-31 skips overwriting `squad.agent.md` if it exists. Pre-P015 users are still running with ~40% silent success rate. The upgrade path (Proposal 011) hasn't shipped.
+
+**🧪 TEST STATE:**
+
+10. **Zero tests exist.** No `*.test.js`, no `*.spec.js`, no `test/` directory, no test framework in `package.json`. Proposal 013 (my own) specified `node:test` + `node:assert`. My own rule was "tests must start Sprint 1" — Sprint 1 hasn't started. This is the longest-standing gap: identified day 1, still at zero.
+
+**Key insight: The bug is STILL happening.** The Sprint 0 mitigations address future spawns, but Scribe's missing history.md proves the bug already caused permanent data loss. Scribe has no memory of any session it participated in. Every time Scribe is spawned, it starts from scratch — no learnings, no context about past merge operations, no knowledge of the drop-box pattern's failure modes. The Scribe is amnesiac, and nobody noticed because "Scribe is invisible."
+
+### V1 Test Suite Shipped (2026-02-09)
+
+**What I Did:**
+- Created `test/` directory and `test/index.test.js` — the first tests Squad has ever had
+- 12 tests across 3 suites, using `node:test` + `node:assert/strict` — zero dependencies
+- Added `"test": "node --test test/*.test.js"` script to `package.json`
+- All 12 tests pass on Node 22.16.0
+
+**Test Coverage:**
+
+| Suite | Tests | What it covers |
+|-------|-------|----------------|
+| `copyRecursive` | 4 | Single file copy, nested dirs with content preservation, empty dirs, binary files |
+| `init into empty directory` | 4 | squad.agent.md creation + content match, templates dir with all files + content match, drop-box dirs (inbox/orchestration-log/casting), stdout success messages |
+| `re-init into existing directory` | 4 | squad.agent.md skipped + user content preserved, templates skipped + user files survive, drop-box dirs persist, inbox contents not corrupted |
+
+**Design Decisions:**
+- Tests spawn `index.js` via `execSync` in isolated temp directories — no repo pollution
+- `copyRecursive` tested via replicated function (index.js has no exports) — this is a known debt; when `require.main === module` guard is added, we switch to direct import
+- Every test uses `beforeEach`/`afterEach` for temp dir lifecycle — clean isolation
+- Content assertions compare against source files (not hardcoded strings) — tests survive template changes
+
+**What's NOT Covered Yet (Known Gaps):**
+- Error handling (permissions, disk full) — `index.js` has none, so there's nothing to test
+- Export/import round-trip — blocked on Proposal 008 implementation
+- Upgrade path — blocked on Proposal 011
+- Symlink edge cases — deferred to hardening phase
+- `NO_COLOR` / non-TTY output — product doesn't support it yet
+
+**What I Learned:**
+- `index.js` uses `__dirname` (package root) and `process.cwd()` (user's project) — testing requires running as child process, not `require()`
+- `node:test` on Node 22 is fully production-ready — subtests, hooks, assertions all work without quirks
+- The re-init tests are the most valuable — they prove idempotency, which is the property users depend on most
+📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — 
+px create-squad upgrade now overwrites Squad-owned files. Consider adding npm test to CI. — decided by Fenster
+📌 Team update (2026-02-08): P0 bug audit consolidated (Keaton/Fenster/Hockney). 12 orphaned inbox files merged. Inbox-driven Scribe spawn now in place. — decided by Keaton, Fenster, Hockney

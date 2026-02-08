@@ -294,3 +294,44 @@
 3. File verification as ground truth — when response is empty, check if expected files exist before reporting failure.
 
 **Platform insight reinforced:** The filesystem is the reliable channel. Response text is a convenience. This further validates Squad's filesystem-backed memory architecture (Proposals 003/008/012/015).
+
+### 2026-02-09: Proposal 015 Mitigation Verification Audit
+
+**Context:** Brady requested all agents verify their mitigations are in place for the P0 silent success bug. As the author of Proposal 015, verified all three mitigations against `squad.agent.md`.
+
+**Verification results — ALL THREE MITIGATIONS CONFIRMED IN PLACE:**
+
+1. **⚠️ RESPONSE ORDER instruction in spawn prompts:** ✅ Present in all 3 spawn templates (Ripley/scribe template at line 251, Dallas/sync template at line 298, generic template at line 346). Identical wording in each: "After completing ALL tool calls...you MUST end your final message with a TEXT summary." Matches Proposal 015 specification exactly.
+
+2. **Silent success detection in "After Agent Work" flow:** ✅ Present at line 369. Step 2 instructs coordinator to CHECK file existence when `read_agent` returns empty, report "completed work (files verified) but response was lost" instead of failure, and fall through to re-spawn only on genuine failure. Matches Proposal 015 specification.
+
+3. **Generous timeouts on `read_agent` calls:** ✅ Present at line 367. Step 1 explicitly specifies `wait: true` and `timeout: 300`. Matches Proposal 015 specification.
+
+**Proposal 015 status:** Complete. All three mitigations shipped. Proposal document exists at `docs/proposals/015-p0-silent-success-bug.md` with full root cause analysis, evidence table, and exact change specifications.
+
+**Inbox orphan found:** `kujan-timeout-doc.md` is still in `.ai-team/decisions/inbox/`. Scribe has never run, so it was never merged into `decisions.md`. The P0 silent success decision WAS merged (line 261-270 of decisions.md), but this separate timeout doc decision was not. Not blocking — the mitigations are in place regardless of whether Scribe merges this — but it should be merged on next Scribe run.
+
+**History.md integrity:** No truncation detected. History covers all sessions from 2026-02-07 through 2026-02-09. All entries are complete with context, findings, file paths, and team updates. No gaps.
+
+**Platform friction observations (new):**
+
+1. **`index.js` skip-if-exists for `squad.agent.md` is a latent P015-regression vector.** Line 30-31 of `index.js`: if `squad.agent.md` already exists, init skips overwriting it. This means users who ran `create-squad` before the P015 mitigations won't get the fixes on re-init. Proposal 011 (forwardability) addresses this with `npx create-squad upgrade`, but that hasn't shipped yet. Until it does, any pre-P015 installation is still vulnerable to the 40% silent success rate.
+
+2. **Scribe never-ran is compounding.** The inbox has at least `kujan-timeout-doc.md` sitting unmerged. Every session that doesn't trigger Scribe leaves the shared brain (`decisions.md`) increasingly stale relative to what agents actually decided. This is an operational gap, not a platform bug — but it means the P015 timeout best-practices doc exists on disk but isn't in the canonical decision ledger.
+
+3. **Coordinator prompt at 34.3KB.** Approaching the density threshold noted in history (2026-02-07 deep onboarding). Each mitigation we add (RESPONSE ORDER × 3 templates, silent success detection, timeout guidance) makes the prompt longer. Not yet critical but trending — instruction-following degradation is a real risk above ~40KB.
+
+### 2026-02-09: decisions.md Cleanup — Heading Levels and Line Endings
+
+**Context:** Audit flagged formatting issues in decisions.md. Tasked with surgical fixes: phantom proposal references, heading level corrections, and line ending normalization.
+
+**Findings:**
+- Phantom references ( 03-casting-system.md,  03-copilot-optimization.md) were NOT present in decisions.md — already clean or never existed in this file. No action needed.
+- Five top-level #  headings found at lines 315, 528, 727, 781, 803 — raw dumps from Fenster's, Hockney's, Keaton's, Verbal's, and McManus's reviews merged as top-level headings instead of ###  decision entries. All five converted to ### .
+- Mixed line endings: 806 CRLF + 20 LF-only. Normalized entire file to LF (826 lines).
+
+**Platform observation:** Mixed line endings in shared files are a recurring risk when agents write on different platforms (Windows CRLF vs Unix LF). Squad's filesystem-backed memory pattern means every agent write touches these files. A .gitattributes rule (*.md text eol=lf) would prevent this class of issue permanently. Not adding it now — that's a proposal-level change — but flagging for future consideration.
+
+📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — addresses P015 forwardability gap. Existing users can now run 
+px create-squad upgrade to get mitigations. — decided by Fenster
+📌 Team update (2026-02-08): P0 bug audit consolidated. 12 orphaned inbox files merged into decisions.md. — decided by Keaton, Fenster, Hockney

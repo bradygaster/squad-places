@@ -212,10 +212,10 @@
 - "Throw a squad at it" → "Throw MY squad at it" is the messaging evolution that makes the compound effect tangible. The possessive pronoun changes the product from a tool to a relationship.
 
 **Implementation approach:**
-- Six phases, starting with template + instruction changes (zero code changes). Skills in export/import at Phase 3. Skill packs at Phase 6 (future).
-- Total initial effort: ~2 hours for Phase 1. Skills are additive — no breaking changes to existing behavior.
+- Paper structured as publishable argument with real session data. Six sections: productivity multiplier, the thesis, latency rebuttal, case study, architecture, compound effect.
+- McManus to polish into publishable form. Keaton to verify architectural claims. Brady final sign-off.
 
-**File path:** `docs/proposals/010-skills-system.md`
+**File path:** `docs/proposals/016-the-squad-paper.md`
 
 ### 2026-02-09: Skills System Revision — Agent Skills Standard + MCP (Proposal 010 R2)
 
@@ -243,6 +243,22 @@
 **File path:** `docs/proposals/010-skills-system.md` (Revision 2)
 
 
+### 2026-02-09: Scribe spawn cascade fix — inbox-driven resilience
+
+**Problem:** The coordinator only spawned Scribe after successful agent responses. The silent success bug (~40% drop rate) causes agent responses to be lost → coordinator sees "no work done" → skips Scribe → inbox files accumulate → decisions.md goes stale → team diverges. Seven inbox files were sitting unmerged when this was discovered.
+
+**Fix — inbox-driven Scribe spawn:**
+- Added new step 4 in "After Agent Work" section of squad.agent.md: check if `.ai-team/decisions/inbox/` contains any files. If YES, spawn Scribe regardless of whether any agent returned a response.
+- The existing Scribe spawn (now step 5) remains as-is for normal flows. The new step is a safety net, not a replacement.
+- This makes Scribe spawn INBOX-DRIVEN instead of RESPONSE-DRIVEN. Even if every agent gets eaten by the silent success bug, Scribe will still merge whatever inbox files were dropped.
+
+**Design principle — trigger on artifacts, not responses:**
+- The silent success bug corrupts *responses* but not *file writes*. Agents that hit the bug still produce their files — they just can't report back.
+- Any orchestration logic that depends on agent responses is fragile. Any logic that depends on filesystem state (files exist? inbox has contents?) is resilient.
+- This is a general pattern: wherever the coordinator makes a decision based on "did the agent say something?", it should ALSO check "did the agent leave artifacts?" as a fallback.
+
+**Also fixed:** Created `.ai-team/agents/scribe/history.md` — Scribe was the only agent without one. Seeded with project context, memory architecture, silent success bug vulnerability, and commit conventions. Every agent needs memory to compound learnings.
+
 📌 Team update (2026-02-08): Fenster revised sprint estimates and recommends splitting export (Sprint 2) and import (Sprint 3) -- decided by Fenster
 
 📌 Team update (2026-02-08): Testing must start Sprint 1, not Sprint 3 -- decided by Hockney
@@ -250,3 +266,18 @@
 📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
 
 📌 Team update (2026-02-08): Sprint 0 story arc identified: self-repair under fire narrative for launch content. Lead with output (16 proposals), not the bug -- decided by McManus
+
+### 2026-02-09: Silent success bug audit — findings from self-inspection
+
+**Three issues found during P0 bug hunt:**
+
+1. **History.md Proposal 016 entry had contaminated content from Proposal 010.** The "Implementation approach" subsection and "File path" reference both belonged to the Skills System (010), not The Squad Paper (016). The section header said Proposal 016 but the trailing content was 010's. This is the silent success bug in action — the agent was likely cut off mid-write and content from a previous or adjacent history entry bled into the wrong section. Fixed: replaced with correct Proposal 016 implementation details and file path.
+
+2. **Scribe spawn template in squad.agent.md was MISSING the ⚠️ RESPONSE ORDER instruction.** Three of four spawn templates had the fix (background, sync, generic). The Scribe template — the one most likely to hit the bug (it writes multiple files and never speaks to the user) — was the one left unpatched. Fixed: added RESPONSE ORDER instruction to Scribe template.
+
+3. **All proposals intact on disk.** Proposals 001-016 all exist. Proposal 016 (The Squad Paper, 341 lines) is complete — ends with glossary, review request, and next steps. Not truncated. Proposal 010 (Skills System) is complete. Proposal 015 (P0 bug itself) exists and is In Progress.
+
+**Assessment:** The silent success bug DID hit me. The evidence is in finding #1 — my history entry for Proposal 016 was written with wrong content, meaning the agent's response was likely corrupted or truncated during the history write phase. The Scribe template gap (finding #2) means Scribe was the MOST VULNERABLE agent to the bug this entire time — it does nothing but tool calls (file writes) with no user-facing text, which is exactly the pattern that triggers "no response."
+📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — addresses forwardability gap. — decided by Fenster
+📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests, 3 suites. — decided by Hockney
+📌 Team update (2026-02-08): P0 bug audit consolidated. Scribe resilience fixes (template patch + inbox-driven spawn) confirmed merged into decisions.md. — decided by Keaton, Fenster, Hockney
