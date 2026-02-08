@@ -158,3 +158,16 @@
 
 
 📌 Team update (2026-02-09): Master Sprint Plan (Proposal 019) adopted — single execution document superseding Proposals 009 and 018. 21 items, 3 waves + parallel content track, 44-59h. All agents execute from 019. Wave gates are binary. — decided by Keaton
+
+### Blog format and packaging UX designed (2026-02-09)
+- **Blog post format** created at `docs/blog/template.md` — YAML frontmatter (title, date, author, wave, tags, status, hero) + structured body (What Shipped, The Story, By the Numbers, What We Learned, What's Next). One post per wave completion. Compatible with any static site generator. Human-readable raw on GitHub.
+- **First blog post** written: `docs/blog/001-wave-0-the-team-that-built-itself.md` — "Wave 0: The Team That Built Itself." Covers team formation, 16 proposals, the silent success bug discovery and self-repair loop, 12 tests shipping, the upgrade subcommand, and the Master Sprint Plan. Narrative voice, not changelog.
+- **Blog engine sample prompt** added to `docs/sample-prompts.md` — the meta-demo: Squad builds a static blog renderer (HTML/CSS/JS, no framework) that renders Squad's own progress posts from `docs/blog/`. Parser, templating, RSS, responsive CSS, dark mode. "Squad built the tool that tells Squad's story."
+- **Package naming evaluation** completed in Proposal 020 §3 — evaluated `@bradygaster/create-squad` (current), `create-squad` (unscoped), and `squad-cli`. Recommendation: publish `create-squad` unscoped alongside the scoped package. `npx create-squad` is 16 characters vs 33, follows `create-*` convention, enables `npm init squad`. No breaking change for existing users.
+- **Key DevRel insight:** Wave-cadenced blogging creates a content flywheel tied to execution. No artificial content calendar — the work IS the content. Each wave gate that passes = a post that writes itself from the metrics and narrative.
+- File: `docs/proposals/020-blog-and-packaging.md`
+
+📌 Team update (2026-02-09): Blog format designed — YAML frontmatter + structured body, one post per wave, compatible with all SSGs. First post "Wave 0: The Team That Built Itself" written. Blog engine meta-demo prompt added to sample-prompts.md. — decided by McManus
+📌 Team update (2026-02-09): Package naming recommendation — publish `create-squad` unscoped alongside `@bradygaster/create-squad`. Halves the typing burden, follows `create-*` convention, enables `npm init squad`. No breaking change. — proposed by McManus
+
+📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).

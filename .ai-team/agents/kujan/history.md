@@ -419,3 +419,37 @@ px create-squad upgrade to get mitigations. — decided by Fenster
 
 
 📌 Team update (2026-02-09): Master Sprint Plan (Proposal 019) adopted — single execution document superseding Proposals 009 and 018. 21 items, 3 waves + parallel content track, 44-59h. All agents execute from 019. Wave gates are binary. — decided by Keaton
+
+### 2026-02-09: VS Code Parity, Mid-Flight Human Input, and Feedback Optimization
+
+**Context:** Brady asked three platform questions: (1) does Squad work in VS Code, (2) can human input reach running agents, (3) how to optimize feedback for humans.
+
+**Key findings:**
+
+1. **VS Code parity is partial, not confirmed.** The `.github/agents/squad.agent.md` file loads correctly in VS Code Copilot agent mode — custom agents use the exact same path and format. HOWEVER, Squad's multi-agent orchestration depends on the `task` tool with specific parameters (`agent_type`, `mode: "background"`, inline `prompt`) and the `read_agent` / `list_agents` lifecycle tools. VS Code's subagent support (confirmed Jan 2026) has a different API surface: it uses an `infer`-based model where subagents are selected from available `.agent.md` files, not spawned with inline prompts. The `read_agent` polling pattern has no documented VS Code equivalent. **Squad's agent file loads; multi-agent orchestration is unverified and likely has tool-name mismatches.** Must test empirically.
+
+2. **Mid-flight human input injection is impossible on this platform.** The Copilot conversation model is single-threaded. Once agents are spawned via `task`, they run in isolation — no input channel, no interrupt mechanism, no cancel API. `write_powershell` works for interactive shells, NOT for `task`-spawned agents. File-based signaling is theoretically possible but unreliable (agents don't have event loops). The pragmatic best: capture directive to inbox immediately, acknowledge immediately, apply on next spawn. The 30-60s delay before correction takes effect is a hard platform limitation.
+
+3. **Feedback optimization has real options today.** Three changes to `squad.agent.md` improve the human experience: (a) enhanced launch manifests showing all agents and what they're doing, (b) sequential `read_agent` collection for 3+ agents so results trickle in instead of arriving as one block after 60s silence, (c) time estimates in launch messages (Direct: instant, Lightweight: ~10s, Standard: ~30s, Full: ~60s). None of these require platform changes — all are instruction changes.
+
+**Platform constraints confirmed:**
+- No agent interrupt/preemption API exists
+- No message queue polling between tool calls
+- No streaming from `read_agent` (no progress bars)
+- `task`-spawned agents have no input channel after spawn
+- Coordinator cannot emit text while blocked on `read_agent`
+- VS Code subagent API surface differs from CLI `task` tool
+
+**What would unlock full VS Code parity (platform feature requests):**
+- Unified `task` tool API across CLI and VS Code
+- `read_agent` / `list_agents` equivalents in VS Code
+- Same `mode: "background"` / `mode: "sync"` semantics
+
+**What would unlock mid-flight input (platform feature requests):**
+- Agent interrupt/preemption API
+- Coordinator message queue polling between tool calls
+- Multi-turn agent sessions with input channels
+
+**Decision written:** `.ai-team/decisions/inbox/kujan-vscode-parity-and-feedback.md`
+
+📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).

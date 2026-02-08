@@ -1,6 +1,6 @@
 # Background Agent Timeouts: What We Learned the Hard Way
 
-> "What did you expect the agent to do when you asked it to cure cancer in 5 minutes?"
+> "What did you expect the agent to do when you asked it to solve ColdFusion in 5 minutes?"
 
 ## The Problem
 

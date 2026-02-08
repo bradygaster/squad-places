@@ -964,3 +964,297 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 **What:** Proposal 019 is the definitive build plan for Squad v1. Synthesizes all 18 prior proposals into one execution plan: 21 items, 3 waves + parallel content track, 44–59h estimated. Wave 1 (Quality): error handling, test expansion, CI, version stamping, silent success, human directive capture, "feels heard." Wave 1.5 (Content, parallel): README, messaging, Squad Paper, "where are we?" beat, demo script, video. Wave 2 (Experience): tiered response modes, smart upgrade, Skills Phase 1, Export CLI. Wave 3 (Magical): Import CLI, Skills Phase 2, history summarization, lightweight spawn. Horizon deferred: Squad DM, agent-to-agent negotiation, speculative execution, sharing/registry, merge support. All Brady directives reflected. Wave gates are binary. Supersedes Proposals 009 and 018.
 **Why:** Brady asked for "all of it — stack it all up, sprint plan it." 18 proposals had overlapping scope and no single source of truth. 019 is that source of truth. All agents execute from 019.
 
+
+
+---
+
+### 2026-02-09: Brady directives — session 5 batch
+
+**By:** bradygaster (human)
+
+**Directives:**
+
+1. **VS Code parity:** No reason Squad shouldn't work in VS Code Copilot Chat as well or better than CLI. Investigate.
+
+2. **"Feels heard" clarification:** Not just coordinator saying "gotcha" — ideally human input impacts ongoing agent work in real-time. If not possible, enhance the experience for now. Don't let perfect be the enemy of good.
+
+3. **README timing:** Consider saving README rewrite for the end, OR keep it updated as we go. Team's call. But think of each iteration as individually blogworthy.
+
+4. **Blog engine meta-play:** Create a blog markdown format to update users on progress. Then make one of the sample prompts a blog engine with amazing front-end UX that renders Squad blog posts. Meta.
+
+5. **NPM package naming:** Currently `bradygaster/squad`. Wants easy-to-understand npx commands for update/export. If we need to rename now, do it — not at v1 yet. Optimize for consistency and future-proofing.
+
+6. **Human feedback optimization:** "please please optimize for an efficient experience or a continually up-to-date one for the human. humans like feedback." — This is a P0 UX principle for all work going forward.
+
+---
+
+### 2026-02-09: Sprint plan amendments for Brady's session 5 directives
+
+**By:** Keaton (Lead)
+
+**Proposal:** 019a — Sprint Plan Amendments
+
+**Decisions for team review:**
+
+1. **README timing: living document.** README updated per wave, not written once at end. McManus refreshes at each wave gate. Blog posts handle the narrative arc; README documents current truth.
+
+2. **Blog format defined, blog engine sample prompt added.** YAML front matter, `docs/blog/` directory, one post per wave. McManus owns. Blog engine sample prompt added to `docs/sample-prompts.md` — meta: Squad builds a blog engine that renders Squad's own posts.
+
+3. **Package naming: register `create-squad` (unscoped) NOW.** Available on npm today. Dual-publish as both `create-squad` and `@bradygaster/create-squad`. Primary docs use `npx create-squad`. Zero breaking change. Time-sensitive — name could be taken.
+
+4. **Human feedback is the 5th directive.** "Optimize for human feedback. Every interaction gives the human visible evidence of progress. Silence is never acceptable." Distinct from Directives 3-4 (input→system). This is output→human. New items: 1.9 (progress reporting), result summarization in 2.1, CLI output enrichment in 1.1.
+
+5. **VS Code parity: manual smoke test in Wave 1.** No architectural blockers expected. Kujan tests init, team mode, parallel spawn in VS Code. Automated VS Code CI not recommended for v1 — too heavyweight. Document test checklist instead.
+
+6. **Three new Wave 1 items:** 1.8 (register create-squad, Fenster, 1h), 1.9 (progress reporting, Verbal+Kujan, 2h), 1.10 (VS Code smoke test, Kujan, 1h). All parallelize with existing work.
+
+7. **Updated effort: 52.5-67.5h total** (up from 44-59h). Calendar impact minimal due to parallelism.
+
+**Status:** Pending team review and Brady approval.
+
+---
+
+### 2026-02-09: VS Code Parity, Mid-Flight Human Input, and Feedback Optimization — Platform Analysis
+**By:** Kujan (Copilot SDK Expert)
+**Requested by:** bradygaster
+
+---
+
+## Decision 1: VS Code Parity — "Would Squad Just Work?"
+
+**Verdict: Almost, but not quite. The `task` tool is the gap.**
+
+### What matches across CLI and VS Code Copilot agent mode:
+
+| Tool | CLI | VS Code Agent Mode | Match? |
+|------|-----|-------------------|--------|
+| `.github/agents/*.agent.md` | ✅ Custom agents | ✅ Custom agents (same path, same format) | ✅ Exact match |
+| `view`, `edit`, `create` | ✅ | ✅ (file operations built-in) | ✅ |
+| `grep`, `glob` | ✅ | ✅ (search tools available) | ✅ |
+| `powershell` / terminal | ✅ Interactive shell sessions | ✅ Terminal tool exists | ⚠️ Similar, not identical API |
+| MCP servers | ✅ | ✅ | ✅ |
+| `task` (spawn sub-agents) | ✅ `task` tool with `agent_type`, `mode`, `prompt` | ⚠️ Subagent support exists but with different API surface | ❌ Not the same tool |
+| `read_agent` / `list_agents` | ✅ Background agent lifecycle management | ⚠️ No documented equivalent | ❌ Gap |
+| `write_powershell` / `read_powershell` | ✅ Interactive shell sessions | ⚠️ Different terminal interaction model | ⚠️ Partial |
+| `store_memory` / `sql` | ✅ | ❓ Not confirmed in VS Code | ⚠️ Unknown |
+
+### The critical analysis:
+
+**Squad's entire orchestration model depends on the `task` tool with these specific features:**
+1. `agent_type: "general-purpose"` — spawns a full-capability sub-agent
+2. `mode: "background"` — parallel async execution
+3. `read_agent` with `wait: true, timeout: 300` — lifecycle collection
+4. `list_agents` — discover running agents
+
+VS Code Copilot agent mode supports subagent spawning (confirmed in Jan 2026 updates), but the API surface is different:
+- VS Code uses an `infer`-based model where subagents are selected from available `.agent.md` files
+- The CLI uses an explicit `task` tool call with inline prompts
+- VS Code's subagent model may not support the same `background` / `sync` mode distinction
+- `read_agent` (polling for completion) has no documented VS Code equivalent — VS Code subagents appear to report results differently
+
+**What this means for Squad:**
+- The `.github/agents/squad.agent.md` file WILL be picked up by VS Code Copilot as a custom agent — confirmed
+- The coordinator's INSTRUCTIONS will be loaded — confirmed
+- The coordinator's attempts to call `task` tool with Squad's specific parameter patterns may work IF VS Code's subagent tool accepts the same schema
+- But the `read_agent` / `list_agents` lifecycle management pattern is CLI-specific
+
+### Honest assessment:
+
+Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS Code's subagent tool is API-compatible with the CLI's `task` tool. The safest statement: **Squad's agent file loads correctly in VS Code, the coordinator's instructions are understood, but multi-agent orchestration (the core value prop) is unverified and likely has tool-name mismatches.**
+
+### What to verify (actionable):
+1. Open the repo in VS Code, invoke `@squad` in Copilot Chat
+2. Give it a task that requires agent spawning
+3. Watch whether it successfully calls the `task` tool or errors
+4. If it errors, check the error — is it "unknown tool" or "wrong parameters"?
+5. Report findings back
+
+### Performance comparison:
+- VS Code Copilot has a larger context window (typically matches CLI at 128K)
+- VS Code may have richer editor integration (diagnostics, LSP, inline diff)
+- CLI has more explicit tool control and session management
+- CLI's `/tasks` command gives visibility into running sub-agents — no VS Code equivalent
+
+---
+
+## Decision 2: "Feels Heard" — Can Human Input Reach Running Agents?
+
+**Verdict: No. Mid-flight input injection is not possible on this platform. But we have a pragmatic path.**
+
+### Platform reality:
+
+| Mechanism | Possible? | Why / Why Not |
+|-----------|-----------|---------------|
+| Send input to running `task` agent | ❌ | `task` agents are NOT interactive shells. `write_powershell` works for shell sessions, not for agents spawned via `task`. Agents are isolated LLM sessions with no input channel after spawn. |
+| Cancel running agents and re-spawn | ⚠️ Partially | `stop_powershell` exists but only for shell sessions. No `stop_agent` tool exists. Background agents run until completion or timeout. The coordinator CANNOT cancel a running `task` agent. |
+| Coordinator polls for new messages mid-turn | ❌ | Single-threaded conversation model. Coordinator processes one message to completion. No message queue inspection API. No yield-and-resume. |
+| File-based signal (agent checks mid-work) | ⚠️ Theoretically | We could instruct agents to check a `.ai-team/human-directive.md` file periodically during long tasks. BUT: agents don't have event loops — they execute tool calls sequentially. An agent would only check the file if explicitly instructed to do so between steps. This adds complexity and latency. Not reliable. |
+| Wait for agent completion, then re-route | ✅ Yes | The coordinator can capture the human directive to the inbox, wait for current agents to finish, then re-spawn with updated context. This is the realistic path. |
+
+### The honest answer:
+
+**Mid-flight human input injection is not possible on the Copilot platform today.** The conversation model is single-threaded. Once agents are spawned, they run in isolation until completion. The coordinator cannot:
+- Interrupt running agents
+- Send them new information
+- Cancel and re-spawn them
+- Inject context mid-execution
+
+### The pragmatic best (what we CAN do):
+
+**The "feels heard" + "directive capture" pattern from Proposal 019 items 1.6 and 1.7 is the best we can do, and it's actually pretty good:**
+
+1. **Instant acknowledgment** — Coordinator responds with text BEFORE any tool calls: "Got it. I'll factor that in."
+2. **Directive persistence** — Coordinator writes the human directive to `.ai-team/decisions/inbox/human-directive-{timestamp}.md` as first action
+3. **Context injection on next spawn** — When current agents complete and the coordinator routes follow-up work, the new spawn prompts include the human directive
+4. **Scribe merges** — Directive enters `decisions.md` and becomes persistent team knowledge
+
+**The gap:** If the user says "actually, don't use PostgreSQL, use SQLite" while the backend agent is 30 seconds into implementing PostgreSQL, that work is wasted. The coordinator can only apply the correction AFTER the agent completes.
+
+**What would fix this (platform feature requests):**
+- Agent interrupt/preemption API
+- Coordinator message queue polling between tool calls
+- Agent subscription to filesystem events (inotify-style)
+- Multi-turn agent sessions with input channels
+
+**Brady said "don't let perfect be the enemy of good."** The pragmatic answer: capture the directive immediately, acknowledge it immediately, apply it on next spawn. The 30-60 second delay before it takes effect is a platform limitation, not a Squad limitation. Document it honestly.
+
+---
+
+## Decision 3: Human Feedback Optimization — What Can We Do TODAY?
+
+**Verdict: Several things, all via `squad.agent.md` changes only.**
+
+### What the platform supports for real-time feedback:
+
+| Technique | Supported? | How |
+|-----------|-----------|-----|
+| Coordinator text before tool calls | ✅ Yes | Coordinator emits text in the same turn as tool calls. User sees text while agents spin up. |
+| Progress indicators during agent work | ⚠️ Limited | The coordinator CANNOT emit text while waiting on `read_agent`. The `read_agent` call blocks the coordinator's turn. No streaming progress. |
+| Report as each agent completes | ⚠️ Partially | Sequential `read_agent` calls can report one-at-a-time. BUT this means serial collection instead of parallel. Trade-off: faster feedback vs. longer total time. |
+| Intermediate status messages | ❌ | Once the coordinator is in a tool-call turn, it cannot interleave text responses. Text comes before or after tool calls, never during. |
+
+### What we can change in `squad.agent.md` TODAY:
+
+#### 1. Enhanced launch message (already partially in 1.7 — extend it)
+```
+When spawning agents, emit a detailed launch manifest BEFORE the task calls:
+
+"🚀 Launching:
+ 🏗️ Keaton — analyzing architecture implications
+ ⚛️ Fenster — implementing the API endpoint  
+ 🧪 Hockney — writing test cases from the spec
+ 
+ Estimated: 30-45 seconds. I'll report as each completes."
+```
+This gives the user a mental model of what's happening during the wait.
+
+#### 2. Sequential collection with incremental reporting
+Instead of:
+```
+1. Spawn all agents (background)
+2. read_agent for ALL agents
+3. Present all results at once
+```
+
+Do:
+```
+1. Spawn all agents (background)
+2. read_agent for Agent A (wait: true, timeout: 300)
+3. Report Agent A's results immediately
+4. read_agent for Agent B (wait: true, timeout: 300)  
+5. Report Agent B's results immediately
+...
+```
+
+**Trade-off:** This is sequential collection, which means the user sees results sooner but the TOTAL time is the same (or slightly longer due to serial read_agent overhead). The UX improvement is that the user isn't staring at silence for 60 seconds — they see results trickling in.
+
+**Recommendation:** Use sequential collection for 3+ agents. For 1-2 agents, the current pattern is fine.
+
+#### 3. Post-collection summary
+After all agents report, add a one-line synthesis:
+```
+"✅ All 3 agents completed. Key output: {brief summary}. 
+ Scribe is merging decisions. What's next?"
+```
+
+#### 4. Time estimates in launch message
+The coordinator knows the task complexity from its routing. Include an estimate:
+- Direct mode: "(instant)"
+- Lightweight: "(~10 seconds)"
+- Standard: "(~30 seconds)"
+- Full: "(~60 seconds)"
+
+This manages expectations. Waiting 60 seconds when you expected 5 is painful. Waiting 60 seconds when you were told 60 is acceptable.
+
+### What we CANNOT do today:
+- Stream agent progress in real-time (no streaming from `read_agent`)
+- Show a progress bar (no mechanism for partial updates from agents)
+- Interrupt and report mid-work (agents are isolated)
+- Push notifications while waiting (single-threaded conversation)
+
+---
+
+## Summary of Conclusions
+
+| Question | Answer |
+|----------|--------|
+| Does Squad work in VS Code? | Agent file loads; multi-agent orchestration is unverified and likely has tool gaps |
+| Can humans impact running agents? | No — platform limitation. Capture-and-apply-next is the best we can do. |
+| Can we give more feedback? | Yes — launch manifests, sequential collection, time estimates. All via squad.agent.md. |
+
+**Recommended actions:**
+1. **Verify VS Code parity** — Open repo in VS Code, try a Squad task, report what happens with the `task` tool
+2. **Ship items 1.6 and 1.7** from Proposal 019 — these are the "feels heard" foundation
+3. **Add sequential agent collection** to squad.agent.md for 3+ agent spawns
+4. **Add time estimates** to the launch manifest
+5. **Document honestly** in README that mid-flight input injection is a platform limitation
+
+---
+
+# Decision: Blog Format, Blog Engine Prompt, and Package Naming UX
+
+**Author:** McManus (DevRel)  
+**Date:** 2026-02-09  
+**Proposal:** 020-blog-and-packaging.md  
+**Requested by:** bradygaster
+
+---
+
+## Decisions Made
+
+### 1. Blog Post Format Adopted
+- Template at `docs/blog/template.md`
+- YAML frontmatter: title, date, author, wave, tags, status, hero
+- Structured body: What Shipped → The Story → By the Numbers → What We Learned → What's Next
+- One post per wave completion — wave cadence IS the content cadence
+- First post shipped: `docs/blog/001-wave-0-the-team-that-built-itself.md`
+
+### 2. Blog Engine Sample Prompt Added
+- Added to `docs/sample-prompts.md` as "Squad Blog Engine (Meta Demo)"
+- Squad builds a static blog renderer (HTML/CSS/JS) that renders its own progress posts
+- Meta angle: "Squad built the tool that tells Squad's story"
+- Categorized as Quick Build — single session, well-scoped
+
+### 3. Package Naming Recommendation (Pending Brady's Call)
+- **Recommendation:** Publish `create-squad` (unscoped) alongside existing `@bradygaster/create-squad`
+- `npx create-squad` = 16 chars vs `npx @bradygaster/create-squad` = 33 chars
+- Follows `create-*` convention (create-react-app, create-next-app, create-vite)
+- Enables `npm init squad` for free
+- No breaking change — both names coexist on npm
+- `squad-cli` rejected: breaks `create-*` convention, implies ongoing CLI tool not initializer
+- **This is a naming proposal, not a decision. Brady decides.**
+
+---
+
+## Files Created/Modified
+
+| File | Action |
+|------|--------|
+| `docs/blog/template.md` | Created — blog post template |
+| `docs/blog/001-wave-0-the-team-that-built-itself.md` | Created — first blog post |
+| `docs/proposals/020-blog-and-packaging.md` | Created — full proposal |
+| `docs/sample-prompts.md` | Modified — added blog engine prompt |
+
+---
+
+**Review requested from:** bradygaster (package naming decision), Keaton (architecture), Fenster (implementation)

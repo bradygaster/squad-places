@@ -437,7 +437,9 @@ After each batch of agent work:
 
 3. **Write orchestration log entries** for all agents in this batch (see Orchestration Logging). Do this in a single batched write, not one at a time.
 
-4. **Spawn Scribe** (always `mode: "background"` — never wait for Scribe):
+4. **Inbox-driven Scribe spawn:** Check if `.ai-team/decisions/inbox/` contains any files. If YES, spawn Scribe regardless of whether any agent returned a response. This ensures inbox files get merged even when agent responses are lost to the silent success bug.
+
+5. **Spawn Scribe** (always `mode: "background"` — never wait for Scribe):
 ```
 agent_type: "general-purpose"
 mode: "background"
@@ -505,9 +507,15 @@ prompt: |
        output matches the expected message. If it doesn't, report the error.
   
   Never speak to the user. Never appear in output.
+  
+  ⚠️ RESPONSE ORDER: After completing ALL tool calls (file writes, history updates,
+  decision inbox writes), you MUST end your final message with a TEXT summary of what
+  you did. Your very last output must be text, NOT a tool call. If your final turn is
+  a tool call with no follow-up text, the platform will report "no response" even
+  though your work completed successfully.
 ```
 
-5. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
+6. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
 
 ### Ceremonies
 

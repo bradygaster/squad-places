@@ -99,6 +99,45 @@ I want one agent designing the card set and balance, another building the game e
 
 ---
 
+### Squad Blog Engine (Meta Demo)
+
+```
+Build a static blog engine that renders markdown blog posts into beautiful HTML pages.
+No frameworks — just HTML, CSS, and vanilla JavaScript.
+
+Input: markdown files from a docs/blog/ directory. Each file has YAML frontmatter
+(title, date, author, wave, tags, status, hero).
+
+Output:
+- An index page listing all posts, sorted by date, with title, hero text, author, and tags
+- Individual post pages with clean typography, syntax-highlighted code blocks, and responsive tables
+- A tag index page that groups posts by tag
+- Wave navigation: "← Previous Wave | Next Wave →" links on each post
+- Dark mode toggle (CSS custom properties, saved to localStorage)
+- RSS feed (feed.xml)
+
+Design direction:
+- Clean, modern, developer-focused. Think GitHub's blog meets a personal dev blog.
+- Monospace headings, proportional body text
+- Code blocks with a dark theme and copy-to-clipboard button
+- Mobile responsive — single column on small screens
+- Fast. No JavaScript required for reading — JS only for dark mode toggle and copy button.
+- Hero section on the index page with the blog title and a one-liner about the project.
+
+The markdown parser should handle: headings, paragraphs, lists, code blocks (fenced),
+inline code, bold, italic, links, images, blockquotes, horizontal rules, and tables.
+
+Build the parser, the template engine, the RSS generator, and the static file output.
+Put the output in a dist/ folder. Include a build script that can be run with
+`node build.js` to regenerate the site.
+
+Set up the team and build it. I want to see this running in one session.
+```
+
+**What it demonstrates:** The ultimate meta-demo — Squad builds the tool that publishes Squad's own progress story. Input is markdown files Squad already writes (wave completion posts in `docs/blog/`). Parser, templating, RSS, and responsive CSS can all be built in parallel. The finished product is visual (screenshots well), functional (actually renders real content), and narratively perfect: "Squad built this to tell you about itself."
+
+---
+
 ## Mid-Size Projects
 
 These need real coordination. Agents make architectural decisions, share them, and build on each other's work across multiple rounds.

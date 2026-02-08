@@ -262,3 +262,25 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 **Why one document matters:** The team had 18 proposals, each with its own context, its own priority claims, its own status. Brady couldn't answer "what's next?" without reading 5 documents. Now he reads one. That's the value of 019.
 
 📌 Team update (2026-02-09): Master Sprint Plan written (Proposal 019) — supersedes 009 and 018. Single execution document with 21 work items across 3 waves + parallel content track. 44-59h total, ~3 weeks. Brady's four session directives all reflected. — decided by Keaton
+
+### 2026-02-09: Sprint plan amendments — Brady's session 5 directives (Proposal 019a)
+
+**Core insight:** Brady's session 5 directives are mostly about the human experience of using Squad — not features, not architecture, but *how it feels to be the human in the loop*. Directives 1 (README timing), 4 (human feedback), and 5 (VS Code) are all variations of "I should never have to wonder what's happening." Directive 2 (blog engine) is strategic positioning — Squad's own story, told by Squad's own tools. Directive 3 (naming) is about the 5-second experience of typing an npm command.
+
+**Key decisions made:**
+
+1. **README is a living document.** Updated per wave, not written once. The README is always truthful about current capabilities. Blog posts handle the narrative arc. This is the right call because the README is the product's face — a stale face says "we're not shipping."
+
+2. **`create-squad` (unscoped) registered on npm.** Available right now. Dual-publish preserves backward compatibility. `npx create-squad` is the shortest possible command. `npm create squad` works via npm's `create` alias. Time-sensitive — register before someone else does.
+
+3. **Human feedback is the 5th directive.** Distinct from "feels heard" (Directive 4, about input acknowledgment). Directive 5 is about continuous output — progress reporting, result summarization, CLI output enrichment. The gap in 019 was the 45-second silence between acknowledgment and result. New item 1.9 fills that gap.
+
+4. **Blog meta-play is strategically perfect.** Squad builds a blog engine. The blog engine renders posts about Squad. The demo creates the tool that tells the demo's story. McManus writes posts, owns the sample prompt. Blog format is standard YAML front matter — nothing custom.
+
+5. **VS Code is expected to work.** No architectural blockers. Manual smoke test in Wave 1 (Kujan). Automated CI testing not recommended — too heavyweight for v1. If gaps found, they become Wave 2 items.
+
+6. **Effort increases by ~8.5h but calendar unchanged.** Three new Wave 1 items (1.8, 1.9, 1.10) all parallelize with existing work. Blog posts and README refreshes are inter-wave work.
+
+📌 Team update (2026-02-09): Sprint plan amendments filed (019a) — README is living (updated per wave), `create-squad` unscoped name to be registered, human feedback is 5th directive, blog post per wave + blog engine sample prompt, VS Code smoke test in Wave 1. +8.5h effort, no calendar impact. — decided by Keaton
+
+📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).

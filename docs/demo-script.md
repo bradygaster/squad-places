@@ -157,6 +157,24 @@ Show the `list_agents` output if there are still background agents running. This
 
 ---
 
+## ACT 7 — THE ARTIFACTS & SECOND WAVE (6:30–7:30)
+
+### On Screen
+Switch to an editor and open the files the agents just created. Show these in order, pausing on each:
+
+1. `.ai-team/decisions.md` — scroll through real decisions the agents wrote during the build. Architecture choices, file structure, naming conventions. These aren't templates — they're decisions made minutes ago.
+2. One agent's `history.md` (e.g., `.ai-team/agents/ripley/history.md` or whatever name was cast) — scroll through what it learned. Canvas setup, CRT filter values, rendering approach. This is persistent memory.
+3. Back in Copilot, ask Squad to do a second pass: "Add a pause menu and a game-over screen." Watch it fan out again — same agents, same names, but now they already know the codebase. The second wave launches faster because no one needs to rediscover the architecture.
+
+### Voiceover
+> Now let's look at what they left behind — and I don't mean the code. This is `decisions.md`. These are real architectural decisions the team made while building — canvas dimensions, input handling strategy, audio approach. Every agent read this file before starting work, and every agent wrote back to it. It's the shared brain.
+>
+> And here — this is Ripley's history file. Look at what it learned: the CRT filter values, the rendering pipeline, the sprite dimensions. Next session, Ripley won't ask about any of this. It remembers.
+>
+> Now watch this. I'm going to ask for a second feature — a pause menu and game-over screen. Same team. Same names. But this time, they already know the codebase. They don't need to rediscover the architecture — they read their own history files and the shared decisions before starting. That's the compounding effect in action. The second wave is faster because the first wave made the team smarter.
+
+---
+
 ## ACT 8 — THE PAYOFF (7:30–8:00)
 
 ### On Screen

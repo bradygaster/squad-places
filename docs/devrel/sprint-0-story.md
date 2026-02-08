@@ -92,14 +92,6 @@ A product built by its own agents. The agents hit a bug. The agents diagnosed th
 - The first external user session where the team self-repairs without Brady noticing
 - The first "portable squad" import where the team already knows the developer
 
----
-
-## Raw Quotes to Use
-
-- Brady: "this feels sort of gold" (on the self-repair loop)
-- Brady: "9 users, whole division talking" (on adoption momentum)
-- Brady: "make Squad the best AI dev tool out there. Period." (on ambition)
-- Brady: "HOLY CRAP" (on portable squads)
 
 ---
 
