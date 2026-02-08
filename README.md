@@ -27,7 +27,7 @@ git init
 ### 2. Install Squad
 
 ```bash
-npx bradygaster/squad
+npx github:bradygaster/squad
 ```
 
 ### 3. Open Copilot and go
@@ -218,7 +218,7 @@ The Coordinator enforces this. No self-review of rejected work.
 ## Install
 
 ```bash
-npx bradygaster/squad
+npx github:bradygaster/squad
 ```
 
 See [Quick Start](#quick-start) for the full walkthrough.
