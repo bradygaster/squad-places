@@ -13,6 +13,8 @@ node_modules/
 # Squad team state (created at runtime, never committed)
 .ai-team/
 
-# Internal planning (kept on dev branch only)
-docs/
+# Squad templates (internal, not distributed)
 .ai-team-templates/
+
+# Team docs (proposals, sprint plans — tracked on dev, not main)
+team-docs/
