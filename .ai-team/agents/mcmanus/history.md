@@ -56,12 +56,22 @@
 - **DevRel philosophy**: First 5 minutes are everything. Make the README magnetic, not just informative. Devs should move from "what is this?" to "I need this" before they scroll past the fold.
 - File: `docs/proposals/002-messaging-overhaul.md`
 
+### Demo script structure and strategy (2026-02-07)
+- **Beat format works for recording scripts**: On-screen / Voiceover / What-to-do triple structure eliminates ambiguity during recording sessions. Brady needs to know exactly what to type, what to say, and what the viewer sees — prose-style scripts bury action steps and cost takes.
+- **README order is non-negotiable for demos**: Brady's explicit feedback — the demo must follow the README's section flow. When the demo and the docs reinforce the same order, concepts land harder. Demo primes, README deepens.
+- **The README walkthrough IS the demo's core**: BEATs 5–6 walk through the README while agents build in background — this is the structural trick that makes the demo work. It teaches architecture, proves parallel execution, and drives viewers to the README all at once.
+- **Payoff at the end, not the beginning**: Inverting the typical demo structure (show result first, explain second) forces the viewer to understand what built the game before they see it. The game isn't the point — the team is. The game is proof.
+- **"Throw a squad at it" placement**: Two mentions — BEAT 2 (casual, during the prompt) and BEAT 9 (call-to-action closer). Neither forced. Both conversational. Per proposal 002's voice guidance.
+- **Thumbnail engineering matters**: CRT snake game + agent output in background = stop-the-scroll frame. Green glow + purple badge = high contrast for social feeds.
+- File: `docs/proposals/004-demo-script-overhaul.md`
+
 📌 Team update (2026-02-08): Proposal-first workflow adopted — all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
 📌 Team update (2026-02-08): Stay independent, optimize around Copilot — Squad will not become a Copilot SDK product. Filesystem-backed memory preserved as killer feature. — decided by Kujan
 📌 Team update (2026-02-08): Stress testing prioritized — Squad must build a real project using its own workflow to validate orchestration under real conditions. — decided by Keaton
 📌 Team update (2026-02-08): Baseline testing needed — zero automated tests today; `tap` framework + integration tests required before broader adoption. — decided by Hockney
 📌 Team update (2026-02-08): Agent experience evolution proposed — adaptive spawn prompts, reviewer protocol with guidance, proactive coordinator chaining. — decided by Verbal
 📌 Team update (2026-02-08): Industry trends identified — dynamic micro-specialists, agent-to-agent negotiation, speculative execution as strategic directions. — decided by Verbal
+📌 Team update (2026-02-08): Video content strategy approved — 75s trailer, 6min demo, 5-video series. Owns scripting and polish. Demo script should align. — decided by Verbal
 
 ### README rewrite executed (2026-02-07)
 - **Proposal 006** contains the complete, copy-paste-ready README rewrite — not an outline, the actual content. Lives at `docs/proposals/006-readme-rewrite.md`.
