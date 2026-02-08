@@ -137,9 +137,23 @@
 
 2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.
 
+### Error Handling Implementation (Sprint Task 1.1)
+
+- **`fatal()` helper pattern established** — centralized error output using RED ✗ prefix to stderr, then `process.exit(1)`. All fatal errors route through this single function for consistent formatting. Keeps error paths DRY.
+- **`process.on('uncaughtException')` added** — catches anything that slips past explicit try/catch. Prints clean user-facing message, exits 1. No stack traces in production output.
+- **Pre-flight validation before any writes** — source file existence (`squad.agent.md`, `templates/`) and destination writability (`fs.accessSync` with `W_OK`) are checked before any copy operations begin. Fail fast, fail clean.
+- **`copyRecursive` wrapped in try/catch** — the recursive copy now catches at each level and reports which source path failed. Uses `path.relative()` for readable error messages.
+- **Agent copy and directory creation wrapped** — both the upgrade and init paths for `squad.agent.md`, plus the `mkdirSync` calls for `.ai-team/` directories, have explicit error handling.
+- **RED color constant added** (`\x1b[31m`) — consistent with existing ANSI constants (GREEN, DIM, BOLD, RESET).
+- **File grew from 103 to 146 lines** — well under the 150-line ceiling. No restructuring, no new dependencies. All changes are additive wrapping of existing code.
+- **All 12 existing tests pass** — zero regressions. Error handling is invisible to the happy path.
+
 ### Version Stamping Phase 1 (Sprint Task 1.4)
 
 - **`engines` field added to package.json** — `"node": ">=22.0.0"` declares the Node 22+ requirement explicitly. This is needed because `node:test` (used by the test suite) is a Node 22+ feature. The engines field gives clear errors on older runtimes instead of cryptic module-not-found failures.
 - **`--version` flag already correct** — `index.js` lines 13, 17-19 read `pkg.version` from `package.json` at runtime. Single source of truth, no duplication. No changes needed to index.js.
 - **package.json is the version authority** — version (`0.1.0`), engine constraint (`>=22.0.0`), and the `--version` CLI flag all derive from package.json. No separate version file, no frontmatter, no build step. This aligns with Proposal 011's version detection strategy (package.json as primary source).
 - **All 12 tests pass** after adding `engines` field. Zero test changes needed.
+📌 Team update (2026-02-08): CI pipeline created — GitHub Actions runs tests on push/PR to main/dev. PRs now have automated quality gate. — decided by Hockney
+
+📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan

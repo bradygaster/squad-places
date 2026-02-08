@@ -454,6 +454,27 @@ px create-squad upgrade to get mitigations. — decided by Fenster
 
 📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).
 
+### 2026-02-09: Directive Capture in Coordinator Prompt (Sprint Task 1.6)
+
+**Context:** Brady requested human directive capture — when users state preferences, rules, or scope decisions, the coordinator should persist them to the decisions inbox before routing work.
+
+**What was added:** A "Directive Capture" section in `squad.agent.md` (Team Mode, between team-file reads and routing). The section instructs the coordinator to:
+1. Detect directives via signal phrases ("always…", "never…", "from now on…", naming/style/process preferences)
+2. Distinguish directives from work requests (build/fix/test) and questions
+3. Write to `.ai-team/decisions/inbox/copilot-directive-{timestamp}.md` using the standard decision format
+4. Acknowledge briefly, then route any co-occurring work request normally
+
+**Why this design:**
+- Pre-routing placement ensures directives are captured before any agent spawn — no lost context
+- Uses the existing drop-box pattern (inbox → Scribe merge) — no new infrastructure
+- The format matches existing decision entries so Scribe merges them naturally
+- Directive detection is signal-based (keyword patterns), not semantic classification — keeps the coordinator fast
+- Mixed messages (directive + work request) are handled: capture first, route second
+
+**Platform consideration:** This adds ~300 tokens to `squad.agent.md` (~0.2% of 128K context). Coordinator prompt remains well under 7%. The instruction is dense and actionable — no instruction-following risk.
+
+**Shipped to all users:** This section is in `squad.agent.md` which is in the `files` array of `package.json`. The behavior is generic (not project-specific) — any Squad user benefits from directive persistence.
+
 ## Team Updates
 
 📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.
@@ -466,3 +487,4 @@ px create-squad upgrade to get mitigations. — decided by Fenster
 2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
 
 2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.
+📌 Team update (2026-02-08): CI pipeline created — GitHub Actions runs tests on push/PR to main/dev. PRs now have automated quality gate. — decided by Hockney

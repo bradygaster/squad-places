@@ -370,3 +370,6 @@ Audited all 25 proposal files in `docs/proposals/`. Every `Status:` field was st
 **Key insight:** Status drift is a process smell. 25 proposals all saying "Proposed" or "Draft" means the lifecycle states from 001a weren't being enforced. Proposal status should be updated when work begins, not retroactively in an audit.
 
 2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.
+📌 Team update (2026-02-08): CI pipeline created — GitHub Actions runs tests on push/PR to main/dev. PRs now have automated quality gate. — decided by Hockney
+
+📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan

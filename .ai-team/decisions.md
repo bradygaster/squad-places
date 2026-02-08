@@ -1949,3 +1949,72 @@ Blog 001 mentioned the original 5. Blog 002 introduced Kobayashi through his wor
 
 **Why:** Squad has no visual identity. As the product approaches v1 launch (Proposal 014), it needs a logo, color system, and typography that work across every rendering context: terminal (monochrome), GitHub README (dark/light mode), favicon (16px), VS Code sidebar, social cards, and npm. The recommended concept was chosen because it satisfies every constraint with zero adaptation — one SVG, one color, infinite contexts. The brand register matches Squad's tone governance: confident, not flashy; structured, not decorative. Awaiting team feedback before refinement.
 
+
+
+### 2026-02-08: Error handling patterns for index.js
+**By:** Fenster
+**What:** Established error handling patterns for the Squad installer runtime. All fs operations are now wrapped in try/catch. A centralized `fatal()` function handles error output (RED ✗ to stderr + `process.exit(1)`). Pre-flight validation checks source integrity and destination writability before any writes. `process.on('uncaughtException')` catches anything that escapes explicit handling. RED color constant added for error messages.
+**Why:** index.js had zero error handling — bare fs calls that would throw raw Node.js errors on permission issues, missing files, or corrupted installs. For a CLI tool that runs via `npx` in unknown environments, unhandled errors destroy user trust. The `fatal()` pattern keeps error paths DRY and user-facing messages clean (no stack traces). Pre-flight validation follows fail-fast principle — detect problems before making any filesystem changes. The uncaughtException handler is a safety net, not primary error handling.
+
+
+# Version Stamping Phase 1
+
+**Decided by:** Fenster (Core Dev)
+**Date:** 2026-02-09
+**Sprint Task:** 1.4
+**Status:** Completed
+
+## Decision
+
+Added `"engines": { "node": ">=22.0.0" }` to `package.json` to declare the Node 22+ runtime requirement. No changes to `index.js` — the existing `--version` flag already reads from `package.json` correctly.
+
+## Rationale
+
+- Squad's test suite uses `node:test`, which requires Node 22+. Without an explicit engine constraint, users on older Node versions get cryptic `ERR_MODULE_NOT_FOUND` errors instead of a clear "unsupported engine" warning from npm/npx.
+- The `--version` flag (index.js lines 17-19) reads `pkg.version` at runtime from `package.json`. This is the correct pattern — single source of truth, zero duplication. No index.js changes needed.
+- `package.json` remains the sole version authority: version number, engine constraint, and CLI `--version` all derive from it.
+
+## Changes
+
+- `package.json`: Added `engines.node: ">=22.0.0"` field.
+- `index.js`: No changes (already correct).
+
+## Verification
+
+- All 12 tests pass (`npm test`).
+- `--version` flag confirmed working (reads `0.1.0` from package.json).
+
+
+# Decision: CI Pipeline Configuration
+
+**By:** Hockney (Tester)
+**Date:** 2026-02-09
+**Sprint Task:** 1.3
+
+## What
+
+Created `.github/workflows/ci.yml` — a minimal GitHub Actions CI pipeline that runs `npm test` on every push to `main`/`dev` and every PR to `main`. Added CI status badge to README.md.
+
+## Key Decisions
+
+1. **Node 22.x only** — no multi-version matrix. We use `node:test` and `node:assert` which require Node 22+. Testing older versions would just fail.
+2. **No `npm install` step** — zero runtime dependencies, zero dev dependencies. The test framework is built into Node.
+3. **No caching** — nothing to cache (no `node_modules`). Can add later if dependencies are introduced.
+4. **No artifacts/coverage** — ship the floor first. Coverage uploads and test result artifacts are Sprint 3 territory.
+5. **Badge goes above existing shields** — CI status is the most operationally important badge; it belongs at the top.
+
+## Why This Matters
+
+CI is the quality gate. My own rule from Proposal 013: "No pre-commit hook — CI is the quality gate." This workflow makes that real. Every PR to `main` must pass 12 tests before merging. The badge makes pass/fail visible to anyone who visits the repo.
+
+## Impact
+
+- All agents: PRs now have an automated gate. If tests fail, the badge goes red.
+- Kobayashi: Release workflow should depend on CI passing (or at minimum, tests are a subset of release gates).
+- Fenster: Any changes to `index.js` will be validated automatically on push.
+
+
+### 2026-02-09: Coordinator captures user directives before routing
+**By:** Kujan
+**What:** Added a "Directive Capture" section to `squad.agent.md` (Team Mode). When the user states a preference, rule, or scope decision (signaled by phrases like "always…", "never…", "from now on…"), the coordinator writes it to `.ai-team/decisions/inbox/copilot-directive-{timestamp}.md` before routing any work. The format matches standard decision entries so Scribe merges them naturally. Mixed messages (directive + work request) are handled — capture first, route second.
+**Why:** User directives are team-wide decisions that affect all agents. Without capture, they exist only in conversation context and are lost between sessions. The decisions inbox is the correct persistence layer — it feeds into `decisions.md` via Scribe, which all agents read at spawn time. This closes the loop between human intent and team memory.

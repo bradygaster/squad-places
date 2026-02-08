@@ -251,3 +251,5 @@ px create-squad upgrade now overwrites Squad-owned files. Consider adding npm te
 - CI badge placed on line 3, immediately after the `# Squad` heading, before the tagline
 - Positioned above the existing Status and Platform badges (those are on line 5)
 - Standard GitHub Actions badge format: links to the workflow runs page
+
+📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
