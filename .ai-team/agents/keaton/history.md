@@ -242,3 +242,23 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 📌 Team update (2026-02-09): Wave-based execution plan proposed — quality → experience ordering. Wave 1: error handling, test expansion, CI, version stamping, silent success fix. Wave 1.5: README, messaging (parallel). Wave 2: tiered modes, skills Phase 1, export. Wave 3: import, skills Phase 2, history summarization. Squad DM deferred to Wave 4+. Proposal 018 written. — decided by Keaton
 📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop, demo beat, DM connection. — decided by McManus
 📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — platform input latency is unsolvable, but directive persistence uses existing drop-box. — decided by Kujan
+
+### 2026-02-09: Master Sprint Plan — the definitive build plan (Proposal 019)
+
+**Core insight:** Brady asked for "all of it" — one document that supersedes everything. Proposal 019 synthesizes all 18 prior proposals, all team decisions, and Brady's four session directives into a single executable plan. No more cross-referencing. No more ambiguity about what's next.
+
+**Key decisions made:**
+
+1. **Proposals 009 and 018 are superseded, not discarded.** Their architecture decisions, feature sets, and cut lists remain valid. 019 carries forward every active item and marks each as carried forward or superseded with rationale. The sprint structure (009) became the wave structure (018) became the master plan (019) — each refinement preserving what worked.
+
+2. **Two new Wave 1 items from Brady's session directives.** Human directive capture (1.6) and "feels heard" coordinator behavior (1.7) are quality items, not experience items. They go in Wave 1 because trust requires responsiveness. If the coordinator doesn't acknowledge you, you don't trust it.
+
+3. **Content track is fully enumerated.** 018 had 3 content items. 019 has 6 — adding "where are we?" messaging beat (1.5.4), demo script finalization (1.5.5), and video content strategy alignment (1.5.6). Brady elevated "where are we?" to a first-class value prop, so it needs its own line item.
+
+4. **"Where are we?" threads through everything.** It's a messaging beat (1.5.4), a tiered mode (Direct in 2.1), a README placement (1.5.1), a demo script beat (1.5.5), and a video moment (1.5.6). This is what "first-class value prop" looks like in execution — it shows up in every wave.
+
+5. **Total effort: 44-59h across ~3 weeks.** Slightly higher than 018's 38-51h because of the new items. Calendar time stays the same due to parallelism.
+
+**Why one document matters:** The team had 18 proposals, each with its own context, its own priority claims, its own status. Brady couldn't answer "what's next?" without reading 5 documents. Now he reads one. That's the value of 019.
+
+📌 Team update (2026-02-09): Master Sprint Plan written (Proposal 019) — supersedes 009 and 018. Single execution document with 21 work items across 3 waves + parallel content track. 44-59h total, ~3 weeks. Brady's four session directives all reflected. — decided by Keaton

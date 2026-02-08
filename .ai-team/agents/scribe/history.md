@@ -34,3 +34,5 @@
 📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Waves replace sprints. Gates are binary. Squad DM deferred to Wave 4+. Supersedes Proposal 009 sprint structure. — decided by Keaton
 📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop. Demo beat, DM connection, README placements defined. — decided by McManus
 📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — coordinator writes directive-type messages to decisions inbox as first action. No new infrastructure. — decided by Kujan
+
+📌 Team update (2026-02-09): Master Sprint Plan (Proposal 019) adopted — single execution document superseding Proposals 009 and 018. 21 items, 3 waves + parallel content track, 44-59h. All agents execute from 019. Wave gates are binary. — decided by Keaton

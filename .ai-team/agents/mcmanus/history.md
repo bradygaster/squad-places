@@ -156,3 +156,5 @@
 - **README placements:** Two spots — closing beat of "Why Squad?" (emotional hook) and follow-up in "Agents Work in Parallel" (completes the "step away / come back" arc). Standalone section deferred to DM launch.
 - **Key files:** `docs/proposals/014a-where-are-we-messaging-beat.md` (this amendment), `docs/proposals/014-v1-messaging-and-launch.md` (parent proposal), `docs/proposals/017-dm-experience-design.md` (DM connection)
 
+
+📌 Team update (2026-02-09): Master Sprint Plan (Proposal 019) adopted — single execution document superseding Proposals 009 and 018. 21 items, 3 waves + parallel content track, 44-59h. All agents execute from 019. Wave gates are binary. — decided by Keaton
