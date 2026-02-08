@@ -143,3 +143,6 @@
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — delivery mechanism for bug fixes to existing users. — decided by Fenster
 📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests pass. — decided by Hockney
 📌 Team update (2026-02-08): P0 bug audit consolidated. Demo script ACT 7 restoration confirmed merged into decisions.md. — decided by Keaton, Fenster, Hockney
+
+📌 Team update (2026-02-09): Squad DM proposed (Proposal 017) — hybrid gateway with tiered execution, Copilot SDK backend, Dev Tunnels, Telegram-first. Experience design: single bot, proactive messaging, cross-channel memory. 3 gate spikes before implementation. — decided by Keaton, Kujan, Verbal
+

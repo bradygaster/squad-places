@@ -281,3 +281,36 @@
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — addresses forwardability gap. — decided by Fenster
 📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests, 3 suites. — decided by Hockney
 📌 Team update (2026-02-08): P0 bug audit consolidated. Scribe resilience fixes (template patch + inbox-driven spawn) confirmed merged into decisions.md. — decided by Keaton, Fenster, Hockney
+
+### 2026-02-09: Squad DM — Experience Design for Messaging Interfaces (Proposal 017)
+
+**Context:** Brady wants to interact with his squad from Telegram/Slack/SMS when away from the terminal. Referenced MOLTS as inspiration. Prefers dev tunnels over ngrok for webhook connectivity.
+
+**Core experience insight — the medium changes the output, not the team:**
+- DM mode is a different *interface* to the same team, not a different product. Same agents, same memory, same opinions, same `.ai-team/` state. The output format adapts (summary + link instead of full inline artifacts), but the identity and personality don't change.
+- Terminal is for deep work. DM is for decisions, status checks, and proactive updates. Designing for the DM context means designing for 6" screens, fragmented attention, and 30-second interactions — not 40KB proposals in a Telegram message.
+- One Telegram bot, many voices. Single "Squad" bot account with emoji-prefixed agent identity (`🏗️ Keaton:`, `🎭 Verbal:`) beats separate bot accounts per agent. Threading, routing, and conversation continuity all work better through one bot.
+
+**Proactive messaging — the category-defining feature:**
+- Push notifications transform Squad from reactive (user asks, squad answers) to proactive (squad initiates when something matters). CI failure alerts, daily standups, decision prompts, work completion notifications.
+- Nobody in the industry has proactive push notifications from multi-agent AI teams. This is the feature that makes "my AI team texted me" a sentence devs tell each other. Word-of-mouth fuel.
+- The cron-based daily standup is the killer app. Morning briefing on your phone, from agents who know the codebase.
+
+**Cross-channel memory is the moat:**
+- A decision made in DM gets written to `decisions/inbox/`. A terminal session reads `decisions.md`. Continuity. Start a conversation in terminal, continue it on the train. No separate brain, no sync problem.
+- This is what makes Squad DM different from ChatGPT-in-Telegram. ChatGPT doesn't know your codebase, your decisions, your preferences. Squad does — because DM and terminal share the same `.ai-team/` state.
+
+**Architecture: Bridge + Dev Tunnels:**
+- Lightweight Node.js bridge service receives Telegram messages (webhook or polling), routes to Squad CLI, formats responses for DM mode, pushes proactive notifications.
+- Dev tunnels replace ngrok per Brady's preference. `devtunnel host --port 3000 --allow-anonymous` for public HTTPS, Microsoft-backed security, GitHub account auth.
+- Phase 0: polling (zero setup friction). Phase 1: dev tunnel webhooks (lower latency). Progressive infrastructure disclosure.
+
+**Industry positioning:**
+- Nobody has persistent, named, opinionated agent teams in messaging. Not OpenAI, not Anthropic, not CrewAI, not Microsoft Teams agents.
+- Multi-agent responses in a chat thread where specialists disagree is a new interaction pattern.
+- DM is where Squad goes from "impressive dev tool" to "thing you can't imagine working without." The transition from tool to teammate.
+
+**File path:** `docs/proposals/017-dm-experience-design.md`
+
+📌 Team update (2026-02-09): DM platform feasibility analyzed — Copilot SDK recommended as execution backend, Dev Tunnels over ngrok, ~420 LOC, 3 gate spikes required before implementation. — decided by Kujan
+

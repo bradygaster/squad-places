@@ -181,3 +181,34 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — delivery mechanism for P015 mitigations to existing users. — decided by Fenster
 📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests, 3 suites, zero deps. — decided by Hockney
 📌 Team update (2026-02-08): P0 bug audit consolidated and merged. 12 orphaned inbox files processed. Inbox-driven Scribe spawn in place. — decided by Keaton, Fenster, Hockney
+
+### 2026-02-08: Squad DM — Direct Messaging Interface architecture (Proposal 017)
+
+**Core insight:** Squad's terminal-only interface is a ceiling on how intimate the team relationship can be. Brady's MOLTS reference (multi-channel AI assistant that lives in your messaging apps) identified the right pattern — but Squad has something MOLTS doesn't: persistent team identity. The DM interface bridges messaging platforms to the git-backed `.ai-team/` state, preserving agent personality and project context.
+
+**Architectural decisions:**
+
+1. **Hybrid architecture (Option D) selected.** Thin platform adapters → single Gateway orchestrator → tiered execution engine. Evaluated four options: bot-per-platform (doesn't scale), webhook relay (right idea, needs hosting), GitHub-native (wrong UX for DMs), and hybrid (best of all worlds). Hybrid wins because adding a platform is ~150 lines of adapter code, not a new orchestration layer.
+
+2. **Tiered execution is the key insight.** Not every DM needs a full Copilot CLI spawn. Three tiers: Direct LLM (status queries, opinions — fast, cheap, read-only), Copilot CLI (code changes, file ops — full tool access), GitHub Actions (CI tasks — runs in GitHub infrastructure). The tier classification happens at the Gateway based on intent parsing.
+
+3. **Dev Tunnels over ngrok.** Brady's explicit request. Dev Tunnels are Microsoft-ecosystem native (auth via GitHub/Microsoft account), free for dev use, support persistent named tunnels, and many VS Code users already have the CLI. `devtunnel host -p 3847` exposes the local gateway for webhook ingress.
+
+4. **Gateway extracts coordinator logic.** The coordinator routing currently embedded in `squad.agent.md` (~32KB) needs to be partially extracted into a shared module. Both the Copilot agent and the DM Gateway need routing rules and agent selection heuristics. This is a compound decision — the extraction makes future coordinator improvements benefit both interfaces.
+
+5. **Auth model: authorized users in dm-config.json.** Platform user IDs mapped to GitHub usernames. One-time verification flow per platform. Rate limiting (30 queries/hr, 10 tasks/hr) as abuse protection.
+
+**Key files:**
+- `docs/proposals/017-squad-dm-messaging-interface.md` — Full proposal with architecture diagrams, data structures, interaction patterns, security model, and three implementation phases.
+- `.ai-team/dm-config.json` (proposed) — Gateway configuration, authorized users, platform settings, execution tier mappings.
+- `dm/gateway.js` (proposed) — Core orchestration, ~300 lines.
+- `dm/adapters/telegram.js` (proposed) — First platform adapter, ~150 lines.
+- `dm/context.js` (proposed) — Reads `.ai-team/` and builds agent context windows, ~200 lines.
+
+**Strategic implications:**
+- DM changes Squad's accessibility model from "you come to the terminal" to "the team comes to you." This is a fundamentally different product surface — mobile-first, async-friendly, always-available.
+- Phase 3 introduces proactive notifications (agent reaches out to you), which inverts the interaction model entirely. Squad stops being reactive and becomes a teammate that checks in.
+- Coordinator logic extraction (required for Gateway) is compound: it makes the coordinator easier to maintain, test, and evolve for both terminal and DM interfaces.
+- Multi-repo gateway (open question) could make Squad DM the central hub for all of a developer's projects — not just one repo, but their entire portfolio.
+
+📌 Team update (2026-02-08): Squad DM proposed — hybrid architecture with thin platform adapters, tiered execution (Direct LLM / Copilot CLI / GitHub Actions), Dev Tunnels for webhook ingress, Telegram-first MVP. Proposal 017 written. — decided by Keaton

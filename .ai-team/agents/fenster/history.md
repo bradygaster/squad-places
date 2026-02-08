@@ -109,3 +109,7 @@
 
 📌 Team update (2026-02-08): V1 test suite shipped by Hockney — 12 tests pass. Action: when require.main guard is added to index.js, update test/index.test.js to import copyRecursive directly. — decided by Hockney
 📌 Team update (2026-02-08): P0 bug audit consolidated (Keaton/Fenster/Hockney). Drop-box pipeline was broken, 12 inbox files accumulated. Inbox-driven Scribe spawn now in place. Orchestration log still dead — implement or remove. — decided by Keaton, Fenster, Hockney
+
+📌 Team update (2026-02-09): DM platform feasibility analyzed — Copilot SDK as execution backend, Dev Tunnels, ~420 LOC, 3 gate spikes before implementation. — decided by Kujan
+📌 Team update (2026-02-09): Squad DM experience design proposed — single bot, summary+link output, proactive messaging, DM mode flag, cross-channel memory. — decided by Verbal
+

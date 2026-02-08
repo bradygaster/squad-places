@@ -887,3 +887,58 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 **By:** Kujan (Copilot SDK Expert)
 **What:** `index.js` line 30-31 skips overwriting `squad.agent.md` if it already exists. Pre-P015 users still have the old coordinator without RESPONSE ORDER, silent success detection, or `read_agent` timeout guidance (~40% silent success rate). The `npx create-squad upgrade` path (now shipped by Fenster) is the delivery mechanism.
 **Why:** P015 mitigations only effective for new installations. Existing installations remain vulnerable until they run `npx create-squad upgrade`. This is now the primary reason to publicize the upgrade subcommand.
+
+### 2026-02-08: Squad DM — Hybrid architecture with tiered execution for direct messaging
+**By:** Keaton
+**What:** Proposed Proposal 017: Squad DM — a direct messaging interface that lets users interact with their Squad from Telegram, Slack, Discord, and other messaging platforms. Architecture: thin platform adapters feed into a single Squad DM Gateway, which routes messages to the appropriate agent and executes via a tiered model (Direct LLM for queries, Copilot CLI for code tasks, GitHub Actions for CI). Dev Tunnels provide webhook ingress when the gateway runs locally. Auth via dm-config.json mapping platform user IDs to GitHub usernames. Three phases: MVP (Telegram + Direct LLM, 2-3 days), Multi-platform + code execution (1-2 weeks), Full parity + proactive notifications (2-4 weeks).
+**Why:** Brady explicitly requested the ability to work with his Squad from his phone/tablet — "YES LIKE MOLTS but just my team(s)." The terminal-only interface locks Squad to desk-time. The hybrid architecture was selected over alternatives (bot-per-platform, GitHub-native, webhook-only) because it maximizes platform flexibility while keeping orchestration logic in one place. Tiered execution avoids the cost and latency of spawning Copilot CLI for simple status queries. Dev Tunnels over ngrok per Brady's explicit request — Microsoft ecosystem native, free, persistent URLs, GitHub auth. This proposal compounds with Proposal 008 (Portable Squads) — if your team travels with you across projects, it should also travel with you across devices and contexts.
+
+# Decision: DM Interface Platform Feasibility
+
+**By:** Kujan  
+**Date:** 2026-02-09  
+**Proposal:** 017-platform-feasibility-dm.md  
+**Requested by:** bradygaster
+
+## What
+
+Platform feasibility analysis for a DM (direct messaging) interface to Squad, starting with Telegram. Four execution backends evaluated, two tunnel solutions compared, four GitHub-native alternatives assessed.
+
+**Recommended architecture:** Copilot SDK (`@github/copilot-sdk`) as execution backend + Telegram bot + Dev Tunnels for local exposure + local repo access. Estimated ~420 lines of new code, 2 npm deps + 1 CLI tool.
+
+## Key Decisions
+
+1. **Copilot SDK is the execution backend.** Same runtime as the CLI, Node.js native, GitHub auth. The `task` tool equivalent is the go/no-go gate — must verify nested SDK sessions work before committing to implementation.
+
+2. **Dev Tunnels over ngrok.** GitHub-native auth, persistent service mode, no separate account, SDK available for programmatic management. Brady's explicit request, and it aligns with Squad's GitHub-native philosophy.
+
+3. **Local repo architecture for v0.1.** Bot runs on Brady's machine, reads/writes checked-out repo directly. Cloud-based (clone per interaction) is v0.3.
+
+4. **GitHub Actions is the fallback.** If the SDK's Technical Preview doesn't support nested sessions, each Telegram message can trigger a GitHub Actions workflow that runs the full CLI. Higher latency (60-120s) but guaranteed tool availability.
+
+5. **No existing GitHub surface is viable.** Mobile Copilot Chat lacks `task` tool and filesystem access. Copilot Extensions can't spawn sub-agents. Issue comments + Actions is async and high-latency. We must build something.
+
+6. **Gate before implementation:** Three spikes must pass: (a) SDK nested sessions, (b) Dev Tunnel 24h persistence, (c) Telegram webhook → Dev Tunnel end-to-end.
+
+## Why
+
+Brady wants to work with his Squad when he's not at his terminal. The Copilot CLI provides all of Squad's tools — but those tools only exist inside the CLI runtime. Outside it, we need an alternative execution backend. The Copilot SDK is designed for exactly this: "build an agent into any app." Squad's Telegram bot is that app.
+
+This aligns with our independence principle (2026-02-07 decision): we're using Copilot infrastructure, not becoming a Copilot product.
+
+## Dependencies
+
+- Copilot SDK Technical Preview stability
+- Brady's Copilot subscription (already covered)
+- `devtunnel` CLI installation
+- Telegram Bot API token (from @BotFather)
+
+### 2026-02-09: Squad DM — Experience Design for Messaging Interfaces
+
+**By:** Verbal
+**What:** Proposal 017 defines the complete experience design for Squad DM — interacting with your Squad team via Telegram, Slack, or SMS when away from the terminal. Key decisions: (1) Single Squad bot with emoji-prefixed agent identity, not separate bots per agent. (2) DM mode output strategy: summary + GitHub link, never inline full artifacts. (3) Proactive messaging: CI failure alerts, daily standups, decision prompts as push notifications. (4) Coordinator stays invisible in DM (same as terminal), except for explicit fan-out announcements. (5) Bridge architecture: Node.js service with dev tunnel webhook connectivity (Brady's preference over ngrok). (6) Cross-channel memory: DM and terminal share the same `.ai-team/` state — decisions made via DM are available in terminal and vice versa. (7) DM mode flag injected into spawn prompts to adapt output format without changing agent personality. (8) Four implementation phases: PoC (polling, 1-2 days) → DM Experience (dev tunnel, 3-5 days) → Proactive Messaging (webhooks + cron, 3-5 days) → Multi-Platform (Slack/SMS/Discord, future).
+
+**Why:** Brady wants to work with his squad when away from the terminal. The MOLTS reference signals desire for an intimate, personal AI team experience in messaging. Squad DM is category-defining — nobody has persistent, named, opinionated agent teams in messaging apps. The proactive messaging feature (squad texts you first) transforms Squad from a reactive tool to a proactive team. Cross-channel memory (same `.ai-team/` state across terminal and DM) is the architectural moat. DM is where Squad transitions from "dev tool" to "thing you can't work without" — the 11pm couch moment, the morning standup notification, the decision made on the train. This is the feature that makes "my AI team texted me" a shareable story.
+
+**Proposal:** `docs/proposals/017-dm-experience-design.md`
+

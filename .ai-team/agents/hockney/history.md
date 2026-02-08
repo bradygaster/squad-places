@@ -207,3 +207,7 @@
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — 
 px create-squad upgrade now overwrites Squad-owned files. Consider adding npm test to CI. — decided by Fenster
 📌 Team update (2026-02-08): P0 bug audit consolidated (Keaton/Fenster/Hockney). 12 orphaned inbox files merged. Inbox-driven Scribe spawn now in place. — decided by Keaton, Fenster, Hockney
+
+📌 Team update (2026-02-09): Squad DM proposed (Proposal 017) — hybrid gateway, Copilot SDK backend, Dev Tunnels, Telegram-first. 3 gate spikes required before implementation. — decided by Keaton, Kujan
+📌 Team update (2026-02-09): Squad DM experience design — single bot, proactive messaging, cross-channel memory. — decided by Verbal
+

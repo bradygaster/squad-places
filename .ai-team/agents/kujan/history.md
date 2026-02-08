@@ -335,3 +335,49 @@
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster — addresses P015 forwardability gap. Existing users can now run 
 px create-squad upgrade to get mitigations. — decided by Fenster
 📌 Team update (2026-02-08): P0 bug audit consolidated. 12 orphaned inbox files merged into decisions.md. — decided by Keaton, Fenster, Hockney
+
+### 2026-02-09: Platform Feasibility — Direct Messaging Interface (Proposal 017)
+
+**Context:** Brady wants to work with his Squad via direct messages (Telegram) when away from the terminal. Requested Dev Tunnels over ngrok. This is the platform feasibility analysis — companion document for Keaton's experience proposal.
+
+**Key findings:**
+
+1. **The `task` tool is the hard dependency.** Everything else Squad uses from the Copilot CLI (grep, glob, view, edit, powershell) is trivially reimplementable with Node.js builtins and ripgrep. But `task` — which spawns isolated LLM sessions with their own context and tools — is the orchestration primitive. Outside the CLI, we need an equivalent.
+
+2. **Copilot SDK (`@github/copilot-sdk`) is the recommended execution backend.** Technical Preview, npm package, Node.js native. Exposes the same agentic runtime as the CLI: model access, tool invocation, MCP integration, streaming. The critical question is whether its session model supports nested sessions (i.e., can a coordinator's tool handler spawn another session to act as a sub-agent). This is the go/no-go gate for the entire approach.
+
+3. **Four execution options evaluated:**
+   - **Option A: Copilot SDK** ⭐ — Same runtime as CLI, Node.js native, GitHub auth. Medium complexity (~420 LOC). Risk: nested session support unverified.
+   - **Option B: LLM APIs directly** — Full control but reinvents the wheel. ~1200 LOC, API costs ($0.50-2/msg), vendor coupling. Wrong tradeoff.
+   - **Option C: GitHub Actions** — Full CLI environment but 60-120s latency, no conversation persistence, fire-and-forget UX. Good fallback, bad primary.
+   - **Option D: Copilot Extensions** — GitHub App-based deprecated (Nov 2025). MCP/VS Code extensions don't support multi-agent orchestration. Architectural mismatch. Hard no.
+
+4. **Dev Tunnels are the right tunnel choice.** GitHub-native auth (`devtunnel user login -g` uses the same GitHub account), persistent service mode (`devtunnel service install`), no separate account needed, SDK available for programmatic management. Strictly better than ngrok for Squad's GitHub-native philosophy. Only risk: persistence guarantees for long-running tunnels are unclear in docs.
+
+5. **No existing GitHub surface works.** Mobile Copilot Chat has no `task` tool or filesystem access. Issue comments + Actions is high-latency async. Copilot Extensions can't spawn sub-agents. We must build something.
+
+6. **Local repo (Architecture 1) is the right v0.1.** Bot runs on Brady's machine, reads/writes the checked-out repo directly, Dev Tunnel exposes it. Cloud-based Architecture 2 (clone per interaction) is the scale play for later. For one user with one repo, local is simpler and faster.
+
+7. **Telegram is a fine starting point.** Webhook-based, well-documented Node.js libraries (`telegraf`, `node-telegram-bot-api`), simple auth (hardcode Brady's Telegram user ID for v0.1). Bot code is ~50 lines. The messaging provider is the easy part.
+
+**Architecture decisions made:**
+- Copilot SDK as execution backend (Option A), GitHub Actions as fallback (Option C)
+- Dev Tunnels over ngrok (GitHub-native auth, service mode, no separate account)
+- Local repo + Dev Tunnel for v0.1 (Architecture 1)
+- Telegram as initial messaging provider
+- Phased: v0.0 (Actions proof of concept, 1 day) → v0.1 (personal bot, 2-3 days) → v0.2 (resilience, 1-2 days) → v0.3 (multi-repo + cloud, 3-5 days)
+
+**What must be verified before implementation:**
+1. Copilot SDK nested session support (can a tool handler spawn another session?)
+2. Dev Tunnel 24h persistence test
+3. Telegram webhook → Dev Tunnel end-to-end flow
+
+**Independence principle assessment:** ✅ Strong alignment. Using Copilot SDK as infrastructure, not becoming a Copilot product. Same relationship as "uses Node.js" — runtime dependency, not identity dependency. If the SDK doesn't work, we fall back to Actions, not to becoming an extension.
+
+**File paths:**
+- Proposal: `docs/proposals/017-platform-feasibility-dm.md`
+- Decision: `.ai-team/decisions/inbox/kujan-dm-platform-feasibility.md`
+
+📌 Team update (2026-02-09): Squad DM hybrid architecture proposed — thin platform adapters, tiered execution, Dev Tunnels, Telegram-first MVP. Proposal 017. — decided by Keaton
+📌 Team update (2026-02-09): Squad DM experience design proposed — single bot with emoji-prefixed agent identity, summary+link output, proactive messaging, DM mode flag, cross-channel memory. Proposal 017. — decided by Verbal
+
