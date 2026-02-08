@@ -98,3 +98,42 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **By:** McManus
 **What:** Demo script (`docs/demo-script.md`) uses beat-based format with three sections per beat: 🎬 ON SCREEN (what viewer sees), 🎙️ VOICEOVER (exact words), 👆 WHAT TO DO (physical actions during recording). Eliminates improvisation — Brady records each beat independently.
 **Why:** Brady's feedback: current script doesn't tell him what to do. Ambiguity costs takes. Beat format makes recording mechanical. Proposal: `docs/proposals/004-demo-script-overhaul.md`. Needs Keaton (feature ordering), Verbal (tone/claims), Brady (final sign-off).
+
+### 2026-02-08: Portable Squads — architecture direction
+
+**By:** Keaton
+**Proposal:** 008-portable-squads.md
+
+**What:** Squad will support exporting and importing team identity across projects via a JSON manifest file. Core architectural decision: separate Team Identity (portable) from Project Context (not portable) at the data model level. History split into `## Portable Knowledge` and `## Project Learnings`. Export format is a single `squad-export.json` manifest. CLI: `npx create-squad export` / `npx create-squad --from <manifest>`. Casting (universe, names, roles) travels unconditionally. No merge in v1 — `--force` replaces with archival.
+
+**Why:** The team is more valuable than the project. Without portability, users rebuild from scratch every time. Opens path to squad sharing (v2) and registries (v3). Aligns with Proposal 007 (both modify history structure, complementary). Requires Hockney's testing infrastructure for round-trip validation. Template changes are backward-compatible.
+
+### 2026-02-08: Agent persistence and latency reduction — tiered response modes
+
+**By:** Kujan + Verbal
+
+**What:** Proposed a tiered response system (Direct → Lightweight → Standard → Full) to replace the current "every interaction spawns an agent" model. Key changes: (1) Coordinator skips re-reading team.md/routing.md/registry.json after first message (context caching), (2) Scribe only spawns when inbox has files to merge, (3) Coordinator may handle trivial single-line tasks directly without spawning, (4) Lightweight spawn template for simple scoped tasks that skips history.md and decisions.md reads, (5) Progressive history summarization for mature projects.
+
+**Why:** Brady's feedback: "later on, the agents get in the way more than they help." Root cause is that every interaction pays the same 9-10 tool call overhead (~30-35s) regardless of task complexity. By message 10, trivial tasks take 30+ seconds for what should be a 5-second change. P0 fixes (context caching + Scribe batching) are zero-risk instruction changes that save ~12-17s per message. P1 fixes (tiered modes + coordinator direct handling) transform the late-session experience from friction to flow.
+
+**Proposal:** `docs/proposals/007-agent-persistence-and-latency.md`
+
+### 2026-02-08: Portable squads — export/import design and platform feasibility
+
+**By:** Kujan
+
+**What:** Designed the portable squads feature: CLI subcommands (`create-squad export` / `create-squad import <file>`), `.squad` JSON file format, export payload definition, import flow, and coordinator integration. Key decisions: (1) Single JSON file format over tarball/directory, (2) refuse merge in v0.1 (existing squad → error), (3) manual history curation in v0.1 with LLM-assisted cleanup in v0.2, (4) `imported_from` one-time flag in registry.json for coordinator onboarding detection, (5) Scribe history excluded from export (project-specific), Scribe charter included.
+
+**Why:** Brady wants users to move squads between projects. The feature is pure CLI/filesystem — no Copilot platform constraints. History splitting (portable user preferences vs. project-specific facts) is the only hard problem; v0.1 punts to manual curation. Merge support deferred to v0.3 due to universe conflicts and name collision complexity. Implementation is ~80 lines in `index.js`, ~10 lines in `squad.agent.md`. No new dependencies.
+
+**Proposal:** `docs/proposals/008-portable-squads-platform.md`
+
+### 2026-02-08: Portable Squads — memory architecture and experience design
+
+**By:** Verbal
+
+**What:** Portable squads require a memory split: separate `preferences.md` (user-specific, portable) from `history.md` (project-specific, stays). Add `squad-profile.md` for team-level meta-history. Export packages charters + preferences + casting + coordinator. Import reconstitutes the squad with user knowledge intact but project context empty. Import skips casting ceremony. Narrative markdown format for v1.
+
+**Why:** Nobody in the industry has portable agent teams — category-defining feature. Stickiness through relationship capital, not lock-in. Filesystem-backed memory makes export trivially simple. Enables future phases: squad templates, team-shared squads, marketplace. Aligns with Proposal 007's progressive summarization.
+
+**Proposal:** `docs/proposals/008-portable-squads-experience.md`

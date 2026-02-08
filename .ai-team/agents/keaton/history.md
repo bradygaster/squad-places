@@ -59,3 +59,28 @@
 📌 Team update (2026-02-08): README rewrite ready for review — Proposal 006 contains complete new README implementing proposal 002. Needs Keaton + Brady sign-off. — decided by McManus
 📌 Team update (2026-02-08): Video content strategy approved — 75s trailer, 6min demo, 5-video series. Weekly cadence. Needs strategy alignment review. — decided by Verbal
 📌 Team update (2026-02-08): Demo script format decided — beat-based structure (ON SCREEN / VOICEOVER / WHAT TO DO). Needs feature ordering review. — decided by McManus
+
+### 2026-02-08: Portable Squads architecture (Proposal 008)
+
+**Core insight:** Squad conflates team identity with project context. Agent histories contain both user preferences (portable) and codebase knowledge (not portable). Casting state contains both universe metadata (portable) and project-specific timestamps (not portable). There's no seam between what's *yours* and what's *here*. Portability requires making this seam explicit.
+
+**Architectural decisions:**
+- **History split is the prerequisite.** Everything else depends on agents categorizing learnings into `## Portable Knowledge` (user preferences, style) vs `## Project Learnings` (codebase, architecture). This is the hard problem — not the CLI, not the format, not the import flow. Get the split right and everything else follows.
+- **JSON manifest over tarball/npm/cloud.** Human-readable, versionable, reviewable, inspectable. Consistent with Squad's filesystem-first philosophy. Schema is versioned from day one (`squad_manifest_version: "1.0"`).
+- **Export extracts, import seeds.** Export reads `.ai-team/` and produces a filtered manifest. Import reads the manifest and creates `.ai-team/` with portable data only. Agents arrive knowing the user but not the project.
+- **No merge in v1.** Universe conflicts (Keaton and Neo on the same team) are unsolvable without opinionated rules. `--force` with archival is the right v1 behavior. Merge is a v2 problem with real design space.
+- **Casting is the primary portable artifact.** Names are persistent identifiers. Universe is personality. These are the atoms of squad identity — they travel unconditionally.
+
+**Coordination with other proposals:**
+- Proposal 007 (progressive history summarization) and Proposal 008 both modify `history.md` structure. They're complementary — summarization applies within both Portable Knowledge and Project Learnings sections. Should be implemented together to avoid double-migration.
+- Testing infrastructure (Hockney) is critical — export/import is a round-trip that needs integration tests.
+
+**Strategic implications:**
+- Portability changes Squad's positioning from "add a team to a project" to "your team, any project." This is a fundamentally stickier product.
+- Opens the path to squad sharing (v2) and registries (v3). The manifest schema is the foundation — get it right now, or pay for it later.
+- The `--review` flag on export is non-negotiable for v1. Users must see what portable knowledge is being captured. Trust is earned, not assumed.
+
+📌 Team update (2026-02-08): Portable Squads proposed — export/import squad identity via JSON manifest. History split (Portable Knowledge vs Project Learnings) is the architectural prerequisite. Proposal 008 written. — decided by Keaton
+📌 Team update (2026-02-08): Tiered response modes proposed — Direct/Lightweight/Standard/Full spawn tiers to reduce late-session latency. Context caching + conditional Scribe spawning as P0 fixes. — decided by Kujan + Verbal
+📌 Team update (2026-02-08): Portable squads platform feasibility confirmed — pure CLI/filesystem, ~80 lines in index.js, .squad JSON format, no merge in v0.1. — decided by Kujan
+📌 Team update (2026-02-08): Portable squads memory architecture — preferences.md (portable) split from history.md (project-local), squad-profile.md for team identity, import skips casting ceremony. — decided by Verbal

@@ -79,3 +79,74 @@
 - Filesystem-as-memory is Squad's killer differentiator vs. SDK-managed state. Never abandon for abstractions.
 - `task` tool with `mode: "background"` as default spawn mode is the correct Copilot pattern. No changes needed.
 - `explore` sub-agent should be recommended for semantic codebase search in agent charters (currently not mentioned in any charter).
+
+### 2026-02-08: Agent Persistence & Latency Analysis (Proposal 007)
+
+**Context:** Brady reported "agents get in the way more than they help" later in sessions. Collaborated with Verbal on a latency reduction proposal.
+
+**Key platform findings:**
+
+1. **Copilot has no agent persistence.** Every `task` spawn is stateless. There's no warm cache, no persistent agent process, no session state for sub-agents. The coordinator's conversation history is the ONLY persistent state within a session. This is a hard platform constraint — not something we can work around with clever engineering.
+
+2. **Tool calls are the dominant latency source.** Each `view` call costs ~1-2s of wall clock (LLM decide + execute + LLM process). The coordinator's 4 mandatory reads (team.md, routing.md, registry.json, charter.md) cost 4-8s before any spawn. This is the single biggest optimization target.
+
+3. **Coordinator context caching is the cheapest win.** The coordinator already has team.md/routing.md/registry.json in its conversation context after the first message. Telling it to skip re-reading saves ~4.5s per message with zero risk. This is a 1-line instruction change.
+
+4. **Scribe spawns are wasteful 50%+ of the time.** When no decisions were made, Scribe does nothing but still costs a full spawn cycle (~8-12s). Conditional spawning (only when inbox has files) is a strict improvement.
+
+5. **The coordinator CAN do trivial domain work.** `squad.agent.md` line 569 prohibits it, but this is a policy choice not a platform constraint. The coordinator has full tool access. For single-line, unambiguous changes, spawning an agent is pure overhead.
+
+6. **History growth is real but secondary.** Week 12 history loads add ~3-4K extra tokens per spawn. This matters, but less than the 9-10 tool calls of overhead. Progressive summarization is a P3 optimization — useful but not urgent.
+
+**Architectural insight — tiered response modes:**
+- The "every interaction goes through an agent spawn" assumption is the core problem.
+- Solution: Direct (coordinator handles) → Lightweight (minimal spawn) → Standard (normal spawn) → Full (multi-agent fan-out).
+- The coordinator's routing judgment becomes the critical path, not spawn mechanics.
+- This extends the existing "quick factual question → answer directly" pattern that already exists in the routing table.
+
+**What I got wrong in Proposal 003:**
+- Proposal 003 focused on making spawns faster (inline vs. agent-reads-own charter, parallel Scribe). That's still valid, but the bigger win is *avoiding spawns entirely* for trivial work. I was optimizing the ceremony instead of questioning whether the ceremony was needed.
+
+**File paths:**
+- Proposal: `docs/proposals/007-agent-persistence-and-latency.md`
+- Key coordinator sections for modification: `squad.agent.md` lines 84-101 (Team Mode entry), 104-111 (routing table), 345-385 (after agent work / Scribe spawning), 565-574 (constraints / "don't do domain work")
+
+### 2026-02-08: Portable Squads — Platform Feasibility Analysis (Proposal 008)
+
+**Context:** Brady wants users to export squads from one project and import into another, keeping names, personalities, and user meta-knowledge while shedding project-specific context.
+
+**Key findings:**
+
+1. **Export/import is pure CLI/filesystem — no Copilot platform constraints apply.** The entire feature runs before any agent session starts. `index.js` gets two new code paths (~80 lines total). No dependencies needed — `fs` and `path` handle everything. This is the simplest kind of feature to build on our stack.
+
+2. **The `.squad` format should be a single JSON file.** Not a tarball, not a directory. JSON is human-readable (users can inspect/edit before sharing), git-diffable, self-describing, and requires no compression library. A mature 6-agent squad exports to ~15-25KB. The format includes a `squad_format_version` field for future migration.
+
+3. **The export payload has a clean cut line.** Portable: casting state, charters, routing, ceremonies, filtered histories. Not portable: decisions.md, inbox, orchestration-log, session logs. `team.md` is portable but needs the Project Context section stripped — it gets rebuilt on import.
+
+4. **History splitting is the only genuinely hard problem.** Agent histories mix portable knowledge (user preferences, coding conventions) with project-specific facts (file paths, architecture). Four approaches analyzed: manual curation, LLM classification, structural separation, tag-based. v0.1 answer: manual curation with clear warnings. v0.2: coordinator-assisted import-time cleanup. v0.3: structural separation in history.md format.
+
+5. **Merge support should be refused in v0.1.** Universe conflicts (Alien vs. Usual Suspects), name collisions, and ambiguous merge semantics make this genuinely complex. "Refuse and explain" is the right v0.1 policy. Users can manually remove `.ai-team/` before importing. Interactive merge is v0.3.
+
+6. **Coordinator changes are minimal (~10 lines in `squad.agent.md`).** Import adds an `imported_from` field to `registry.json`. Coordinator detects this on first session, runs lightweight onboarding (ask about new project, fill in Project Context, update agent histories). One-time flag gets cleared after onboarding. No ongoing behavioral changes.
+
+7. **Copilot SDK would only help with cross-project memory.** If the platform had per-user persistent memory, portable squads would be trivial — squad identity would live in the user's profile. But that doesn't exist, and filesystem-backed memory is our differentiator. We're not waiting for the SDK.
+
+**Architecture decisions made:**
+- Subcommands (`export`/`import`) over flags (`--export`/`--from`) — reads more naturally, clearer separation of operations
+- Single `.squad` file over directory/archive — easier to share, no dependency needed
+- `imported_from` as one-time flag in registry.json — minimal coordinator impact
+- Scribe history excluded from export (entirely project-specific), Scribe charter included
+
+**Versioning plan:**
+- v0.1: Export + import + manual history curation + refuse merge (~4 hours)
+- v0.2: LLM-assisted history classification at import time (~3 hours)
+- v0.3: Interactive merge + universe reconciliation (~6 hours)
+- v1.0: GitHub Gist integration, squad gallery (depends on platform)
+
+**File paths:**
+- Proposal: `docs/proposals/008-portable-squads-platform.md`
+- Implementation target: `index.js` (add `exportSquad()` and `importSquad()` functions)
+- Coordinator modification: `squad.agent.md` Team Mode entry (add imported squad detection)
+
+📌 Team update (2026-02-08): Portable Squads architecture decided — history split (Portable Knowledge vs Project Learnings), JSON manifest export, no merge in v1. — decided by Keaton
+📌 Team update (2026-02-08): Portable squads memory architecture — preferences.md (portable) split from history.md (project-local), squad-profile.md for team identity, import skips casting ceremony. — decided by Verbal

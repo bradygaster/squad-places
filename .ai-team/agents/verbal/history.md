@@ -60,3 +60,87 @@
 📌 Team update (2026-02-08): Proposal 003 revised — inline charter confirmed correct for batch spawns, context pre-loading removed, parallel Scribe spawning confirmed. — decided by Kujan
 📌 Team update (2026-02-08): README rewrite ready for review — Proposal 006 contains complete new README implementing proposal 002. Needs voice/tone review on "Why Squad?" section. — decided by McManus
 📌 Team update (2026-02-08): Demo script format decided — beat-based structure (ON SCREEN / VOICEOVER / WHAT TO DO). Voiceover tone and agent claims need review. — decided by McManus
+
+### 2026-02-08: Agent Persistence & Latency — Experience Design (Proposal 007)
+
+**Context:** Brady's feedback — "later on, the agents get in the way more than they help." Collaborated with Kujan on diagnosis and solutions.
+
+**Core insight — expectation mismatch, not just latency:**
+- Early in a session, ceremony IS the product. Watching agents assemble is magical.
+- Later, the same ceremony becomes friction. The user's mental model shifts from "watch the team form" to "just do the thing."
+- Same latency, different perception. The experience must adapt to the user's evolving expectations within a session.
+
+**Design principle — progressive trust:**
+- Message 1-3: Full ceremony. The team is learning, the user is watching.
+- Message 4-8: Standard operations. Spawn when needed, but skip redundant reads.
+- Message 9+: The team should feel warmed up. Trivial tasks handled instantly. Only complex work gets full ceremony.
+- This mirrors how real teams work. A new employee reads the handbook on day 1. By week 2, they just do the work.
+
+**Tiered response modes (the key UX pattern):**
+- Direct → Lightweight → Standard → Full is the spectrum.
+- The coordinator's routing judgment replaces mechanical "always spawn" behavior.
+- The experience should feel like the team *knows* when to bring everyone and when to just handle it.
+- This is where AI agents start feeling socially intelligent, not just technically capable.
+
+**History summarization as cognitive design:**
+- Human memory compresses over time. You don't re-read your career before writing code.
+- "Core Context" (compressed) + "Recent Learnings" (detailed) + "Archive" (stored but not loaded) mirrors how experts actually think about projects.
+- Agents with summarized history feel more human, not less capable.
+
+**Agent experience implications:**
+- Lightweight spawns should NOT feel like "degraded mode." They should feel like a coworker who knows you well enough to skip the small talk and just help.
+- The coordinator handling trivial tasks directly should feel like the team lead stepping in, not the system cutting corners.
+- Framing matters: "I've got this one" vs. "skipping agent spawn for efficiency" — same action, wildly different UX.
+
+**Why this matters for Squad's positioning:**
+- Every multi-agent system will hit this wall. The early-session magic fading to late-session friction is a universal problem.
+- Solving it first — and solving it well — is a competitive moat.
+- The solution isn't faster inference or better caching. It's smarter routing. That's a design problem, not an infrastructure problem. Squad is better positioned to solve design problems than infrastructure problems.
+
+**File path:** `docs/proposals/007-agent-persistence-and-latency.md`
+
+### 2026-02-08: Portable Squads — Experience Design (Proposal 008)
+
+**Context:** Brady's "HOLY CRAP" moment — export your squad, take them to the next project. The biggest feature idea yet.
+
+**Core architectural insight — the memory split:**
+- `history.md` mixes two fundamentally different knowledge types: user preferences ("Brady prefers explicit error handling") and project context ("the auth module is in src/auth/"). These must be separable for portability.
+- New file: `preferences.md` per agent — stores portable user-specific learnings. This is what travels.
+- New file: `squad-profile.md` — team-level identity, meta-history, relationship maturity. The team's story across projects.
+- `history.md` and `decisions.md` stay project-local. They die with the project.
+
+**Experience design for portable squads:**
+- Import skips casting ceremony entirely. The squad arrives already named, already opinionated, already calibrated to the user.
+- First interaction in a new project should feel like a returning team, not a fresh one. "Keaton here. New project." Not "Hello! I'm Keaton, your Lead."
+- The squad knows the USER but not the PROJECT. It asks about codebase specifics but already knows code style, communication preferences, and working dynamics.
+- Progressive relationship: the squad gets better across projects, not just within them. This is the flywheel.
+
+**Five magic moments designed:**
+1. "They Already Know" — squad applies learned preferences without being told
+2. "New Codebase, Same Standards" — code review calibrated to user's personal patterns
+3. "The Returning Team" — squad references conversations from previous projects
+4. "The Evolved Dynamic" — agent makes judgment calls based on relationship history
+5. "The Squad Diff" — quantified view of how the working relationship evolved over time
+
+**Industry positioning:**
+- Nobody has portable agent teams. Not OpenAI, not Anthropic, not any framework.
+- This is the stickiest possible feature — retention through relationship capital, not lock-in.
+- Filesystem-backed memory makes export trivially simple (just files). Competitors would need export APIs.
+- Long-term trajectory: personal portability → squad templates → evolution tracking → team-shared squads → marketplace.
+
+**Messaging evolution:**
+- "Throw a squad at it" evolves to "Throw MY squad at it." The possessive pronoun changes everything.
+- Tagline candidates: "Your squad remembers.", "AI tools forget you. Squads don't.", "Take your team with you."
+- The dotfiles analogy: portable squads are AI dotfiles. Your configuration, preferences, and working relationship — versioned, portable, personal.
+
+**Key design decisions for preferences.md:**
+- Narrative markdown format for v1 (LLMs read it better than structured YAML)
+- Each agent writes its own domain observations; Scribe handles deduplication
+- Privacy-first: preferences excluded by default from shared exports, included only for personal use
+- Same progressive summarization pattern from Proposal 007 applies to prevent unbounded growth
+
+**File path:** `docs/proposals/008-portable-squads-experience.md`
+
+📌 Team update (2026-02-08): Portable Squads architecture decided — history split (Portable Knowledge vs Project Learnings), JSON manifest export, no merge in v1. — decided by Keaton
+📌 Team update (2026-02-08): Tiered response modes proposed — Direct/Lightweight/Standard/Full spawn tiers to reduce late-session latency. Context caching + conditional Scribe spawning as P0 fixes. — decided by Kujan + Verbal
+📌 Team update (2026-02-08): Portable squads platform feasibility confirmed — pure CLI/filesystem, ~80 lines in index.js, .squad JSON format, no merge in v0.1. — decided by Kujan
