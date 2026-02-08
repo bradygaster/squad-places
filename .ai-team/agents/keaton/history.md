@@ -29,3 +29,29 @@
 - Coordinator complexity (32KB) is necessary for full orchestration but becomes a maintenance surface. Future work: templatize repeated patterns or extract routing logic.
 - Parallel execution depends on agents respecting shared memory protocols (read decisions.md, write to inbox). If an agent skips this, decisions don't propagate.
 - Casting adds personality but increases init complexity. Policy files, registry files, and history tracking all need to be maintained. Worth it for user experience, but not free.
+
+### 2026-02-07: Proposal-first workflow design
+
+**Core insight:** Squad's mission is beating the industry to what customers need next. That requires compound decisions where each feature makes the next easier. Proposals are the alignment mechanism that makes compound decisions possible.
+
+**Key principles:**
+- **Proposals for meaningful change:** New features, architecture shifts, major refactors, agent design changes, messaging overhauls, breaking changes. Rule: if you'd want to know before merge, it needs a proposal.
+- **Skip proposals for obvious work:** Bug fixes, minor polish, test additions, doc updates (unless policy-changing), dependency updates. Rule: if it's obviously right and reversible, just do it.
+- **Format matters:** Required sections (Summary, Problem, Solution, Trade-offs, Alternatives, Success Criteria) force complete thinking. Located at `docs/proposals/{number}-{slug}.md`.
+- **Review is multi-stage:** Domain specialists (Keaton for architecture, Verbal for AI strategy, others for their areas) + bradygaster always gets final sign-off. Timeline: 48 hours max.
+- **Evolution over perfection:** Before approval, edit directly. After approval, file amendments as new proposals. Cancelled proposals stay in the repo as learning artifacts.
+
+**Trade-offs identified:**
+- Proposals slow down spontaneous shipping but prevent architectural drift. Worth it for compound decision-making.
+- Overhead on small changes is real, but "no proposal needed" category covers most of these.
+- Agents must learn to write proposals (not just code), but that's a feature — architectural thinking is a skill we want agents to develop.
+
+**Why this matters:** Proposal-first is itself a compound decision. By establishing this pattern now, we make future process improvements easier (every process change gets the same review treatment). It's also the first test of whether agents can participate in meta-work (defining how the team works, not just executing tasks).
+
+📌 Team update (2026-02-08): Proposal-first workflow adopted — all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
+📌 Team update (2026-02-08): Stay independent, optimize around Copilot — Squad will not become a Copilot SDK product. Filesystem-backed memory preserved as killer feature. — decided by Kujan
+📌 Team update (2026-02-08): Stress testing prioritized — Squad must build a real project using its own workflow to validate orchestration under real conditions. — decided by Keaton
+📌 Team update (2026-02-08): Baseline testing needed — zero automated tests today; `tap` framework + integration tests required before broader adoption. — decided by Hockney
+📌 Team update (2026-02-08): DevRel polish identified — six onboarding gaps to close: install output, sample-prompts linking, "Why Squad?" section, casting elevation, troubleshooting, demo video. — decided by McManus
+📌 Team update (2026-02-08): Agent experience evolution proposed — adaptive spawn prompts, reviewer protocol with guidance, proactive coordinator chaining. — decided by Verbal
+📌 Team update (2026-02-08): Industry trends identified — dynamic micro-specialists, agent-to-agent negotiation, speculative execution as strategic directions. — decided by Verbal
