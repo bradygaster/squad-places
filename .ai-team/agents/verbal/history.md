@@ -43,8 +43,19 @@
 
 **Why this matters for AI strategy:** Industry trend is "agents execute, humans decide." We're inverting that — agents can propose, humans approve. This is where multi-agent dev needs to go: agents with architectural agency, not just task execution. Proposal-first is the governance model that makes that safe.
 
+### 2026-02-07: Video content strategy as first-mover play
+
+- **"Wait what" moment design**: The most shareable moment in any dev video is when the viewer's mental model breaks. For Squad, that moment is agents coordinating through `decisions.md` — writing decisions *for each other* in real time. This looks like agents talking to each other. Nobody is showing this. It's the visual hook that will drive shares.
+- **Don't show code generation, show coordination**: Every AI demo shows code appearing in an editor. That's table stakes. Squad's differentiator on video is the *coordination artifacts* — decisions.md updating, history.md growing, orchestration logs, reviewer rejections. Show the teamwork, not the typing.
+- **Empty folder → working artifact is the recurring visual**: Every video should open on nothing and end on something working. This arc is viscerally satisfying and proves the claim. The `.ai-team/` folder is the visual proof that a *team* built it, not a single model.
+- **Content defines visual language**: First project to define how multi-agent dev *looks on screen* wins the mental model war. When devs think "AI agent team," they should picture Squad's terminal with five named agents running in parallel. Ship content before competitors figure out how to film their own orchestration.
+- **Series > single video**: One viral video gets attention. A series builds an audience that converts to users. Cadence: trailer first (reach), full demo second (conversion), weekly series (depth + SEO + return viewership).
+- **Agent-to-agent as the advanced content play**: Anticipatory work (tester writing tests before code exists), autonomous chaining (coordinator spawning follow-up work without user input), and reviewer protocol (agents rejecting and rerouting work) are the features that demonstrate Copilot's ceiling. These are Videos 3.3 and 3.6 — the content that positions Squad as the most advanced Copilot integration in the ecosystem.
+
 📌 Team update (2026-02-08): Proposal-first workflow adopted — all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
 📌 Team update (2026-02-08): Stay independent, optimize around Copilot — Squad will not become a Copilot SDK product. Filesystem-backed memory preserved as killer feature. — decided by Kujan
 📌 Team update (2026-02-08): Stress testing prioritized — Squad must build a real project using its own workflow to validate orchestration under real conditions. — decided by Keaton
 📌 Team update (2026-02-08): Baseline testing needed — zero automated tests today; `tap` framework + integration tests required before broader adoption. — decided by Hockney
 📌 Team update (2026-02-08): DevRel polish identified — six onboarding gaps to close: install output, sample-prompts linking, "Why Squad?" section, casting elevation, troubleshooting, demo video. — decided by McManus
+📌 Team update (2026-02-08): Proposal 003 revised — inline charter confirmed correct for batch spawns, context pre-loading removed, parallel Scribe spawning confirmed. — decided by Kujan
+📌 Team update (2026-02-08): README rewrite ready for review — Proposal 006 contains complete new README implementing proposal 002. Needs voice/tone review on "Why Squad?" section. — decided by McManus
