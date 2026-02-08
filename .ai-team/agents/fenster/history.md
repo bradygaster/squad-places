@@ -112,4 +112,7 @@
 
 📌 Team update (2026-02-09): DM platform feasibility analyzed — Copilot SDK as execution backend, Dev Tunnels, ~420 LOC, 3 gate spikes before implementation. — decided by Kujan
 📌 Team update (2026-02-09): Squad DM experience design proposed — single bot, summary+link output, proactive messaging, DM mode flag, cross-channel memory. — decided by Verbal
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Wave 1: error handling in index.js, version stamping. Wave 2: smart upgrade, export, skills Phase 1. Wave 3: import, full portability. Squad DM deferred to Wave 4+. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop. — decided by McManus
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — no new infrastructure needed. — decided by Kujan
 

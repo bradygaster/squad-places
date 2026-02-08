@@ -381,3 +381,39 @@ px create-squad upgrade to get mitigations. — decided by Fenster
 📌 Team update (2026-02-09): Squad DM hybrid architecture proposed — thin platform adapters, tiered execution, Dev Tunnels, Telegram-first MVP. Proposal 017. — decided by Keaton
 📌 Team update (2026-02-09): Squad DM experience design proposed — single bot with emoji-prefixed agent identity, summary+link output, proactive messaging, DM mode flag, cross-channel memory. Proposal 017. — decided by Verbal
 
+### 2026-02-09: Human Input Latency and Persistence — Platform Analysis
+
+**Context:** Brady described two pain points: (1) latency when typing while agents work — messages queue and the experience feels unresponsive, (2) human messages are ephemeral — not captured in `.ai-team/` state, so agent directives spoken mid-session are lost to context.
+
+**Key findings:**
+
+1. **Input latency is a hard platform limitation.** The Copilot CLI conversation model is single-threaded. The coordinator gets one turn per user message and processes it to completion before seeing the next message. There is no interrupt mechanism, no message polling API, no way to yield mid-turn and check for new input. When the coordinator is in a `read_agent` call with `wait: true, timeout: 300`, the user's next message waits in queue. No workaround exists within the current platform.
+
+2. **Partial mitigation: Proposal 007's tiered modes reduce the window.** The Direct tier (coordinator handles trivially, no spawn) responds in ~3-5s, dramatically reducing the "dead zone" where the coordinator is unreachable. The Lightweight tier (~8-12s) also helps. The Full tier (~40-60s) is where the latency problem bites hardest, but that's also where the ceremony is earning its keep. The key insight: **the latency problem is worst for trivial requests during complex work, and tiered modes already solve this case.**
+
+3. **A "listener" pattern is not possible on this platform.** The coordinator cannot spawn a background watcher for new messages. The `task` tool spawns isolated agents that cannot read the conversation queue. There's no pub/sub, no event loop, no callback mechanism. The coordinator IS the only listener, and it's single-threaded.
+
+4. **Shorter `read_agent` timeouts would help marginally but risk regression.** Reducing from 300s to, say, 120s would free the coordinator sooner, but risks reintroducing the P0 silent success bug (Proposal 015). The 300s timeout is a MAX, not a fixed delay — `wait: true` returns as soon as the agent finishes. The timeout only matters when agents are slow. Not worth the regression risk.
+
+5. **Human messages as state IS fully solvable today.** The coordinator can write human directives to `.ai-team/decisions/inbox/human-{slug}.md` as its FIRST action on any message that contains a decision, scope change, or explicit directive. Scribe merges these into `decisions.md` on next run. This uses the existing drop-box pattern — zero new infrastructure.
+
+6. **Scribe should NOT serve double duty as a "human listener."** Scribe runs AFTER agent work (step 4-5 of "After Agent Work"). By the time Scribe runs, the coordinator has already processed the human message and dispatched agents. Making Scribe capture human input would require either (a) spawning Scribe before agents (adds latency), or (b) having the coordinator pass human text to Scribe's prompt (redundant — the coordinator could just write the file itself). The coordinator writing directly to the inbox is simpler, faster, and architecturally cleaner.
+
+7. **Not every human message should be persisted.** "change the port to 8080" is a task, not a directive. "skip the skills system for now" is a directive that changes project scope. The coordinator's routing judgment already classifies intent — extend that classification to decide what gets written to the inbox. Over-logging creates noise in `decisions.md` and inflates context for future agents.
+
+8. **Connection to Proposal 017 (DM):** In a Telegram/Slack context, all messages are logged by the platform natively. But `.ai-team/` state still needs the directive-capture pattern because (a) Telegram logs aren't git-backed, (b) agents can't read Telegram history, (c) the coordinator-writes-to-inbox pattern works identically in CLI and DM contexts. This is a converging design — solving it now for CLI also solves it for DM.
+
+**What would require platform changes (feature requests):**
+- Interrupt/preemption mechanism for mid-turn message injection
+- Message queue inspection API (coordinator checks for new messages between tool calls)
+- Async message notification (coordinator gets notified of new input while processing)
+- Multi-turn coordinator sessions (coordinator can yield and resume)
+
+**Decision made:** Coordinator writes human directives to the decision inbox as first action on directive-type messages. Written to `.ai-team/decisions/inbox/kujan-human-input-analysis.md`.
+
+**File paths:**
+- Decision: `.ai-team/decisions/inbox/kujan-human-input-analysis.md`
+
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Wave 2: tiered response modes. Wave 3: lightweight spawn template. Squad DM deferred to Wave 4+. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop. — decided by McManus
+

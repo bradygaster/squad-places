@@ -31,3 +31,6 @@
 
 📌 Team update (2026-02-08): Scribe cascade fix shipped by Verbal — inbox-driven spawn now in coordinator. Scribe spawns if inbox has files, regardless of agent response status. — decided by Verbal
 📌 Team update (2026-02-08): Upgrade subcommand shipped by Fenster. V1 tests shipped by Hockney. P0 bug audit consolidated (Keaton/Fenster/Hockney). — decided by multiple
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Waves replace sprints. Gates are binary. Squad DM deferred to Wave 4+. Supersedes Proposal 009 sprint structure. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop. Demo beat, DM connection, README placements defined. — decided by McManus
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — coordinator writes directive-type messages to decisions inbox as first action. No new infrastructure. — decided by Kujan

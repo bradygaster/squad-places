@@ -212,3 +212,33 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 - Multi-repo gateway (open question) could make Squad DM the central hub for all of a developer's projects — not just one repo, but their entire portfolio.
 
 📌 Team update (2026-02-08): Squad DM proposed — hybrid architecture with thin platform adapters, tiered execution (Direct LLM / Copilot CLI / GitHub Actions), Dev Tunnels for webhook ingress, Telegram-first MVP. Proposal 017 written. — decided by Keaton
+
+### 2026-02-09: Wave-based execution plan (Proposal 018)
+
+**Core insight:** Brady's directive — quality then experience — requires reorganizing work by trust level, not by capability. Proposal 009's sprint structure (fast → yours → smart) was organized around features. Proposal 018's wave structure (trustworthy → feels right → magical) is organized around user confidence. Each wave's quality investments make the next wave's experience work lower-risk.
+
+**Key architectural decisions:**
+
+1. **Waves, not sprints.** Sprints have fixed timelines. Waves have gates. A wave doesn't end when the calendar says so — it ends when the quality criteria are met. Binary gates: all pass or the next wave doesn't start.
+
+2. **Wave 1.5 — the parallel content track.** Zero-risk experience work (README, messaging, Squad Paper) can run alongside quality work. This respects Brady's "quality first" while not leaving McManus and Verbal idle. Content never conflicts with code.
+
+3. **Export before import.** Fenster estimated 11-14h for full portability. Splitting export (Wave 2, ~4h) from import (Wave 3, ~5-6h) is the right cut. Export is useful standalone (backup, sharing, diffing). Import builds on it.
+
+4. **Skills Phase 1 is template-only.** Full skills system is too big for one wave. Phase 1 (Wave 2): add the SKILL.md format to templates and teach agents to read skills. Phase 2 (Wave 3): earned skills, confidence lifecycle, MCP declarations. Each phase is independently useful.
+
+5. **Squad DM deferred to Wave 4+.** Proposal 017 is architecturally sound but it's a second product surface. Building it before the core CLI is bulletproof creates two half-finished products. Quality first means the terminal experience ships complete before we open new surfaces.
+
+6. **Init behavior preserved.** Proposal 009 proposed always-overwriting squad.agent.md on init. That's already been handled differently — init skips, upgrade overwrites. Changing init now breaks 4 tests and 9 users' expectations. The upgrade subcommand is the correct delivery mechanism.
+
+**What got cut and why:**
+- Conditional memory loading (~1.5s/spawn) — tiered modes save 25+ seconds on trivial tasks. Optimize the big thing first.
+- LLM history classification — manual curation is honest and correct for v1.
+- Squad merge — design problem, not engineering problem. `--force` with archival.
+- Agent-to-agent negotiation, speculative execution — fascinating, premature.
+
+**Total estimate:** 38-51h across 3 waves (~3 weeks with parallelism).
+
+📌 Team update (2026-02-09): Wave-based execution plan proposed — quality → experience ordering. Wave 1: error handling, test expansion, CI, version stamping, silent success fix. Wave 1.5: README, messaging (parallel). Wave 2: tiered modes, skills Phase 1, export. Wave 3: import, skills Phase 2, history summarization. Squad DM deferred to Wave 4+. Proposal 018 written. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop, demo beat, DM connection. — decided by McManus
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — platform input latency is unsolvable, but directive persistence uses existing drop-box. — decided by Kujan

@@ -120,6 +120,8 @@
 📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) with MCP tool declarations -- decided by Verbal
 
 📌 Team update (2026-02-08): Fenster recommends README drafting can start Day 1 (fully parallel) -- decided by Fenster
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Wave 1.5 (parallel): README rewrite, messaging, Squad Paper. Squad DM deferred to Wave 4+. — decided by Keaton
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — no new infrastructure needed. — decided by Kujan
 
 ### Documentation audit — silent success bug check (2026-02-09)
 - **README.md**: INTACT. 232 lines, no truncation. All internal anchor links (#status, #how-it-works) resolve correctly. Content matches current product state. No corruption detected.
@@ -145,4 +147,12 @@
 📌 Team update (2026-02-08): P0 bug audit consolidated. Demo script ACT 7 restoration confirmed merged into decisions.md. — decided by Keaton, Fenster, Hockney
 
 📌 Team update (2026-02-09): Squad DM proposed (Proposal 017) — hybrid gateway with tiered execution, Copilot SDK backend, Dev Tunnels, Telegram-first. Experience design: single bot, proactive messaging, cross-channel memory. 3 gate spikes before implementation. — decided by Keaton, Kujan, Verbal
+
+### "Where are we?" messaging beat identified (2026-02-09)
+- **The insight:** Brady asked "where are we?" and got instant team-wide status — proof of persistent memory, shared state, and coordinator intelligence in a single two-second interaction. His reaction ("that is SO hot, such a feature") signals a visceral value prop moment we weren't messaging.
+- **New messaging beat:** "Ask Your Team, Not Your Dashboard" — sits alongside portability, skills, and parallel execution as a top-tier value prop. Demonstrates three features simultaneously without explaining any of them.
+- **Demo beat:** "The Check-In" — 30-second demo moment. Three words typed → comprehensive status. Usable in v1 demo (BEAT 4.5), introductory demo (end of ACT 7), and standalone social clip.
+- **DM connection:** "Where are we?" from a terminal is cool. From Telegram at 11pm? Category-defining. This becomes the lead demo for Squad DM launch (Proposal 017). The progression: terminal ask → DM ask → proactive standup (you don't even ask).
+- **README placements:** Two spots — closing beat of "Why Squad?" (emotional hook) and follow-up in "Agents Work in Parallel" (completes the "step away / come back" arc). Standalone section deferred to DM launch.
+- **Key files:** `docs/proposals/014a-where-are-we-messaging-beat.md` (this amendment), `docs/proposals/014-v1-messaging-and-launch.md` (parent proposal), `docs/proposals/017-dm-experience-design.md` (DM connection)
 

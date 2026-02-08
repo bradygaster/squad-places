@@ -210,4 +210,7 @@ px create-squad upgrade now overwrites Squad-owned files. Consider adding npm te
 
 📌 Team update (2026-02-09): Squad DM proposed (Proposal 017) — hybrid gateway, Copilot SDK backend, Dev Tunnels, Telegram-first. 3 gate spikes required before implementation. — decided by Keaton, Kujan
 📌 Team update (2026-02-09): Squad DM experience design — single bot, proactive messaging, cross-channel memory. — decided by Verbal
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Wave 1: error handling, tests, CI. Wave 2: tiered modes, skills, export. Wave 3: import, skills Phase 2. Squad DM deferred to Wave 4+. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — instant team-wide status as core value prop. — decided by McManus
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — no new infrastructure needed. — decided by Kujan
 

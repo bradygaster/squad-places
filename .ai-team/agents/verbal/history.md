@@ -313,4 +313,7 @@
 **File path:** `docs/proposals/017-dm-experience-design.md`
 
 📌 Team update (2026-02-09): DM platform feasibility analyzed — Copilot SDK recommended as execution backend, Dev Tunnels over ngrok, ~420 LOC, 3 gate spikes required before implementation. — decided by Kujan
+📌 Team update (2026-02-09): Wave-based execution plan adopted (Proposal 018) — quality → experience ordering. Wave 1.5 (parallel): README rewrite, messaging, Squad Paper. Squad DM deferred to Wave 4+. — decided by Keaton
+📌 Team update (2026-02-09): "Where are we?" elevated to messaging beat (Proposal 014a) — demo beat, DM connection, README placements defined. — decided by McManus
+📌 Team update (2026-02-09): Human directives persist via coordinator-writes-to-inbox pattern — no new infrastructure needed. — decided by Kujan
 
