@@ -58,3 +58,4 @@
 📌 Team update (2026-02-08): Proposal 003 revised — inline charter confirmed correct for batch spawns, context pre-loading removed, parallel Scribe spawning confirmed. — decided by Kujan
 📌 Team update (2026-02-08): README rewrite ready for review — Proposal 006 contains complete new README implementing proposal 002. Needs Keaton + Brady sign-off. — decided by McManus
 📌 Team update (2026-02-08): Video content strategy approved — 75s trailer, 6min demo, 5-video series. Weekly cadence. Needs strategy alignment review. — decided by Verbal
+📌 Team update (2026-02-08): Demo script format decided — beat-based structure (ON SCREEN / VOICEOVER / WHAT TO DO). Needs feature ordering review. — decided by McManus
