@@ -1,8 +1,10 @@
 # Squad Documentation
 
-User-facing documentation for Squad.
+Public-facing documentation for Squad. GitHub Pages ready.
 
-> **Note:** Internal planning docs (proposals, blog drafts, sprint plans) live on development branches, not here. This directory contains only documentation that helps Squad users.
+This directory contains only documentation intended for Squad users — guides, sample prompts, API docs, and assets. No internal team content belongs here.
+
+> **Internal team docs** (proposals, sprint plans, postmortems, blog drafts) live in [`team-docs/`](../team-docs/).
 
 ## Contents
 
