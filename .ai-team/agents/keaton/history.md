@@ -284,3 +284,30 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 📌 Team update (2026-02-09): Sprint plan amendments filed (019a) — README is living (updated per wave), `create-squad` unscoped name to be registered, human feedback is 5th directive, blog post per wave + blog engine sample prompt, VS Code smoke test in Wave 1. +8.5h effort, no calendar impact. — decided by Keaton
 
 📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).
+
+### 2026-02-09: No npm — GitHub-only distribution, release process, Kobayashi hired
+
+**Core insight:** Brady killed the npm publish model entirely. Squad is GitHub-only: `npx github:bradygaster/squad`. This is simpler than dual-publish, eliminates npm auth/registry/publish CI complexity, and keeps the entire project lifecycle on one platform. My recommendation to register the unscoped `create-squad` name was wrong — Brady's instinct to stay GitHub-native is better architecture. One platform, one distribution mechanism, one source of truth.
+
+**Key decisions:**
+
+1. **Item 1.8 (npm registration) CANCELLED.** The entire Directive 3 analysis in 019a (Options A/B/C) is moot. Rewrote it to reflect reality.
+
+2. **Kobayashi (Git & Release Engineer) joins the team.** This is the right call. Git is our state maintenance layer — `.ai-team/`, drop-box, casting registry, orchestration logs. The silent success bug cascade (Session 4 findings) showed what happens when git state isn't actively maintained. A dedicated owner prevents that class of failure.
+
+3. **Three new Wave 1 items (1.11, 1.12, 1.13).** Release workflow, branch strategy, and first tagged release. 1.13 is a gate EXIT criterion — Wave 1 quality gate must pass first, then Kobayashi cuts v0.1.0, then Wave 2 features begin. This ensures every release is a quality-verified artifact.
+
+4. **Item 1.3 ownership split.** Hockney + Kobayashi. Separation of concerns: Kobayashi owns Actions YAML, Hockney owns test assertions. Neither needs to understand the other's domain.
+
+5. **Effort totals updated.** Wave 1: 18-22h (was 15-18h). Total: 55.5-71.5h (was 52.5-67.5h). Kobayashi's work parallelizes with existing agents, so calendar impact is moderate.
+
+**Strategic implications:**
+- GitHub Releases become the versioning and distribution mechanism. Tags are versions. The release workflow validates tests before publish. This is cleaner than npm's publish model.
+- Kobayashi's detailed release proposal (021) will define the specifics. I slotted the work into waves; Kobayashi owns the implementation details.
+- The `upgrade` subcommand needs to pull from GitHub releases/tags, not npm. This is a design change Fenster should incorporate into 1.4 (version stamping).
+
+📌 Team update (2026-02-09): No npm publish — GitHub-only distribution via `npx github:bradygaster/squad`. Item 1.8 CANCELLED. Kobayashi (Git & Release Engineer) hired. Items 1.11 (release workflow), 1.12 (branch strategy), 1.13 (first tagged release v0.1.0) added to Wave 1. Item 1.3 ownership updated to Hockney + Kobayashi. — decided by Brady, executed by Keaton
+
+## Team Updates
+
+📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.

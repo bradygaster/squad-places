@@ -1258,3 +1258,106 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 ---
 
 **Review requested from:** bradygaster (package naming decision), Keaton (architecture), Fenster (implementation)
+
+### 2026-02-09: No npm — GitHub-only distribution, release plan needed, Git specialist hired
+
+**By:** bradygaster (human)
+
+**Decisions:**
+
+1. **No npm publish. Ever.** Squad is distributed exclusively via GitHub: `npx github:bradygaster/squad`. No npm registry involvement.
+
+2. **Update mechanism required:** Users must be able to run something to get the latest Squad without breaking their `.ai-team/` state. The `upgrade` subcommand already exists — it needs to pull from the latest GitHub release/tag, not npm.
+
+3. **Release plan needed:** Proper GitHub Releases with tags, versioning, changelogs. We need a release workflow.
+
+4. **Git/GitHub specialist:** Hire a dedicated team member who owns ALL git and GitHub responsibilities — releases, tags, branch strategy, state integrity, CI/CD, GitHub Actions. Git is our state maintenance — we can't mess it up.
+
+5. **Item 1.8 from Proposal 019a (Register create-squad on npm) is CANCELLED.**
+
+
+### 2026-02-09: No npm publish — GitHub-hosted npx only
+
+**By:** bradygaster (human)
+
+**Decision:** Squad is NOT published to npm. Not now, not ever. Brady does not want npm publish. The package is consumed exclusively via GitHub-hosted npx:
+
+```bash
+npx github:bradygaster/squad
+```
+
+**Impact on Proposal 019a:**
+- Item 1.8 (Register `create-squad` on npm) — **CANCELLED**
+- Keaton's and McManus's recommendation to register `create-squad` unscoped — **REJECTED**
+- All documentation, README, sample prompts must use `npx github:bradygaster/squad` syntax
+- No dual-publish, no npm scope, no registry concerns
+
+**What this means for naming:**
+- The "package name" is the GitHub repo name: `bradygaster/squad`
+- Users run: `npx github:bradygaster/squad` (init), `npx github:bradygaster/squad upgrade` (upgrade)
+- If Brady renames the repo, the npx command changes automatically
+- No npm auth, no publish CI, no registry maintenance
+
+
+### 2026-02-09: No npm distribution — GitHub-only model, Kobayashi hired, release plan slotted
+
+**By:** Keaton (Lead), executing Brady's session 6 directives
+
+**Decisions:**
+
+1. **Item 1.8 (Register `create-squad` on npm) is CANCELLED.** Brady's decision: no npm publish, ever. Squad is distributed exclusively via `npx github:bradygaster/squad`. My previous recommendation to register the unscoped `create-squad` name is withdrawn.
+
+2. **Kobayashi (Git & Release Engineer) joins the team.** Owns ALL git and GitHub responsibilities: releases, tags, branch strategy, CI/CD workflows, state integrity. Git is our state maintenance layer — `.ai-team/`, the drop-box pattern, casting registry — and a dedicated owner is the right call.
+
+3. **Three new Wave 1 items added:**
+   - **1.11:** Release workflow (GitHub Actions) — Kobayashi, 2h
+   - **1.12:** Branch strategy and merge to main — Kobayashi, 1-2h
+   - **1.13:** First tagged release v0.1.0 — Kobayashi, 1h (Wave 1 gate exit criterion)
+
+4. **Item 1.3 (CI setup) ownership updated:** Hockney + Kobayashi. Kobayashi owns the Actions workflow definition, Hockney owns the test content CI runs.
+
+5. **All npm references in 019a updated.** Directive 3 rewritten to reflect GitHub-only distribution. Blog post code examples, CLI references, and effort totals corrected.
+
+6. **Updated effort totals:** Wave 1 increases from 15-18h to 18-22h. Total increases from 52.5-67.5h to 55.5-71.5h. Calendar impact is moderate — Kobayashi's work parallelizes with existing agents.
+
+**Impact on Proposal 019:**
+- Directive 3 (Package Naming) is now "GitHub-Only Distribution"
+- New Directive 6 added to 019a: "GitHub-Only Distribution & Release Process"
+- Wave 1 gate exit now requires v0.1.0 tagged release
+- Kobayashi is writing detailed release proposal (021)
+
+**Filed in:** `docs/proposals/019a-sprint-plan-amendments.md` (Directive 6 section added)
+
+
+### 2025-07-16: Proposal 021 — Release Plan & Distribution Strategy
+
+**By:** Kobayashi (Git & Release Engineer)
+
+**Decisions proposed (pending Brady's approval):**
+
+1. **Distribution model:** `npx github:bradygaster/squad` pulls `main` HEAD. Version pinning uses `#` syntax: `npx github:bradygaster/squad#v0.2.0`. No npm publish — ever.
+
+2. **Branch strategy:** `main` is release-only (always stable, always what users get). `squadify` is the development branch. Merges to `main` happen only during the release process. Direct push to `main` is prohibited.
+
+3. **Tag format:** `v{MAJOR}.{MINOR}.{PATCH}` — e.g., `v0.1.0`, `v0.2.0`. Tags are immutable.
+
+4. **Semantic versioning (pre-v1):** Minor bump for new features/breaking changes, patch bump for bug fixes and content changes. Wave completion → minor bump.
+
+5. **CI pipeline:** `.github/workflows/ci.yml` — runs `npm test` on push/PR to `main` and `squadify`. Node 22.x, ubuntu-latest. Includes smoke test (init) and state integrity test (upgrade preserves `.ai-team/`).
+
+6. **Release automation:** `.github/workflows/release.yml` — triggered by `v*` tag push. Validates tag matches `package.json` version, runs tests, creates GitHub Release with install/upgrade/pin instructions, verifies npx resolution.
+
+7. **State integrity:** `.ai-team/` is never touched by upgrade — enforced in CI with a sentinel file test. `.ai-team/` stays out of `.gitignore` (it's user state that should be committed).
+
+8. **Release authority:** Open question — does Brady approve each release, or can Kobayashi cut releases when wave gates pass?
+
+**Proposal location:** `docs/proposals/021-release-plan-and-distribution.md`
+
+**Implements:** Sprint Plan items 1.3 (CI setup), release process (new scope), distribution strategy (new scope).
+
+**Open questions for Brady:**
+- Tag `v0.1.0` now or wait for Wave 1 → `v0.2.0`?
+- Is the repo public or private? (affects branch protection and API access)
+- Release authority model?
+- When to merge `squadify` → `main` for the first time?
+

@@ -18,6 +18,7 @@
 | Fenster | Core Dev | `.ai-team/agents/fenster/charter.md` | ✅ Active |
 | Hockney | Tester | `.ai-team/agents/hockney/charter.md` | ✅ Active |
 | Kujan | Copilot SDK Expert | `.ai-team/agents/kujan/charter.md` | ✅ Active |
+| Kobayashi | Git & Release Engineer | `.ai-team/agents/kobayashi/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.ai-team/agents/scribe/charter.md` | 📋 Silent |
 
 ## Project Context

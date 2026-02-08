@@ -88,7 +88,7 @@ One-paragraph preview of the next wave.
 ## Try It
 
 ```bash
-npx @bradygaster/create-squad upgrade
+npx github:bradygaster/squad upgrade
 ```
 ```
 
@@ -141,67 +141,38 @@ Make it gorgeous. This blog tells the story of a product being built.
 
 ---
 
-## Directive 3: Package Naming
+## Directive 3: Package Naming — GitHub-Only Distribution
 
 **Brady said:** *"today the package is just bradygaster/squad. if we are going to do an export or an update - i'd love if folks could run an npx command to get an update to their squad without breaking their squad"*
 
+**Brady's subsequent decision (Session 6):** *No npm publish. Ever.* Squad is distributed exclusively via GitHub: `npx github:bradygaster/squad`. No npm registry involvement.
+
 ### Current State
 
-- Package name: `@bradygaster/create-squad`
-- `npx @bradygaster/create-squad` → init
-- `npx @bradygaster/create-squad upgrade` → upgrade
-- Future: `npx @bradygaster/create-squad export` → export
+- Package lives on GitHub: `bradygaster/squad`
+- `npx github:bradygaster/squad` → init
+- `npx github:bradygaster/squad upgrade` → upgrade
+- Future: `npx github:bradygaster/squad export` → export
 
-### Analysis
+### Analysis — SUPERSEDED
 
-**Option A: Keep `@bradygaster/create-squad` (current)**
-- ✅ Follows npm `create-*` convention (`npx create-react-app`, `npx create-next-app`)
-- ✅ Already published, already has users
-- ✅ Subcommands (`upgrade`, `export`, `import`) work naturally
-- ❌ `@bradygaster/create-squad upgrade` is long to type
-- ❌ Scope prefix feels heavy for a community tool
+The original analysis in this directive (Options A/B/C, `create-squad` npm registration) is **moot**. Brady has decided: no npm, no registry, no dual-publish. The distribution model is GitHub-only via `npx github:bradygaster/squad`. This is simpler, cleaner, and eliminates an entire class of maintenance (npm auth, publish CI, registry concerns).
 
-**Option B: `@bradygaster/squad` with subcommands**
-- ✅ Shorter: `npx @bradygaster/squad upgrade`
-- ❌ Breaks the `create-*` convention — `npx @bradygaster/squad` doesn't imply initialization
-- ❌ Requires rename now — breaks existing users' muscle memory
-- ❌ `squad` alone doesn't signal "this creates something"
-
-**Option C: `create-squad` (no scope) — RECOMMENDED**
-- ✅ Shortest: `npx create-squad`, `npx create-squad upgrade`
-- ✅ Follows the exact convention: `npm create squad` works (npm `create` resolves to `create-squad`)
-- ✅ **Available on npm** — confirmed via registry lookup, 404 (unregistered)
-- ✅ Memorable, shareable, professional
-- ✅ `npm create squad` is the gold standard UX (`npm create` is an alias for `npm init` which resolves `create-*`)
-- ❌ No scope means you must own the name — but it's available RIGHT NOW
-- ❌ Slight risk: someone else could register it later (irrelevant if we register it)
-
-### My Recommendation: Register `create-squad` Now, Keep `@bradygaster/create-squad` as Alias
-
-**Phase 1 (Now, Wave 1):**
-1. Register `create-squad` on npm immediately. It's available. This is time-sensitive.
-2. Keep publishing as both `create-squad` AND `@bradygaster/create-squad` (npm supports this — same package, two names).
-3. README and docs use `npx create-squad` as the primary command.
-4. `@bradygaster/create-squad` continues to work for existing users.
-
-**Phase 2 (Wave 2, with export):**
-- All commands become clean:
-  - `npx create-squad` — init
-  - `npx create-squad upgrade` — upgrade
-  - `npx create-squad export` — export
-  - `npx create-squad import <file>` — import (Wave 3)
-  - `npm create squad` — the shortest possible init
-
-**Why now:** Brady said "if we need to change our existing name now, that's fine." The unscoped `create-squad` is available TODAY. It may not be tomorrow. Register it and publish under both names. Zero breaking change, maximum future-proofing.
+**What this means:**
+- The "package name" is the GitHub repo name: `bradygaster/squad`
+- Users run: `npx github:bradygaster/squad` (init), `npx github:bradygaster/squad upgrade` (upgrade)
+- If Brady renames the repo, the npx command changes automatically
+- No npm auth, no publish CI, no registry maintenance
+- GitHub Releases and tags become the versioning and distribution mechanism (see Directive 6)
 
 ### Sprint Plan Changes
 
 | ID | Item | Owner | Effort | Wave |
 |----|------|-------|--------|------|
-| 1.8 | Register `create-squad` on npm, dual-publish setup | Fenster | 1h | 1 (ASAP) |
-| 1.5.1 | README uses `npx create-squad` as primary command | McManus | (part of README) | 1.5 |
+| ~~1.8~~ | ~~Register `create-squad` on npm, dual-publish setup~~ | ~~Fenster~~ | ~~1h~~ | **CANCELLED** |
+| 1.5.1 | README uses `npx github:bradygaster/squad` as primary command | McManus | (part of README) | 1.5 |
 
-**Fenster** handles the npm publish config. **McManus** updates all documentation references.
+**Item 1.8 is CANCELLED.** No npm registration, no dual-publish. McManus updates all documentation to use `npx github:bradygaster/squad`.
 
 ---
 
@@ -242,7 +213,7 @@ Directives 3 and 4 are about input (human → system). Directive 5 is about outp
 
 2. **Result summarization after agent work.** When agents finish, the coordinator should synthesize: "All 3 agents completed. Fenster added error handling to index.js. Hockney wrote 8 new tests. Verbal updated 2 spawn prompts. Details in their reports." This is the "what just happened" leg.
 
-3. **CLI output improvements.** `npx create-squad` currently outputs checkmarks. It should also explain what was created and what to do next. (Partially exists — the "Next steps" block is good, but the file list needs context.)
+3. **CLI output improvements.** `npx github:bradygaster/squad` currently outputs checkmarks. It should also explain what was created and what to do next. (Partially exists — the "Next steps" block is good, but the file list needs context.)
 
 ### Sprint Plan Changes
 
@@ -295,9 +266,12 @@ Squad's architecture is platform-agnostic by design:
 
 | ID | Item | Owner | Effort | Wave |
 |----|------|-------|--------|------|
-| 1.8 | Register `create-squad` on npm | Fenster | 1h | 1 |
+| ~~1.8~~ | ~~Register `create-squad` on npm~~ | ~~Fenster~~ | ~~1h~~ | **CANCELLED** (Directive 6) |
 | 1.9 | Progress reporting in coordinator | Verbal + Kujan | 2h | 1 |
 | 1.10 | VS Code parity smoke test | Kujan | 1h | 1 |
+| 1.11 | Release workflow (GitHub Actions) | Kobayashi | 2h | 1 |
+| 1.12 | Branch strategy and merge to main | Kobayashi | 1-2h | 1 |
+| 1.13 | First tagged release (v0.1.0) | Kobayashi | 1h | 1 (gate exit) |
 | B.1 | Blog post: Wave 1 | McManus | 1h | Post-Wave 1 |
 | B.2 | Blog post: Wave 2 | McManus | 1h | Post-Wave 2 |
 | B.3 | Blog post: Wave 3 | McManus | 1h | Post-Wave 3 |
@@ -306,6 +280,7 @@ Squad's architecture is platform-agnostic by design:
 
 | ID | Change |
 |----|--------|
+| 1.3 | CI setup: **Hockney + Kobayashi** (Kobayashi owns the Actions workflow, Hockney owns test content) |
 | 1.5.1 | README scope: current-state only, updated per wave |
 | 1.1 | Added: CLI output enrichment for human feedback |
 | 2.1 | Added: result summarization after multi-agent fan-out |
@@ -332,13 +307,13 @@ Squad's architecture is platform-agnostic by design:
 
 | Category | 019 Estimate | 019a Additions | New Total |
 |----------|-------------|----------------|-----------|
-| Wave 1 | 11-14h | +4h (1.8, 1.9, 1.10) | 15-18h |
+| Wave 1 | 11-14h | +7-8h (1.9, 1.10, 1.11, 1.12, 1.13; 1.8 cancelled) | 18-22h |
 | Wave 1.5/Content | 9-13h | +4.5h (blog posts, sample prompt, README refreshes) | 13.5-17.5h |
 | Wave 2 | 12-16h | (absorbed into existing items) | 12-16h |
 | Wave 3 | 12-16h | (absorbed into existing items) | 12-16h |
-| **Total** | **44-59h** | **+8.5h** | **52.5-67.5h** |
+| **Total** | **44-59h** | **+11.5-12.5h** | **55.5-71.5h** |
 
-Calendar impact: minimal. New Wave 1 items (1.8, 1.9, 1.10) all parallelize with existing work. Blog posts and README refreshes are inter-wave work that doesn't extend any wave duration.
+Calendar impact: moderate. New Wave 1 items (1.9, 1.10, 1.11, 1.12) all parallelize with existing work. Item 1.13 (first tagged release) is a Wave 1 gate exit criterion — it runs after the gate passes but before Wave 2 features begin. Kobayashi's work is entirely additive and does not block existing agents. Item 1.8 (npm registration) is cancelled, removing 1h.
 
 ---
 
@@ -347,15 +322,148 @@ Calendar impact: minimal. New Wave 1 items (1.8, 1.9, 1.10) all parallelize with
 ```
 Day 1-2:                                    Day 2-4:
 ├── 1.1 Error handling (Fenster)            └── 1.2 Test expansion (Hockney) ← needs 1.1
-├── 1.3 CI setup (Hockney)
+├── 1.3 CI setup (Hockney + Kobayashi)       ← UPDATED: Kobayashi owns Actions workflow
 ├── 1.4 Version stamping (Fenster)
 ├── 1.5 Silent success (Verbal)
 ├── 1.6 Human directive capture (Kujan)
 ├── 1.7 Feels heard behavior (Verbal)
-├── 1.8 Register create-squad (Fenster)      ← NEW
 ├── 1.9 Progress reporting (Verbal + Kujan)  ← NEW
-└── 1.10 VS Code smoke test (Kujan)          ← NEW
+├── 1.10 VS Code smoke test (Kujan)          ← NEW
+├── 1.11 Release workflow (Kobayashi)        ← NEW
+└── 1.12 Branch strategy (Kobayashi)         ← NEW
+
+Wave 1 Gate Exit:
+├── 1.13 First tagged release v0.1.0 (Kobayashi) ← NEW (gate exit criterion)
+├── README refresh (McManus)
+└── Blog post: Wave 1 (McManus)
 ```
+
+---
+
+## Directive 6: GitHub-Only Distribution & Release Process
+
+**Source:** Brady's session 6 decisions — no npm, Kobayashi hired, release plan needed.
+
+### What Changed
+
+Brady made three decisions that fundamentally affect the distribution and release model:
+
+1. **No npm publish. Ever.** Squad is distributed exclusively via `npx github:bradygaster/squad`. The npm registry is not involved. Item 1.8 (register `create-squad` on npm) is **CANCELLED**. My recommendation to register the unscoped name was rejected — and Brady's right. GitHub-only distribution is simpler, eliminates npm auth/publish/registry maintenance, and keeps the entire project lifecycle on one platform.
+
+2. **Kobayashi (Git & Release Engineer) joins the team.** Dedicated specialist for ALL git and GitHub responsibilities: releases, tags, branch strategy, CI/CD workflows, state integrity. Git IS our state maintenance layer — the `.ai-team/` directory, the drop-box pattern, orchestration logs, casting registry. A dedicated owner for git operations is the right call.
+
+3. **Release workflow needed.** Proper GitHub Releases with tags, versioning, changelogs. Kobayashi is writing the detailed proposal (021), but release work slots into Wave 1 immediately.
+
+### Team Roster Update
+
+**Kobayashi — Git & Release Engineer** is added to the team:
+
+| Agent | Role | Responsibilities |
+|-------|------|-----------------|
+| **Kobayashi** | Git & Release Engineer | GitHub Releases, tags, versioning, branch strategy, CI/CD workflows, GitHub Actions, state integrity, merge-to-main process |
+
+Kobayashi owns the intersection of git and GitHub that touches every other agent's work. When Hockney writes tests, Kobayashi ensures CI runs them. When Fenster ships features, Kobayashi tags the release. When the team merges to main, Kobayashi owns the process.
+
+### Cancelled Items
+
+| ID | Item | Reason |
+|----|------|--------|
+| ~~1.8~~ | ~~Register `create-squad` on npm, dual-publish setup~~ | Brady: no npm, ever. GitHub-only distribution. |
+
+### New Items
+
+| ID | Item | Owner | Effort | Depends On | Wave |
+|----|------|-------|--------|------------|------|
+| **1.11** | Release workflow (GitHub Actions) | Kobayashi | 2h | 1.3 (CI foundation) | 1 |
+| **1.12** | Branch strategy and merge to main | Kobayashi | 1-2h | — | 1 |
+| **1.13** | First tagged release (v0.1.0) | Kobayashi | 1h | Wave 1 gate (all items pass) | 1 (gate exit) |
+
+#### 1.11 Release Workflow (GitHub Actions)
+
+**Owner:** Kobayashi
+**Effort:** 2 hours
+**Depends on:** 1.3 (CI must exist as the foundation)
+
+**What ships:**
+- `.github/workflows/release.yml` — triggered on tag push or manual dispatch
+- Creates a GitHub Release with auto-generated changelog from commits
+- Attaches version metadata
+- Validates that tests pass before release is published
+- No npm publish step — the release IS the distribution (users pull via `npx github:bradygaster/squad`)
+
+**Detail:** Kobayashi is writing the full proposal (021) with implementation specifics. This item slots the work into the wave structure.
+
+#### 1.12 Branch Strategy and Merge to Main
+
+**Owner:** Kobayashi
+**Effort:** 1-2 hours
+**Depends on:** Nothing
+
+**What ships:**
+- Documented branch strategy (main as release branch, feature branches for work)
+- Branch protection rules for main (require CI pass, require review)
+- Merge process documentation for the team
+- `.ai-team/` state integrity verification on merge (ensure no conflicting writes)
+
+#### 1.13 First Tagged Release (v0.1.0)
+
+**Owner:** Kobayashi
+**Effort:** 1 hour
+**Depends on:** Wave 1 gate must be GREEN
+
+**What ships:**
+- First official GitHub Release: `v0.1.0`
+- Changelog summarizing everything shipped in Wave 1
+- Tag on main branch
+- Validates the release workflow (1.11) works end-to-end
+
+**This is a Wave 1 gate EXIT criterion.** The gate must pass first (tests, CI, error handling, etc.), then Kobayashi cuts the release before Wave 2 features begin. No feature work starts on Wave 2 until v0.1.0 is tagged and released.
+
+### Modified Items
+
+| ID | Original Owner | New Owner | Change |
+|----|---------------|-----------|--------|
+| **1.3** | Hockney | **Hockney + Kobayashi** | Kobayashi owns the GitHub Actions workflow definition and CI infrastructure. Hockney owns the test content that CI runs. Split responsibility — Hockney shouldn't need to know Actions YAML, Kobayashi shouldn't need to know test assertions. |
+
+### npm Reference Updates
+
+All references to npm registration, dual-publish, and `create-squad` unscoped naming in this document have been updated:
+
+| Location | Before | After |
+|----------|--------|-------|
+| Directive 3 title | "Package Naming" | "Package Naming — GitHub-Only Distribution" |
+| Directive 3 analysis | Options A/B/C with npm registration recommendation | Marked SUPERSEDED — GitHub-only per Brady's decision |
+| Directive 3 sprint changes | Item 1.8 active | Item 1.8 CANCELLED |
+| Blog post code example | `npx @bradygaster/create-squad upgrade` | `npx github:bradygaster/squad upgrade` |
+| Summary new items table | Item 1.8 listed | Item 1.8 marked CANCELLED |
+| Effort totals | +4h for 1.8/1.9/1.10 | 1.8 removed, 1.11/1.12/1.13 added |
+
+### Updated Agent Workload Summary (Wave 1 Only)
+
+| Agent | Wave 1 Items | Effort |
+|-------|-------------|--------|
+| **Fenster** | 1.1 (2h), 1.4 (1-2h) | 3-4h |
+| **Hockney** | 1.2 (3-4h), 1.3 test content (0.5h) | 3.5-4.5h |
+| **Verbal** | 1.5 (2h), 1.7 (1h), 1.9 shared (1h) | 4h |
+| **Kujan** | 1.6 (1h), 1.9 shared (1h), 1.10 (1h) | 3h |
+| **Kobayashi** | 1.3 Actions workflow (0.5h), 1.11 (2h), 1.12 (1-2h), 1.13 (1h) | 4.5-5.5h |
+| **McManus** | (Wave 1.5 — no Wave 1 items) | — |
+| **Keaton** | Review all gates | Continuous |
+
+### Impact on Wave 1 Gate
+
+The Wave 1 gate criteria from 019 are updated:
+
+- [ ] `npm test` passes 20+ tests covering init, upgrade, flags, error cases, and exit codes
+- [ ] CI runs on every push and PR — `.github/workflows/ci.yml` exists and is green
+- [ ] index.js has zero unhandled exceptions on any filesystem error
+- [ ] `squad.agent.md` has a version header
+- [ ] `upgrade` reports version deltas
+- [ ] Silent success rate is measured and documented
+- [ ] Coordinator captures human directives to inbox before routing
+- [ ] Coordinator acknowledges user messages with immediate text before tool calls
+- [ ] **NEW:** Branch strategy documented and protection rules applied
+- [ ] **NEW (gate exit):** Release workflow tested and v0.1.0 tagged on GitHub Releases
 
 ---
 

@@ -171,3 +171,7 @@
 📌 Team update (2026-02-09): Package naming recommendation — publish `create-squad` unscoped alongside `@bradygaster/create-squad`. Halves the typing burden, follows `create-*` convention, enables `npm init squad`. No breaking change. — proposed by McManus
 
 📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).
+
+## Team Updates
+
+📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.

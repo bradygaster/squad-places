@@ -20,8 +20,8 @@ if (cmd === '--version' || cmd === '-v') {
 }
 
 if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
-  console.log(`\n${BOLD}create-squad${RESET} v${pkg.version} — Add an AI agent team to any project\n`);
-  console.log(`Usage: npx @bradygaster/create-squad [command]\n`);
+  console.log(`\n${BOLD}squad${RESET} v${pkg.version} — Add an AI agent team to any project\n`);
+  console.log(`Usage: npx github:bradygaster/squad [command]\n`);
   console.log(`Commands:`);
   console.log(`  ${BOLD}(default)${RESET}  Initialize Squad (skip files that already exist)`);
   console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
