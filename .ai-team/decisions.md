@@ -1375,3 +1375,180 @@ npx github:bradygaster/squad
 3. **Release authority:** Kobayashi proposes + prepares draft GitHub Release. Brady reviews and publishes. Automation without losing control.
 
 4. **`squadify` → `main` merge:** After Wave 1 gate passes. First merge to main = first release-worthy state. `squadify` remains the working branch until then.
+
+---
+
+### 2026-02-09: Branch strategy — dev has everything, main is product-only
+
+**By:** bradygaster (human)
+
+**Decision:**
+
+1. **Rename `squadify` to `dev`** — all work continues here, including Squad Squad files (`.ai-team/`, `docs/proposals/`, orchestration logs, etc.)
+
+2. **`main` is product-only** — when we merge to main, Squad Squad files are excluded. Main only gets: `index.js`, `package.json`, `.github/agents/squad.agent.md`, `templates/`, `test/`, `README.md`, `LICENSE`, `.npmignore`.
+
+3. **`dev` is public and intentional** — the Squad Squad state being visible is part of the story. Dog-fooding in public.
+
+4. **`npx github:bradygaster/squad` pulls from `main`** — users always get clean product, never the Squad Squad.
+
+**Impact:**
+- Kobayashi needs to design the merge-to-main process to strip Squad Squad files
+- CI runs on `dev`, releases cut from `main`
+- The `.ai-team/` files in this repo never land on `main`
+
+
+---
+
+# Decision: Branch Strategy & Release Workflow
+
+**Author:** Kobayashi (Git & Release Engineer)  
+**Date:** 2025-07-16  
+**Status:** Implemented (pending Brady's push)
+
+---
+
+## Branch Rename
+
+- `squadify` renamed to `dev` (local only — remote rename is Brady's call)
+- `dev` is the primary development branch; Squad Squad lives here and is intentionally public (dog-fooding story)
+
+## Branch Separation
+
+| Branch | Purpose | Contains |
+|--------|---------|----------|
+| `main` | Product-only, what users get via `npx github:bradygaster/squad` | `index.js`, `package.json`, `README.md`, `LICENSE`, `.gitignore`, `.npmignore`, `.gitattributes`, `.github/agents/squad.agent.md`, `templates/` |
+| `dev` | Development + Squad Squad | Everything — product files, `.ai-team/`, `docs/`, `test/`, `.github/workflows/`, etc. |
+
+## Release Process: Filtered-Copy Strategy
+
+**Chosen approach:** Script-based filtered copy via GitHub Actions (Option C from Brady's list).
+
+**How it works:**
+1. Workflow triggers on `workflow_dispatch` (enter version) or tag push
+2. Tests run on `dev` — gate before anything ships
+3. Checks out `dev`, copies only product files to staging area
+4. Switches to `main`, replaces content with staged product files
+5. Commits `release: v{version}` on `main`
+6. Tags the commit, pushes `main` + tag
+7. Creates GitHub Release (prerelease for pre-v1)
+8. Verifies `npx` resolution
+
+**Why this over alternatives:**
+- **Not force-push (Option A):** Destructive, loses `main` commit history
+- **Not `.gitattributes` merge drivers (Option B):** Fragile, hard to debug, requires all contributors to configure
+- **Not orphan branch (Option D):** Loses all git history tracing from `dev`
+- **Filtered-copy is:** Simple, explicit, auditable, reversible, automatable
+
+## Files Created/Modified
+
+- **Created:** `.github/workflows/release.yml`
+- **Modified:** `docs/proposals/021-release-plan-and-distribution.md` (updated all references from `squadify` → `dev`, rewrote §4b and §5)
+
+## Action Required
+
+- Brady: push `dev` branch to remote (replaces `squadify`)
+- Brady: review and approve release workflow before first use
+- Brady: set remote default branch to `dev` on GitHub (or keep `main` as default — either works since `main` is what users pull)
+
+
+---
+
+# Decision: Squad Squad Isolation — Distribution Hygiene
+
+**Author:** Kobayashi (Git & Release Engineer)  
+**Date:** 2026-02-09  
+**Status:** Implemented  
+**Triggered by:** bradygaster — "you're the squad squad"
+
+---
+
+## Problem
+
+Squad (the product) and the Squad Squad (the AI team that builds it) live in the same repository. When users run `npx github:bradygaster/squad`, should they receive the team's internal state (`.ai-team/`, `docs/proposals/`, orchestration logs, etc.) alongside the product?
+
+Brady's position: The repo is completely public. The Squad Squad state SHOULD be visible (it's the story — dogfooding). But it should NOT ship to users as part of the `npx` install.
+
+## Analysis of Options
+
+### Option 1: `.npmignore` — Belt-and-suspenders exclusion
+- **Verdict: IMPLEMENTED (defense in depth)**
+- `.npmignore` explicitly excludes `.ai-team/`, `.ai-team-templates/`, `docs/`, `test/`, `.gitattributes`, `.github/workflows/`
+- With `package.json` `files` field present, `.npmignore` is redundant for filtering — `files` takes precedence as a whitelist
+- Value: catches mistakes if `files` field is accidentally removed; serves as documentation of intent
+
+### Option 2: Separate `release`/`dist` branch
+- **Verdict: NOT NEEDED**
+- Would work but adds operational complexity (CI must maintain a stripped branch)
+- The `files` field already solves the problem without branch gymnastics
+- Reserved as an option if npm behavior changes in the future
+
+### Option 3: GitHub Release artifacts (tarball)
+- **Verdict: REJECTED**
+- Changes the user-facing command from `npx github:bradygaster/squad` to a tarball URL
+- Breaks the current UX contract and all existing documentation
+- No benefit over the current `files`-based approach
+
+### Option 4: `.gitattributes` with `export-ignore`
+- **Verdict: DOES NOT WORK**
+- `npx github:` uses GitHub's tarball API (`codeload.github.com`), NOT `git archive`
+- `export-ignore` is only honored by `git archive`, which npm never calls for `github:` installs
+- This is a common misconception — researched and empirically debunked
+
+### Option 5: Accept it (do nothing)
+- **Verdict: ALREADY RESOLVED — the `files` field works**
+- The `files` field in `package.json` already correctly filters the distributed package
+- Empirically verified: `npm install github:bradygaster/squad` installs only 15 files (product files)
+- The npm cache contains opaque content-addressed blobs, not a browsable directory tree
+- The Squad Squad files never appear in the user's `node_modules` or project
+
+## Key Discovery
+
+**`package.json` `files` field IS respected by `npx github:` installs.** This was verified empirically on npm v11.9.0:
+
+```
+npm install github:bradygaster/squad
+# Result in node_modules/@bradygaster/create-squad/:
+#   .github/agents/squad.agent.md
+#   index.js
+#   package.json
+#   README.md
+#   templates/ (11 files)
+# Total: 15 files. No .ai-team/, docs/, test/, etc.
+```
+
+The npm documentation states that for git dependencies, the package is "packaged and installed" — meaning npm applies the same `files` filtering as `npm publish`, even for GitHub-sourced installs. This holds true regardless of whether a `prepare` script exists.
+
+## What Was Implemented
+
+1. **Created `.npmignore`** — Explicit exclusion list for Squad Squad files. Acts as defense-in-depth behind the `files` field and as documentation of intent.
+
+2. **No changes to `package.json`** — The `files` field was already correctly configured:
+   ```json
+   "files": ["index.js", ".github/agents/squad.agent.md", "templates/**/*"]
+   ```
+
+3. **No changes to `index.js`** — The runtime was already correct: it copies from `templates/` (source) to `.ai-team-templates/` (destination in user's project).
+
+## What This Means
+
+| Content | In repo? | In distributed package? | In user's project? |
+|---------|----------|------------------------|--------------------|
+| `index.js` | ✅ | ✅ | ❌ (runs, doesn't copy itself) |
+| `templates/` | ✅ | ✅ | ❌ → copies to `.ai-team-templates/` |
+| `.github/agents/squad.agent.md` | ✅ | ✅ | ✅ (copied by init) |
+| `.ai-team/` (Squad Squad state) | ✅ | ❌ | ❌ |
+| `docs/` (proposals, blog, etc.) | ✅ | ❌ | ❌ |
+| `test/` | ✅ | ❌ | ❌ |
+| `.ai-team-templates/` (Squad's own) | ✅ | ❌ | ❌ |
+
+## Risk Assessment
+
+- **Risk of npm changing behavior:** Low. The `files` field has been a core npm feature since npm v1. If it ever stops working for git installs, `.npmignore` catches it.
+- **Risk of accidental `files` removal:** Low but non-zero. `.npmignore` catches this.
+- **Risk of new Squad Squad paths not being excluded:** Mitigated by the whitelist approach (`files` field only includes what's needed).
+
+---
+
+**Kobayashi's note:** The product was already correctly isolated by the existing `files` field. The `.npmignore` I added is insurance and documentation — it makes the separation visible to anyone reading the repo. Zero behavioral change. Zero risk. Ship it.
+

@@ -10,7 +10,7 @@
 
 ## What This Document Is
 
-The definitive release and distribution plan for Squad. Covers how code gets from `squadify` branch to users' machines, how versions are tagged, how releases are cut, and how we guarantee `.ai-team/` state integrity through every upgrade.
+The definitive release and distribution plan for Squad. Covers how code gets from `dev` branch to users' machines, how versions are tagged, how releases are cut, and how we guarantee `.ai-team/` state integrity through every upgrade.
 
 **Non-negotiable constraint:** No npm publish. Ever. Squad is distributed exclusively via `npx github:bradygaster/squad`.
 
@@ -38,7 +38,7 @@ The `@` syntax does NOT work for GitHub-hosted packages. The correct syntax uses
 | `npx github:bradygaster/squad` | HEAD of default branch (`main`) |
 | `npx github:bradygaster/squad#v0.2.0` | Exact tag `v0.2.0` |
 | `npx github:bradygaster/squad#main` | HEAD of `main` |
-| `npx github:bradygaster/squad#squadify` | HEAD of `squadify` |
+| `npx github:bradygaster/squad#dev` | HEAD of `dev` |
 | `npx github:bradygaster/squad#abc1234` | Exact commit SHA |
 
 **This means:**
@@ -59,17 +59,16 @@ The `@` syntax does NOT work for GitHub-hosted packages. The correct syntax uses
 Since `npx github:bradygaster/squad` pulls `main` HEAD (not the latest tag), we have two strategies:
 
 **Strategy A: Main IS the latest release (Recommended)**
-- `main` only receives code via tagged releases
-- Merges to `main` happen ONLY as part of the release process
-- `main` HEAD is always the latest tagged release
-- Users who run the bare command get the latest stable release
+- `main` only receives code via the release workflow
+- The release workflow filters `dev`, keeping only product files, and commits to `main`
+- `main` HEAD is always the latest tagged release — no Squad Squad files, no docs, no tests
 
 **Strategy B: Latest-tag redirect in code**
 - `upgrade` subcommand reads the GitHub API to find the latest release tag
 - Adds complexity, requires network calls, fragile
 - NOT recommended for v1
 
-**Decision: Strategy A.** Keep `main` clean. Develop on `squadify` (or feature branches). Merge to `main` only when cutting a release. Tag the merge commit.
+**Decision: Strategy A.** Keep `main` clean. Develop on `dev`. The release workflow (`.github/workflows/release.yml`) filters `dev` to product-only files and commits to `main`. Tag the commit on `main`.
 
 ### The `upgrade` Subcommand
 
@@ -123,7 +122,7 @@ This is the manual process for cutting a release. Later we automate parts of it 
 
 ### Pre-Release
 
-- [ ] All tests pass on `squadify`: `npm test`
+- [ ] All tests pass on `dev`: `npm test`
 - [ ] Version in `package.json` is bumped to the new version
 - [ ] CHANGELOG.md is updated with release notes (when it exists — McManus owns this, Wave 1.5)
 - [ ] If version stamping exists (1.4): `squad.agent.md` has the correct version comment
@@ -131,9 +130,9 @@ This is the manual process for cutting a release. Later we automate parts of it 
 ### Cut the Release
 
 ```bash
-# 1. Ensure squadify is clean and up to date
-git checkout squadify
-git pull origin squadify
+# 1. Ensure dev is clean and up to date
+git checkout dev
+git pull origin dev
 
 # 2. Bump version in package.json (if not already done)
 # Edit package.json "version" field
@@ -141,20 +140,23 @@ git pull origin squadify
 # 3. Commit the version bump
 git add package.json
 git commit -m "chore: bump version to 0.2.0"
+git push origin dev
 
-# 4. Merge to main
-git checkout main
-git pull origin main
-git merge squadify --no-ff -m "release: v0.2.0"
+# 4. Option A: Trigger via workflow_dispatch (manual)
+#    Go to Actions → Release → Run workflow → enter version "0.2.0"
 
-# 5. Tag the merge commit
+# 5. Option B: Trigger via tag push
 git tag -a v0.2.0 -m "Release v0.2.0"
-
-# 6. Push everything
-git push origin main
-git push origin squadify
 git push origin v0.2.0
 ```
+
+The release workflow (`.github/workflows/release.yml`) then:
+1. Runs tests on `dev`
+2. Checks out `dev`, filters to product-only files
+3. Commits the filtered content to `main`
+4. Tags the commit on `main`
+5. Creates a GitHub Release (marked `prerelease` for pre-v1)
+6. Verifies `npx` resolution
 
 ### Post-Release
 
@@ -177,9 +179,9 @@ name: CI
 
 on:
   push:
-    branches: [main, squadify]
+    branches: [main, dev]
   pull_request:
-    branches: [main, squadify]
+    branches: [main, dev]
 
 jobs:
   test:
@@ -228,133 +230,19 @@ jobs:
 
 ### 4b. Release Workflow (`.github/workflows/release.yml`)
 
-Triggered when a version tag is pushed. Creates a GitHub Release with auto-generated notes.
-
-```yaml
-name: Release
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-permissions:
-  contents: write
-
-jobs:
-  test:
-    name: Test before release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-
-      - name: Run tests
-        run: npm test
-
-  release:
-    name: Create GitHub Release
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate tag matches package.json version
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "ERROR: Tag version ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
-            exit 1
-          fi
-          echo "Version validated: $TAG_VERSION"
-
-      - name: Generate release notes
-        id: notes
-        run: |
-          # Get the previous tag
-          PREV_TAG=$(git tag --sort=-creatordate | grep '^v' | sed -n '2p')
-          if [ -z "$PREV_TAG" ]; then
-            echo "First release — no previous tag"
-            echo "PREV_TAG=" >> $GITHUB_OUTPUT
-          else
-            echo "Previous tag: $PREV_TAG"
-            echo "PREV_TAG=$PREV_TAG" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create GitHub Release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const tag = context.ref.replace('refs/tags/', '');
-            const version = tag.replace('v', '');
-
-            const releaseBody = [
-              `## Install`,
-              '```bash',
-              `npx github:bradygaster/squad`,
-              '```',
-              '',
-              `## Upgrade`,
-              '```bash',
-              `npx github:bradygaster/squad upgrade`,
-              '```',
-              '',
-              `## Pin this version`,
-              '```bash',
-              `npx github:bradygaster/squad#${tag}`,
-              '```',
-              '',
-              `---`,
-              '',
-              `**Full Changelog**: https://github.com/bradygaster/squad/compare/${process.env.PREV_TAG || 'main'}...${tag}`,
-            ].join('\n');
-
-            await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: tag,
-              name: `Squad ${tag}`,
-              body: releaseBody,
-              draft: false,
-              prerelease: version.startsWith('0.'),
-              generate_release_notes: true,
-            });
-          env:
-            PREV_TAG: ${{ steps.notes.outputs.PREV_TAG }}
-
-  verify:
-    name: Verify release
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for GitHub to propagate
-        run: sleep 10
-
-      - name: Verify npx resolves the tag
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          mkdir -p /tmp/verify-release
-          cd /tmp/verify-release
-          npx github:bradygaster/squad#${TAG} --version
-          echo "Release verification passed"
-```
+Triggered manually via `workflow_dispatch` or when a version tag is pushed. Filters `dev` to product-only files, commits to `main`, tags, and creates a GitHub Release.
 
 **Key design decisions:**
+- **Filtered copy, not git merge** — `main` never sees Squad Squad files, docs, tests, or workflow YAML
 - Tests run BEFORE the release is created — a failing test prevents a broken release
 - Tag-to-`package.json` version validation prevents mismatched tags
 - `generate_release_notes: true` uses GitHub's auto-generated changelog (commit-based)
 - Custom release body includes install/upgrade/pin instructions
 - Pre-v1 releases are marked as `prerelease: true`
 - Post-release verification confirms `npx` resolution works
+- Product files explicitly kept: `index.js`, `package.json`, `README.md`, `LICENSE`, `.gitignore`, `.npmignore`, `.gitattributes`, `.github/agents/squad.agent.md`, `templates/`
+
+See `.github/workflows/release.yml` for the full implementation.
 
 ---
 
@@ -362,32 +250,60 @@ jobs:
 
 ### Current State
 
-- `main` branch exists (remote and local)
-- `squadify` branch is the active development branch
+- `main` branch exists (remote and local) — product-only, no Squad Squad files
+- `dev` branch is the active development branch (renamed from `squadify`)
+- `dev` is public — Squad Squad visibility is intentional (dog-fooding story)
 - No branch protection rules
 
 ### Target State
 
 ```
-main          ← release-only; always stable; this is what users get
+main          ← product-only; always stable; this is what users get via npx
+  ↑              (no .ai-team/, docs/, test/, orchestration logs)
+dev           ← primary development branch; Squad Squad lives here
   ↑
-squadify      ← primary development branch
-  ↑
-feature/*     ← optional feature branches off squadify
+feature/*     ← optional feature branches off dev
 ```
 
 ### Branch Rules
 
 | Branch | Who Pushes | What Gets Pushed | Protection |
 |--------|-----------|------------------|------------|
-| `main` | Kobayashi (release process only) | Merge commits from `squadify` + version tags | Protected: no direct push, no force push |
-| `squadify` | All agents | Feature work, bug fixes, proposals | Default dev branch |
-| `feature/*` | Individual agents | Scoped work for complex features | None — merge to `squadify` when done |
+| `main` | Release workflow only | Filtered product files + version tags | Protected: no direct push, no force push |
+| `dev` | All agents | Feature work, bug fixes, proposals, Squad Squad | Default dev branch |
+| `feature/*` | Individual agents | Scoped work for complex features | None — merge to `dev` when done |
+
+### What Goes Where
+
+| Content | `dev` | `main` |
+|---------|-------|--------|
+| `index.js`, `package.json`, `README.md` | ✅ | ✅ |
+| `templates/` | ✅ | ✅ |
+| `.github/agents/squad.agent.md` | ✅ | ✅ |
+| `LICENSE`, `.gitignore`, `.npmignore`, `.gitattributes` | ✅ | ✅ |
+| `.ai-team/` (Squad Squad state) | ✅ | ❌ |
+| `.ai-team-templates/` | ✅ | ❌ |
+| `docs/` (proposals, blog drafts) | ✅ | ❌ |
+| `test/` | ✅ | ❌ |
+| `.github/workflows/` | ✅ | ❌ |
+
+### Release Process (dev → main)
+
+Releases use `.github/workflows/release.yml` which implements a **filtered copy** strategy:
+
+1. Tests pass on `dev`
+2. Workflow checks out `dev`
+3. Copies only product files to a staging area
+4. Switches to `main`, replaces all content with staged files
+5. Commits, tags, pushes
+6. Creates GitHub Release
+
+This ensures `main` never contains Squad Squad files, docs, tests, or workflow definitions. Users who run `npx github:bradygaster/squad` get a clean product-only tree.
 
 ### Merge Strategy
 
-- `squadify` → `main`: **Merge commit** (`--no-ff`), only during release
-- `feature/*` → `squadify`: **Squash merge** preferred (clean history), or regular merge
+- `dev` → `main`: **Automated via release workflow** (filtered copy, not a git merge)
+- `feature/*` → `dev`: **Squash merge** preferred (clean history), or regular merge
 - Direct push to `main` is prohibited
 
 ### Branch Protection Recommendations
@@ -410,9 +326,9 @@ Branch: main
 
 **Note:** Full branch protection requires a GitHub Pro/Team plan for private repos, or the repo must be public. For public repos, these rules are free.
 
-### Moving from `squadify` to `main`
+### Moving from `dev` to `main`
 
-The first release (`v0.1.0` or `v0.2.0` — Brady's call) merges `squadify` into `main` and establishes the branch strategy going forward. Until then, all development stays on `squadify`.
+The first release (`v0.1.0` or `v0.2.0` — Brady's call) runs the release workflow to populate `main` with product-only files and establishes the branch strategy going forward. Until then, all development stays on `dev`.
 
 ---
 
@@ -578,7 +494,7 @@ Release notes include:
 
 3. **Release authority:** Should releases require Brady's explicit approval, or can I cut releases when wave gates pass?
 
-4. **`squadify` → `main` merge:** When do we merge `squadify` into `main` for the first time? This establishes the branch strategy.
+4. **`dev` → `main` release:** When do we run the first release workflow? This populates `main` with product-only files.
 
 ---
 
@@ -589,7 +505,7 @@ Release notes include:
 | Distribution | `npx github:bradygaster/squad` — pulls from `main` HEAD |
 | Version pinning | `npx github:bradygaster/squad#v0.2.0` — uses `#` not `@` |
 | Tag format | `v{MAJOR}.{MINOR}.{PATCH}` |
-| Branch strategy | `main` (releases only) ← `squadify` (development) |
+| Branch strategy | `main` (product-only) ← `dev` (development + Squad Squad) |
 | Release trigger | Wave gate pass or critical fix |
 | CI | GitHub Actions on push/PR, Node 22.x, ubuntu-latest |
 | Release automation | Tag push triggers test → release → verify pipeline |

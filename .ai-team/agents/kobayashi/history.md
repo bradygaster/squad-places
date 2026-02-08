@@ -29,9 +29,26 @@
 - **No `.github/workflows/` directory exists yet.** Creating both `ci.yml` and `release.yml` is blocked on proposal approval.
 - **GitHub Releases for pre-v1 are marked `prerelease: true`** — signals to users these are early versions.
 - Proposal 021 written and filed — covers distribution, versioning, CI, release automation, branch strategy, state integrity.
+- **`package.json` `files` field IS respected by `npx github:` installs.** Empirically verified on npm v11.9.0. npm downloads the GitHub tarball then applies `files` filtering before placing in `node_modules`. The distributed package contains only 15 product files — no `.ai-team/`, `docs/`, `test/`, etc.
+- **`.npmignore` added as defense-in-depth.** Excludes `.ai-team/`, `.ai-team-templates/`, `docs/`, `test/`, `.gitattributes`, `.github/workflows/`. Redundant with `files` field (which takes precedence) but catches mistakes if `files` is accidentally removed.
+- **`.gitattributes` `export-ignore` does NOT work for `npx github:`.** npm uses GitHub's tarball API (`codeload.github.com`), not `git archive`. `export-ignore` is only honored by `git archive`.
+- **npm for `github:` installs uses `codeload.github.com` tarball endpoint**, not `git clone`. The tarball contains all repo files, but npm packs/filters before installation.
+- **Squad Squad isolation is already solved.** The `files` field in `package.json` was correctly configured from the start. `.npmignore` added for insurance. No runtime or config changes needed.
+
+- **Branch renamed: `squadify` → `dev`** — local rename done. Remote rename is Brady's call.
+- **`main` = product-only** — no `.ai-team/`, `docs/`, `test/`, or workflow files. Only ships: `index.js`, `package.json`, `README.md`, `LICENSE`, `.gitignore`, `.npmignore`, `.gitattributes`, `.github/agents/squad.agent.md`, `templates/`.
+- **`dev` is public** — Squad Squad visibility is intentional (dog-fooding story).
+- **Release workflow uses filtered-copy strategy** (Option C) — not a git merge. Checks out `dev`, copies only product files, commits to `main`, tags, creates GitHub Release. Clean, auditable, reversible.
+- **Why filtered-copy over alternatives:** (a) Force-push is destructive and loses main history; (b) `.gitattributes` merge drivers are fragile and hard to debug; (c) Orphan branches lose all git history tracing; (d) Filtered-copy is simple, explicit, and every release is a traceable commit.
+- **Workflow triggers:** `workflow_dispatch` (manual, enters version) OR tag push on `dev`. Both validate version against `package.json`.
+- **Proposal 021 updated** — branch strategy, release process, workflow spec all reflect new `dev`/`main` separation.
 
 ## Team Updates
 
 📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.
 
 2026-02-09: Release decisions — v0.1.0 tag now, Kobayashi proposes releases/Brady publishes, squadify→main merge after Wave 1 gate, design for public repo.
+
+2026-02-09: Branch strategy implemented — `squadify` renamed to `dev`, release workflow created (`.github/workflows/release.yml`), proposal 021 updated. `main` is now product-only via filtered-copy release process.
+
+2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
