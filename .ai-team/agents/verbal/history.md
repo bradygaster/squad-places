@@ -216,3 +216,28 @@
 - Total initial effort: ~2 hours for Phase 1. Skills are additive — no breaking changes to existing behavior.
 
 **File path:** `docs/proposals/010-skills-system.md`
+
+### 2026-02-09: Skills System Revision — Agent Skills Standard + MCP (Proposal 010 R2)
+
+**Context:** Brady clarified his skills vision: *"claude-and-copilot-compliant skills that adhere to the anthropic 'skills.md' way"* and *"could we also find a way to be able to tell copilot which mcp tools our skills would need?"*
+
+**The pivot — standard over invention:**
+- Original Proposal 010 invented a custom format (`skills.md` per agent, freeform markdown). Brady's directive killed that. The Agent Skills standard (SKILL.md format from agentskills.io) is the format. Squad doesn't invent — it adopts and extends.
+- This is strategically correct. A proprietary format locks skills into Squad. The standard makes them portable to Claude Code, Copilot, any compliant tool. Openness creates network effects. Every SKILL.md Squad generates adds value to the entire ecosystem.
+
+**Key architectural changes from Revision 1:**
+- **Flat `skills/` directory replaces per-agent `skills.md` files.** Each skill is a standard directory (`skill-name/SKILL.md`). Skills are team knowledge, not agent-siloed. Agent attribution via `metadata.author`.
+- **YAML frontmatter + markdown body replaces pure markdown.** The standard requires `name` and `description` in YAML frontmatter. Squad extends with `metadata.confidence`, `metadata.projects-applied`, `metadata.acquired-by`, `metadata.mcp-tools`.
+- **`<available_skills>` XML injection replaces full context inlining.** The standard's progressive disclosure model: name + description at spawn (~50 tokens per skill), full SKILL.md on demand. This is cheaper than the original "inject all skills" design.
+- **MCP tool declarations in `metadata.mcp-tools`.** Skills declare which MCP servers they need, with rationale. Copilot can wire them up. The coordinator surfaces MCP dependencies in spawn context.
+
+**The MCP insight:**
+- `allowed-tools` is for CLI tool declarations (per the spec). MCP tools are different — they're server-based, need configuration, may or may not be available. Putting them in `metadata.mcp-tools` is spec-compliant (metadata accepts arbitrary keys) and semantically clean.
+- This solves Brady's problem: a "database-migration" skill that says `mcp-tools: [{server: postgres}]` tells Copilot exactly what to wire up. The agent arrives with both the knowledge AND the tool reference.
+
+**The strategic realization:**
+- Squad doesn't just USE the Agent Skills standard — it GENERATES standard-compliant skills from real work. That's the differentiator. Everyone else writes SKILL.md by hand. Squad earns them through experience.
+- Interoperability is a feature, not a compromise. Skills that work outside Squad make Squad MORE valuable, not less. Users don't fear lock-in. Contributors can bring skills IN from other tools.
+- The evolution path changed: `Static SKILL.md → Squad-generated SKILL.md → Portable skills → Skill packs → Community exchange`. We're positioned at the "generated" step. Nobody else is here.
+
+**File path:** `docs/proposals/010-skills-system.md` (Revision 2)

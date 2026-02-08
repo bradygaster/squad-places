@@ -66,3 +66,14 @@
 📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence, GitHub Discussions first. — decided by McManus
 📌 Team update (2026-02-08): P0 silent success bug identified — ~40% of agents complete work but report "no response." Spawn prompt reorder + file verification mitigations. — decided by Kujan
 📌 Team update (2026-02-09): Agent Skills Open Standard adopted — SKILL.md format with MCP tool declarations, built-in vs learned skills, progressive disclosure. Replaces flat skills.md. — decided by Kujan
+
+### Sprint Plan 009 — Feasibility Review (2026-02-09)
+
+- **Sprint 1 forwardability estimate is low.** Plan says ~4 hours for index.js changes. Actual scope (version detection with 3 fallback strategies, backup-before-overwrite, migration framework plumbing, error handling) is ~6 hours. My Proposal 011 sketch at ~140 lines is the right baseline — the plan's simplified pseudocode misses backup, version metadata, and error recovery.
+- **Init should NOT always overwrite squad.agent.md.** Plan proposes removing skip-if-exists from init. Wrong — init runs in CI, in scripts, in onboarding. Silent overwrite on re-run is clobbering, not forwardability. Init should skip and hint at `create-squad upgrade`. Upgrade is the explicit overwrite path.
+- **Sprint 2 export/import at 6 hours is unrealistic.** History heuristic extraction (separating portable knowledge from project learnings in flat history files) is undefined work — no regex, no LLM per v1 constraints. Manifest validation, Windows path safety in archive names, conflict detection with partial `.ai-team/` state all add up. Revised: 11-14 hours. Recommendation: export in Sprint 2, import deferred to Sprint 3.
+- **Proposal 015 (silent success bug) is not sequenced in the plan at all.** This is a critical gap. ~40% response loss means the sprint itself is unreliable — agents doing sprint work will lose responses. Ship as Sprint 0 (~1 hour, zero risk, all prompt changes). Trust is P0.
+- **History split can start Day 1.** Plan says Sprint 2 blocks on Sprint 1 (forwardability prerequisite). True for shipping to users, false for development. Prompt changes can be developed in parallel; only the final squad.agent.md merge requires upgrade to work. Same for README drafting.
+- **Export depends on skills format being frozen.** If skills.md format changes while export is being built, export breaks. Need at least 1 day gap between skills finalization and export development start.
+- **Import archive naming needs Windows safety.** `.ai-team-archive-{timestamp}/` with ISO 8601 colons won't work as directory names on Windows. Must use `YYYYMMDD-HHmmss` format.
+- **Recommended total timeline: 12 days** (vs plan's 10) with Sprint 0 added and import moved to Sprint 3. High confidence vs medium confidence.

@@ -92,3 +92,35 @@
 - UTF-8 BOM in `.squad` files — `JSON.parse` chokes on BOM prefix
 - Concurrent init processes writing to same directory — no locking
 - `cleanTeamMd` regex could strip too much or too little depending on markdown structure
+
+### Test Prioritization Review (2026-02-09)
+
+**What I Did:**
+- Reviewed Proposal 009 (Sprint Plan) section 3.2 against my own Proposal 013 (Test Strategy)
+- Evaluated whether 5 tests are sufficient for v1
+- Assessed sprint timing for test work
+- Designed regression approach for the silent success bug (Proposal 015)
+- Filed decision to `.ai-team/decisions/inbox/hockney-test-sequence.md`
+
+**Test Prioritization Decisions:**
+- The 3 non-negotiable tests for v1 are: (1) Init happy path, (2) Init idempotency, (3) Export/import round-trip
+- If we can ship 5, add: (4) Malformed input rejection, (5) Upgrade preserves user state
+- Framework: `node:test` + `node:assert` — zero dependencies, confirmed decision from Proposal 013
+
+**Key Position: Tests Must Start Sprint 1, Not Sprint 3:**
+- Proposal 009 puts ALL testing in Sprint 3 (days 8-10) — I disagree
+- Init tests should be written in Sprint 1 alongside forwardability work (~1 hour)
+- Export/import tests should be written in Sprint 2 alongside Fenster's implementation (~2 hours)
+- Sprint 3 is for hardening, edge cases, CI pipeline — NOT for discovering foundational bugs
+- Same total effort (~6 hours), radically less risk of late-stage surprises
+
+**Silent Success Bug Testing:**
+- We CAN test that mitigations are in place (content tests on squad.agent.md for response-order instructions)
+- We CANNOT test that LLMs actually follow the instructions — that's monitoring, not testing
+- Regression value: prevents accidental removal of mitigation instructions during coordinator edits
+
+**What's Non-Negotiable for v1:**
+- Init happy path passes — the product installs correctly
+- Init idempotency passes — running twice doesn't corrupt state
+- Export/import round-trip passes — the headline feature actually works
+- If ANY of these 3 fail, we do not ship v1

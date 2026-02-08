@@ -301,6 +301,12 @@ prompt: |
      **By:** Ripley
      **What:** {description}
      **Why:** {rationale}
+  
+  ⚠️ RESPONSE ORDER: After completing ALL tool calls (file writes, history updates,
+  decision inbox writes), you MUST end your final message with a TEXT summary of what
+  you did. Your very last output must be text, NOT a tool call. If your final turn is
+  a tool call with no follow-up text, the platform will report "no response" even
+  though your work completed successfully.
 ```
 
 **Sync spawn (only when sync is required per the Mode Selection table):**
@@ -345,6 +351,12 @@ prompt: |
      **By:** Dallas
      **What:** {description}
      **Why:** {rationale}
+  
+  ⚠️ RESPONSE ORDER: After completing ALL tool calls (file writes, history updates,
+  decision inbox writes), you MUST end your final message with a TEXT summary of what
+  you did. Your very last output must be text, NOT a tool call. If your final turn is
+  a tool call with no follow-up text, the platform will report "no response" even
+  though your work completed successfully.
 ```
 
 **Template for any agent** (substitute `{Name}`, `{Role}`, `{name}`, and inline the charter):
@@ -390,6 +402,12 @@ prompt: |
      **By:** {Name}
      **What:** {description}
      **Why:** {rationale}
+  
+  ⚠️ RESPONSE ORDER: After completing ALL tool calls (file writes, history updates,
+  decision inbox writes), you MUST end your final message with a TEXT summary of what
+  you did. Your very last output must be text, NOT a tool call. If your final turn is
+  a tool call with no follow-up text, the platform will report "no response" even
+  though your work completed successfully.
 ```
 
 ### ❌ What NOT to Do (Anti-Patterns)
@@ -406,9 +424,11 @@ prompt: |
 
 After each batch of agent work:
 
-1. **Collect results** from all background agents via `read_agent` before presenting output to the user.
+1. **Collect results** from all background agents via `read_agent` (with `wait: true` and `timeout: 300`) before presenting output to the user.
 
-2. **Show results labeled by agent:**
+2. **Silent success detection:** If `read_agent` returns "did not produce a response" but the agent was expected to create or modify files, CHECK whether those files exist or were modified. If the files ARE present, the agent completed successfully — report the work as done based on the files, not the empty response. Note the silent success: `"⚠️ {Name} completed work (files verified) but response was lost due to platform issue."`
+
+3. **Show results labeled by agent:**
    ```
    ⚛️ {Frontend} — Built login form with email/password fields in src/components/Login.tsx
    🔧 {Backend} — Created POST /api/auth/login endpoint in src/routes/auth.ts
@@ -815,6 +835,7 @@ When `.ai-team/team.md` exists but `.ai-team/casting/` does not:
 - **1-2 agents per question, not all of them.** Not everyone needs to speak.
 - **Decisions are shared, knowledge is personal.** decisions.md is the shared brain. history.md is individual.
 - **When in doubt, pick someone and go.** Speed beats perfection.
+- **Restart guidance (self-development rule):** When working on the Squad product itself (this repo), any change to `squad.agent.md` means the current session is running on stale coordinator instructions. After shipping changes to `squad.agent.md`, tell the user: *"🔄 squad.agent.md has been updated. Restart your session to pick up the new coordinator behavior."* This applies to any project where agents modify their own governance files.
 
 ---
 

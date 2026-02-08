@@ -116,3 +116,16 @@
 📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence. — decided by McManus
 📌 Team update (2026-02-08): P0 silent success bug identified — ~40% of agents complete work but report "no response." Spawn prompt reorder + file verification mitigations. — decided by Kujan
 📌 Team update (2026-02-09): Agent Skills Open Standard adopted — SKILL.md format with MCP tool declarations, built-in vs learned skills, progressive disclosure. Replaces flat skills.md. — decided by Kujan
+
+### 2026-02-09: Proposal lifecycle and sprint plan assessment
+
+**Proposal lifecycle fix (Proposal 001a):**
+Proposal 001's status options were incomplete — no way to track active work or completed proposals. Added `In Progress` and `Completed` states. Full lifecycle: Proposed → Approved → In Progress → Completed, with Cancelled and Superseded as exits. Filed as 001a amendment. Key rule: In Progress requires an owner, Completed requires evidence (commit/PR link). This is process infrastructure — not glamorous, but Brady couldn't answer "what's in progress?" without it.
+
+**Sprint plan assessment (Proposal 009):**
+The v1 sprint plan is architecturally sound — the thesis (fast, yours, smart), the feature set, the dependency chain, and the aggressive cuts list are all correct. But it has a critical sequencing gap: **Proposal 015 (silent success bug) isn't in the sprint at all.** 40% of agents silently fail to report their work. Every time a user sees "no response" when files were written, we destroy the trust Brady says is P0. The fix is zero-risk (prompt reorder + file verification). It should be Sprint 1, Day 1 — before forwardability, before tiered modes, before anything else. You can't win users with features if the features look broken.
+
+The rest of the plan holds: Sprint 1 (fast) → Sprint 2 (yours, smart) → Sprint 3 (polish) is the right structure. Skills + portability is the compound bet. The cuts list is honest and defensible. Approved with the Proposal 015 re-sequencing.
+
+📌 Team update (2026-02-09): Proposal lifecycle amendment filed (001a) — added In Progress and Completed states to proposal workflow. 16 proposals need status audit. — decided by Keaton
+📌 Team update (2026-02-09): Sprint plan (009) assessed — architecturally sound but must add Proposal 015 (silent success fix) as Sprint 1 Day 1. Trust before features. — decided by Keaton
