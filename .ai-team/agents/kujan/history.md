@@ -493,3 +493,24 @@ px create-squad upgrade to get mitigations. — decided by Fenster
 
 
 📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal
+
+### 2026-02-09: Incoming Queue Platform Assessment
+
+**Context:** Brady asked whether Copilot's built-in TODO capability could serve as an "incoming queue" for user messages — capturing requests while agents work, parsing prompts for actionable items, and dropping them into the inbox on behalf of Scribe.
+
+**Key findings:**
+
+1. **SQL `todos` table exists but is session-scoped.** The per-session SQLite database with `todos` and `todo_deps` tables is available to the coordinator, but it starts empty every session and is not readable by spawned agents. It cannot serve as a durable queue. The filesystem is the only cross-session, agent-readable state.
+
+2. **The coordinator CAN do work in the same turn it spawns agents.** Text, file writes, SQL queries, and tool calls all coexist in a single LLM turn. The coordinator already uses this (directive capture + acknowledgment + spawns happen in one turn). But once it calls `read_agent`, it blocks — no more work until agents return.
+
+3. **No background listener is possible.** The coordinator is single-threaded. No interrupt mechanism, no message polling API, no yield-and-resume. Messages typed while agents work queue silently and are processed only after the current turn completes. This is a hard platform constraint confirmed across multiple analyses (Proposals 017, 018, VS Code parity).
+
+4. **The existing inbox IS the queue.** `.ai-team/decisions/inbox/` + directive capture + Scribe merge pipeline already provides: durable storage, git-cloneable history, cross-session persistence, agent-readable state. The gap is scope — directive capture only triggers on "always/never" style statements, not on all actionable items.
+
+**Recommendation:** Broaden directive capture to a full "request log" that captures every actionable item from every message to the inbox. This turns the existing infrastructure into Brady's incoming queue with ~200 tokens of coordinator prompt changes. SQL `todos` can optionally track within-session dispatch status for complex multi-item prompts, but the filesystem inbox is the durable queue.
+
+**Assessment written to:** `.ai-team/decisions/inbox/kujan-incoming-queue-assessment.md`
+
+📌 Team update (2026-02-08): Incoming queue architecture direction — SQL as hot working layer, filesystem as durable store, team backlog as key feature, agents can clone across worktrees — decided by Brady
+

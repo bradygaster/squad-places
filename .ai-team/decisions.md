@@ -2080,3 +2080,166 @@ Expanded `test/index.test.js` from 12 tests / 3 suites to **27 tests / 7 suites*
 **What:** Upgraded the P0 silent success bug workaround in squad.agent.md. All 4 spawn templates now have a 6-line RESPONSE ORDER instruction (was 3 lines) with explicit "write 2-3 sentence summary, no more tool calls after." Added structured filesystem-based silent success detection with two branches (files found → ⚠️ done, no files → ❌ failed). Added HTML comment documenting bug rate (~7-10%), root cause, and three mitigation layers.
 **Why:** The original one-line RESPONSE ORDER was insufficient — agents (especially Scribe, whose entire job is tool calls) still hit the bug. The coordinator also lacked clear guidance on what to do when silent success occurred: should it re-spawn? Report failure? The new detection logic gives a concrete decision tree. The HTML comment ensures future maintainers understand this is a known platform-level issue, not a Squad bug. All changes are safe for all users (ships via npm).
 
+
+### 2026-02-08: Incoming queue architecture direction
+**By:** Brady (via Copilot)
+**What:** SQL as hot working layer, filesystem as durable record. Team members work from SQL, writes flush to disk for permanence. On session restart, rehydrate SQL from the on-disk backlog. The team backlog is the key feature. Presume the team can clone itself (multiple instances of same agent in worktrees). Filesystem is source of truth, SQL is queryable index.
+**Why:** User request — captured for team memory
+
+
+### 2026-02-09: Platform Assessment — Incoming Queue for User Messages
+
+**By:** Kujan (Copilot SDK Expert)
+**For:** Verbal's proposal on "feeling heard" / incoming queue
+**Requested by:** Brady (bradygaster)
+
+---
+
+## Brady's Idea
+
+> "Copilot itSELF has built-in 'todo list' capability, right? If so, maybe we just delegate to copilot to work in each prompt we send in whilst the team is working. Copilot could parse the prompt, take action, maybe drop it into the inbox itself on behalf of scribe?"
+
+## What Actually Exists
+
+### 1. The SQL `todos` Table — Available but Wrong Scope
+
+The Copilot CLI provides a per-session SQLite database with pre-built `todos` and `todo_deps` tables. Every coordinator session has access via the `sql` tool.
+
+**What it can do:**
+- Store structured items (id, title, description, status, timestamps)
+- Track dependencies between items
+- Query by status (`pending`, `in_progress`, `done`, `blocked`)
+- Persist across tool calls within a single session
+
+**What it can't do:**
+- **Persist across sessions.** The database is per-session and starts empty. When the user closes the terminal or starts a new `copilot` session, everything in the SQL database is gone. This is a hard platform constraint — there is no cross-session storage in the SQL tool.
+- **Be read by spawned agents.** Sub-agents spawned via the `task` tool run in isolated contexts. They cannot query the coordinator's SQLite database. The SQL tool is coordinator-only state.
+
+**Verdict:** The SQL tool is useful for within-session tracking (e.g., tracking which items from a prompt have been dispatched) but cannot serve as a durable incoming queue. Anything that needs to survive the session must go to the filesystem.
+
+### 2. What the Coordinator Can Do Between Spawns
+
+The coordinator has full tool access between spawning agents and collecting results. Specifically:
+
+| Capability | Available? | Notes |
+|-----------|-----------|-------|
+| Write files (create/edit) | ✅ Yes | Can write to inbox immediately |
+| Run SQL queries | ✅ Yes | Session-scoped only |
+| Read the codebase | ✅ Yes | Can parse, classify, route |
+| Make more tool calls | ✅ Yes | No limit on tool calls per turn |
+| Spawn additional agents | ✅ Yes | Can fan out in same turn |
+| Emit text to user | ✅ Yes | Text + tool calls coexist in one turn |
+
+**Key insight:** The coordinator CAN do useful work in the same turn it spawns agents. It already does this — the "Acknowledge Immediately" pattern emits text while tool calls spawn agents. The directive capture pattern writes to the inbox before routing. These happen in the same LLM turn. There is no "idle time" between spawn and collection where additional work could happen — the coordinator emits everything (text, tool calls, file writes) in one turn, then blocks on `read_agent`.
+
+### 3. Platform Constraints — The Hard Truths
+
+**The coordinator is blocked while waiting for agents.** Once the coordinator calls `read_agent` with `wait: true`, it cannot process new messages, make new tool calls, or do any work until the agent returns. This is a single-threaded conversation model — confirmed in my earlier analysis (Proposal 018 human input latency). There is no interrupt mechanism, no message polling API, no yield-and-resume.
+
+**The user CAN type while agents run** — but messages queue. The next message is processed only after the coordinator finishes its current turn (collecting all agent results, spawning Scribe, presenting output). During a full fan-out (~40-60s), the user's follow-up message sits in queue.
+
+**There is no state between user messages** beyond:
+- The coordinator's conversation history (LLM context window)
+- The filesystem (`.ai-team/` directory)
+- That's it. No SQL persistence, no in-memory state, no background processes.
+
+### 4. What We Already Have vs. What We'd Build
+
+**Already exists — no new infrastructure needed:**
+
+| Component | Status | Where |
+|-----------|--------|-------|
+| Drop-box inbox | ✅ Shipped | `.ai-team/decisions/inbox/` |
+| Directive capture | ✅ Shipped | `squad.agent.md` Team Mode |
+| Scribe merge pipeline | ✅ Shipped | Scribe charter + After Agent Work flow |
+| User acknowledgment | ✅ Shipped | "Acknowledge Immediately" section |
+| Routing classification | ✅ Shipped | Routing table in Team Mode |
+
+**The gap Brady is describing:**
+
+Brady's "incoming queue" idea is about the *middle* of the current flow — between "user sends message" and "agents start working." Today, the coordinator:
+
+1. Reads the message
+2. Checks for directives → writes to inbox if found
+3. Routes to agents → spawns them
+4. Waits → collects results
+5. Spawns Scribe → merges inbox
+
+Brady wants step 2 to be smarter — not just directives, but ANY actionable item parsed from the prompt, written to the inbox as a queue entry, even if the coordinator also routes it for immediate work. This creates a paper trail of what was asked, separate from what was done.
+
+## Assessment: What's Actually Feasible
+
+### Option A: Enhance Directive Capture (Recommended — Zero New Infrastructure)
+
+Broaden the existing directive capture to capture ALL actionable items from every message, not just "always/never" directives. The coordinator already writes to the inbox — expand what triggers a write.
+
+**How it works:**
+1. User sends message
+2. Coordinator parses for actionable items (directives, tasks, questions, scope changes)
+3. Writes each to `.ai-team/decisions/inbox/copilot-request-{timestamp}.md`
+4. Acknowledges immediately ("📌 Captured 3 items. Dispatching...")
+5. Routes and spawns agents as normal
+6. Scribe merges the request log into `decisions.md`
+
+**Why this works:**
+- Uses the existing inbox → Scribe pipeline
+- Filesystem-backed = survives sessions, is git-cloneable, human-readable
+- No new tools, no SQL dependency, no platform features needed
+- The coordinator already does steps 1, 4, and 5 — only step 2-3 is new
+- Cost: ~200 tokens added to `squad.agent.md` (~0.15% of context)
+
+**What it doesn't solve:**
+- Messages queued while agents work still wait. The coordinator can't process them until its current turn finishes. This is a hard platform constraint.
+- There's no "background listener" that captures input independently of the coordinator's turn cycle.
+
+### Option B: SQL as Session-Local Work Queue (Marginal Value)
+
+Use the `todos` table to track items within a session — parse prompt into items, insert as todos, update status as agents complete them.
+
+**Why it's marginal:**
+- Adds complexity (SQL + filesystem, two state systems)
+- SQL state vanishes between sessions — the filesystem version persists
+- Agents can't read the SQL state — only the coordinator benefits
+- The filesystem inbox already serves the same purpose more durably
+
+**When it might help:** A single complex session with 10+ items where the coordinator needs to track which are dispatched vs. pending vs. blocked. SQL's query semantics beat flat files for this. But this is an edge case — most prompts have 1-3 actionable items.
+
+### Option C: What Would Require Platform Changes (Not Available Today)
+
+- **Cross-session SQL persistence** — would make Option B viable as a durable queue
+- **Background message listener** — a coordinator subprocess that captures input while agents work
+- **Agent-readable shared state** — sub-agents querying the coordinator's SQL database
+- **Message queue API** — coordinator checking for new messages between tool calls
+- **Multi-turn coordinator sessions** — yield, check inbox, resume
+
+None of these exist. None are announced. Don't design for them.
+
+## Recommendation
+
+**Option A. Broaden directive capture to a full "request log."** The coordinator already writes directives to the inbox. Extend this to capture every actionable item from every message — tasks, questions, scope changes, directives. This turns the inbox into Brady's "incoming queue" with zero new infrastructure.
+
+The SQL `todos` table is a nice-to-have for within-session tracking of complex multi-item prompts, but it's not the queue — the filesystem inbox is the queue.
+
+**What this gives the user:**
+- Every request is logged to `.ai-team/decisions/inbox/` before agents start
+- Scribe merges these into `decisions.md` — creating a persistent record of what was asked
+- If agents fail (silent success, timeout, crash), the request is still captured
+- The user can inspect the inbox anytime to see what's pending
+- Git history shows the full request log — auditable, diffable
+
+**What this doesn't give the user:**
+- Real-time processing of messages sent while agents work (hard platform limit)
+- A live dashboard of queue status (would need a UI, not just files)
+- Automatic retry of failed items (possible but adds coordinator complexity)
+
+---
+
+*This assessment is honest about platform constraints. The Copilot CLI is single-threaded, session-scoped, and has no background processing for the coordinator. The filesystem is the only durable, cross-session, agent-readable state. Build on that.*
+
+
+### 2026-02-09: Incoming queue — coordinator as message processor
+
+**By:** Verbal
+**What:** Proposal 023 recommends generalizing the directive capture pattern into full message extraction. The coordinator parses every message for work requests, directives, backlog items, questions, and context clues — capturing each to the appropriate store before spawning agents. Backlog items persist to `.ai-team/backlog.md` (filesystem-first, drop-box pattern for agent writes). SQL rejected as primary store (session-scoped = non-persistent). Proactive backlog surfacing as Phase 3.
+**Why:** Users send compound messages. Today, only directives and work requests get captured — everything else (future intent, implicit preferences, deferred work items) disappears. Extraction closes this gap at zero marginal latency (same coordinator turn as routing). The backlog adds a third memory channel (intent) alongside decisions (agreements) and history (learnings). This is the "feeling heard" Brady described — proof that nothing slipped through.
+

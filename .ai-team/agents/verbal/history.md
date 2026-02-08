@@ -386,3 +386,36 @@
 - **Surgical changes only.** The rest of squad.agent.md was untouched. The file ships to all users via npm — no unnecessary churn.
 
 📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal
+
+### 2026-02-09: Incoming Queue — Coordinator as Message Processor (Proposal 023)
+
+**Context:** Brady's insight — *"copilot itSELF has built-in 'todo list' capability"* — the coordinator should do useful work before agents start, not just acknowledge and spawn.
+
+**Core design insight — extraction, not just routing:**
+- The coordinator already parses every message to decide routing. Extraction is a broadening of that parse: instead of identifying one route, identify ALL actionable items (work requests, directives, backlog items, context clues) and capture each to the appropriate store.
+- This costs zero additional latency because it happens in the same LLM turn as routing. The coordinator isn't doing MORE work — it's doing BROADER work in the same cycle.
+
+**Key architecture decisions:**
+- **Filesystem over SQL for backlog persistence.** Copilot's SQL (session SQLite) is session-scoped — items evaporate when you close the terminal. Backlog items that persist for weeks are the entire value proposition. `.ai-team/backlog.md` follows the same proven pattern as `decisions.md`.
+- **Directive capture becomes a special case of extraction**, not a separate system. The taxonomy broadens from one item type (directives) to five (work requests, directives, backlog items, questions, context clues). No breaking change to existing behavior.
+- **Drop-box pattern for agent writes to backlog.** Coordinator writes `backlog.md` directly (safe — sole writer during extraction). Agents use `backlog/inbox/` for additions. Scribe reconciles. Same pattern, new file.
+
+**The "third memory channel" argument:**
+- Squad currently has two persistent memory channels: decisions (what the team agreed) and history (what agents learned). The backlog adds intent (what the user wants but hasn't prioritized). Three channels > two. Intent is the most human channel — it's aspirational, not settled.
+
+**Proactive surfacing as the compound payoff:**
+- With a persistent backlog, the coordinator can practice anticipatory work at a higher level: "User mentioned connection pooling three sessions ago. Fenster just finished the database module. Should I spawn Fenster for pooling?" This is the behavior that makes Squad feel like it's thinking ahead, not just executing commands.
+
+**Risks assessed:**
+- Coordinator doing domain work (mitigation: extract and capture only, never evaluate)
+- Added latency (mitigation: same-turn extraction, not a separate step)
+- Backlog noise (mitigation: progressive summarization, same as history.md)
+- Scope creep into project management (mitigation: flat list, no priorities/estimates unless explicitly added)
+
+**File path:** `docs/proposals/023-incoming-queue.md`
+
+📌 Team update (2026-02-08): Incoming queue architecture direction — SQL as hot working layer, filesystem as durable store, team backlog as key feature, agents can clone across worktrees — decided by Brady
+
+
+📌 Team update (2026-02-08): Platform assessment confirms SQL todos table is session-scoped only, filesystem is sole durable cross-session state, Option A (broaden directive capture) recommended — decided by Kujan
+
