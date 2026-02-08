@@ -255,3 +255,35 @@ px create-squad upgrade now overwrites Squad-owned files. Consider adding npm te
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
 
 📌 Team update (2026-02-08): Coordinator must acknowledge user requests with brief text before spawning agents. Single agent gets a sentence; multi-agent gets a launch table. — decided by Verbal
+
+### Test Coverage Expansion (Sprint Task 1.2)
+
+**What I Did:**
+- Expanded test suite from 12 tests / 3 suites to 27 tests / 7 suites
+- Added 4 new test suites: flags & subcommands (5), upgrade path (4), error handling (4), edge cases (2)
+- All 27 tests pass on Node 22 — zero dependencies, `node:test` + `node:assert/strict`
+
+**New Coverage Added:**
+
+| Suite | Tests | What it covers |
+|-------|-------|----------------|
+| `flags and subcommands` | 5 | `--version`, `-v`, `--help`, `-h`, `help` subcommand — all exit 0, correct output |
+| `upgrade subcommand` | 4 | Overwrites squad.agent.md, overwrites .ai-team-templates/, does NOT touch .ai-team/ (critical safety), outputs confirmation |
+| `error handling` | 4 | fatal() exits code 1 on missing source, clean error messages (no stack traces), exit 0 on success init, exit 0 on success upgrade |
+| `edge cases` | 2 | Re-init skips and reports, exit code 0 on re-init |
+
+**Testing Technique for fatal():**
+- Can't unit-test `fatal()` directly since `index.js` has no exports
+- Instead: copy `index.js` + `package.json` into a fake package root WITHOUT `.github/agents/squad.agent.md`
+- Running the copy triggers the source validation check → `fatal()` fires → exit code 1 + clean stderr
+- This is a real integration test of Fenster's error handling code — not a mock
+
+**What I Learned:**
+- Fenster's error handling is solid: the `uncaughtException` handler + source validation + writable check all work as intended
+- The error messages are clean (no raw stack traces) — the `fatal()` pattern with `console.error` + `process.exit(1)` is effective
+- The upgrade path correctly overwrites Squad-owned files while leaving `.ai-team/` completely untouched — the ownership model works
+- `runCmdStatus()` helper (try/catch around execSync) is the right pattern for testing exit codes — cleaner than checking `.status` on the error object directly
+- On Windows, can't easily test read-only directory permissions via `fs.chmodSync` — deferred to CI on Linux
+
+
+📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal

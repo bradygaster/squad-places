@@ -2027,3 +2027,56 @@ CI is the quality gate. My own rule from Proposal 013: "No pre-commit hook — C
 **Why:** When the coordinator spawns background agents, there can be a significant delay before the user sees any response. A blank screen while agents work creates anxiety and breaks the feeling of a responsive team. Immediate acknowledgment makes the experience feel human — like a team lead saying "I'm on it" before diving into work.
 **Where:** `.github/agents/squad.agent.md` — new "Acknowledge Immediately" subsection in Team Mode, placed before Directive Capture and Routing.
 **Scope:** This is the coordinator-level instruction only. Does not change agent spawn templates or post-completion behavior.
+
+### 2026-02-08: Park logo SVGs, keep proposal, redirect Redfoot
+**By:** Brady (via Copilot)
+**What:** Delete all logo SVG files from docs/assets/. Keep Proposal 022 (visual identity concepts) for future reference. Redirect Redfoot's design energy toward README polish, UI, and presentation rather than logo SVGs for now. The concepts are good but SVG generation isn't capturing the vision yet. No harm, no foul — Brady has ideas for later.
+**Why:** User request — captured for team memory
+
+
+# Decision: Test Coverage Expansion to 27 Tests (Sprint Task 1.2)
+
+**By:** Hockney
+**Date:** 2026-02-09
+**Status:** Completed
+
+## What
+
+Expanded `test/index.test.js` from 12 tests / 3 suites to **27 tests / 7 suites**. Added coverage for Fenster's error handling work, the upgrade subcommand, all CLI flags, and edge cases. All tests pass. Zero dependencies.
+
+## New Test Suites
+
+| Suite | Count | Coverage |
+|-------|-------|----------|
+| flags and subcommands | 5 | `--version`, `-v`, `--help`, `-h`, `help` |
+| upgrade subcommand | 4 | Overwrites squad-owned files, preserves `.ai-team/` |
+| error handling | 4 | `fatal()` exit code 1, clean errors, exit code 0 on success |
+| edge cases | 2 | Idempotent re-init, exit codes |
+
+## Why
+
+- Sprint Task 1.2 required 20+ tests — we now have 27
+- Fenster shipped error handling (source validation, writable check, `fatal()`, `uncaughtException` handler) — needs test coverage
+- The upgrade subcommand is a critical path (overwrites files while preserving user state) — must be regression-tested
+- CLI flags are user-facing contract — must not break silently
+
+## Key Testing Decisions
+
+1. **fake package root technique** — to test `fatal()`, we copy `index.js` to a directory without source files, triggering the validation check. This is a real integration test, not a mock.
+2. **`runCmdStatus()` helper** — wraps execSync in try/catch to capture both stdout and exit codes for error-path testing.
+3. **No read-only directory test on Windows** — `fs.chmodSync` doesn't reliably enforce read-only on Windows. Deferred to Linux CI.
+
+## What's Still Not Covered
+
+- Read-only directory permissions (platform-dependent)
+- Symlink edge cases
+- Export/import round-trip (blocked on Proposal 008)
+- `NO_COLOR` / non-TTY output
+- Concurrent init processes
+
+
+### 2026-02-09: Silent success mitigation strengthened across all spawn templates
+**By:** Verbal
+**What:** Upgraded the P0 silent success bug workaround in squad.agent.md. All 4 spawn templates now have a 6-line RESPONSE ORDER instruction (was 3 lines) with explicit "write 2-3 sentence summary, no more tool calls after." Added structured filesystem-based silent success detection with two branches (files found → ⚠️ done, no files → ❌ failed). Added HTML comment documenting bug rate (~7-10%), root cause, and three mitigation layers.
+**Why:** The original one-line RESPONSE ORDER was insufficient — agents (especially Scribe, whose entire job is tool calls) still hit the bug. The coordinator also lacked clear guidance on what to do when silent success occurred: should it re-spawn? Report failure? The new detection logic gives a concrete decision tree. The HTML comment ensures future maintainers understand this is a known platform-level issue, not a Squad bug. All changes are safe for all users (ships via npm).
+

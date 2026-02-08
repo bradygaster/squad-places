@@ -367,3 +367,22 @@
 **Placement decision — before routing, not in fan-out:**
 - Placed the instruction in Team Mode before Directive Capture, not inside Parallel Fan-Out. Reason: acknowledgment applies to ALL spawns (single agent, multi-agent, sync, background), not just fan-out scenarios. It needs to be a top-level behavior, not a sub-pattern.
 - Kept it out of "After Agent Work" to avoid conflicts with task 1.5 (silent success), which is modifying that section in parallel.
+
+### 2026-02-09: Silent success deeper mitigation — Sprint Task 1.5
+
+**Context:** The P0 silent success bug (~7-10% of spawns) causes agents to complete all file writes but return no text response. The existing mitigation was a one-line "⚠️ RESPONSE ORDER" instruction at the end of spawn templates. This task strengthened the mitigation across three layers.
+
+**Changes to squad.agent.md:**
+
+1. **Strengthened RESPONSE ORDER in all 4 spawn templates** (background, sync, generic, Scribe). The old instruction was 3 lines telling agents to "end with text." The new version is 6 lines with explicit behavioral guidance: write a 2-3 sentence summary, do NOT make any more tool calls after the summary, and the observed failure rate (~7-10%). Stronger language ("CRITICAL", "WILL report" vs. "will report") and structured bullet points make it harder to ignore.
+
+2. **Expanded silent success detection in "After Agent Work"** from a single-paragraph instruction to a full decision tree. Three filesystem checks (history.md timestamp, inbox files, task-specific output files), two branches (files found → report as done with ⚠️ warning, no files → report as failed with ❌), and explicit guidance to read the files for a summary and NOT re-spawn successful agents.
+
+3. **Added HTML comment documenting the bug** above "After Agent Work" — observed rate, root cause, three mitigation layers, reference to Proposal 015. Visible to anyone reading the source but doesn't render in agent prompts.
+
+**Design principles applied:**
+- **Trigger on artifacts, not responses.** The filesystem is the source of truth. Agent responses are unreliable. This pattern (check files, not text) should be applied anywhere the coordinator makes decisions based on agent output.
+- **Three-layer defense:** (1) agent-side prevention (RESPONSE ORDER instruction), (2) coordinator-side detection (filesystem checks), (3) cascade protection (inbox-driven Scribe spawn). Any one layer can fail and the system still recovers.
+- **Surgical changes only.** The rest of squad.agent.md was untouched. The file ships to all users via npm — no unnecessary churn.
+
+📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal

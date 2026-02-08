@@ -33,3 +33,9 @@
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
 
 📌 Team update (2026-02-08): Coordinator must acknowledge user requests with brief text before spawning agents. Single agent gets a sentence; multi-agent gets a launch table. — decided by Verbal
+
+
+📌 Team update (2026-02-08): Logo SVGs parked, Proposal 022 kept. Redfoot redirected to README polish, UI, and presentation instead of logo SVGs. — decided by Brady
+
+
+📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal
