@@ -49,3 +49,7 @@ Brady directed the team to plan Squad v1. Three major feature directions emerged
 - Kujan: Skills platform and Copilot integration (Proposal 012)
 - McManus: v1 messaging and launch (Proposal 014)
 - Verbal: Skills system (Proposal 010)
+
+2 additional inbox decisions merged:
+- Kujan: P0 silent success bug mitigation (Proposal 015)
+- Kujan: Adopt Agent Skills Open Standard with MCP tool declarations (Proposal 012 Revision 2)
