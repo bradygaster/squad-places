@@ -124,3 +124,10 @@
 - Init idempotency passes — running twice doesn't corrupt state
 - Export/import round-trip passes — the headline feature actually works
 - If ANY of these 3 fail, we do not ship v1
+
+
+📌 Team update (2026-02-08): Fenster revised sprint estimates: forwardability 6h (not 4h), export/import 11-14h (not 6h). Recommends splitting export (Sprint 2) and import (Sprint 3) -- decided by Fenster
+
+📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
+
+📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal

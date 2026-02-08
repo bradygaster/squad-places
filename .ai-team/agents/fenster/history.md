@@ -77,3 +77,12 @@
 - **Export depends on skills format being frozen.** If skills.md format changes while export is being built, export breaks. Need at least 1 day gap between skills finalization and export development start.
 - **Import archive naming needs Windows safety.** `.ai-team-archive-{timestamp}/` with ISO 8601 colons won't work as directory names on Windows. Must use `YYYYMMDD-HHmmss` format.
 - **Recommended total timeline: 12 days** (vs plan's 10) with Sprint 0 added and import moved to Sprint 3. High confidence vs medium confidence.
+
+
+📌 Team update (2026-02-08): Fenster revised sprint estimates: forwardability 6h (not 4h), export/import 11-14h (not 6h). Recommends export Sprint 2, import Sprint 3 -- decided by Fenster
+
+📌 Team update (2026-02-08): Testing must start Sprint 1, not Sprint 3. Hockney will pair with Fenster: implement + test together -- decided by Hockney
+
+📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
+
+📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal

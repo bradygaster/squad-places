@@ -105,3 +105,18 @@
 📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates. — decided by Hockney
 📌 Team update (2026-02-08): P0 silent success bug identified — ~40% of agents complete work but report "no response." Spawn prompt reorder + file verification mitigations. — decided by Kujan
 📌 Team update (2026-02-09): Agent Skills Open Standard adopted — SKILL.md format with MCP tool declarations, built-in vs learned skills, progressive disclosure. Replaces flat skills.md. — decided by Kujan
+
+### Sprint 0 narrative arc identified (2026-02-09)
+- **The arc:** Self-repair under fire. Team produced 16 proposals (~350KB), hit a 40% silent success bug, self-diagnosed it in the same session, shipped three zero-risk mitigations. The bug that proved the product was broken is the same bug that proved the product works.
+- **Key metrics for storytelling:** 16 proposals, ~350KB output, 50-70x productivity multiplier, ~40% bug rate → 3 mitigations → Sprint 0 created, 3/3 independent reviewers converged on Sprint 0 priority, ~15 human messages produced the entire session's output.
+- **Lead story hook:** "Success caused the failure" — agents that completed ALL their work (including final history writes) were the ones whose responses got dropped. Doing the right thing triggered the bug.
+- **Demo climax for v1:** Sprint 2 export moment — squad imported into new project already knows your preferences. That's the "holy cow" beat.
+- **Story formats planned:** Twitter thread (8-10 tweets), blog post (1500 words), conference talk (20 min), raw demo script (5 min, no staging).
+- File: `docs/devrel/sprint-0-story.md`
+
+
+📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
+
+📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) with MCP tool declarations -- decided by Verbal
+
+📌 Team update (2026-02-08): Fenster recommends README drafting can start Day 1 (fully parallel) -- decided by Fenster

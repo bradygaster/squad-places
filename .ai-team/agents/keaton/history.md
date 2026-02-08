@@ -129,3 +129,10 @@ The rest of the plan holds: Sprint 1 (fast) → Sprint 2 (yours, smart) → Spri
 
 📌 Team update (2026-02-09): Proposal lifecycle amendment filed (001a) — added In Progress and Completed states to proposal workflow. 16 proposals need status audit. — decided by Keaton
 📌 Team update (2026-02-09): Sprint plan (009) assessed — architecturally sound but must add Proposal 015 (silent success fix) as Sprint 1 Day 1. Trust before features. — decided by Keaton
+
+
+📌 Team update (2026-02-08): Fenster revised sprint estimates: forwardability 6h (not 4h), export/import 11-14h (not 6h). Recommends splitting export (Sprint 2) and import (Sprint 3) -- decided by Fenster
+
+📌 Team update (2026-02-08): Testing must start Sprint 1, not Sprint 3. Top 3 non-negotiable tests: init happy path, init idempotency, export/import round-trip -- decided by Hockney
+
+📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) in .ai-team/skills/. MCP tool dependencies declared in metadata.mcp-tools -- decided by Verbal

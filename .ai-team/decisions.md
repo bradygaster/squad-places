@@ -308,3 +308,491 @@ No new dependencies. `index.js` stays under 150 lines. Aligns with Proposal 008'
 **Format Decision:** Written as a proposal (because proposal-first), structured as a publishable paper. McManus should take this draft and polish for external publication. The data is real, the structure is set, the argument is made.
 
 **Dependencies:** McManus for publication polish, Keaton for accuracy review of architectural claims, Brady for final sign-off.
+
+
+---
+
+# Fenster — Sprint Plan 009 Implementation Review
+
+**Author:** Fenster (Core Dev)
+**Date:** 2026-02-09
+**Re:** Proposal 009 (v1 Sprint Plan) feasibility assessment
+**Requested by:** bradygaster
+
+---
+
+## Verdict: Approve with re-sequencing
+
+The plan is good. The feature set is right. The dependency map is mostly correct. But the sequencing has a critical gap: **Proposal 015 (silent success bug) is not in the sprint plan at all**, and it should be Sprint 0 — before anything else ships.
+
+Below is my section-by-section implementation review.
+
+---
+
+## 1. Sprint 1 Feasibility: Forwardability (~4 hours estimate)
+
+**Assessment: 4 hours is about right for the `index.js` changes alone. But the plan undersells the scope.**
+
+### What's actually involved
+
+I already wrote Proposal 011 with the complete `index.js` sketch (~140 lines, up from 65). The plan's section 1.1 describes the intent correctly but glosses over implementation details I covered:
+
+- **Version detection** needs three fallback strategies (`.squad-version` file → frontmatter parsing → presence detection). The plan just says "version header in squad.agent.md" — that's the easy part. Detecting pre-versioning installs (every current user) is the hard part.
+- **Backup before overwrite** — the plan doesn't mention this. My Proposal 011 does. If upgrade clobbers a customized `squad.agent.md` with no backup, Brady will hear about it from users. Non-negotiable.
+- **Migration framework** — even though v0.1→v0.2 has no data migrations, the framework needs to exist. Empty migrations array is fine, but the plumbing (getMigrations, ordered execution, idempotency) must be built now or we'll be retrofitting it under pressure when v0.3 needs it.
+- **Error handling** — backup failure aborts. Overwrite failure restores backup. Migration failure warns but continues. This is not trivial code.
+
+### What's missing from the plan
+
+1. **The plan says init should "always write squad.agent.md" (remove skip-if-exists)**. My Proposal 011 disagrees. Init should still skip if exists, but HINT at upgrade. Reason: `npx create-squad` is what users run in CI, in scripts, in onboarding docs. Silently overwriting their coordinator without warning on every `npx create-squad` is wrong. The plan's proposed change means any re-run of the init command overwrites — that's not forwardability, that's clobbering.
+
+2. **No mention of `.squad-version` metadata file.** Where does the installed version live? The plan says "version header in squad.agent.md" but that couples version detection to parsing a 32KB markdown file. My proposal uses a dedicated `.ai-team-templates/.squad-version` JSON file.
+
+3. **Templates overwrite behavior.** The plan says upgrade overwrites templates. Fine. But init should still skip templates if they exist (same as coordinator). The plan marks both init and upgrade as "always overwrite" — that changes init semantics in a way users don't expect.
+
+### Revised estimate
+
+- `index.js` rewrite with upgrade, version detection, backup, migrations: **4-5 hours**
+- `squad.agent.md` version header addition: **15 minutes**
+- Testing the upgrade path on a real v0.1.0 install: **1 hour**
+- **Total: ~6 hours** (not 4)
+
+### Recommendation
+
+Use Proposal 011's `index.js` sketch as the implementation baseline, not the plan's simplified pseudocode. The sketch handles all the edge cases the plan skips.
+
+---
+
+## 2. Sprint 2 Feasibility: Export/Import CLI (~6 hours estimate)
+
+**Assessment: 6 hours is unrealistic. 10-12 hours minimum.**
+
+### What's actually hard
+
+The plan lists the export manifest schema and import flow as if they're straightforward file operations. They're not.
+
+#### Export edge cases the plan misses:
+
+1. **History heuristic extraction.** The plan says "Portable Knowledge section only" for history export, with "heuristic extraction for unsplit histories." There IS no heuristic yet. Writing one that correctly separates "Brady prefers explicit error handling" from "Auth module is in src/auth/" from a flat history.md is an LLM task, not a regex task. And we said we're not using LLM-assisted classification in v1 — so what's the actual heuristic? This is undefined work.
+
+2. **Casting state validation.** The plan exports `registry.json`, `history.json`, `policy.json` as opaque blobs. What if they reference files or paths specific to the source project? What if universe assignments are inconsistent? Export needs to validate, not just copy.
+
+3. **Manifest size.** Skills + charters + portable knowledge + casting state + routing. If a squad has worked on 5 domains with 6 agents, this manifest could be large. The plan doesn't set size limits or mention chunking.
+
+4. **Encoding.** History files may contain unicode, emoji, special characters. JSON.stringify handles this but we need to verify round-trip fidelity with real history.md content.
+
+#### Import edge cases the plan misses:
+
+1. **Manifest validation.** "Validate `.squad` or `.json` manifest" — what's the validation? Schema checking? Version compatibility? The plan doesn't define what makes a manifest invalid. A malformed manifest shouldn't silently create a broken squad.
+
+2. **Conflict with existing `.ai-team/`.** The plan says "refuse if `.ai-team/team.md` exists (unless `--force`)". But what about partial state? What if `.ai-team/` exists but `team.md` doesn't? What if agents/ exists with some but not all of the imported agents? The detection needs to be more nuanced than "team.md exists."
+
+3. **`--force` archive naming.** `.ai-team-archive-{timestamp}/` — what timestamp format? ISO 8601 with colons doesn't work as a directory name on Windows. Need `YYYYMMDD-HHmmss` or similar.
+
+4. **Import of skills.md.** The plan says "Write skills.md from manifest." But what if skills.md already has content from the current project and we're not using `--force`? This is a merge problem the plan explicitly defers to v2, but import without merge means destroying local skills.
+
+#### The dependency problem:
+
+Export depends on history split (2.1) AND skills (2.2). Both are prompt-engineering changes to `squad.agent.md`. Until agents are actually writing to the new history format and skills.md, there's nothing meaningful to export. The plan acknowledges this dependency but underestimates the testing overhead: you need a squad that has actually USED the new formats to verify export captures them correctly.
+
+### Revised estimate
+
+- Export command implementation: **3-4 hours**
+- Import command implementation: **3-4 hours**
+- Manifest validation: **2 hours**
+- History heuristic (or deciding to punt it): **1-2 hours**
+- Round-trip testing: **2 hours**
+- **Total: 11-14 hours** (not 6)
+
+### Recommendation
+
+Ship export-only in Sprint 2. Import is Sprint 3. Export is useful immediately (backup/audit). Import without thorough testing is dangerous — it creates broken squads.
+
+---
+
+## 3. P0 Priority Check: Silent Success Bug (Proposal 015)
+
+**Assessment: This MUST be Sprint 0. Before everything else.**
+
+### Why it blocks the sprint plan
+
+The silent success bug means ~40% of agent spawns lose their response text. The sprint plan's entire development process uses Squad to build Squad. If Verbal writes the tiered response mode changes to `squad.agent.md` and the coordinator reports "did not produce a response," we've lost work. If I implement forwardability and my response vanishes, Brady sees failure where there was success.
+
+**You cannot build v1 with a tool that lies about success 40% of the time.**
+
+### Proposal 015's mitigations are zero-risk
+
+Every change in Proposal 015 is a prompt instruction change to `squad.agent.md`:
+
+1. Response order guidance (tell agents to end with text, not tool calls) — ~15 minutes to edit
+2. Silent success detection (coordinator checks for files when response is empty) — ~30 minutes to edit
+3. `read_agent` timeout increase (`wait: true`, `timeout: 300`) — ~10 minutes to edit
+
+**Total implementation: ~1 hour.** These are instruction edits, not code changes.
+
+### The trust argument
+
+Brady said "human trust is P0." If Squad reports "agent did not produce a response" when the agent actually wrote a 45KB proposal, that's a trust-destroying moment. The user thinks the system failed. The system actually succeeded. This is worse than an actual failure — at least real failures are honest.
+
+### Recommendation
+
+Ship Proposal 015 as Sprint 0. One hour of work. Zero risk. Immediately makes the rest of the sprint more reliable. Don't start Sprint 1 without this.
+
+---
+
+## 4. My Re-sequencing
+
+Given "human trust is P0," here's the order I'd build in:
+
+### Sprint 0: Trust Foundation (Day 0, ~2 hours)
+
+1. **Silent success bug fix** (Proposal 015) — prompt changes to `squad.agent.md`
+2. **Response format enforcement** — same file, same edit session
+
+This unblocks everything. Every subsequent sprint benefits from agents that reliably report their work.
+
+### Sprint 1: Forwardability + Latency (Days 1-3)
+
+1. **`index.js` rewrite** with upgrade, version detection, backup, migrations (Proposal 011 sketch)
+2. **Latency fixes** — context caching, Scribe batching (prompt changes)
+3. **Tiered response modes** — routing table in `squad.agent.md` (prompt changes)
+4. **Coordinator direct handling** — permission expansion (prompt changes)
+
+Items 2-4 are all prompt edits. They can ship independently of item 1. Item 1 is the code work.
+
+### Sprint 2: Portability Foundation (Days 4-7)
+
+1. **History split** — template + prompt changes (prerequisite for everything else)
+2. **Skills system** — template + prompt changes
+3. **Export CLI** — `create-squad export` command in `index.js`
+4. **Defer import to Sprint 3** — export is useful alone; import needs more testing
+
+### Sprint 3: Import + Polish + Tests (Days 8-10+)
+
+1. **Import CLI** — `create-squad import` with proper validation
+2. **Imported squad detection** — coordinator prompt change
+3. **Testing infrastructure** — Hockney's 5 core tests
+4. **README rewrite** — McManus
+5. **History summarization** — if time permits
+
+### Why this order
+
+- Sprint 0 makes every subsequent sprint more reliable
+- Export before import: export is a backup mechanism even without import
+- Import gets more testing time, which it desperately needs
+- Tests can cover export AND import in Sprint 3 instead of testing export in Sprint 2 and import in Sprint 3 separately
+
+---
+
+## 5. Dependencies the Plan Gets Wrong
+
+### Marked parallel but has a hard dependency:
+
+1. **2.3 Export/Import depends on 2.2 Skills.** The plan shows this correctly in the dependency diagram but then assigns both to Sprint 2 days 4-7 as if they can overlap. Skills system (prompt engineering) must be DONE before export knows what to export. If skills.md format changes during export development, export breaks. **Verdict: Skills must be finalized before export begins. At least 1 day gap.**
+
+2. **3.2 Testing depends on export AND import.** The plan's test list includes "Export/import round-trip" and "Skills persistence test." If import is in Sprint 2, testing it in Sprint 3 works. But if import bugs are found in testing, the fix cycle bleeds past Sprint 3. **Verdict: Import and tests should overlap in Sprint 3 with buffer for fix cycles.**
+
+### Marked sequential but could be parallel:
+
+1. **2.1 History split and 1.1 Forwardability.** The plan says "Sprint 2 blocks: Sprint 1 must ship first (forwardability is prerequisite for template updates reaching users)." This is wrong for development purposes. History split is a prompt change to `squad.agent.md` — it doesn't require forwardability to DEVELOP. It requires forwardability to SHIP to existing users. Development can start in parallel. Only the final `squad.agent.md` delivery needs Sprint 1 done. **Verdict: History split development starts Day 1. Just don't merge into the coordinator file until upgrade works.**
+
+2. **3.1 README rewrite and Sprint 2.** The plan notes McManus "can start README draft" during Sprint 2. McManus can start the README Day 1. The README doesn't depend on any implementation — it's messaging work. Only the final version needs feature screenshots/demos. **Verdict: README drafting is fully parallel from Day 1.**
+
+3. **3.4 Lightweight spawn template and 1.3 Tiered modes.** The plan marks this as dependent. It's not — the lightweight template is a standalone prompt blob. It references tiered mode concepts but doesn't require the routing table to exist. Both are edits to the same file. **Verdict: Can be developed in parallel, merged together.**
+
+### Missing dependency:
+
+1. **Export/Import depends on `package.json` updates.** The manifest includes `exported_from` and version info. The package.json version must be bumped to 0.2.0 before export generates correct manifests. The plan mentions version bump in passing but doesn't sequence it. **Verdict: Version bump is Sprint 1, item 1.**
+
+---
+
+## Summary for Brady
+
+The sprint plan is solid architecture, weak on implementation details. My recommendations:
+
+1. **Add Sprint 0** — ship Proposal 015 (silent success bug) immediately. 1 hour, zero risk, unblocks trust.
+2. **Revise Sprint 1 estimate** from 4 to 6 hours for forwardability. Use Proposal 011's implementation, not the plan's simplified version.
+3. **Revise Sprint 2 estimate** from 6 to 11-14 hours for export/import. Or split: export in Sprint 2, import in Sprint 3.
+4. **Start parallel tracks earlier** — README and history split development can begin Day 1.
+5. **Keep the "What We're NOT Doing" list** — it's the most important section of the plan. Don't let scope creep.
+
+The plan's total timeline of 10 days is achievable IF we split import from export. If we try to do both in Sprint 2 with the current 6-hour estimate, Sprint 2 will overrun and compress Sprint 3.
+
+With re-sequencing: **12 days total, high confidence.** Without: **10 days, medium confidence with Sprint 2 overrun risk.**
+
+— Fenster
+
+
+---
+
+# Decision: Test Sequence and Sprint Placement
+
+**Author:** Hockney (Tester)
+**Date:** 2026-02-09
+**Context:** Brady asked if we have team agreement on the sprint plan. I'm reviewing the test aspects of Proposal 009 against my own Proposal 013, and flagging where the plan puts quality at risk.
+
+---
+
+## 1. Are 5 Tests Enough for v1?
+
+**No. But the right 5 tests cover the critical path.**
+
+Proposal 009 lists 5 tests for Sprint 3:
+
+1. Init test
+2. Upgrade test
+3. Export/import round-trip
+4. Forwardability test
+5. Skills persistence test
+
+My Proposal 013 has ~80 test cases across 9 categories. That's the full picture. But 80 tests in Sprint 3 (days 8-10) is fantasy — we'd spend all of Sprint 3 just writing tests and ship nothing else.
+
+**My position:** 5 tests is the right number for the *Sprint 3 deliverable*, BUT only if we've been writing foundational tests alongside Sprint 1 and Sprint 2 implementation. The 5 tests in the plan are integration/acceptance tests that prove the whole system works. They sit on top of unit and module tests that should already exist.
+
+**The minimum test suite that proves the product works:**
+
+| # | Test | What It Proves | Non-Negotiable? |
+|---|------|---------------|-----------------|
+| 1 | Init happy path | The product installs correctly | ✅ YES |
+| 2 | Init idempotency | Running twice doesn't corrupt state | ✅ YES |
+| 3 | Export/import round-trip | Portability actually works | ✅ YES |
+| 4 | Malformed input rejection | Bad `.squad` files don't crash the CLI | ✅ YES |
+| 5 | Upgrade preserves user state | Users don't lose their team | ✅ YES |
+| 6 | Exit codes are correct | Scripts can depend on us | ⚠️ Should have |
+| 7 | No raw stack traces on error | Users see messages, not crashes | ⚠️ Should have |
+
+**Bottom line:** 5 is enough if they're the RIGHT 5. Tests 1-5 above are my non-negotiable set. Tests 6-7 are close behind.
+
+---
+
+## 2. Should Testing Be Sprint 3 or Earlier?
+
+**Testing MUST start in Sprint 1. This is the hill I'll die on.**
+
+Proposal 009 puts ALL testing in Sprint 3 (days 8-10). That's a mistake. Here's why:
+
+**Brady's P0 is human trust.** Trust comes from reliability. Reliability comes from tests. If we build for 7 days without tests, we're building on a foundation we can't verify. Every Sprint 2 feature (export, import, skills) is built on top of Sprint 1 code (init, upgrade). If init is broken in a subtle way, we won't know until Sprint 3 — and then we're debugging foundational bugs while trying to write tests AND polish.
+
+**My recommended test timeline:**
+
+| Sprint | Tests to Write | Why Now |
+|--------|---------------|---------|
+| Sprint 1 (days 1-3) | Init happy path, init idempotency | We're touching `index.js` for forwardability. Write tests for the code we're changing. Takes 1 hour. |
+| Sprint 2 (days 4-7) | Export validation, import validation, round-trip | We're building export/import. Write tests as we build. Takes 2 hours. |
+| Sprint 3 (days 8-10) | Upgrade preservation, edge cases, CI pipeline, malformed input | Harden and ship. Takes 3 hours. |
+
+**Total effort is the same (~6 hours).** We're just spreading it across sprints instead of cramming it into the last 3 days.
+
+**The Sprint 3-only plan has a specific failure mode:** Fenster builds export/import in Sprint 2 without tests. I write tests in Sprint 3 and discover that the `.squad` JSON format has a bug — maybe it silently drops agent skills during export. Now it's day 9 and we're choosing between shipping a broken feature or delaying the release. Tests alongside implementation catch this in Sprint 2 when there's time to fix it.
+
+**Decision:** Testing starts Sprint 1, day 1. I'll pair with Fenster — they implement, I test. This is how quality works.
+
+---
+
+## 3. The Silent Success Bug (Proposal 015) — How to Test
+
+The silent success bug is a platform-level issue (background agents returning empty responses despite completing work). We can't unit-test LLM behavior. But we CAN write a regression test for the *mitigations*.
+
+**What we can test:**
+
+### Test A: Response Order Compliance
+Verify that the spawn prompt template in `squad.agent.md` contains the response-order instruction. This is a content test — grep for the critical text:
+
+```javascript
+it('spawn prompt requires text summary as final output', () => {
+  const content = fs.readFileSync(
+    path.join(tmpDir, '.github', 'agents', 'squad.agent.md'), 'utf8'
+  );
+  assert.ok(
+    content.includes('end with a TEXT summary') || 
+    content.includes('RESPONSE ORDER') ||
+    content.includes('end your final message with a text summary'),
+    'squad.agent.md must instruct agents to end with text, not tool calls'
+  );
+});
+```
+
+### Test B: Silent Success Detection Instructions
+Verify that the coordinator instructions include silent-success detection logic:
+
+```javascript
+it('coordinator handles silent success', () => {
+  const content = fs.readFileSync(
+    path.join(tmpDir, '.github', 'agents', 'squad.agent.md'), 'utf8'
+  );
+  assert.ok(
+    content.includes('silent success') || content.includes('did not produce a response'),
+    'squad.agent.md must include silent success detection'
+  );
+});
+```
+
+### Test C: File Existence as Ground Truth
+The mitigation says "check if expected files exist when response is empty." We can test the FILE CREATION part — which is the ground truth the coordinator relies on:
+
+```javascript
+it('init creates all expected files (ground truth for silent success detection)', () => {
+  execSync(`node ${indexPath}`, { cwd: tmpDir });
+  // These are the files the coordinator checks when detecting silent success
+  assert.ok(fs.existsSync(path.join(tmpDir, '.github', 'agents', 'squad.agent.md')));
+  assert.ok(fs.existsSync(path.join(tmpDir, '.ai-team-templates')));
+  assert.ok(fs.existsSync(path.join(tmpDir, '.ai-team', 'decisions', 'inbox')));
+});
+```
+
+**What we CANNOT test:** Whether the LLM actually follows the response-order instruction. That's an AI behavior test, not a code test. Kujan's Proposal 015 is right that the ~40% rate is non-deterministic. Our tests prove the mitigations are IN PLACE, not that they work 100% of the time. Monitoring the silent success rate post-mitigation is the only way to validate effectiveness.
+
+**Regression value:** If someone edits `squad.agent.md` and accidentally removes the response-order instructions, these tests catch it. That's the regression we're preventing.
+
+---
+
+## 4. My Recommended Test Sequence — If You Can Only Ship 3
+
+If I could only ship 3 tests, these are the 3:
+
+### Priority 1: Init Happy Path
+**Why first:** If `npx create-squad` doesn't work, nothing else matters. This is the front door. Every user hits this. Zero ambiguity about whether the product functions.
+
+```
+Run index.js in temp dir → verify:
+  - .github/agents/squad.agent.md exists and matches source
+  - .ai-team-templates/ exists with all template files  
+  - .ai-team/decisions/inbox/ exists
+  - .ai-team/orchestration-log/ exists
+  - .ai-team/casting/ exists
+  - stdout contains "Squad is ready"
+  - exit code is 0
+```
+
+### Priority 2: Init Idempotency
+**Why second:** Real users WILL run `npx create-squad` twice. Maybe they forgot they already ran it. Maybe they want to check if it's installed. If the second run corrupts their team state, we've lost that user's trust permanently. Brady's P0 is human trust — this test is how we prove it.
+
+```
+Run index.js in temp dir (first run)
+Create .ai-team/agents/keaton/history.md with content
+Run index.js again (second run) → verify:
+  - history.md content is unchanged
+  - squad.agent.md is unchanged (skipped)
+  - .ai-team-templates/ is unchanged (skipped)
+  - stdout contains "already exists — skipping"
+  - No errors, exit code 0
+```
+
+### Priority 3: Export/Import Round-Trip
+**Why third:** This is the v1 headline feature. "Your squad travels with you." If export → import loses data, the feature is a lie. This is the acid test — if it passes, portability works. If it fails, we don't have a v1.
+
+```
+Init in dir A
+Seed A with agent data (charters, histories, casting, skills)
+Export from A → .squad file
+Import into dir B
+Compare: A's portable state == B's state
+  - casting/registry.json matches
+  - agent charters match
+  - skills/preferences survive
+  - NO project-specific leakage (decisions.md is fresh, orchestration-log is empty)
+```
+
+**What I'm cutting and why:**
+- Upgrade test — important but upgrade is a convenience feature, not the core value prop
+- Skills persistence — covered by the round-trip test (skills are part of the export)
+- Forwardability test — similar to upgrade, secondary to the core init/export/import flow
+- Edge cases — these catch bugs but don't prove the product works; they prove it doesn't break
+
+**The 3-test suite proves:** The product installs (1), it's safe to use repeatedly (2), and the headline feature works (3). That's the minimum viable trust.
+
+---
+
+## Summary Decision
+
+| Question | Answer |
+|----------|--------|
+| Are 5 tests enough? | Yes, if they're the right 5 and foundational tests exist earlier |
+| Sprint 3 only? | **NO.** Tests must start Sprint 1. Same total effort, radically less risk. |
+| Silent success testing? | Test that mitigations are in place (content tests on squad.agent.md). Can't test LLM compliance. |
+| Top 3 tests? | Init happy path → Init idempotency → Export/import round-trip |
+| Framework? | `node:test` + `node:assert` (zero dependencies, per Proposal 013) |
+| Blocking for v1? | Init + idempotency + round-trip. If these 3 don't pass, we don't ship. |
+
+**I agree with Proposal 009's test LIST but disagree with the TIMING.** Push init tests to Sprint 1 and export/import tests to Sprint 2. Sprint 3 is for hardening, edge cases, and CI — not for discovering that the foundation is broken.
+
+---
+
+**For:** bradygaster (sign-off), Keaton (sprint plan revision), Fenster (test-alongside-implementation)
+**Status:** PROPOSED
+
+
+---
+
+# Decision: Proposal Lifecycle Amendment
+
+**From:** Keaton (Lead)  
+**Date:** 2026-02-09  
+**Re:** Proposal 001a — Adding lifecycle states to proposal workflow
+
+---
+
+## Decision 1: Proposal Lifecycle States
+
+Proposal 001's status options (`Proposed | Approved | Cancelled | Superseded`) are insufficient. We have 16 proposals with no way to track what's active or shipped.
+
+**Adding two states:**
+- **In Progress** — implementation started, owner assigned
+- **Completed** — shipped, evidence linked
+
+Full lifecycle: `Proposed → Approved → In Progress → Completed` (with `Cancelled` and `Superseded` as exits at any point).
+
+Filed as Proposal 001a. Needs Brady's sign-off.
+
+---
+
+## Decision 2: Sprint Plan Assessment (Proposal 009)
+
+Proposal 009 is architecturally sound but **mis-sequenced for trust**. Brady said human trust is P0. Proposal 015 (silent success bug) affects 40% of agent spawns — users see "no response" when work completed successfully. This is the single biggest trust destroyer.
+
+**What should change:**
+
+1. **Silent success fix (Proposal 015) must be Sprint 1, Day 1.** It's a zero-risk prompt change. Every session where a user sees "no response" when work was done erodes the trust we're trying to build. The sprint plan doesn't mention it at all — that's a gap.
+
+2. **Sprint 1 priority reorder:**
+   - Day 1: Silent success mitigations (Proposal 015) — ship immediately
+   - Day 1-2: Tiered response modes + coordinator direct handling — the "it's fast" feeling
+   - Day 2-3: Forwardability + latency fixes — infrastructure
+   
+3. **Sprint 2 and 3 are fine as-is.** The dependency chain (history split → skills → export/import) is correct. README and testing are correctly deferred.
+
+4. **What can start without team review:** Silent success fix (Proposal 015) — zero risk, ship now. Latency P0 fixes — instruction-only changes. Context caching — instruction-only.
+
+5. **What needs team review before starting:** Skills system design — Verbal's prompt work is critical path. Export/import schema — once shipped, the manifest format is a contract.
+
+**The plan is right for v1. The sequencing needs the trust fix up front.**
+
+---
+
+## Action Required
+
+- Scribe: merge both decisions to `decisions.md`
+- Brady: review and approve Proposal 001a
+- Keaton: update Proposal 009 to include Proposal 015 mitigations in Sprint 1
+
+
+---
+
+# Decision: Skills System — Agent Skills Standard + MCP Tool Declarations
+
+**By:** Verbal  
+**Date:** 2026-02-09  
+**Proposal:** 010-skills-system.md (Revision 2)
+
+**What:** Squad skills will use the **Agent Skills standard** (SKILL.md format) instead of a custom format. Skills live in `.ai-team/skills/{skill-name}/SKILL.md` as standard directories — not per-agent `skills.md` files. Each SKILL.md has YAML frontmatter (`name`, `description` required; `metadata.confidence`, `metadata.projects-applied`, `metadata.acquired-by`, `metadata.mcp-tools` for Squad extensions) and a markdown body with earned knowledge. The coordinator injects `<available_skills>` XML into spawn prompts for progressive disclosure (~50 tokens per skill at discovery, full SKILL.md loaded on demand). MCP tool dependencies are declared in `metadata.mcp-tools` — skills specify which MCP servers they need and why. Skills are generated organically from real work (agents create SKILL.md after completing tasks), can be explicitly taught, and follow a lifecycle: acquisition → reinforcement → correction → deprecation. The standard format means skills are portable beyond Squad — works in Claude Code, Copilot, any compliant tool.
+
+**Why:** Brady's directive: *"skills that adhere to the anthropic 'skills.md' way"* and *"tell copilot which mcp tools our skills would need."* The original Proposal 010 invented a custom format. This revision adopts the open standard, gaining interoperability (skills work everywhere), progressive disclosure (cheap discovery, on-demand activation), and MCP awareness (skills declare their tool dependencies). Squad's unique value isn't the format — it's that Squad GENERATES standard-compliant skills from real work. Everyone else authors them by hand. The flat `skills/` directory replaces per-agent skill files because skills are team knowledge, not agent-siloed. MCP declarations in metadata are spec-compliant (arbitrary key-value) and solve the tool-wiring problem. Implementation phased across 6 releases, starting with template + instruction changes only.
+
+**Key changes from Revision 1:**
+- Storage: `skills/*/SKILL.md` (standard directories) replaces `agents/*/skills.md` (per-agent markdown)
+- Format: YAML frontmatter + markdown body (standard) replaces freeform markdown (custom)
+- Context: `<available_skills>` XML injection (standard progressive disclosure) replaces full content inlining
+- MCP: `metadata.mcp-tools` array for declaring MCP server dependencies (NEW — addresses Brady's request)
+- Portability: Skills work in any Agent Skills-compliant tool (Claude Code, Copilot, etc.)
+
+**Depends on:** Proposal 008 (Portable Squads) for export/import; Proposal 007 (Persistence) for progressive summarization; Proposal 012 (Skills Platform) for Kujan's forwardability analysis.

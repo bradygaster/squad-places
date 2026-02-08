@@ -268,3 +268,8 @@
 - Coordinator modification: `squad.agent.md` spawn prompt section (add `<available_skills>` XML + MCP requirements)
 - Export format update: version bump to 1.1, add `skills` and `team_skills` objects
 - Decision: `.ai-team/decisions/inbox/kujan-skills-standard.md`
+
+
+📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
+
+📌 Team update (2026-02-08): Skills system adopts Agent Skills standard (SKILL.md format) with MCP tool declarations -- decided by Verbal

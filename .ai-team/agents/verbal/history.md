@@ -241,3 +241,10 @@
 - The evolution path changed: `Static SKILL.md → Squad-generated SKILL.md → Portable skills → Skill packs → Community exchange`. We're positioned at the "generated" step. Nobody else is here.
 
 **File path:** `docs/proposals/010-skills-system.md` (Revision 2)
+
+
+📌 Team update (2026-02-08): Fenster revised sprint estimates and recommends splitting export (Sprint 2) and import (Sprint 3) -- decided by Fenster
+
+📌 Team update (2026-02-08): Testing must start Sprint 1, not Sprint 3 -- decided by Hockney
+
+📌 Team update (2026-02-08): Proposal 001a adopted: proposal lifecycle states (Proposed -> Approved -> In Progress -> Completed) -- decided by Keaton
