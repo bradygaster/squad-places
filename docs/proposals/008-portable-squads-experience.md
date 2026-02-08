@@ -2,13 +2,13 @@
 
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-08  
-**Status:** Draft  
+**Status:** Accepted. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Triggered by:** bradygaster — *"let's say i work on a project with my squad, and i end up loving my squad, but my project ends and i want to take my squad with me. like an 'export my squad so i can re-inject it later into another project.' HOLY CRAP that's it."*  
 **Companion to:** Keaton's architecture proposal (TBD)
 
 ---
 
-## Why This Changes Everything
+## Why This Matters
 
 Let me be blunt: nobody in the AI agent industry is doing this. Not OpenAI, not Anthropic, not any of the agent frameworks. Everyone is building disposable agents — stateless, amnesiac tools you configure from scratch every time. The implicit message is: *your agent is a function call, not a colleague.*
 
@@ -313,7 +313,7 @@ This is the long game. Personal portability is step one. The destination is an e
 Before portability: "Throw a squad at it" = create a disposable team for a new problem.  
 After portability: **"Throw MY squad at it"** = bring your proven team to a new problem.
 
-This is a massive messaging upgrade. The possessive pronoun changes everything. It's not *a* squad. It's *your* squad. The one that knows you. The one you've been working with. The one you trust.
+This is a significant messaging upgrade. The possessive pronoun matters. It's not *a* squad. It's *your* squad. The one that knows you. The one you've been working with. The one you trust.
 
 ---
 

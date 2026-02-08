@@ -1,6 +1,6 @@
 # Proposal 014: V1 Messaging, README, and Launch Plan — "Throw MY Squad at It"
 
-**Status:** Draft  
+**Status:** Accepted  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster  
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-Squad is going v1 with three features that change everything: **portable squads**, **skills**, and **forwardability**. This proposal is the complete public-facing launch plan — positioning, README, demo script, launch strategy, community play, and competitive framing. Every word the world sees. Every frame of the first demo. The campaign that takes Squad from 9 users to 900.
+Squad is going v1 with three features that matter: **portable squads**, **skills**, and **forwardability**. This proposal is the complete public-facing launch plan — positioning, README, demo script, launch strategy, community play, and competitive framing. Every word the world sees. Every frame of the first demo. The campaign that takes Squad from 9 users to 900.
 
 The core insight: portability transforms Squad's tagline from a verb into an identity. "Throw a squad at it" becomes "Throw MY squad at it." That possessive pronoun is the entire v1 story.
 
@@ -44,7 +44,7 @@ AI agent teams that learn you, grow with you, and come with you.
 
 > I just exported my AI dev team from one project and imported them into another. They already knew my code style, my testing preferences, and my architecture patterns. No config. No setup. They just *knew*.
 >
-> This is @bradygaster's Squad. And it changes everything about AI tools.
+> This is @bradygaster's Squad. And it's not like any AI tool you've used.
 
 ### Tagline hierarchy for v1:
 
@@ -836,7 +836,7 @@ Do people say "throw a squad at it" unprompted? Do they call agents by name? Do 
 
 ## Endorsement
 
-**McManus:** This is the launch Squad has been building toward. Portability transforms "a cool tool" into "my team." Skills transform "it remembers stuff" into "it's actually good at this." And forwardability says "we'll never make you start over." The possessive pronoun — MY squad — is the entire v1 story in one word. The demo script's two-project arc is the proof. The Twitter thread is the amplifier. The community play is the multiplier. Ship it. Make it pop. — McManus
+**McManus:** Portability transforms "a cool tool" into "my team." Skills transform "it remembers stuff" into "it's actually good at this." And forwardability says "we'll never make you start over." The possessive pronoun — MY squad — is the entire v1 story in one word. The demo script's two-project arc is the proof. The Twitter thread is the amplifier. The community play is the multiplier. Ship it. — McManus
 
 ---
 

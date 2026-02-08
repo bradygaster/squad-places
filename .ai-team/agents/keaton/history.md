@@ -315,3 +315,23 @@ The drop-box pattern is elegant in theory. In practice, it depends on Scribe bei
 2026-02-09: Release decisions — v0.1.0 tag now, Kobayashi proposes releases/Brady publishes, squadify→main merge after Wave 1 gate, design for public repo.
 
 2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
+
+### Stale proposals audit
+
+**Date:** Session post-019a
+**Trigger:** bradygaster requested a full audit of proposal statuses.
+
+Audited all 25 proposal files in `docs/proposals/`. Every `Status:` field was stale — most still said `Proposed` or `Draft` despite being actively tracked in Proposal 019 or already shipped.
+
+**Changes made:**
+- 14 proposals → `Accepted` (actively being executed via Proposal 019)
+- 2 proposals → `Implemented` (001a lifecycle amendment, 015 silent success mitigations)
+- 3 proposals → `Superseded` (006 by 014/019, 009 by 019, 018 by 019)
+- 5 proposals → `Deferred` (003 platform optimization, 005 video strategy, 017 DM family ×3)
+- 1 proposal unchanged (`019` — already `Approved`, the active plan)
+
+**npm/GitHub-only notes added:** Proposals 008-experience, 008-platform, 011, and 020 reference `@bradygaster/create-squad` or npm publishing. Added notes that distribution is now GitHub-only per 019a.
+
+**Key insight:** Status drift is a process smell. 25 proposals all saying "Proposed" or "Draft" means the lifecycle states from 001a weren't being enforced. Proposal status should be updated when work begins, not retroactively in an audit.
+
+2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.

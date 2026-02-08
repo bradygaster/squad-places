@@ -1,6 +1,6 @@
 # Proposal 016: The Squad Paper — Why Multi-Agent Teams Beat Working Alone
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster  

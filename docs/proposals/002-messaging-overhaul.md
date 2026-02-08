@@ -1,6 +1,6 @@
 # Proposal 002: Messaging Overhaul — "Throw a Squad at It"
 
-**Status:** Draft  
+**Status:** Accepted  
 **Authors:** McManus (DevRel) + Verbal (Prompt Engineer)  
 **Date:** 2026-02-07  
 **Context:** Brady greenlit complete messaging overhaul. Cultural hook: "throw a squad at it" (internal lingo at his company for spinning up teams to solve important problems).

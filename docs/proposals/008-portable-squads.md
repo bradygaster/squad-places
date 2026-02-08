@@ -1,6 +1,6 @@
 # Proposal 008: Portable Squads
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster

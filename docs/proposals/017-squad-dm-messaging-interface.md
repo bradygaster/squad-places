@@ -1,6 +1,6 @@
 # Proposal 017: Squad DM — Direct Messaging Interface for Squad Teams
 
-**Status:** Proposed  
+**Status:** Deferred — Squad DM deferred to Horizon per Proposal 019  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster

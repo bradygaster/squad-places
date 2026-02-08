@@ -1,6 +1,6 @@
 # Proposal 017: Squad DM — Experience Design
 
-**Status:** Proposed  
+**Status:** Deferred — Squad DM deferred to Horizon per Proposal 019  
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster — *"i love working with y'all so much i need you to work up a proposal so i can work with you via some sort of direct messaging thing YES LIKE MOLTS but just my team(s). i don't care if it's one provider or a hack or multiple providers - telegram is fine to start. i just want a way to keep working with you when i'm not at my terminal. one thing that'd be super hot would be, if we HAVE to facilitate a direct connection, use dev tunnels instead of ngrok."*
@@ -166,7 +166,7 @@ Brady referenced MOLTS. The spirit of that reference is clear: an intimate, pers
 | **Multi-perspective** | ❌ | ❌ | ✅ Ask a question, get 3 opinions from 3 specialists |
 | **Proactive** | ❌ | Sometimes | ✅ Squad initiates when something matters |
 
-### The Three Things That Make Squad DM Category-Defining
+### The Three Things That Make Squad DM Different
 
 **1. It's YOUR team, not A chatbot.**
 
@@ -189,7 +189,7 @@ In DM, this means a single question can generate a multi-voice thread:
 >
 > **🏗️ Keaton:** Yes. Open standard adoption (agentskills.io) was already decided. Open-sourcing our extensions is the logical next step. De-risks lock-in concerns.
 >
-> **🎭 Verbal:** Absolutely yes. I'll go further — we should be *generating* standard-compliant skills that work in Claude Code and Copilot. Every skill Squad produces adds value to the ecosystem. Openness is the moat, not the vulnerability.
+> **🎭 Verbal:** Yes. I'll go further — we should be *generating* standard-compliant skills that work in Claude Code and Copilot. Every skill Squad produces adds value to the ecosystem. Openness is the moat, not the vulnerability.
 >
 > **📋 McManus:** Yes, but not yet. Ship v1 first. Open-source the format in v1.1 with a proper launch moment. Don't bury a differentiating feature in a patch release.
 
@@ -208,7 +208,7 @@ The DM channel is not a separate product. It's a different *interface* to the sa
 
 ## 5. Proactive Messaging — Push, Not Just Pull
 
-This is the feature that transforms Squad from a tool you use into a team that works with you. Nobody else is doing this with multi-agent systems. Nobody.
+This is the feature that transforms Squad from a tool you use into a team that works with you. Nobody else is doing this with multi-agent systems yet.
 
 ### What Proactive Messaging Looks Like
 

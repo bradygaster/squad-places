@@ -2,7 +2,7 @@
 
 **Authors:** Kujan (Copilot SDK Expert) + Verbal (Prompt Engineer)  
 **Date:** 2026-02-08  
-**Status:** Draft  
+**Status:** Accepted  
 **Triggered by:** bradygaster — *"it seems later on, the agents get in the way more than they help"*
 
 ---

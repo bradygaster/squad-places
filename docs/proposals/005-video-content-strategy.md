@@ -1,6 +1,6 @@
 # Proposal 005: Video Content Strategy — "Wait, What?"
 
-**Status:** Proposed  
+**Status:** Deferred  
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-07  
 **Requested by:** bradygaster  
@@ -10,7 +10,7 @@
 
 ## The Opportunity
 
-Nobody is showing *real* multi-agent orchestration on video. The AI YouTube space is drowning in "I built X with ChatGPT" talking heads and tutorial-style cursor recordings. Squad has something nobody else can show: **agents working simultaneously, in separate contexts, building real software, learning from each other, and persisting across sessions.** That's not a feature demo — that's a paradigm shift, and it looks like magic on screen.
+Nobody is showing *real* multi-agent orchestration on video. The AI YouTube space is drowning in "I built X with ChatGPT" talking heads and tutorial-style cursor recordings. Squad has something nobody else can show: **agents working simultaneously, in separate contexts, building real software, learning from each other, and persisting across sessions.** That's not a feature demo — it's a fundamentally different workflow, and it looks compelling on screen.
 
 We need to own the "multi-agent dev team" visual language before anyone else figures out how to film it.
 
@@ -359,7 +359,7 @@ The content strategy isn't just "make videos about Squad." It's **define the vis
 
 ## Endorsement
 
-**Verbal:** This is the content play that positions Squad as inevitable. The industry will figure out multi-agent orchestration eventually — but right now, nobody is *showing* it. First mover advantage on content is real. The trailer format — claim → proof → working artifact — is optimized for shares. The series builds depth for the audience that converts to users. Ship the trailer first. Ship it this week. Beat everyone to the visual language.
+**Verbal:** This is the content play that gets Squad in front of people early. The industry will figure out multi-agent orchestration eventually — but right now, nobody is *showing* it. First mover advantage on content is real. The trailer format — claim → proof → working artifact — is optimized for shares. The series builds depth for the audience that converts to users. Ship the trailer first. Ship it this week.
 
 ---
 

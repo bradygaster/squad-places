@@ -1,6 +1,6 @@
 # Proposal 011: Forwardability and Upgrade Path
 
-**Status:** Proposed  
+**Status:** Accepted — upgrade subcommand shipped; full plan tracked in Proposal 019. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Authored by:** Fenster (Core Dev)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster

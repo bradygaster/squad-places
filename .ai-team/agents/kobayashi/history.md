@@ -52,3 +52,5 @@
 2026-02-09: Branch strategy implemented — `squadify` renamed to `dev`, release workflow created (`.github/workflows/release.yml`), proposal 021 updated. `main` is now product-only via filtered-copy release process.
 
 2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
+
+2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.

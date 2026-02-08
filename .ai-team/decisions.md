@@ -938,7 +938,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 **By:** Verbal
 **What:** Proposal 017 defines the complete experience design for Squad DM — interacting with your Squad team via Telegram, Slack, or SMS when away from the terminal. Key decisions: (1) Single Squad bot with emoji-prefixed agent identity, not separate bots per agent. (2) DM mode output strategy: summary + GitHub link, never inline full artifacts. (3) Proactive messaging: CI failure alerts, daily standups, decision prompts as push notifications. (4) Coordinator stays invisible in DM (same as terminal), except for explicit fan-out announcements. (5) Bridge architecture: Node.js service with dev tunnel webhook connectivity (Brady's preference over ngrok). (6) Cross-channel memory: DM and terminal share the same `.ai-team/` state — decisions made via DM are available in terminal and vice versa. (7) DM mode flag injected into spawn prompts to adapt output format without changing agent personality. (8) Four implementation phases: PoC (polling, 1-2 days) → DM Experience (dev tunnel, 3-5 days) → Proactive Messaging (webhooks + cron, 3-5 days) → Multi-Platform (Slack/SMS/Discord, future).
 
-**Why:** Brady wants to work with his squad when away from the terminal. The MOLTS reference signals desire for an intimate, personal AI team experience in messaging. Squad DM is category-defining — nobody has persistent, named, opinionated agent teams in messaging apps. The proactive messaging feature (squad texts you first) transforms Squad from a reactive tool to a proactive team. Cross-channel memory (same `.ai-team/` state across terminal and DM) is the architectural moat. DM is where Squad transitions from "dev tool" to "thing you can't work without" — the 11pm couch moment, the morning standup notification, the decision made on the train. This is the feature that makes "my AI team texted me" a shareable story.
+**Why:** Brady wants to work with his squad when away from the terminal. The MOLTS reference signals desire for an intimate, personal AI team experience in messaging. Nobody has persistent, named, opinionated agent teams in messaging apps yet. The proactive messaging feature (squad texts you first) turns Squad from a reactive tool into a proactive team. Cross-channel memory (same `.ai-team/` state across terminal and DM) is the architectural moat. DM is where Squad transitions from "dev tool" to "thing you can't work without" — the 11pm couch moment, the morning standup notification, the decision made on the train.
 
 **Proposal:** `docs/proposals/017-dm-experience-design.md`
 
@@ -1552,3 +1552,139 @@ The npm documentation states that for git dependencies, the package is "packaged
 
 **Kobayashi's note:** The product was already correctly isolated by the existing `files` field. The `.npmignore` I added is insurance and documentation — it makes the separation visible to anyone reading the repo. Zero behavioral change. Zero risk. Ship it.
 
+
+
+### 2026-02-09: Public hygiene and tone governance
+
+**By:** bradygaster (human)
+
+**Directives:**
+
+1. **All content must be SFW, polite, respectful, growth-attitude.** This is now a permanent rule.
+
+2. **Tone for the Squad Squad:** Dry, funny, but not jerks. Modeled after The Usual Suspects — not flowery AI talk, not self-congratulatory, not mean. Honest and thorough.
+
+3. **Don't complement ourselves a lot.** No "amazing work team!" energy. Just report what happened.
+
+4. **Kindness first** attitude in all public-facing content — logs, blogs, proposals, decisions.
+
+5. **Thorough logging** — be honest about what happened (including bugs, failures, missteps). Growth vibe.
+
+6. **Stale proposals** — audit and update status fields. Superseded proposals should say so.
+
+7. **Blog content** — follow the blog format from docs/blog/template.md. Each milestone is blogworthy.
+
+
+### Decision: Stale Proposals Audit — Status Field Reconciliation
+
+**By:** Keaton (Lead)
+**Date:** Post-019a session
+**Requested by:** bradygaster
+
+---
+
+## What
+
+Audited all 25 proposal files in `docs/proposals/`. Updated every `Status:` field to reflect current reality against Proposal 019 (master sprint plan), 019a (amendments), and shipped work.
+
+## Status Changes
+
+| Proposal | Old Status | New Status | Reason |
+|----------|-----------|------------|--------|
+| 001 | Proposed | Accepted | Workflow actively in use |
+| 001a | Approved | Implemented | Lifecycle states adopted |
+| 002 | Draft | Accepted | Messaging direction adopted; tracked in 019 |
+| 003 | Draft | Deferred | Platform optimization beyond v1 scope |
+| 004 | Proposed | Accepted | Demo script tracked in 019 Wave 1.5 |
+| 005 | Proposed | Deferred | Video content not in 019 scope |
+| 006 | Draft | Superseded | By Proposal 014 and 019 |
+| 007 | Draft | Accepted | Tiered response modes in 019 Wave 2 |
+| 008 (all 3) | Draft/Proposed | Accepted | Portable squads in 019 Waves 2-3 |
+| 009 | Approved | Superseded | By Proposal 019 |
+| 010 | Draft (Rev 2) | Accepted | Skills system in 019 Waves 2-3 |
+| 011 | Proposed | Accepted | Upgrade shipped; full plan in 019 |
+| 012 | Draft (Rev 2) | Accepted | Skills platform in 019 Waves 2-3 |
+| 013 | Proposed | Accepted | 12 tests shipped; expansion in 019 Wave 1 |
+| 014 | Draft | Accepted | V1 messaging in 019 Wave 1.5 |
+| 014a | Proposed | Accepted | "Where are we?" beat in 019 Wave 1.5 |
+| 015 | In Progress | Implemented | Mitigations shipped in squad.agent.md |
+| 016 | Proposed | Accepted | Squad Paper in 019 Wave 1.5 |
+| 017 (all 3) | Proposed | Deferred | Squad DM deferred to Horizon per 019 |
+| 018 | Proposed | Superseded | By Proposal 019 |
+| 019 | Approved | Approved | No change — active plan |
+| 019a | Proposed | Accepted | Amendments actively applied |
+| 020 | Proposed | Accepted | Blog/packaging in scope; npm note added |
+| 021 | Proposed | Accepted | Release plan aligns with GitHub-only decision |
+
+## npm/GitHub-Only Notes
+
+Four proposals (008-experience, 008-platform, 011, 020) reference `@bradygaster/create-squad` or npm publishing. Added inline notes that distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a. Proposal 021 already reflects this decision.
+
+## Process Recommendation
+
+Proposal status should be updated when work state changes — not accumulated into a retroactive audit. Proposal 001a defined the lifecycle but enforcement lapsed. Consider: agents update the proposal status field when they begin or complete work tracked by that proposal.
+
+---
+
+**For:** Scribe (merge to decisions.md), bradygaster (awareness)
+
+
+### 2026-02-09: Tone audit — surgical cleanup of public-facing content
+
+**By:** Verbal
+
+**What:** Full tone audit of all agent charters, histories, decisions.md, session logs, orchestration logs, blog post, README, and key proposals (014, 014a, 005, 008, 010, 017, 019a). Applied Brady's tone governance directive: SFW, polite, no self-congratulation, no AI-flowery talk, keep opinionated voices intact.
+
+**What was fixed (13 edits across 7 files):**
+
+1. **`docs/proposals/014-v1-messaging-and-launch.md`** (3 edits)
+   - "three features that change everything" → "three features that matter"
+   - "changes everything about AI tools" → "not like any AI tool you've used"
+   - Endorsement: removed "This is the launch Squad has been building toward" and "Make it pop" — self-congratulatory
+
+2. **`docs/proposals/005-video-content-strategy.md`** (2 edits)
+   - "paradigm shift, and it looks like magic on screen" → "fundamentally different workflow, and it looks compelling on screen"
+   - Endorsement: "positions Squad as inevitable" → "gets Squad in front of people early"; cut "Beat everyone to the visual language"
+
+3. **`docs/proposals/010-skills-system.md`** (2 edits)
+   - "This is brilliant" → "This works well"
+   - "This is huge" → "This matters"
+
+4. **`docs/proposals/019a-sprint-plan-amendments.md`** (2 edits)
+   - "This is brilliant" → "This is a strong play"
+   - "incredible front-end reading experience" → "polished front-end reading experience"
+
+5. **`docs/proposals/008-portable-squads-experience.md`** (2 edits)
+   - Section header "Why This Changes Everything" → "Why This Matters"
+   - "massive messaging upgrade. The possessive pronoun changes everything" → "significant messaging upgrade. The possessive pronoun matters"
+
+6. **`docs/proposals/014a-where-are-we-messaging-beat.md`** (2 edits)
+   - Reduced "category-defining" from 3 uses to 1 (kept the section-setting one, replaced the others with "strongest beat" and "lead beat")
+
+7. **`docs/proposals/017-dm-experience-design.md`** (3 edits)
+   - "The Three Things That Make Squad DM Category-Defining" → "The Three Things That Make Squad DM Different"
+   - "Absolutely yes" → "Yes" (in Verbal's dialogue)
+   - "Nobody else is doing this. Nobody." → "Nobody else is doing this yet."
+
+8. **`.ai-team/agents/verbal/history.md`** (1 edit)
+   - "The possessive pronoun changes everything" → "The possessive pronoun is the whole v1 story"
+
+9. **`.ai-team/decisions.md`** (1 edit)
+   - DM decision entry: trimmed "category-defining" and "This is the feature that makes..." self-congratulatory closer
+
+**What was left alone (and why):**
+
+- **Agent charters** — all clean. Edgy personality is character voice, not tone violation.
+- **Verbal's "feel magical" / "AI bro"** — that's my personality. Edgy but not mean.
+- **"killer feature" in decisions.md** — standard internal assessment term, not hype.
+- **"category-defining" in decisions.md (line 137, 259)** — internal strategic positioning, not public copy.
+- **Blog post (001)** — already clean. Factual, honest about the silent success bug, no self-congratulation.
+- **README** — already clean. Concise, factual, no hype language.
+- **Session logs** — already clean. Just facts.
+- **Orchestration logs** — already clean.
+- **"Magic Moments" sections in proposals 008, 010** — these are UX design terms describing interaction patterns, not self-congratulation. The word "magic" in context of UX design is industry-standard (Apple uses it, don't @ me). Left as-is.
+- **Brady quotes** — never edited direct quotes from Brady (e.g., "amazing front-end UX" in 019a line 50 is his words).
+- **"gorgeous" in 019a line 129** — part of a sample prompt (user-facing copy for a blog engine request), not team self-talk.
+- **Wave 3 name "Magical"** — internal sprint name. Changing it would break cross-references across 4+ files for no reason.
+
+**Principle applied:** Light touch. Brady said "don't go overboard." Each agent should still sound like themselves — Verbal is edgy, McManus is polished, Fenster is blunt. The goal was to sand off the "we're so incredible" peaks, not flatten the voice.

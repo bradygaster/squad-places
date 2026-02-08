@@ -3,7 +3,7 @@
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-08  
 **Revised:** 2026-02-09 — Aligned with Agent Skills standard (SKILL.md format), added MCP tool declarations  
-**Status:** Draft (Revision 2)  
+**Status:** Accepted  
 **Triggered by:** bradygaster — *"when i say skills i mean claude-and-copilot-compliant skills that adhere to the anthropic 'skills.md' way"* and *"could we also find a way to be able to tell copilot which mcp tools our skills would need?"*  
 **Builds on:** Proposal 008 (Portable Squads), Proposal 007 (Progressive Trust)
 
@@ -100,7 +100,7 @@ The coordinator injects available skills into spawn prompts via the standard XML
 </available_skills>
 ```
 
-This is brilliant for Squad because it solves our context budget problem (Proposal 003). Only names + descriptions load at spawn. Full skill content loads on demand. A squad with 30 skills pays ~3K tokens at startup, not 30K.
+This works well for Squad because it solves our context budget problem (Proposal 003). Only names + descriptions load at spawn. Full skill content loads on demand. A squad with 30 skills pays ~3K tokens at startup, not 30K.
 
 ### What Squad Adds to the Standard
 
@@ -123,7 +123,7 @@ The standard is the foundation. Squad makes it alive.
 
 Brady's second insight: *"could we also find a way to be able to tell copilot which mcp tools our skills would need?"*
 
-This is huge. A skill shouldn't just contain knowledge — it should declare its **tool dependencies**. When a squad agent activates a skill, the coordinator (or Copilot itself) should know what MCP servers that skill needs.
+This matters. A skill shouldn't just contain knowledge — it should declare its **tool dependencies**. When a squad agent activates a skill, the coordinator (or Copilot itself) should know what MCP servers that skill needs.
 
 ### How It Works
 

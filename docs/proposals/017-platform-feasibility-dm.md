@@ -1,6 +1,6 @@
 # Proposal 017: Platform Feasibility — Direct Messaging Interface
 
-**Status:** Proposed  
+**Status:** Deferred — Squad DM deferred to Horizon per Proposal 019  
 **Authored by:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster  

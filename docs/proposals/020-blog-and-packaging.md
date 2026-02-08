@@ -1,6 +1,6 @@
 # Proposal 020: Blog Format, Blog Engine Prompt, and Package Naming UX
 
-**Status:** Proposed  
+**Status:** Accepted. Note: npm publishing recommendations in §3 are superseded — distribution is GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster  

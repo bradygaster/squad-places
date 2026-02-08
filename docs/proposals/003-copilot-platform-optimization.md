@@ -2,7 +2,7 @@
 
 **Author:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-07  
-**Status:** Draft  
+**Status:** Deferred  
 
 ---
 

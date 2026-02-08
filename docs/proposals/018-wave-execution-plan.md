@@ -1,6 +1,6 @@
 # Proposal 018: Wave-Based Execution Plan (Quality → Experience)
 
-**Status:** Proposed  
+**Status:** Superseded — by Proposal 019  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster — *"i'd like a priority-based approach - quality then experience - for our next few waves of work"*  

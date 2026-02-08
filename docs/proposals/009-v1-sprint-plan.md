@@ -2,7 +2,7 @@
 
 **Author:** Keaton (Lead)  
 **Date:** 2026-02-08  
-**Status:** Approved  
+**Status:** Superseded — by Proposal 019  
 **Approved by:** bradygaster (2026-02-08)  
 **Amendments:** Sprint 0 added per Fenster/Keaton/Hockney review. Export/import split per Fenster. Tests start Sprint 1 per Hockney.  
 **Triggered by:** bradygaster — 9 users, whole division talking. Make Squad the best AI dev tool out there. Period.

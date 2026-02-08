@@ -1,6 +1,6 @@
 # Proposal 014a: "Where Are We?" — Messaging Beat Amendment
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-09  
 **Amends:** Proposal 014 (V1 Messaging and Launch)  
@@ -176,7 +176,7 @@ The DM "where are we?" moment is the bridge between two value propositions:
 | Your squad knows where you are | Your squad is in your pocket |
 | No Jira | No laptop required |
 
-When we launch Squad DM (Proposal 017), the "where are we?" moment becomes the lead demo. Not the code generation. Not the architecture debates. The check-in. Because the check-in is the moment where the team feels real. And it feeling real from a phone — that's the category-defining beat.
+When we launch Squad DM (Proposal 017), the "where are we?" moment becomes the lead demo. Not the code generation. Not the architecture debates. The check-in. Because the check-in is the moment where the team feels real. And it feeling real from a phone — that's the strongest beat.
 
 ### Messaging for DM launch
 
@@ -258,7 +258,7 @@ Add to Proposal 014's tagline hierarchy:
 
 2. **Demo script beat** — "The Check-In" — a 30-second demo moment that proves three features simultaneously. Usable in the v1 demo, the introductory demo, and as a standalone social clip.
 
-3. **DM connection** — Bridges the terminal experience to Proposal 017's DM vision. "Where are we?" from a phone is the category-defining beat for Squad DM's launch.
+3. **DM connection** — Bridges the terminal experience to Proposal 017's DM vision. "Where are we?" from a phone is the lead beat for Squad DM's launch.
 
 4. **README placements** — Two placements for current README (close of "Why Squad?", follow-up in "Agents Work in Parallel"). A third standalone section deferred until DM launch.
 

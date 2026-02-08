@@ -1,6 +1,6 @@
 # Proposal 021: Release Plan & Distribution Strategy
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Authored by:** Kobayashi (Git & Release Engineer)  
 **Date:** 2025-07-16  
 **Requested by:** bradygaster  

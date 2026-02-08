@@ -1,6 +1,6 @@
 # Proposal 004: Demo Script Overhaul — "Make It Pop"
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Authored by:** McManus (DevRel)  
 **Date:** 2026-02-07  
 **Requested by:** bradygaster

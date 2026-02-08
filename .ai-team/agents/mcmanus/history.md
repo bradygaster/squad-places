@@ -172,6 +172,14 @@
 
 📋 Team update (2026-02-09): Session 5 directives merged — VS Code parity analysis, sprint amendments (019a), blog format + blog engine sample prompt (020), package naming (create-squad), 5th directive (human feedback optimization).
 
+### Blog post #2 — "The Squad Squad Problem" (2026-02-09)
+- **Story arc:** Product-ships-itself problem → Kobayashi's first-task analysis → `files` field already works → branch strategy is the real cleanup → meta angle (team that might ship itself solves deployment isolation).
+- **Narrative technique:** Led with Brady's quote ("ideally we don't inadvertently ship the squad"), let Kobayashi's empirical findings drive the middle, landed on the meta humor without dwelling on it. One paragraph, not a recurring bit.
+- **Tone calibration:** Dry humor on the namespace collision ("It's not a cute nickname. It's a namespace collision."), no self-congratulation, reported what Kobayashi found rather than praising him for finding it. Matched Blog 001's voice.
+- **Template adherence:** YAML frontmatter, hero quote, What Shipped (4 items with agent attribution), The Story (6 paragraphs), By the Numbers (6 metrics), What We Learned (3 bullets), What's Next, footer. Exact template structure.
+- **Key content decision:** Included the `.gitattributes` `export-ignore` trap as a learning — it's a common misconception that could save readers real debugging time. Technical value in the blog, not just narrative.
+- File: `docs/blog/002-the-squad-squad-problem.md`
+
 ## Team Updates
 
 📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.
@@ -179,3 +187,5 @@
 2026-02-09: Release decisions — v0.1.0 tag now, Kobayashi proposes releases/Brady publishes, squadify→main merge after Wave 1 gate, design for public repo.
 
 2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
+
+2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.

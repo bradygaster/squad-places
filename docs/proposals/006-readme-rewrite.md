@@ -1,6 +1,6 @@
 # Proposal 006: README Rewrite — "Throw a Squad at It"
 
-**Status:** Draft  
+**Status:** Superseded — by Proposal 014 (V1 Messaging) and Proposal 019  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-07  
 **Depends on:** Proposal 002 (Messaging Overhaul) — approved by Brady  

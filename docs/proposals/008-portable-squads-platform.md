@@ -2,7 +2,7 @@
 
 **Author:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-08  
-**Status:** Draft  
+**Status:** Accepted. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Triggered by:** bradygaster — portable squads: export your team from one project, import into another
 
 ---

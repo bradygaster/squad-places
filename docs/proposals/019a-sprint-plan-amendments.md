@@ -1,6 +1,6 @@
 # Proposal 019a: Sprint Plan Amendments — Brady's Session 5 Directives
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-09  
 **Amends:** Proposal 019 (Master Sprint Plan)  
@@ -49,7 +49,7 @@ A living README serves three purposes a final-write-at-the-end does not:
 
 **Brady said:** *"think about a blog markdown format to continually update our users on progress, and then, one of the sample prompts is a blog engine with amazing front-end UX that renders Squad blog posts"*
 
-This is brilliant. Squad builds a blog engine sample prompt. Squad uses a blog format to document its own progress. The blog engine renders Squad's own blog posts. Meta all the way down.
+This is a strong play. Squad builds a blog engine sample prompt. Squad uses a blog format to document its own progress. The blog engine renders Squad's own blog posts. Meta all the way down.
 
 ### 2a. Blog Post Format
 
@@ -113,7 +113,7 @@ Add to `docs/sample-prompts.md` under a new section:
 **Proposed sample prompt:**
 
 ```
-I need a developer blog engine with an incredible front-end reading experience. 
+I need a developer blog engine with a polished front-end reading experience. 
 Requirements:
 - Reads markdown files with YAML front matter (title, date, author, tags, summary)
 - Renders blog posts from a docs/blog/ directory

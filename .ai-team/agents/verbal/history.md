@@ -129,7 +129,7 @@
 - Long-term trajectory: personal portability → squad templates → evolution tracking → team-shared squads → marketplace.
 
 **Messaging evolution:**
-- "Throw a squad at it" evolves to "Throw MY squad at it." The possessive pronoun changes everything.
+- "Throw a squad at it" evolves to "Throw MY squad at it." The possessive pronoun is the whole v1 story.
 - Tagline candidates: "Your squad remembers.", "AI tools forget you. Squads don't.", "Take your team with you."
 - The dotfiles analogy: portable squads are AI dotfiles. Your configuration, preferences, and working relationship — versioned, portable, personal.
 
@@ -329,3 +329,20 @@
 2026-02-09: Release decisions — v0.1.0 tag now, Kobayashi proposes releases/Brady publishes, squadify→main merge after Wave 1 gate, design for public repo.
 
 2026-02-09: Branch strategy — squadify renamed to dev, main is product-only (no .ai-team/), release workflow (.github/workflows/release.yml) uses filtered-copy from dev→main.
+
+### 2026-02-09: Tone audit — what counts as a violation
+
+**Context:** Brady's tone governance directive. Full audit of all public-facing content.
+
+**Key calibrations:**
+- "Brilliant," "incredible," "paradigm shift," "changes everything" in team commentary = fix. Replace with factual language ("works well," "matters," "this is a strong play").
+- Brady's direct quotes = never edit, even if they contain words like "amazing." Those are his words.
+- "Magic moments" as UX design terminology = leave. It's industry-standard for describing high-impact interaction patterns.
+- Agent personality (Verbal's "AI bro," Fenster's bluntness, McManus's polish) = leave. Character voice ≠ tone violation.
+- Internal positioning terms like "category-defining" = tolerate in decisions.md (team notes), reduce in proposal copy (closer to public-facing).
+- Wave names ("Magical") = leave. Renaming breaks cross-references for no real gain.
+- "killer feature" = standard internal assessment. Not self-congratulation.
+
+**Principle:** Sand off the peaks, don't flatten the voice. The squad should be opinionated without being obnoxious.
+
+2026-02-09: Tone governance established — SFW, kind, dry humor, no AI-flowery talk. 25 proposals audited (status fields updated). Tone audit: 16 edits across 8 files. Blog post #2 shipped.
