@@ -148,7 +148,7 @@ Both Claude Sonnet 4 and Claude Opus 4 have a **200K token** standard context wi
 | **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~9,000 | 4.5% | When spawned |
 | **Remaining for actual work** | **~187,000** | **93%+** | Always |
 
-The coordinator uses 6.6% of context. A 12-week veteran agent uses 4.5% — but in **its own window**, not yours. That leaves **93%+ of the coordinator's context for reasoning about your code**, and each spawned agent gets nearly its entire 200K window for the actual task.
+The coordinator uses 6.6% of context. A 12-week veteran agent uses 4.5% — but in **its own window**, not yours. That leaves **93%+ of the coordinator's context for reasoning about your code**, and each spawned agent gets nearly its entire 200K window for the actual task. Fan out to 5 agents and you're working with **~1M tokens** of total reasoning capacity — without paying for a larger model.
 
 ### Memory Architecture
 
