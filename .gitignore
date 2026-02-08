@@ -13,6 +13,5 @@ node_modules/
 # Squad team state (created at runtime, never committed)
 .ai-team/
 
-# Internal planning (kept on dev branch only)
-docs/
+# Squad Squad templates (internal, not distributed)
 .ai-team-templates/

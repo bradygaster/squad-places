@@ -7,7 +7,7 @@
 .ai-team/
 .ai-team-templates/
 
-# Documentation, proposals, blog drafts
+# User-facing docs (viewed on GitHub, not needed in package)
 docs/
 
 # Tests
