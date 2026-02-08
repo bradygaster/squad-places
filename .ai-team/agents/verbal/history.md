@@ -419,3 +419,20 @@
 
 📌 Team update (2026-02-08): Platform assessment confirms SQL todos table is session-scoped only, filesystem is sole durable cross-session state, Option A (broaden directive capture) recommended — decided by Kujan
 
+### 2026-02-09: Proposal 023 v2 — SQL hot layer, backlog elevation, agent cloning
+
+**Key architecture evolution — SQL as cache, not storage:**
+- Brady's insight resolved the original v1 dilemma (filesystem vs. SQL vs. hybrid). SQL is the hot query layer (fast reads within a session), filesystem is the source of truth (durable across sessions). On write: SQL first, then flush to disk. On session start: rehydrate SQL from disk. This eliminates sync risk — filesystem always wins, SQL is just a cache that rebuilds itself.
+- Kujan's platform assessment confirmed the constraints that make this the right call: SQL is session-scoped, agents can't read coordinator SQL, coordinator blocks on read_agent.
+
+**Team backlog as first-class feature:**
+- Brady called the backlog "amazeballs" and the "favorite part." Elevated from proposed concept to primary feature. It's the third memory channel: decisions (agreements) + history (learnings) + backlog (intent). Intent is what makes the team feel predictive.
+- Auto-populated from conversation extraction, explicit adds supported, proactive surfacing after agent work.
+
+**Agent cloning — already possible, just unused:**
+- The drop-box pattern + worktree support + task tool isolation means the same agent identity can spawn multiple times concurrently with no architecture changes. The only blocker is the coordinator's "1-2 agents" guidance. Relaxing that for parallelizable backlog items enables horizontal scaling.
+- Key risk is file conflicts — mitigated by coordinator assigning non-overlapping scopes and worktree isolation.
+
+**Design principle learned — let user feedback evolve alternatives into architecture:**
+- v1 proposed three options (filesystem, SQL, hybrid) and recommended filesystem-only. Brady's feedback didn't pick an option — he synthesized a new one (SQL as cache layer). The best proposals leave room for the user to improve the architecture. Present options, don't over-commit to one.
+

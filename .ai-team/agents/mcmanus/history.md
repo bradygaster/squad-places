@@ -220,3 +220,10 @@
 
 
 📌 Team update (2026-02-08): Silent success mitigation strengthened in all spawn templates — 6-line RESPONSE ORDER block + filesystem-based detection. — decided by Verbal
+
+### README polish and CHANGELOG for v0.1.0 (2026-02-08)
+- **README edits were surgical** — added Upgrade subsection under Install, Known Limitations section (4 bullets: experimental, Node 22+, Copilot required, knowledge-grows-with-use), v0.1.0 version callout in Status line. No tone changes, no structural rewrites. The README was already strong; job was to close gaps, not reimagine.
+- **CHANGELOG.md created** — three sections: Added (14 items), What ships (3 entries matching `files` array), What doesn't ship (explicitly calls out `.ai-team/` not being in the package). Accurate to `package.json` and `index.js`. Brady's concern about team files shipping addressed directly.
+- **Accuracy verification method**: cross-referenced `index.js` behavior (init flow, upgrade flow, flags) against README claims and CHANGELOG entries. Every feature listed in CHANGELOG was traced to code or test coverage.
+- **CI badge was already correct** — Hockney added it, format is standard GitHub Actions badge with link. No changes needed.
+- **Key editorial decision**: Known Limitations uses bullet list, not prose. Keeps it scannable. Each limitation is a fact, not an apology. Matches Squad's voice (confident, direct, no hedging).

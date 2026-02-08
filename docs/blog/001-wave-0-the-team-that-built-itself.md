@@ -14,7 +14,7 @@ hero: "We asked Squad to build itself a team. It wrote 16 proposals, discovered 
 
 ## What Shipped
 
-- **The team itself** — Five specialists cast from The Usual Suspects: Keaton (Lead), Verbal (Prompt Engineer), McManus (DevRel), Fenster (Core Dev), Hockney (Tester). Not role labels — persistent identities with memory, voice, and expertise that compound across sessions. _(Built by Squad Coordinator)_
+- **The team itself** — Five specialists cast from The Usual Suspects: Keaton (Lead), Verbal (Prompt Engineer), McManus (DevRel), Fenster (Core Dev), Hockney (Tester). Not role labels — persistent identities with memory, voice, and expertise that compound across sessions. _(Built by Copilot)_
 - **16 proposals (~350KB)** — Architecture, messaging, demo scripts, video strategy, portable squads, skills system, tiered response modes, agent experience evolution, and more. All written, cross-referenced, and reviewed in a single session. _(Built by the full squad)_
 - **The silent success bug discovery and mitigation** — ~40% of agents were completing all their work but returning "no response" to the coordinator. The agents that did the most work were the ones that failed. Three zero-risk mitigations shipped same-session. _(Discovered by Kujan, mitigated in squad.agent.md)_
 - **12 tests passing** — Squad's first test suite, built with `node:test` and `node:assert`. Zero external dependencies. Init, idempotency, recursive copy — the foundation. _(Built by Hockney)_

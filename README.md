@@ -1,5 +1,7 @@
 # Squad
 
+[![CI](https://github.com/bradygaster/squad/actions/workflows/ci.yml/badge.svg)](https://github.com/bradygaster/squad/actions/workflows/ci.yml)
+
 **AI agent teams for any project.** A team that grows with your code.
 
 [![Status](https://img.shields.io/badge/status-experimental-blueviolet)](#status)
@@ -223,10 +225,29 @@ npx github:bradygaster/squad
 
 See [Quick Start](#quick-start) for the full walkthrough.
 
+### Upgrade
+
+Already have Squad? Update Squad-owned files to the latest version without touching your team state:
+
+```bash
+npx github:bradygaster/squad upgrade
+```
+
+This overwrites `squad.agent.md` and `.ai-team-templates/`. It never touches `.ai-team/` — your team's knowledge, decisions, and casting are safe.
+
+---
+
+## Known Limitations
+
+- **Experimental** — API and file formats may change between versions
+- **Node 22+** — requires Node.js 22.0.0 or later (`engines` field enforced)
+- **GitHub Copilot CLI** — Squad runs on GitHub Copilot; no other runtimes are supported
+- **Knowledge grows with use** — the first session is the least capable; agents improve as they accumulate history
+
 ---
 
 ## Status
 
-🟣 **Experimental.** Contributors welcome.
+🟣 **Experimental** — v0.1.0. Contributors welcome.
 
 Conceived by [@bradygaster](https://github.com/bradygaster).

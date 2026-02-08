@@ -4,9 +4,19 @@ const fs = require('fs');
 const path = require('path');
 
 const GREEN = '\x1b[32m';
+const RED = '\x1b[31m';
 const DIM = '\x1b[2m';
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
+
+function fatal(msg) {
+  console.error(`${RED}✗${RESET} ${msg}`);
+  process.exit(1);
+}
+
+process.on('uncaughtException', (err) => {
+  fatal(`Unexpected error: ${err.message}`);
+});
 
 const root = __dirname;
 const dest = process.cwd();
@@ -35,42 +45,83 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
 }
 
 function copyRecursive(src, target) {
-  if (fs.statSync(src).isDirectory()) {
-    fs.mkdirSync(target, { recursive: true });
-    for (const entry of fs.readdirSync(src)) {
-      copyRecursive(path.join(src, entry), path.join(target, entry));
+  try {
+    if (fs.statSync(src).isDirectory()) {
+      fs.mkdirSync(target, { recursive: true });
+      for (const entry of fs.readdirSync(src)) {
+        copyRecursive(path.join(src, entry), path.join(target, entry));
+      }
+    } else {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(src, target);
     }
-  } else {
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.copyFileSync(src, target);
+  } catch (err) {
+    fatal(`Failed to copy ${path.relative(root, src)}: ${err.message}`);
   }
 }
 
+// Validate source files exist
+const agentSrcCheck = path.join(root, '.github', 'agents', 'squad.agent.md');
+const templatesSrcCheck = path.join(root, 'templates');
+if (!fs.existsSync(agentSrcCheck)) {
+  fatal(`Source file missing: .github/agents/squad.agent.md — installation may be corrupted`);
+}
+if (!fs.existsSync(templatesSrcCheck) || !fs.statSync(templatesSrcCheck).isDirectory()) {
+  fatal(`Source directory missing or corrupted: templates/ — installation may be corrupted`);
+}
+
+// Validate destination is writable
+try {
+  fs.accessSync(dest, fs.constants.W_OK);
+} catch {
+  fatal(`Cannot write to ${dest} — check directory permissions`);
+}
+
 const isUpgrade = cmd === 'upgrade';
+
+// Stamp version into squad.agent.md after copying
+function stampVersion(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  fs.writeFileSync(filePath, content.replace('version: "0.0.0-source"', `version: "${pkg.version}"`));
+}
 
 // Copy agent file (Squad-owned — overwrite on upgrade)
 const agentSrc = path.join(root, '.github', 'agents', 'squad.agent.md');
 const agentDest = path.join(dest, '.github', 'agents', 'squad.agent.md');
 
 if (isUpgrade) {
-  fs.mkdirSync(path.dirname(agentDest), { recursive: true });
-  fs.copyFileSync(agentSrc, agentDest);
-  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/agents/squad.agent.md`);
+  try {
+    fs.mkdirSync(path.dirname(agentDest), { recursive: true });
+    fs.copyFileSync(agentSrc, agentDest);
+    stampVersion(agentDest);
+  } catch (err) {
+    fatal(`Failed to upgrade squad.agent.md: ${err.message}`);
+  }
+  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/agents/squad.agent.md (v${pkg.version})`);
 } else if (fs.existsSync(agentDest)) {
   console.log(`${DIM}squad.agent.md already exists — skipping (run 'upgrade' to update)${RESET}`);
 } else {
-  fs.mkdirSync(path.dirname(agentDest), { recursive: true });
-  fs.copyFileSync(agentSrc, agentDest);
-  console.log(`${GREEN}✓${RESET} .github/agents/squad.agent.md`);
+  try {
+    fs.mkdirSync(path.dirname(agentDest), { recursive: true });
+    fs.copyFileSync(agentSrc, agentDest);
+    stampVersion(agentDest);
+  } catch (err) {
+    fatal(`Failed to create squad.agent.md: ${err.message}`);
+  }
+  console.log(`${GREEN}✓${RESET} .github/agents/squad.agent.md (v${pkg.version})`);
 }
 
 // Pre-create drop-box, orchestration-log, and casting directories (additive-only)
 const inboxDir = path.join(dest, '.ai-team', 'decisions', 'inbox');
 const orchLogDir = path.join(dest, '.ai-team', 'orchestration-log');
 const castingDir = path.join(dest, '.ai-team', 'casting');
-fs.mkdirSync(inboxDir, { recursive: true });
-fs.mkdirSync(orchLogDir, { recursive: true });
-fs.mkdirSync(castingDir, { recursive: true });
+try {
+  fs.mkdirSync(inboxDir, { recursive: true });
+  fs.mkdirSync(orchLogDir, { recursive: true });
+  fs.mkdirSync(castingDir, { recursive: true });
+} catch (err) {
+  fatal(`Failed to create .ai-team/ directories: ${err.message}`);
+}
 
 // Copy default ceremonies config
 const ceremoniesDest = path.join(dest, '.ai-team', 'ceremonies.md');
