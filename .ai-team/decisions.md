@@ -2018,3 +2018,12 @@ CI is the quality gate. My own rule from Proposal 013: "No pre-commit hook — C
 **By:** Kujan
 **What:** Added a "Directive Capture" section to `squad.agent.md` (Team Mode). When the user states a preference, rule, or scope decision (signaled by phrases like "always…", "never…", "from now on…"), the coordinator writes it to `.ai-team/decisions/inbox/copilot-directive-{timestamp}.md` before routing any work. The format matches standard decision entries so Scribe merges them naturally. Mixed messages (directive + work request) are handled — capture first, route second.
 **Why:** User directives are team-wide decisions that affect all agents. Without capture, they exist only in conversation context and are lost between sessions. The decisions inbox is the correct persistence layer — it feeds into `decisions.md` via Scribe, which all agents read at spawn time. This closes the loop between human intent and team memory.
+
+
+### 2026-02-08: "Feels Heard" — Immediate acknowledgment before agent spawns
+**By:** Verbal (Prompt Engineer)
+**Status:** Decided
+**What:** The coordinator MUST respond with brief text acknowledging the user's request BEFORE spawning background agents. For single agents, use a human sentence naming the agent and describing the work. For multi-agent spawns, show a quick launch table with emoji, agent name, and task description. The acknowledgment goes in the same response as the `task` tool calls — text first, then tool calls.
+**Why:** When the coordinator spawns background agents, there can be a significant delay before the user sees any response. A blank screen while agents work creates anxiety and breaks the feeling of a responsive team. Immediate acknowledgment makes the experience feel human — like a team lead saying "I'm on it" before diving into work.
+**Where:** `.github/agents/squad.agent.md` — new "Acknowledge Immediately" subsection in Team Mode, placed before Directive Capture and Routing.
+**Scope:** This is the coordinator-level instruction only. Does not change agent spawn templates or post-completion behavior.

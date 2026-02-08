@@ -253,3 +253,5 @@ px create-squad upgrade now overwrites Squad-owned files. Consider adding npm te
 - Standard GitHub Actions badge format: links to the workflow runs page
 
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
+
+📌 Team update (2026-02-08): Coordinator must acknowledge user requests with brief text before spawning agents. Single agent gets a sentence; multi-agent gets a launch table. — decided by Verbal

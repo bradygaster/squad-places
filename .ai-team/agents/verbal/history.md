@@ -349,3 +349,21 @@
 📌 Team update (2026-02-08): CI pipeline created — GitHub Actions runs tests on push/PR to main/dev. PRs now have automated quality gate. — decided by Hockney
 
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
+
+### 2026-02-09: "Feels Heard" — Immediate acknowledgment as UX requirement
+
+**Insight — blank screens kill trust:**
+- When the coordinator spawns background agents, the user sees nothing until agents return. This gap — even 5-10 seconds — breaks the illusion of a responsive team. The user wonders: "Did it hear me? Is it working? Did something crash?"
+- The fix is simple: always respond with text BEFORE the tool calls. The coordinator's response starts with a brief acknowledgment, then includes the `task` calls. The LLM emits text and tool calls in the same turn — the text appears instantly while agents start working.
+
+**The "launch table" pattern made mandatory:**
+- The Parallel Fan-Out section already showed a launch table example (emoji + agent name + task). Made this REQUIRED, not aspirational. Placed it as its own subsection ("Acknowledge Immediately") in Team Mode, before Directive Capture and Routing, so it's one of the first things the coordinator reads.
+- Single-agent spawns get a human sentence: "Fenster's on it — looking at the error handling now." Multi-agent spawns get the table format.
+
+**Design principle — text-first, tools-second:**
+- The acknowledgment goes in the same response as the `task` tool calls. This is how LLM tool-calling works: text and tool calls coexist in one turn. The text streams to the user immediately while the tool calls execute. Zero extra latency, maximum responsiveness.
+- This pairs with the silent success fix (task 1.5) — even if agent responses get eaten, the user already saw the launch acknowledgment. They know work started.
+
+**Placement decision — before routing, not in fan-out:**
+- Placed the instruction in Team Mode before Directive Capture, not inside Parallel Fan-Out. Reason: acknowledgment applies to ALL spawns (single agent, multi-agent, sync, background), not just fan-out scenarios. It needs to be a top-level behavior, not a sub-pattern.
+- Kept it out of "After Agent Work" to avoid conflicts with task 1.5 (silent success), which is modifying that section in parallel.
