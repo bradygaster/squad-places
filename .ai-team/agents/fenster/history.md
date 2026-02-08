@@ -47,3 +47,20 @@
 - `.ai-team/casting/policy.json` — universe allowlist, capacity limits
 - `.ai-team/decisions/inbox/` — drop-box for parallel decision writes (merged by Scribe)
 - `templates/` — copied to `.ai-team-templates/` as format guides
+
+### Forwardability and Upgrade Architecture
+- **The skip-if-exists pattern blocks upgrades** — `index.js` line 30 checks `fs.existsSync(agentDest)` and skips, which means users on v0.1.0 never receive coordinator improvements. This is the core forwardability problem.
+- **File ownership model is the foundation** — every file must be classified as Squad-owned (safe to overwrite), user-owned (never touch), or additive-only (create if missing). Getting this classification wrong means either breaking user state or failing to upgrade.
+- **squad.agent.md is stateless by design** — the coordinator reads it fresh every session with no cached state. This means overwriting it IS the upgrade. No running state migration needed for coordinator changes, only for `.ai-team/` files.
+- **Version detection needs three strategies** — `.squad-version` metadata file (primary), frontmatter parsing (secondary), presence detection (fallback for v0.1.0 pre-versioning installs). Defensive detection is critical because we can't control what state users will be in.
+- **Migrations must be idempotent** — users will run `upgrade` multiple times, migrations will encounter partially-migrated state, and failures must not corrupt data. Every migration checks if its work is already done before doing it.
+- **Argument routing stays minimal** — `process.argv[2]` positional subcommands (upgrade/export/import/help/version) with no dependency on yargs or commander. Aligns with Proposal 008's export/import pattern. `index.js` stays under 150 lines.
+- **Windows path safety is non-negotiable** — all file operations use `path.join()`. No hardcoded separators. No symlinks. No shell commands in migrations. Pure `fs` operations only.
+- **Backup before overwrite, always** — `squad.agent.md.v{old}.bak` preserves user customizations. Critical failures (backup or overwrite) abort. Non-critical failures (migrations, new dirs) warn and continue.
+
+📌 Proposal written: `docs/proposals/011-forwardability-and-upgrade-path.md` — complete upgrade system design with migration framework, version detection, error handling, and full index.js sketch.
+📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
+📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, distinct from preferences and history. Six skill types, confidence lifecycle, skill-aware routing. — decided by Verbal
+📌 Team update (2026-02-08): Skills platform feasibility confirmed — skills in spawn prompts, store_memory rejected, file paths are frozen API contracts, defensive forwardability via existence checks. — decided by Kujan
+📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates, 90% line coverage. index.js refactoring recommended. — decided by Hockney
+📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence, GitHub Discussions first. — decided by McManus

@@ -144,3 +144,53 @@
 📌 Team update (2026-02-08): Portable Squads architecture decided — history split (Portable Knowledge vs Project Learnings), JSON manifest export, no merge in v1. — decided by Keaton
 📌 Team update (2026-02-08): Tiered response modes proposed — Direct/Lightweight/Standard/Full spawn tiers to reduce late-session latency. Context caching + conditional Scribe spawning as P0 fixes. — decided by Kujan + Verbal
 📌 Team update (2026-02-08): Portable squads platform feasibility confirmed — pure CLI/filesystem, ~80 lines in index.js, .squad JSON format, no merge in v0.1. — decided by Kujan
+📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
+📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model, `npx create-squad upgrade`, version-keyed migrations, backup before overwrite. — decided by Fenster
+📌 Team update (2026-02-08): Skills platform feasibility confirmed — skills in spawn prompts, store_memory rejected, file paths frozen as API contracts, defensive forwardability. — decided by Kujan
+📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates. — decided by Hockney
+📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, competitive positioning against Cursor/ChatGPT/Claude. — decided by McManus
+
+### 2026-02-08: Skills System — Agent Competence as Portable Knowledge (Proposal 010)
+
+**Context:** Brady dropped the word "skills" — *"the more skills we can build as a team. GIRL. you see where i'm going."* He sees the convergence: portable squads + skills = a team that doesn't just know YOU, it knows how to DO THINGS.
+
+**Core architectural insight — preferences vs. skills:**
+- Preferences are about the human ("Brady prefers explicit error handling"). They answer: "How does this person work?"
+- Skills are about the agent ("I know React server component patterns"). They answer: "What does this agent know how to do?"
+- Both are portable. Both are valuable. They serve fundamentally different purposes and are consumed at different points in the agent's reasoning.
+- Preferences calibrate tone, output style, and review strictness. Skills change approach, routing, and output quality.
+
+**Skill taxonomy — six types identified:**
+- Patterns (learned code conventions), Domain Expertise (deep tech knowledge), Workflows (proven processes), Procedural Knowledge (step-by-step recipes), Anti-patterns (what NOT to do), Integration Knowledge (how technologies work together).
+- Different skill types have different acquisition modes and shelf lives. Anti-patterns are often the most valuable — earned through mistakes.
+
+**Storage architecture:**
+- `skills.md` per agent for domain expertise + squad-level `skills.md` for cross-cutting patterns.
+- Markdown format (same reasoning as preferences.md — LLMs handle narrative better than structured data for nuanced knowledge).
+- "What I Don't Know Yet" section per agent is critical — prevents overconfidence, enables honest routing.
+
+**Skill lifecycle — four phases:**
+- Acquisition (first encounter, low confidence) → Reinforcement (repeated application, rising confidence) → Correction (proven wrong, updated) → Deprecation (outdated, marked with reason).
+- Progressive summarization from Proposal 007 applies: old unreinforced skills compress, active high-confidence skills stay prominent.
+- Skills don't get deleted — deprecated skills retain the reasoning for why they were abandoned.
+
+**Skill-aware routing — the behavioral change:**
+- Coordinator reads agent skills before assigning work. Deep skill match → confident assignment. No skill match → flags uncertainty.
+- Agents express calibrated confidence based on skill level: assertive when deep, collaborative when moderate, transparent when absent.
+- Proactive skill application is the magic moment: "Set up a React project" → agent applies 5 projects worth of earned knowledge without being told.
+
+**Skills + portability — the compound effect:**
+- Skills included in squad manifest (version 1.1). Import restores skill files. Agents arrive with competence intact.
+- The flywheel: work on project → acquire skills → export → import into new project → apply skills → acquire more → export again. Each cycle starts from a higher baseline.
+- Skills are what make squad sharing (marketplace, Proposal 008 Phase 5) genuinely valuable — not cosmetic role labels, but earned domain expertise.
+
+**Industry positioning:**
+- Nobody has agent skills as a portable, earned, transferable concept. Not OpenAI, not Anthropic, not agent frameworks.
+- Evolution path: Single agent → Agent team → Skilled agent team → Portable skilled team. We're three moves ahead.
+- Skill packs (v2) enable community knowledge exchange — "download a React squad with 50 earned skills."
+
+**Implementation approach:**
+- Six phases, starting with template + instruction changes (zero code changes). Skills in export/import at Phase 3. Skill packs at Phase 6 (future).
+- Total initial effort: ~2 hours for Phase 1. Skills are additive — no breaking changes to existing behavior.
+
+**File path:** `docs/proposals/010-skills-system.md`

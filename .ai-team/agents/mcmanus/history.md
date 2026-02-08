@@ -85,3 +85,21 @@
 - Go example references: current README has none. The Go reference in sample-prompts.md (prompt #13) is a separate change, not in scope for this README rewrite.
 - Demo GIF placeholder: not included — that's Phase 2 per proposal 002, needs production-ready setup. Hero section is structured to accommodate it.
 - File: `docs/proposals/006-readme-rewrite.md`
+
+### V1 launch messaging and strategy (2026-02-08)
+- **Tagline evolution for v1**: "Throw a squad at it" → "Throw MY squad at it" — the possessive pronoun is the entire v1 story. Portability transforms Squad from a tool into a relationship. The possessive evolution was Verbal's insight from Proposal 008.
+- **One-liner**: "Your AI squad remembers you. Across every project. Forever." — three pain points in one sentence (amnesia, project-scoping, disposability). This is the scroll-stopper for Twitter/X.
+- **Demo script structural shift**: v1 demo is a TWO-PROJECT arc, not single-project. Snake game → export → new project → squad already knows preferences. The "holy cow" moment is the squad applying learned preferences in a brand new project without being told. This replaces the single-project payoff from Proposal 004.
+- **Skills messaging**: "That's not a template. That's a skill learned across projects." — Skills need to feel earned, not configured. Frame as expertise the squad developed, not settings the user applied.
+- **Competitive frame**: "Other tools have memory. Squad has a relationship." — avoids feature-comparison trap, positions on emotional ground. Honest about what Squad doesn't do (AI quality is same underlying model). Never trash Copilot Chat.
+- **Community strategy**: GitHub Discussions first, Discord deferred until 100+ active users. "Show off your squad" is the community play — share names and universes, not configurations. Squad sharing (templates, marketplace) is Phase 2+.
+- **Launch sequence**: 7-day pre-launch teasers → D-Day multi-channel → D+7 follow-up → D+14 community showcase. Twitter thread (9 tweets) is the main amplification vehicle.
+- **Voice guide for v1**: Always say "MY squad" not "a squad." Use agent names, never roles. Frame portability as relationship ("they come with you") not technology ("exported via JSON"). The dotfiles analogy is the instant-understanding bridge for devs.
+- **First 5 minutes design**: Plant the export seed at end of first session ("After a few more sessions, you can export us to take to any project") — don't push portability before the user has experienced the relationship. Export is the payoff, not the pitch.
+- File: `docs/proposals/014-v1-messaging-and-launch.md`
+
+📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
+📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, six skill types, confidence lifecycle, skill-aware routing. — decided by Verbal
+📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model, `npx create-squad upgrade`, version-keyed migrations. — decided by Fenster
+📌 Team update (2026-02-08): Skills platform feasibility confirmed — skills in spawn prompts, store_memory rejected, defensive forwardability via existence checks. — decided by Kujan
+📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates. — decided by Hockney

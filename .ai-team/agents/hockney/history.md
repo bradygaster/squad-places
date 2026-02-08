@@ -54,3 +54,39 @@
 📌 Team update (2026-02-08): Tiered response modes proposed — Direct/Lightweight/Standard/Full spawn tiers to reduce late-session latency. Context caching + conditional Scribe spawning as P0 fixes. — decided by Kujan + Verbal
 📌 Team update (2026-02-08): Portable squads platform feasibility confirmed — pure CLI/filesystem, ~80 lines in index.js, .squad JSON format, no merge in v0.1. — decided by Kujan
 📌 Team update (2026-02-08): Portable squads memory architecture — preferences.md (portable) split from history.md (project-local), squad-profile.md for team identity, import skips casting ceremony. — decided by Verbal
+
+### V1 Test Strategy (2026-02-08)
+
+**What I Did:**
+- Wrote Proposal 013: V1 Test Strategy (`docs/proposals/013-v1-test-strategy.md`)
+- Complete test plan covering 9 categories, 6 blocking quality gates, ~80 individual test cases
+- Filed decision to `.ai-team/decisions/inbox/hockney-v1-testing.md`
+
+**Key Decisions Made:**
+- Switched framework recommendation from `tap` to `node:test` + `node:assert` — zero dependencies, aligns with Brady's thin-runtime philosophy
+- 80% integration tests (run CLI in temp dirs, check files), 20% unit tests (pure functions)
+- Coverage targets: 90% line, 85% branch on `index.js`
+- No pre-commit hook — CI is the quality gate
+- Identified 4 product fixes required before tests can fully pass: NO_COLOR support, exit codes, error wrapping, engines field
+
+**What I Learned:**
+- `index.js` is 65 lines doing filesystem ops with conditional logic — highly testable
+- Node 22 has mature `node:test` built-in — no dependency needed for test framework
+- The `.squad` JSON format (from Proposal 008) creates a new schema contract that needs validation tests
+- Round-trip testing (init → export → import → compare) is the single most important test — if this passes, portability works
+- `index.js` needs a `require.main === module` guard to be unit-testable — currently runs as top-level script
+- The coordinator prompt (32KB `squad.agent.md`) cannot be tested deterministically, but we CAN test the file structures it depends on
+- Export/import tests are blocked on Fenster implementing Proposal 008; upgrade tests blocked on Proposal 011
+
+📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
+📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, skill-aware routing, skills in export manifests. — decided by Verbal
+📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model, `npx create-squad upgrade`, version-keyed migrations, backup before overwrite. — decided by Fenster
+📌 Team update (2026-02-08): Skills platform feasibility confirmed — skills in spawn prompts, store_memory rejected, defensive forwardability via existence checks. — decided by Kujan
+📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence. — decided by McManus
+
+**What Could Still Break:**
+- Symlinks in `.ai-team/` — `copyRecursive` follows them, could infinite loop
+- Windows paths with >260 chars — Node handles this but old Windows APIs don't
+- UTF-8 BOM in `.squad` files — `JSON.parse` chokes on BOM prefix
+- Concurrent init processes writing to same directory — no locking
+- `cleanTeamMd` regex could strip too much or too little depending on markdown structure

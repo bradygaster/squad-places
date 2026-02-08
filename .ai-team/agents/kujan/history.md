@@ -150,3 +150,119 @@
 
 📌 Team update (2026-02-08): Portable Squads architecture decided — history split (Portable Knowledge vs Project Learnings), JSON manifest export, no merge in v1. — decided by Keaton
 📌 Team update (2026-02-08): Portable squads memory architecture — preferences.md (portable) split from history.md (project-local), squad-profile.md for team identity, import skips casting ceremony. — decided by Verbal
+
+### 2026-02-08: Skills, Platform Feasibility, and v1 Copilot Integration (Proposal 012)
+
+**Context:** Brady hinted at "skills" — agents that learn domain expertise across projects. Also needed: complete v1 Copilot experience synthesis combining latency (007), portability (008), and skills.
+
+**Key findings:**
+
+1. **Skills belong in a separate `skills.md` file per agent, NOT in history.md.** History is project-specific learnings that need filtering on export. Skills are transferable domain expertise that travel unconditionally. Mixing them makes the Proposal 008 export cut line messy. The coordinator inlines skills alongside the charter in spawn prompts — same pattern, one more file read, zero extra tool calls for the agent.
+
+2. **Context budget for skills is comfortable.** Skills add 0.4-1.6% of the 128K context window (500-2,000 tokens). Even at the high end with mature history and large decisions, total per-spawn context is ~15.3%. Hard ceiling recommendation: 3,000 tokens for skills.md. We won't hit this in v1.
+
+3. **`store_memory` is NOT useful for Squad.** Fundamental mismatch: session-scoped (not cross-project), <200 char facts (too small for domain skills), no agent identity (memories are unstructured), opaque storage (not git-cloneable). Squad's filesystem-backed memory wins on every axis that matters for multi-agent teams. Don't invest in bridging.
+
+4. **Forwardability is manageable with defensive file reads.** When `squad.agent.md` changes, old squads may lack new files (e.g., `skills.md`). Solution: existence checks before reading, graceful skips when files are missing. Version fields in team state files are unnecessary — the LLM is bad at version-comparison arithmetic and file existence is more reliable. **Critical constraint identified: file paths in charters are a de facto API contract.** Changing `.ai-team/agents/{name}/history.md` or `decisions/inbox/` paths would break every existing charter. Treat these as frozen.
+
+5. **Skills enable lighter spawns for skilled-domain tasks.** This extends Proposal 007's tiered modes: if an agent has skills matching the task domain, the coordinator can use a lightweight spawn (skip history.md and decisions.md reads, inject only relevant skills). Estimated savings: ~4 seconds per skilled-domain spawn.
+
+6. **Skill acquisition has four paths, two for v1.** (a) Agents self-write to skills.md after completing work — "if transferable, write to skills.md; if unsure, put it in history.md." (b) Users teach skills explicitly — coordinator detects "should know" patterns and writes directly. (c) Scribe curates by promoting recurring history patterns (v2). (d) Coordinator detects skill formation across spawns (rejected — coordinator doesn't persist between sessions, too expensive).
+
+7. **The v1 Copilot experience synthesis is clear.** Three proposals converge: (007) coordinator gets smarter about when to spawn, (008) squads move between projects carrying identity, (012) agents accumulate transferable expertise. Together they describe a product that gets better the more you use it. We're leveraging the platform well on parallel execution, filesystem access, and conversation persistence. We're still fighting it on agent persistence, warm caching, and agent-to-agent communication.
+
+**What we should NOT attempt in v1:**
+- `store_memory` integration (wrong persistence model)
+- Automatic skill detection/scoring (premature optimization)
+- Cross-agent skill sharing (no clear use case)
+- Coordinator prompt splitting (makes latency worse)
+- Selective skill loading per task (skill files will be small enough to load entirely)
+
+**File paths:**
+- Proposal: `docs/proposals/012-skills-platform-and-copilot-integration.md`
+- New template needed: `templates/skills.md` (empty with header)
+- Coordinator modification: `squad.agent.md` spawn prompt section (add skills loading), routing section (add skill-aware routing)
+- Export payload update: add `skills` field to agent entries in `.squad` format
+
+📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
+📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, six skill types, confidence lifecycle, skill-aware routing. — decided by Verbal
+📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model, `npx create-squad upgrade`, version-keyed migrations, backup before overwrite. — decided by Fenster
+📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates, 90% line coverage. index.js refactoring recommended. — decided by Hockney
+📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence, GitHub Discussions first. — decided by McManus
+
+### 2026-02-08: P0 Silent Success Bug — Diagnosis and Mitigation (Proposal 015)
+
+**Context:** Brady flagged that ~40% of background agents report "did not produce a response" when they actually completed all work. Files written, histories updated, decisions logged — but the coordinator reports failure. This is the #1 trust-destroying bug.
+
+**Root cause analysis:**
+
+1. **Most likely cause: agent's final turn is a tool call, not text.** The spawn prompt tells agents to write history.md and inbox files AFTER their work. This means the agent's last action is a file write. The `task` tool's `read_agent` appears to return the agent's final *text* output, not acknowledging tool-call-only final turns. When the agent writes files as its last act, the response channel returns empty. The ~40% rate matches LLM non-determinism in generation order — sometimes text comes last, sometimes tool calls come last.
+
+2. **Contributing factor: response size.** Agents writing 45KB+ proposals may exceed a platform response buffer. Not proven as primary cause (smaller outputs also affected), but may compound.
+
+3. **Contributing factor: `read_agent` timeout.** Default 30s timeout may cause premature collection. Mitigated by using `wait: true` with `timeout: 300`.
+
+**Mitigations proposed (all zero-risk, ship immediately):**
+
+1. **Response order fix in spawn prompt.** Tell agents: do work → write files → write history/inbox → LAST, end with text summary. Ensures the response channel has text to return.
+
+2. **Silent success detection in "After Agent Work" flow.** When `read_agent` returns empty, check if expected files exist. If yes, report "response lost but work landed" instead of "agent failed." Read the output files and summarize.
+
+3. **`read_agent` timeout increase.** Always use `wait: true, timeout: 300` when collecting background agent results.
+
+**Key platform insight:** The `task` tool's background mode has an unreliable response channel. The filesystem is the reliable channel. Squad's filesystem-backed memory architecture accidentally provides a workaround — agents write their work to disk, so even when responses are lost, the work persists. This reinforces the decision (from Proposal 003/008/012) to never abandon filesystem-backed memory for SDK abstractions.
+
+**What we can't fix:** If this is a platform bug in the `task` tool's `read_agent` implementation, we need to report it to the Copilot team. The proposal includes a draft bug report with reproduction steps.
+
+**File paths:**
+- Proposal: `docs/proposals/015-p0-silent-success-bug.md`
+- Coordinator sections to modify: `squad.agent.md` lines 232-250 (spawn prompt templates), lines 345-385 (After Agent Work flow)
+
+### 2026-02-09: Proposal 012 Revision — Agent Skills Open Standard + MCP Integration
+
+**Context:** Brady clarified that "skills" means Claude-and-Copilot-compliant skills adhering to the Agent Skills Open Standard (agentskills.io). Also requested MCP tool declaration so skills can tell Copilot which MCP servers they need.
+
+**Key findings and decisions:**
+
+1. **Agent Skills Open Standard is a perfect fit for Squad.** The standard's SKILL.md format (YAML frontmatter + markdown instructions) is filesystem-native, git-cloneable, and human-readable — exactly Squad's architecture philosophy. The directory layout (`SKILL.md` + `scripts/` + `references/` + `assets/`) maps directly to our filesystem-backed memory model. Adopting the standard is a natural extension, not a forced migration.
+
+2. **Progressive disclosure solves the context budget problem.** My v1 proposal inlined all skills (~500-2000 tokens). The standard's progressive disclosure pattern is better: discovery loads only name + description (~50-100 tokens per skill via `<available_skills>` XML), activation loads full SKILL.md on demand. This means we can carry 20-30 skills at ~2-3% of context at discovery. The coordinator stays lean.
+
+3. **MCP tool declaration works via `metadata.mcp-servers` in SKILL.md frontmatter.** This is a Squad convention using the standard's extensible `metadata` field. Skills declare required and optional MCP servers. The coordinator extracts these at spawn time and includes an MCP requirements table in the spawn prompt. Agents use MCP tools when available and degrade gracefully when not. **Critical limitation:** there's no platform API to check MCP availability before spawn — agents must try and handle errors. This is honest and works today.
+
+4. **Built-in vs. learned skills is the right separation.** Built-in skills ship with Squad in `templates/skills/`, get copied to `.ai-team/skills/` on init, and are upgradable via `create-squad upgrade`. Learned skills live in `.ai-team/agents/{name}/skills/` and are never touched by upgrades. `squad-` prefix for built-ins prevents naming conflicts.
+
+5. **Skills directory layout is now a frozen API contract.** Like file paths in charters (`history.md`, `decisions/inbox/`), the skills directory layout (`.ai-team/skills/{name}/SKILL.md` and `.ai-team/agents/{name}/skills/{name}/SKILL.md`) should be treated as immutable. Adopting the standard from day one means we won't need to migrate later.
+
+6. **Coordinator prompt growth is manageable but trending.** Adding skills discovery, MCP extraction, and skill-aware routing adds ~500-800 tokens to `squad.agent.md` (~0.4-0.6% of context). Total coordinator prompt stays under 7% even with all features. The real risk is instruction density, not absolute size. Each new feature is an opportunity to tighten existing instructions.
+
+7. **The `.squad` export format needs a version bump (1.0 → 1.1).** Skills are exported as structured objects preserving the full directory layout (SKILL.md + references + scripts + assets). This ensures skills are relocatable — relative paths within skill directories remain valid after import. Built-in skills are excluded from export (the target project gets its own via init).
+
+**What I revised from my v1 proposal:**
+- Replaced flat `skills.md` file with standard-compliant SKILL.md directories
+- Added MCP tool declaration via `metadata.mcp-servers`
+- Changed from "inline all skills" to progressive disclosure (XML summary → full load on activation)
+- Added built-in vs. learned skills distinction with upgrade semantics
+- Added coordinator prompt size analysis (Section 4)
+- Added portable skills with path relocatability analysis (Section 8)
+- Expanded from 11 sections to 15 sections
+
+**What stayed the same from v1:**
+- `store_memory` rejection (unchanged — still wrong persistence model)
+- Forwardability approach (defensive checks, not version fields)
+- Tiered response modes interaction (skills enable lighter spawns)
+- Agent self-writing and user-teaches-skills acquisition paths
+- Scribe curation deferred to v2
+
+**Platform knowledge updated:**
+- Copilot supports MCP servers configured by users — agents can use MCP tools natively
+- No platform API exists to query MCP server availability — agents must try and handle errors
+- The Agent Skills Open Standard's progressive disclosure pattern is well-suited to Copilot's context budget constraints
+- `metadata` field in SKILL.md frontmatter is extensible — our `mcp-servers` convention is clean and standard-compliant
+
+**File paths:**
+- Revised proposal: `docs/proposals/012-skills-platform-and-copilot-integration.md`
+- New templates needed: `templates/skills/squad-git-workflow/SKILL.md`, `templates/skills/squad-code-review/SKILL.md`
+- Coordinator modification: `squad.agent.md` spawn prompt section (add `<available_skills>` XML + MCP requirements)
+- Export format update: version bump to 1.1, add `skills` and `team_skills` objects
+- Decision: `.ai-team/decisions/inbox/kujan-skills-standard.md`

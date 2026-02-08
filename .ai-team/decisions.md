@@ -137,3 +137,123 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **Why:** Nobody in the industry has portable agent teams — category-defining feature. Stickiness through relationship capital, not lock-in. Filesystem-backed memory makes export trivially simple. Enables future phases: squad templates, team-shared squads, marketplace. Aligns with Proposal 007's progressive summarization.
 
 **Proposal:** `docs/proposals/008-portable-squads-experience.md`
+
+### 2026-02-08: Squad v1 Sprint Plan — architecture and prioritization
+
+**By:** Keaton
+**Proposal:** 009-v1-sprint-plan.md
+
+**What:** Comprehensive v1 sprint plan synthesizing proposals 001-008 and Brady's directives. Three sprints over 10 days:
+
+- **Sprint 1 (Days 1-3): "Make It Fast"** — Forwardability (`npx create-squad upgrade`), latency P0 fixes (context caching + Scribe batching), tiered response modes (Direct/Lightweight/Standard/Full), coordinator direct handling. Init always overwrites `squad.agent.md` — it's our code, not user state.
+
+- **Sprint 2 (Days 4-7): "Make It Yours"** — History split (Portable Knowledge / Project Learnings), Skills system (`skills.md` — domain expertise that compounds across projects), export/import CLI with manifest schema v1.0, imported squad detection in coordinator.
+
+- **Sprint 3 (Days 8-10): "Make It Shine"** — README rewrite, testing infrastructure (5 core tests with tap), progressive history summarization, lightweight spawn template.
+
+**Key architectural decisions:**
+1. **Forwardability bright line:** We own `squad.agent.md` and templates. Users own `.ai-team/`. Upgrade overwrites our code, never touches their state.
+2. **Skills are a new first-class concept.** Not preferences (about the user), not project learnings (about the codebase) — domain expertise about technologies and frameworks. Stored in `.ai-team/skills.md`. Portable and shareable.
+3. **`preferences.md` deferred to v1.1.** Portable Knowledge section in history.md is sufficient for v1. Separate file adds migration cost without near-term benefit.
+4. **No merge in v1.** `--force` with archival only. Merge is v2.
+5. **No `squad-profile.md` in v1.** Relationship tracking is v1.1.
+
+**What's explicitly cut from v1:** Squad merge, LLM-assisted history classification, squad sharing/registry, agent-to-agent negotiation, speculative execution, Copilot SDK integration, squad diff.
+
+**Why:** Brady said forwardability, portability, and skills are all v1 features. 9 users, division talking. The plan is aggressive because it needs to be. "Throw a squad at it" must be earned, not marketed.
+
+**Success criteria:** Trivial task latency drops from ~30s to ~3-5s. Export/import round-trip at 100% fidelity. Upgrade preserves 100% of user state. 5 core tests passing. Brady approves.
+
+### 2026-02-08: Skills system — agent competence as portable knowledge
+
+**By:** Verbal
+**Date:** 2026-02-08
+**Proposal:** 010-skills-system.md
+
+**What:** Squad agents will acquire, store, and apply **skills** — earned domain knowledge that changes how agents approach work. Skills are distinct from preferences (which are about the user): skills are about what the agent *knows how to do*. Storage: `skills.md` per agent (domain expertise) + squad-level `skills.md` (cross-cutting patterns). Skills travel with portable squad exports alongside preferences and charters. Skill types: patterns, domain expertise, workflows, procedural knowledge, anti-patterns, integration knowledge. Lifecycle: acquisition → reinforcement → correction → deprecation. Confidence tracked via project count (Low/Medium/High). Agents declare known gaps ("What I Don't Know Yet"). Coordinator routes work using skill awareness. Manifest version bumps to 1.1 to include skills in export.
+
+**Why:** Portable squads (Proposal 008) solved "your team knows YOU." Skills solve "your team knows how to DO THINGS." Combined: a squad arrives at a new React project already knowing the user's preferences AND React's patterns. Day one productive. Nobody in the industry has agent skills as a portable, earned, transferable concept. This is the feature that makes squad sharing (marketplace) actually valuable — the difference between a costume and competence. Skills compound across projects: each export captures more, each import starts from a higher baseline. Implementation phased across 6 releases, starting with template + instruction changes only (zero code changes in Phase 1).
+
+**Depends on:** Proposal 008 (Portable Squads) for export/import integration; Proposal 007 (Persistence) for progressive summarization of skills.
+
+### 2026-02-08: Forwardability and upgrade path
+
+**By:** Fenster
+**Date:** 2026-02-08
+
+**What:** Squad adopts a forwardability model based on three principles:
+
+1. **File ownership model.** Every file Squad touches is classified as Squad-owned (overwrite on upgrade), user-owned (never touch), or additive-only (create if missing). `squad.agent.md` and `.ai-team-templates/` are Squad-owned. Everything in `.ai-team/agents/`, `decisions.md`, and `casting/` is user-owned.
+
+2. **`npx create-squad upgrade` subcommand.** Backs up `squad.agent.md`, overwrites it with the latest version, refreshes templates, runs version-specific migrations, creates new directories. Never touches user state. Always backs up before overwriting.
+
+3. **Version-keyed migration system.** Migrations are idempotent functions keyed by version range. Each migration moves `.ai-team/` state forward (e.g., adding `## Portable Knowledge` sections to histories). Migrations are non-destructive, fault-tolerant, and ordered. A failed migration logs an error but doesn't abort the upgrade.
+
+**Why:** The current installer skips files that already exist. This was correct for v0.1 (don't clobber) but blocks upgrades entirely. When we ship a better `squad.agent.md`, existing users never get it. Brady requires forwardability — users should be able to update their squads with new features.
+
+The file ownership model ensures upgrades are safe. The migration system ensures state evolves correctly. The backup strategy ensures recoverability.
+
+**Implementation:**
+- Phase 1 (v0.1.1): Version stamping — add `squad_version` to frontmatter, write `.squad-version` metadata, show version in output
+- Phase 2 (v0.2.0): Upgrade command — argument routing, `upgradeSquad()`, migration framework, backup + overwrite
+- Phase 3 (v0.2.1): Dry-run, backup, and force flags
+- Phase 4 (v0.3.0): Customization detection via content hashing
+
+No new dependencies. `index.js` stays under 150 lines. Aligns with Proposal 008's export/import subcommands — all share the same argument routing pattern.
+
+**What Doesn't Change:**
+- Default `npx create-squad` behavior (init flow) is unchanged
+- User-owned files are never modified by the upgrade system
+- No new dependencies in `package.json`
+- The coordinator reads `squad.agent.md` fresh every session — overwriting it IS the upgrade
+
+**Proposal:** `docs/proposals/011-forwardability-and-upgrade-path.md`
+
+### 2026-02-08: Skills platform architecture and v1 Copilot integration
+
+**By:** Kujan
+
+**What:** Skills are transferable domain expertise stored in per-agent `skills.md` files, separate from project-specific `history.md`. The coordinator inlines skills into spawn prompts alongside charters. Skills enable lighter spawns for skilled-domain tasks (extending Proposal 007's tiered modes). `store_memory` is NOT useful for Squad — wrong persistence model, no agent identity, too small. Forwardability handled via defensive file reads (existence checks), not version fields. File paths in charters are a de facto API contract — treat as frozen.
+
+**Why:** Brady wants agents that learn across projects. Skills are the mechanism. Keeping skills separate from history makes the Proposal 008 export clean (skills travel unconditionally, history needs filtering). The `store_memory` analysis prevents the team from investing in a dead-end platform integration. The forwardability analysis prevents breaking changes when `squad.agent.md` evolves. The v1 synthesis (007 + 008 + 012) tells a coherent product story: Squad gets better the more you use it.
+
+**Proposal:** `docs/proposals/012-skills-platform-and-copilot-integration.md`
+
+**v1 scope:** Agent self-writing to skills.md, user-teaches-skills via coordinator, skills in spawn prompts, skills in `.squad` export, defensive forwardability. NOT in v1: `store_memory` integration, automatic skill detection, cross-agent skill sharing, selective skill loading.
+
+### 2026-02-08: V1 test strategy
+
+**By:** Hockney
+**Date:** 2026-02-08
+**Proposal:** 013-v1-test-strategy.md
+
+**What:** Squad adopts a comprehensive test strategy for v1 using `node:test` + `node:assert` (zero dependencies). Nine test categories covering init, idempotency, export, import, round-trip, upgrade, schema validation, edge cases, and platform-specific behavior. Six blocking quality gates must pass before v1 ships. CI via GitHub Actions matrix (ubuntu, macos, windows).
+
+**Key Decisions:**
+1. **Framework: `node:test`** — zero dependencies, built into Node 22. Previous recommendation of `tap` is withdrawn in favor of Brady's thin-runtime philosophy.
+2. **Coverage target: 90% line, 85% branch** — `index.js` is small enough that this means "you tested almost everything."
+3. **Quality gates (all blocking):** All tests pass; init happy path works; export/import round-trip produces identical portable state; no raw stack traces on any error path; idempotent re-runs don't corrupt state; schema validation catches all malformed input.
+4. **Test architecture: 80% integration, 20% unit** — run the CLI in temp dirs, check file output.
+5. **No pre-commit hook** — CI is the gate.
+6. **`index.js` refactoring recommended** — wrap in functions, export for testing, use `require.main === module` guard.
+
+**Why:** Nine users. Whole division talking. Zero tests. This is a product now — if a user can break it, we should have broken it first.
+
+### 2026-02-08: V1 messaging, README, and launch strategy
+
+**By:** McManus
+**Date:** 2026-02-08
+**Proposal:** `docs/proposals/014-v1-messaging-and-launch.md`
+
+**What:** Complete v1 public-facing launch plan covering: positioning statement, README rewrite, demo script, launch strategy, community engagement, and competitive positioning.
+
+**Key decisions:**
+1. **V1 tagline:** "Throw MY squad at it" — the possessive pronoun is the entire v1 story.
+2. **One-liner:** "Your AI squad remembers you. Across every project. Forever."
+3. **README restructured for v1** with three new sections: "Your Squad Learns" (skills + persistence merged), "Take Your Squad Anywhere" (portability), and "Staying Current" (forwardability).
+4. **Demo script is a two-project arc** — the "holy cow" moment: squad remembers preferences in a brand new project without being told.
+5. **Launch sequence:** 7-day pre-launch teasers → D-Day → D+7 follow-up → D+14 community showcase.
+6. **Community strategy:** GitHub Discussions first, not Discord. `#throwasquadatit` hashtag. No squad sharing in v1.
+7. **Competitive positioning:** "Other tools have memory. Squad has a relationship." Never trash Copilot Chat.
+
+**Why:** Brady's goals: "9 users, whole division talking," "throw a squad at it should be EARNED." Three v1 features (portability, skills, forwardability) are category-defining. The launch must match the ambition.

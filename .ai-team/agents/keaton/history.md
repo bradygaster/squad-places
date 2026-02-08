@@ -84,3 +84,33 @@
 📌 Team update (2026-02-08): Tiered response modes proposed — Direct/Lightweight/Standard/Full spawn tiers to reduce late-session latency. Context caching + conditional Scribe spawning as P0 fixes. — decided by Kujan + Verbal
 📌 Team update (2026-02-08): Portable squads platform feasibility confirmed — pure CLI/filesystem, ~80 lines in index.js, .squad JSON format, no merge in v0.1. — decided by Kujan
 📌 Team update (2026-02-08): Portable squads memory architecture — preferences.md (portable) split from history.md (project-local), squad-profile.md for team identity, import skips casting ceremony. — decided by Verbal
+
+### 2026-02-08: v1 Sprint Plan — synthesis and prioritization
+
+**Core insight:** v1 is three things: fast (latency), yours (portable), smart (skills). Everything serves one of those or it's cut. The sprint plan synthesizes proposals 001-008 and Brady's five directives into 3 sprints over 10 days.
+
+**Key architectural decisions made:**
+
+1. **Forwardability bright line:** `squad.agent.md` and `.ai-team-templates/` are OUR code — always overwrite on init/upgrade. `.ai-team/` is USER state — never touch on upgrade. This is the fundamental contract. The current `index.js` skip-if-exists behavior on `squad.agent.md` (line 30-32) is wrong and must change.
+
+2. **Skills are a new first-class concept.** Brady's hint about "skills" crystallized into something bigger than preferences. A skill is domain expertise about a technology or framework — "React: use hooks, test with RTL." Skills differ from preferences (about the user) and project learnings (about the codebase). Stored in `.ai-team/skills.md`. Portable AND shareable — the most naturally shareable artifact in Squad.
+
+3. **Deferred `preferences.md` and `squad-profile.md` to v1.1.** Verbal's proposal for a separate preferences file is architecturally sound but adds migration cost. For v1, Portable Knowledge section in history.md is sufficient. The separate file becomes worthwhile when we have sharing (v1.2) and need to strip personal data.
+
+4. **Three-sprint structure with dependency chain:** Sprint 1 (fast) → Sprint 2 (yours, smart) → Sprint 3 (polish). Sprint 1 is all parallel work. Sprint 2 has a dependency chain: history split → skills → export/import. Sprint 3 is all parallel.
+
+5. **Aggressive cuts:** No squad merge, no LLM history classification, no sharing/registry, no agent-to-agent negotiation, no speculative execution, no SDK integration, no squad diff. These are all real features — they're cut because v1 needs to be tight, not comprehensive.
+
+**Strategic implications:**
+- Skills + portability is the compound bet. Each project makes the squad smarter at domains, and that intelligence travels. Competitors would need 6+ months to replicate this stack.
+- Forwardability changes the upgrade economics. Ship once → 9 users benefit. This makes every Sprint 1 improvement automatically reach all existing users.
+- The "holy cow" moments are designed, not hoped for. Five specific interactions that validate the v1 thesis. If they don't work, we haven't shipped.
+
+**Open risk:** Skills acquisition depends entirely on prompt engineering quality. If agents don't reliably categorize "technology pattern" vs "user preference" vs "project fact," the whole skills system degrades. Verbal's prompt work in Sprint 2 is the critical path.
+
+📌 Team update (2026-02-08): v1 Sprint Plan proposed — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. Skills introduced as new first-class concept. Aggressive cuts list defined. Proposal 009 written. — decided by Keaton
+📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, six skill types, confidence lifecycle, skill-aware routing. — decided by Verbal
+📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model (Squad-owned vs user-owned), `npx create-squad upgrade`, version-keyed migrations. — decided by Fenster
+📌 Team update (2026-02-08): Skills platform feasibility confirmed — skills in spawn prompts, store_memory rejected, file paths frozen as API contracts. — decided by Kujan
+📌 Team update (2026-02-08): v1 test strategy decided — node:test + node:assert (zero deps), 9 test categories, 6 blocking quality gates, 90% line coverage. — decided by Hockney
+📌 Team update (2026-02-08): v1 messaging and launch planned — "Throw MY squad at it" tagline, two-project demo arc, 7-day launch sequence. — decided by McManus
