@@ -8,6 +8,7 @@ Shared brain. All agents read this before working.
 **What:** Created Squad's own team using The Usual Suspects universe — Keaton (Lead), Verbal (Prompt Engineer), McManus (DevRel), Fenster (Core Dev), Hockney (Tester).
 **Why:** Squad needs a dedicated team to evolve the product, amplify its message, and stay ahead of the industry. Casting chosen to represent pressure and consequence, not literal role names. Brady (the owner) requested The Usual Suspects specifically.
 
+
 ### 2026-02-07: Prioritize stress testing Squad on a real project
 
 **By:** Keaton
@@ -17,6 +18,7 @@ Shared brain. All agents read this before working.
 **Why:** Current testing is theoretical. We've defined the patterns (drop-box, parallel fan-out, casting) but haven't stressed them with genuine multi-agent work where decisions propagate, agents disagree, or orchestration fails. A real project exposes coordination bugs, reveals where the coordinator instructions are unclear, and demonstrates whether memory actually compounds. This is the only way to know if Squad works at scale.
 
 **Next steps:** Pick a target project (non-docs, real implementation), use Squad to build it, and log what breaks.
+
 
 ### 2026-02-07: Proposal-first workflow adoption
 
@@ -34,6 +36,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Implementation:** Proposal written to `docs/proposals/001-proposal-first-workflow.md`.
 
+
 ### 2026-02-07: DevRel priorities for Squad onboarding
 
 **By:** McManus
@@ -41,6 +44,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **What:** Identified six critical polish areas to improve Squad's first-5-minutes developer experience: (1) Make install output visible and explanatory, (2) Link sample-prompts.md from README (16 ready-to-use demos), (3) Add "Why Squad?" value prop section, (4) Elevate casting from Easter egg to feature, (5) Add troubleshooting section, (6) Record 2-minute demo video/GIF showing parallel work.
 
 **Why:** The product has strong bones — solid messaging, tight Quick Start, real numbers in the context budget table — but the first-time experience has gaps. Install output is too quiet (just checkmarks, no structure explanation). Sample prompts are hidden in docs/. Casting (thematic persistent names) is mentioned once but not explained. No "why should I care?" section. No troubleshooting. No visual demo. These gaps increase time-to-value and reduce conversion. Priority is making the first 5 minutes irresistible — from "what is this?" to "I need this" as fast as possible.
+
 
 ### 2026-02-07: Agent experience evolution — three strategic directions
 
@@ -50,6 +54,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Why:** Current spawn template is uniform across all agents. This works functionally but doesn't match how specialists actually work — Leads need trade-off context, Testers need edge case catalogs, etc. Adaptive context loading (tagging decisions by domain, injecting only relevant history) prevents agents from parsing noise. Reviewer protocol adding rejection with guidance + grace periods makes reviews collaborative handoffs. Coordinator chaining follow-up work automatically and catching decision conflicts before the user sees them makes Squad feel predictive, not reactive.
 
+
 ### 2026-02-07: Industry trends — agent specialization, collaboration, speculative execution
 
 **By:** Verbal
@@ -57,6 +62,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **What:** Three trends Squad should lead: (1) Dynamic micro-specialist spawning (10+ narrow experts on the fly), (2) Agent-to-agent negotiation (multi-turn collaboration, not just fan-out-and-merge), (3) Speculative execution (anticipatory agents for work that will obviously follow).
 
 **Why:** Specialization — current 5-role model will expand to 10+ narrow specialists, adding specialists mid-session should be effortless. Collaboration — agents currently work in parallel and coordinator synthesizes; next evolution is agent-to-agent negotiation. Speculative execution — parallel agents are the only way to stay fast at scale; spawn anticipatory agents and discard if unneeded. These trends align with where the industry is headed. Squad should ship these patterns before competitors figure out basic parallelism.
+
 
 ### 2026-02-07: Baseline testing infrastructure needed before broader adoption
 
@@ -70,10 +76,12 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Proposed approach:** Use `tap` as test framework. Start with one integration test. Add error handling incrementally as we find failure modes.
 
+
 ### 2026-02-07: Stay independent, optimize around Copilot
 **By:** Kujan
 **What:** Squad will NOT become a Copilot SDK product. Instead, we optimize around the platform while maintaining independence. Focus on being the best example of what you can build *on* Copilot, not *of* Copilot.
 **Why:** Squad's filesystem-backed memory (git-cloneable, human-readable) is a killer feature. SDK adoption would abstract this away and reduce transparency. We can evolve faster independently. If the SDK later adds features we need (agent memory primitives, marketplace integration, spawn quota management), we reconsider. Until then: independent product, platform-optimized implementation.
+
 
 ### 2026-02-07: Proposal 003 revisions after deep onboarding review
 **By:** Kujan
@@ -83,20 +91,24 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 3. **Parallel Scribe spawning confirmed** — `squad.agent.md` line 360 still spawns Scribe serially after work. Should change to parallel spawning with work agents.
 **Why:** Proposal 003 was written before a full read of `squad.agent.md`. The coordinator's deliberate inline-charter design and hybrid context-loading approach are well-reasoned. Overriding them would fight the platform. Parallel Scribe remains a genuine friction point worth fixing.
 
+
 ### 2026-02-07: README rewrite proposal ready for review
 **By:** McManus
 **What:** Proposal 006 (`docs/proposals/006-readme-rewrite.md`) contains the complete new README text implementing proposal 002. Copy-paste-ready once approved. Key decisions: "What is Squad?" merged into hero, sample prompts link at end of Quick Start, no Go references in README (Go example in sample-prompts tracked separately), no demo GIF yet (needs production setup).
 **Why:** Consolidates messaging overhaul into a concrete, reviewable artifact. Needs sign-off from Keaton (messaging), Brady (owner), and Verbal (voice/tone review on "Why Squad?" section).
+
 
 ### 2026-02-07: Video content strategy approved
 **By:** Verbal
 **What:** Video content strategy for Squad: 75-second trailer, 6-minute full demo, 5-video series (7 total including supercut). Trailer ships first (cold open, no intro). Visual hook is agents coordinating through decisions.md, not code generation. "Throw a squad at it" closes every video. Weekly release cadence (~9 weeks).
 **Why:** Positions Squad as the definitive multi-agent tool for Copilot through visual proof. Needs McManus (scripting/polish), Keaton (strategy alignment review), Brady (release cadence and on-camera decision). Proposal: `docs/proposals/005-video-content-strategy.md`.
 
+
 ### 2026-02-07: Demo script format — beat-based structure
 **By:** McManus
 **What:** Demo script (`docs/demo-script.md`) uses beat-based format with three sections per beat: 🎬 ON SCREEN (what viewer sees), 🎙️ VOICEOVER (exact words), 👆 WHAT TO DO (physical actions during recording). Eliminates improvisation — Brady records each beat independently.
 **Why:** Brady's feedback: current script doesn't tell him what to do. Ambiguity costs takes. Beat format makes recording mechanical. Proposal: `docs/proposals/004-demo-script-overhaul.md`. Needs Keaton (feature ordering), Verbal (tone/claims), Brady (final sign-off).
+
 
 ### 2026-02-08: Portable Squads — architecture direction
 
@@ -106,6 +118,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **What:** Squad will support exporting and importing team identity across projects via a JSON manifest file. Core architectural decision: separate Team Identity (portable) from Project Context (not portable) at the data model level. History split into `## Portable Knowledge` and `## Project Learnings`. Export format is a single `squad-export.json` manifest. CLI: `npx create-squad export` / `npx create-squad --from <manifest>`. Casting (universe, names, roles) travels unconditionally. No merge in v1 — `--force` replaces with archival.
 
 **Why:** The team is more valuable than the project. Without portability, users rebuild from scratch every time. Opens path to squad sharing (v2) and registries (v3). Aligns with Proposal 007 (both modify history structure, complementary). Requires Hockney's testing infrastructure for round-trip validation. Template changes are backward-compatible.
+
 
 ### 2026-02-08: Portable squads — export/import design and platform feasibility
 
@@ -117,6 +130,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Proposal:** `docs/proposals/008-portable-squads-platform.md`
 
+
 ### 2026-02-08: Portable Squads — memory architecture and experience design
 
 **By:** Verbal
@@ -126,6 +140,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **Why:** Nobody in the industry has portable agent teams — category-defining feature. Stickiness through relationship capital, not lock-in. Filesystem-backed memory makes export trivially simple. Enables future phases: squad templates, team-shared squads, marketplace. Aligns with Proposal 007's progressive summarization.
 
 **Proposal:** `docs/proposals/008-portable-squads-experience.md`
+
 
 ### 2026-02-08: Squad v1 Sprint Plan — architecture and prioritization
 
@@ -153,6 +168,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Success criteria:** Trivial task latency drops from ~30s to ~3-5s. Export/import round-trip at 100% fidelity. Upgrade preserves 100% of user state. 5 core tests passing. Brady approves.
 
+
 ### 2026-02-08: Skills system — agent competence as portable knowledge
 
 **By:** Verbal
@@ -165,6 +181,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Depends on:** Proposal 008 (Portable Squads) for export/import integration; Proposal 007 (Persistence) for progressive summarization of skills.
 
+
 ### 2026-02-08: Skills platform architecture and v1 Copilot integration
 
 **By:** Kujan
@@ -176,6 +193,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **Proposal:** `docs/proposals/012-skills-platform-and-copilot-integration.md`
 
 **v1 scope:** Agent self-writing to skills.md, user-teaches-skills via coordinator, skills in spawn prompts, skills in `.squad` export, defensive forwardability. NOT in v1: `store_memory` integration, automatic skill detection, cross-agent skill sharing, selective skill loading.
+
 
 ### 2026-02-08: V1 test strategy
 
@@ -194,6 +212,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 6. **`index.js` refactoring recommended** — wrap in functions, export for testing, use `require.main === module` guard.
 
 **Why:** Nine users. Whole division talking. Zero tests. This is a product now — if a user can break it, we should have broken it first.
+
 
 ### 2026-02-08: V1 messaging, README, and launch strategy
 
@@ -214,6 +233,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Why:** Brady's goals: "9 users, whole division talking," "throw a squad at it should be EARNED." Three v1 features (portability, skills, forwardability) are category-defining. The launch must match the ambition.
 
+
 ### 2026-02-08: P0 — Silent success bug mitigation
 
 **By:** Kujan
@@ -224,6 +244,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **Why:** This is the #1 trust-destroying bug. When the coordinator tells the user "agent failed" but the work is sitting on disk, it creates the exact "agents get in the way" perception Brady flagged. The mitigations are all additive, non-breaking, and can ship immediately. Expected to reduce silent success rate from ~40% to <15% (prompt fix) and catch remaining cases with file verification (detection fix). If rate stays above 10% after mitigations, escalate to Copilot team as platform bug.
 
 **Proposal:** `docs/proposals/015-p0-silent-success-bug.md`
+
 
 ### 2026-02-09: Adopt Agent Skills Open Standard with MCP tool declarations
 
@@ -243,6 +264,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 - No MCP auto-configuration (security concern) — skills document requirements, users configure servers
 
 **Proposal:** `docs/proposals/012-skills-platform-and-copilot-integration.md` (Revision 2)
+
 
 ### 2026-02-09: Squad Paper — The Case for Multi-Agent Teams
 
@@ -268,6 +290,7 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 ---
 
+
 ### Fenster — Sprint Plan 009 Implementation Review
 
 **Author:** Fenster (Core Dev)
@@ -289,6 +312,7 @@ Below is my section-by-section implementation review.
 
 **Assessment: 4 hours is about right for the `index.js` changes alone. But the plan undersells the scope.**
 
+
 ### What's actually involved
 
 I already wrote Proposal 011 with the complete `index.js` sketch (~140 lines, up from 65). The plan's section 1.1 describes the intent correctly but glosses over implementation details I covered:
@@ -298,6 +322,7 @@ I already wrote Proposal 011 with the complete `index.js` sketch (~140 lines, up
 - **Migration framework** — even though v0.1→v0.2 has no data migrations, the framework needs to exist. Empty migrations array is fine, but the plumbing (getMigrations, ordered execution, idempotency) must be built now or we'll be retrofitting it under pressure when v0.3 needs it.
 - **Error handling** — backup failure aborts. Overwrite failure restores backup. Migration failure warns but continues. This is not trivial code.
 
+
 ### What's missing from the plan
 
 1. **The plan says init should "always write squad.agent.md" (remove skip-if-exists)**. My Proposal 011 disagrees. Init should still skip if exists, but HINT at upgrade. Reason: `npx create-squad` is what users run in CI, in scripts, in onboarding docs. Silently overwriting their coordinator without warning on every `npx create-squad` is wrong. The plan's proposed change means any re-run of the init command overwrites — that's not forwardability, that's clobbering.
@@ -306,12 +331,14 @@ I already wrote Proposal 011 with the complete `index.js` sketch (~140 lines, up
 
 3. **Templates overwrite behavior.** The plan says upgrade overwrites templates. Fine. But init should still skip templates if they exist (same as coordinator). The plan marks both init and upgrade as "always overwrite" — that changes init semantics in a way users don't expect.
 
+
 ### Revised estimate
 
 - `index.js` rewrite with upgrade, version detection, backup, migrations: **4-5 hours**
 - `squad.agent.md` version header addition: **15 minutes**
 - Testing the upgrade path on a real v0.1.0 install: **1 hour**
 - **Total: ~6 hours** (not 4)
+
 
 ### Recommendation
 
@@ -322,6 +349,7 @@ Use Proposal 011's `index.js` sketch as the implementation baseline, not the pla
 ## 2. Sprint 2 Feasibility: Export/Import CLI (~6 hours estimate)
 
 **Assessment: 6 hours is unrealistic. 10-12 hours minimum.**
+
 
 ### What's actually hard
 
@@ -351,11 +379,13 @@ The plan lists the export manifest schema and import flow as if they're straight
 
 Export depends on history split (2.1) AND skills (2.2). Both are prompt-engineering changes to `squad.agent.md`. Until agents are actually writing to the new history format and skills.md, there's nothing meaningful to export. The plan acknowledges this dependency but underestimates the testing overhead: you need a squad that has actually USED the new formats to verify export captures them correctly.
 
+
 ### Why it blocks the sprint plan
 
 The silent success bug means ~40% of agent spawns lose their response text. The sprint plan's entire development process uses Squad to build Squad. If Verbal writes the tiered response mode changes to `squad.agent.md` and the coordinator reports "did not produce a response," we've lost work. If I implement forwardability and my response vanishes, Brady sees failure where there was success.
 
 **You cannot build v1 with a tool that lies about success 40% of the time.**
+
 
 ### Proposal 015's mitigations are zero-risk
 
@@ -367,9 +397,11 @@ Every change in Proposal 015 is a prompt instruction change to `squad.agent.md`:
 
 **Total implementation: ~1 hour.** These are instruction edits, not code changes.
 
+
 ### The trust argument
 
 Brady said "human trust is P0." If Squad reports "agent did not produce a response" when the agent actually wrote a 45KB proposal, that's a trust-destroying moment. The user thinks the system failed. The system actually succeeded. This is worse than an actual failure — at least real failures are honest.
+
 
 ### Sprint 0: Trust Foundation (Day 0, ~2 hours)
 
@@ -377,6 +409,7 @@ Brady said "human trust is P0." If Squad reports "agent did not produce a respon
 2. **Response format enforcement** — same file, same edit session
 
 This unblocks everything. Every subsequent sprint benefits from agents that reliably report their work.
+
 
 ### Sprint 1: Forwardability + Latency (Days 1-3)
 
@@ -387,12 +420,14 @@ This unblocks everything. Every subsequent sprint benefits from agents that reli
 
 Items 2-4 are all prompt edits. They can ship independently of item 1. Item 1 is the code work.
 
+
 ### Sprint 2: Portability Foundation (Days 4-7)
 
 1. **History split** — template + prompt changes (prerequisite for everything else)
 2. **Skills system** — template + prompt changes
 3. **Export CLI** — `create-squad export` command in `index.js`
 4. **Defer import to Sprint 3** — export is useful alone; import needs more testing
+
 
 ### Sprint 3: Import + Polish + Tests (Days 8-10+)
 
@@ -401,6 +436,7 @@ Items 2-4 are all prompt edits. They can ship independently of item 1. Item 1 is
 3. **Testing infrastructure** — Hockney's 5 core tests
 4. **README rewrite** — McManus
 5. **History summarization** — if time permits
+
 
 ### Why this order
 
@@ -413,11 +449,13 @@ Items 2-4 are all prompt edits. They can ship independently of item 1. Item 1 is
 
 ## 5. Dependencies the Plan Gets Wrong
 
+
 ### Marked parallel but has a hard dependency:
 
 1. **2.3 Export/Import depends on 2.2 Skills.** The plan shows this correctly in the dependency diagram but then assigns both to Sprint 2 days 4-7 as if they can overlap. Skills system (prompt engineering) must be DONE before export knows what to export. If skills.md format changes during export development, export breaks. **Verdict: Skills must be finalized before export begins. At least 1 day gap.**
 
 2. **3.2 Testing depends on export AND import.** The plan's test list includes "Export/import round-trip" and "Skills persistence test." If import is in Sprint 2, testing it in Sprint 3 works. But if import bugs are found in testing, the fix cycle bleeds past Sprint 3. **Verdict: Import and tests should overlap in Sprint 3 with buffer for fix cycles.**
+
 
 ### Marked sequential but could be parallel:
 
@@ -426,6 +464,7 @@ Items 2-4 are all prompt edits. They can ship independently of item 1. Item 1 is
 2. **3.1 README rewrite and Sprint 2.** The plan notes McManus "can start README draft" during Sprint 2. McManus can start the README Day 1. The README doesn't depend on any implementation — it's messaging work. Only the final version needs feature screenshots/demos. **Verdict: README drafting is fully parallel from Day 1.**
 
 3. **3.4 Lightweight spawn template and 1.3 Tiered modes.** The plan marks this as dependent. It's not — the lightweight template is a standalone prompt blob. It references tiered mode concepts but doesn't require the routing table to exist. Both are edits to the same file. **Verdict: Can be developed in parallel, merged together.**
+
 
 ### Missing dependency:
 
@@ -451,6 +490,7 @@ With re-sequencing: **12 days total, high confidence.** Without: **10 days, medi
 
 
 ---
+
 
 ### Decision: Test Sequence and Sprint Placement
 
@@ -522,6 +562,7 @@ The silent success bug is a platform-level issue (background agents returning em
 
 **What we can test:**
 
+
 ### Test A: Response Order Compliance
 Verify that the spawn prompt template in `squad.agent.md` contains the response-order instruction. This is a content test — grep for the critical text:
 
@@ -539,6 +580,7 @@ it('spawn prompt requires text summary as final output', () => {
 });
 ```
 
+
 ### Test B: Silent Success Detection Instructions
 Verify that the coordinator instructions include silent-success detection logic:
 
@@ -553,6 +595,7 @@ it('coordinator handles silent success', () => {
   );
 });
 ```
+
 
 ### Test C: File Existence as Ground Truth
 The mitigation says "check if expected files exist when response is empty." We can test the FILE CREATION part — which is the ground truth the coordinator relies on:
@@ -577,6 +620,7 @@ it('init creates all expected files (ground truth for silent success detection)'
 
 If I could only ship 3 tests, these are the 3:
 
+
 ### Priority 1: Init Happy Path
 **Why first:** If `npx create-squad` doesn't work, nothing else matters. This is the front door. Every user hits this. Zero ambiguity about whether the product functions.
 
@@ -591,6 +635,7 @@ Run index.js in temp dir → verify:
   - exit code is 0
 ```
 
+
 ### Priority 2: Init Idempotency
 **Why second:** Real users WILL run `npx create-squad` twice. Maybe they forgot they already ran it. Maybe they want to check if it's installed. If the second run corrupts their team state, we've lost that user's trust permanently. Brady's P0 is human trust — this test is how we prove it.
 
@@ -604,6 +649,7 @@ Run index.js again (second run) → verify:
   - stdout contains "already exists — skipping"
   - No errors, exit code 0
 ```
+
 
 ### Priority 3: Export/Import Round-Trip
 **Why third:** This is the v1 headline feature. "Your squad travels with you." If export → import loses data, the feature is a lie. This is the acid test — if it passes, portability works. If it fails, we don't have a v1.
@@ -650,6 +696,7 @@ Compare: A's portable state == B's state
 
 
 ---
+
 
 ### Decision: Proposal Lifecycle Amendment
 
@@ -705,6 +752,7 @@ Proposal 009 is architecturally sound but **mis-sequenced for trust**. Brady sai
 
 ---
 
+
 ### Decision: Skills System — Agent Skills Standard + MCP Tool Declarations
 
 **By:** Verbal  
@@ -726,6 +774,7 @@ Proposal 009 is architecturally sound but **mis-sequenced for trust**. Brady sai
 
 
 ---
+
 
 ### Decision: Sprint 0 Story Arc Identified
 
@@ -752,11 +801,13 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 
 `docs/devrel/sprint-0-story.md` — McManus's internal reference for all storytelling around this arc.
 
+
 ### 2026-02-09: decisions.md Formatting Cleanup
 **By:** Kujan (Copilot SDK Expert)
 **What:** Audit found formatting issues in decisions.md — wrong heading levels and mixed line endings. Five review dumps from Fenster, Hockney, Keaton, Verbal, and McManus were merged with top-level `# ` headings instead of `### ` entries; all converted. File had 806 CRLF and 20 LF-only endings; normalized to LF. Recommends adding `*.md text eol=lf` to `.gitattributes`.
 **Why:** decisions.md is read by every agent. Inconsistent formatting and heading levels cause parsing confusion and merge artifacts.
 **Status:** DECIDED — changes applied directly.
+
 
 ### 2026-02-09: Scribe resilience — template fix + inbox-driven spawn
 **By:** Verbal
@@ -765,6 +816,7 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 2. **Cascade fix:** Added inbox-driven Scribe spawn to squad.agent.md "After Agent Work" section. Coordinator now checks `.ai-team/decisions/inbox/` for files BEFORE deciding whether to spawn Scribe. If inbox has files, Scribe spawns regardless of agent response status. Created `.ai-team/agents/scribe/history.md` — Scribe was the only agent without memory.
 **Why:** Scribe is the most vulnerable agent to the silent success bug (does nothing but tool calls). The cascade: silent success → Scribe not spawned → inbox accumulates → decisions.md stale → team diverges. Fix triggers on artifacts (files), not responses (agent output).
 **Scope:** squad.agent.md (4 lines changed), new file scribe/history.md.
+
 
 ### 2026-02-09: P0 bug audit — shared state integrity findings (consolidated)
 **By:** Keaton (Lead), Fenster (Core Dev), Hockney (Tester)
@@ -784,6 +836,7 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 - ⬜ Orchestration log: implement or remove from charter
 - ⬜ Add `npm test` to CI when pipeline is set up
 
+
 ### 2026-02-09: V1 Test Suite Shipped
 **By:** Hockney (Tester)
 **What:** Shipped first test suite. 12 tests, 3 suites, zero external dependencies. Framework: `node:test` + `node:assert/strict` (Node 22 built-ins). Location: `test/index.test.js`. Run: `npm test`. Result: 12/12 pass.
@@ -793,10 +846,12 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 - Fenster: When `require.main === module` guard is added to `index.js`, update tests to import `copyRecursive` directly.
 - Keaton: Consider adding `npm test` to CI.
 
+
 ### 2026-02-09: Demo Script ACT 7 — Identified Missing and Restored
 **By:** McManus (DevRel)
 **What:** ACT 7 was missing from `docs/demo-script.md` — script jumped from ACT 6 (5:30–6:30) to ACT 8 (7:30–8:00), leaving 60 seconds of dead air. KEY THEMES table referenced ACT 7 three times (history.md, decisions.md on screen, second wave). Likely a silent success bug casualty. McManus reconstructed and inserted **ACT 7 — THE ARTIFACTS & SECOND WAVE (6:30–7:30)** covering: decisions.md on screen, history.md on screen, second wave fan-out demonstrating faster re-launch. Demo script is now recordable end-to-end.
 **Source material:** Proposal 004 BEAT 7, KEY THEMES reference table, existing demo script format.
+
 
 ### 2026-02-09: Upgrade Subcommand Shipped
 **By:** Fenster (Core Dev)
@@ -805,15 +860,18 @@ DevRel content needs a narrative, not a feature list. This session gave us one �
 **Not in this pass:** No backup-before-overwrite, no version detection, no migration framework — deferred per Proposal 011's phased approach.
 **Why:** Pre-P015 users are stuck on coordinator instructions without RESPONSE ORDER and silent success detection. The upgrade subcommand is the delivery mechanism for these fixes.
 
+
 ### 2026-02-09: Background agent timeout best practices documented
 **By:** Kujan (Copilot SDK Expert)
 **What:** Created `docs/platform/background-agent-timeouts.md` — best practices covering the `read_agent` default timeout problem (30s default vs 45-120s real work), response order issue, and file-verification detection pattern. Key numbers: 30s default timeout, 45-120s real agent work time, 300s safe ceiling.
 **Why:** The 30s default was causing ~40% of agents to appear failed when still working. Doc captures hard-won knowledge for future builders.
 
+
 ### 2026-02-09: P015 mitigations don't reach pre-existing installations
 **By:** Kujan (Copilot SDK Expert)
 **What:** `index.js` line 30-31 skips overwriting `squad.agent.md` if it already exists. Pre-P015 users still have the old coordinator without RESPONSE ORDER, silent success detection, or `read_agent` timeout guidance (~40% silent success rate). The `npx create-squad upgrade` path (now shipped by Fenster) is the delivery mechanism.
 **Why:** P015 mitigations only effective for new installations. Existing installations remain vulnerable until they run `npx create-squad upgrade`. This is now the primary reason to publicize the upgrade subcommand.
+
 
 ### 2026-02-08: Squad DM — Hybrid architecture with tiered execution for direct messaging
 **By:** Keaton
@@ -860,6 +918,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 - `devtunnel` CLI installation
 - Telegram Bot API token (from @BotFather)
 
+
 ### 2026-02-09: Squad DM — Experience Design for Messaging Interfaces
 
 **By:** Verbal
@@ -869,10 +928,12 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 
 **Proposal:** `docs/proposals/017-dm-experience-design.md`
 
+
 ### 2026-02-09: "Where are we?" identified as top-tier messaging beat
 **By:** McManus
 **What:** Wrote Proposal 014a — an amendment to Proposal 014's v1 messaging strategy — adding the "where are we?" interaction as a core value prop moment. Includes: new messaging beat ("Ask Your Team, Not Your Dashboard"), demo script beat ("The Check-In"), DM connection to Proposal 017, README placement recommendations, and tagline hierarchy update. File: `docs/proposals/014a-where-are-we-messaging-beat.md`.
 **Why:** Brady's visceral reaction to asking "where are we?" and getting instant team-wide status reveals a feature moment we weren't messaging. It proves three features simultaneously (persistent memory, shared state, coordinator intelligence) in two seconds with zero setup. It's the most emotionally resonant proof that Squad is a team, not a tool — and it bridges directly to the DM story (Proposal 017) where asking "where are we?" from your phone becomes category-defining.
+
 
 ### 2026-02-09: Wave-Based Execution Plan (Quality → Experience)
 
@@ -880,11 +941,13 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 **What:** Proposal 018 — supersede Proposal 009's sprint structure with a wave-based execution plan organized by trust level: quality first, then experience. Gates between waves are binary — all quality criteria must pass before experience work begins. Wave 1: error handling, test expansion to 20+, CI, version stamping, silent success mitigations. Wave 1.5 (parallel): README, messaging, Squad Paper. Wave 2: tiered response modes, skills Phase 1, export, smart upgrade. Wave 3: import, skills Phase 2, history summarization. Squad DM deferred to Wave 4+. Key cuts: conditional memory loading, LLM history classification, squad merge, agent-to-agent negotiation. Total estimate: 38-51h across 3 waves.
 **Why:** Brady's directive — quality then experience — requires reorganizing work by trust level, not by capability. Sprints have fixed timelines; waves have gates. A wave doesn't end when the calendar says so — it ends when the quality criteria are met. Supersedes Proposal 009's sprint structure; feature set and architecture decisions from 009 remain valid.
 
+
 ### 2026-02-09: Human Input Latency and Persistence — Platform Analysis
 
 **By:** Kujan
 **What:** Analyzed Brady's two-part request: (1) reduce latency when human types while agents are working, (2) persist human messages as first-class state in `.ai-team/`. Problem 1 is a hard platform limitation (single-threaded conversation model, no interrupt mechanism) with partial workarounds via tiered response modes. Problem 2 is fully solvable today: coordinator writes human directives to `.ai-team/decisions/inbox/human-{slug}.md` as FIRST action on directive-type messages. Scribe merges via existing drop-box pattern. Not every message — only decisions, scope changes, explicit directives.
 **Why:** Human input responsiveness matters for team experience. Input latency is a platform limitation (no mid-turn message polling), but the lightweight variant (coordinator writes directives to inbox) requires zero new infrastructure and works identically in CLI and DM contexts. Scribe should NOT serve double duty as a human listener — the coordinator is the right place because it's the only entity that sees human messages in real-time.
+
 
 ### 2026-02-09: Master Sprint Plan (Proposal 019)
 **By:** Keaton
@@ -893,6 +956,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 
 
 ---
+
 
 ### 2026-02-09: Brady directives — session 5 batch
 
@@ -913,6 +977,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 6. **Human feedback optimization:** "please please optimize for an efficient experience or a continually up-to-date one for the human. humans like feedback." — This is a P0 UX principle for all work going forward.
 
 ---
+
 
 ### 2026-02-09: Sprint plan amendments for Brady's session 5 directives
 
@@ -940,6 +1005,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 
 ---
 
+
 ### 2026-02-09: VS Code Parity, Mid-Flight Human Input, and Feedback Optimization — Platform Analysis
 **By:** Kujan (Copilot SDK Expert)
 **Requested by:** bradygaster
@@ -949,6 +1015,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 ## Decision 1: VS Code Parity — "Would Squad Just Work?"
 
 **Verdict: Almost, but not quite. The `task` tool is the gap.**
+
 
 ### What matches across CLI and VS Code Copilot agent mode:
 
@@ -963,6 +1030,7 @@ This aligns with our independence principle (2026-02-07 decision): we're using C
 | `read_agent` / `list_agents` | ✅ Background agent lifecycle management | ⚠️ No documented equivalent | ❌ Gap |
 | `write_powershell` / `read_powershell` | ✅ Interactive shell sessions | ⚠️ Different terminal interaction model | ⚠️ Partial |
 | `store_memory` / `sql` | ✅ | ❓ Not confirmed in VS Code | ⚠️ Unknown |
+
 
 ### The critical analysis:
 
@@ -984,9 +1052,11 @@ VS Code Copilot agent mode supports subagent spawning (confirmed in Jan 2026 upd
 - The coordinator's attempts to call `task` tool with Squad's specific parameter patterns may work IF VS Code's subagent tool accepts the same schema
 - But the `read_agent` / `list_agents` lifecycle management pattern is CLI-specific
 
+
 ### Honest assessment:
 
 Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS Code's subagent tool is API-compatible with the CLI's `task` tool. The safest statement: **Squad's agent file loads correctly in VS Code, the coordinator's instructions are understood, but multi-agent orchestration (the core value prop) is unverified and likely has tool-name mismatches.**
+
 
 ### What to verify (actionable):
 1. Open the repo in VS Code, invoke `@squad` in Copilot Chat
@@ -994,6 +1064,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 3. Watch whether it successfully calls the `task` tool or errors
 4. If it errors, check the error — is it "unknown tool" or "wrong parameters"?
 5. Report findings back
+
 
 ### Performance comparison:
 - VS Code Copilot has a larger context window (typically matches CLI at 128K)
@@ -1007,6 +1078,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 
 **Verdict: No. Mid-flight input injection is not possible on this platform. But we have a pragmatic path.**
 
+
 ### Platform reality:
 
 | Mechanism | Possible? | Why / Why Not |
@@ -1017,6 +1089,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 | File-based signal (agent checks mid-work) | ⚠️ Theoretically | We could instruct agents to check a `.ai-team/human-directive.md` file periodically during long tasks. BUT: agents don't have event loops — they execute tool calls sequentially. An agent would only check the file if explicitly instructed to do so between steps. This adds complexity and latency. Not reliable. |
 | Wait for agent completion, then re-route | ✅ Yes | The coordinator can capture the human directive to the inbox, wait for current agents to finish, then re-spawn with updated context. This is the realistic path. |
 
+
 ### The honest answer:
 
 **Mid-flight human input injection is not possible on the Copilot platform today.** The conversation model is single-threaded. Once agents are spawned, they run in isolation until completion. The coordinator cannot:
@@ -1024,6 +1097,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 - Send them new information
 - Cancel and re-spawn them
 - Inject context mid-execution
+
 
 ### The pragmatic best (what we CAN do):
 
@@ -1050,6 +1124,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 
 **Verdict: Several things, all via `squad.agent.md` changes only.**
 
+
 ### What the platform supports for real-time feedback:
 
 | Technique | Supported? | How |
@@ -1058,6 +1133,7 @@ Squad will NOT "just work" in VS Code today without testing. It MIGHT work if VS
 | Progress indicators during agent work | ⚠️ Limited | The coordinator CANNOT emit text while waiting on `read_agent`. The `read_agent` call blocks the coordinator's turn. No streaming progress. |
 | Report as each agent completes | ⚠️ Partially | Sequential `read_agent` calls can report one-at-a-time. BUT this means serial collection instead of parallel. Trade-off: faster feedback vs. longer total time. |
 | Intermediate status messages | ❌ | Once the coordinator is in a tool-call turn, it cannot interleave text responses. Text comes before or after tool calls, never during. |
+
 
 ### What we can change in `squad.agent.md` TODAY:
 
@@ -1112,6 +1188,7 @@ The coordinator knows the task complexity from its routing. Include an estimate:
 
 This manages expectations. Waiting 60 seconds when you expected 5 is painful. Waiting 60 seconds when you were told 60 is acceptable.
 
+
 ### What we CANNOT do today:
 - Stream agent progress in real-time (no streaming from `read_agent`)
 - Show a progress bar (no mechanism for partial updates from agents)
@@ -1148,6 +1225,7 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 
 ## Decisions Made
 
+
 ### 1. Blog Post Format Adopted
 - Template at `docs/blog/template.md`
 - YAML frontmatter: title, date, author, wave, tags, status, hero
@@ -1155,11 +1233,13 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 - One post per wave completion — wave cadence IS the content cadence
 - First post shipped: `docs/blog/001-wave-0-the-team-that-built-itself.md`
 
+
 ### 2. Blog Engine Sample Prompt Added
 - Added to `docs/sample-prompts.md` as "Squad Blog Engine (Meta Demo)"
 - Squad builds a static blog renderer (HTML/CSS/JS) that renders its own progress posts
 - Meta angle: "Squad built the tool that tells Squad's story"
 - Categorized as Quick Build — single session, well-scoped
+
 
 ### 3. Package Naming Recommendation (Pending Brady's Call)
 - **Recommendation:** Publish `create-squad` (unscoped) alongside existing `@bradygaster/create-squad`
@@ -1185,10 +1265,12 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 
 **Review requested from:** bradygaster (package naming decision), Keaton (architecture), Fenster (implementation)
 
+
 ### 2026-02-09: No npm distribution — GitHub-only model (consolidated)
 **By:** bradygaster, Keaton
 **What:** Squad is NOT published to npm. Not now, not ever. Distributed exclusively via `npx github:bradygaster/squad`. Item 1.8 from Proposal 019a (Register create-squad on npm) is CANCELLED. All documentation must use GitHub-hosted npx syntax. Kobayashi (Git & Release Engineer) hired to own releases, tags, branch strategy, CI/CD, and state integrity. Three new Wave 1 items added (1.11 release workflow, 1.12 branch strategy, 1.13 first tagged release). Wave 1 effort increases from 15-18h to 18-22h.
 **Why:** Brady's explicit decision: no npm registry involvement. GitHub is the sole distribution channel. The package name is the GitHub repo name. Keaton executed the directive, updating Proposal 019a and onboarding Kobayashi.
+
 
 
 ### 2025-07-16: Proposal 021 — Release Plan & Distribution Strategy
@@ -1224,6 +1306,7 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 - When to merge `squadify` → `main` for the first time?
 
 
+
 ### 2026-02-09: Kobayashi's open questions — Brady deferred to team judgment
 
 **By:** Copilot (Coordinator) — Brady said "use your best judgment" on all 4
@@ -1239,6 +1322,7 @@ This manages expectations. Waiting 60 seconds when you expected 5 is painful. Wa
 4. **`squadify` → `main` merge:** After Wave 1 gate passes. First merge to main = first release-worthy state. `squadify` remains the working branch until then.
 
 ---
+
 
 ### 2026-02-09: Branch strategy — dev has everything, main is product-only
 
@@ -1333,11 +1417,13 @@ Brady's position: The repo is completely public. The Squad Squad state SHOULD be
 
 ## Analysis of Options
 
+
 ### Option 1: `.npmignore` — Belt-and-suspenders exclusion
 - **Verdict: IMPLEMENTED (defense in depth)**
 - `.npmignore` explicitly excludes `.ai-team/`, `.ai-team-templates/`, `docs/`, `test/`, `.gitattributes`, `.github/workflows/`
 - With `package.json` `files` field present, `.npmignore` is redundant for filtering — `files` takes precedence as a whitelist
 - Value: catches mistakes if `files` field is accidentally removed; serves as documentation of intent
+
 
 ### Option 2: Separate `release`/`dist` branch
 - **Verdict: NOT NEEDED**
@@ -1345,17 +1431,20 @@ Brady's position: The repo is completely public. The Squad Squad state SHOULD be
 - The `files` field already solves the problem without branch gymnastics
 - Reserved as an option if npm behavior changes in the future
 
+
 ### Option 3: GitHub Release artifacts (tarball)
 - **Verdict: REJECTED**
 - Changes the user-facing command from `npx github:bradygaster/squad` to a tarball URL
 - Breaks the current UX contract and all existing documentation
 - No benefit over the current `files`-based approach
 
+
 ### Option 4: `.gitattributes` with `export-ignore`
 - **Verdict: DOES NOT WORK**
 - `npx github:` uses GitHub's tarball API (`codeload.github.com`), NOT `git archive`
 - `export-ignore` is only honored by `git archive`, which npm never calls for `github:` installs
 - This is a common misconception — researched and empirically debunked
+
 
 ### Option 5: Accept it (do nothing)
 - **Verdict: ALREADY RESOLVED — the `files` field works**
@@ -1415,6 +1504,7 @@ The npm documentation states that for git dependencies, the package is "packaged
 **Kobayashi's note:** The product was already correctly isolated by the existing `files` field. The `.npmignore` I added is insurance and documentation — it makes the separation visible to anyone reading the repo. Zero behavioral change. Zero risk. Ship it.
 
 
+
 ### 2026-02-09: Public hygiene and tone governance
 
 **By:** bradygaster (human)
@@ -1434,6 +1524,7 @@ The npm documentation states that for git dependencies, the package is "packaged
 6. **Stale proposals** — audit and update status fields. Superseded proposals should say so.
 
 7. **Blog content** — follow the blog format from docs/blog/template.md. Each milestone is blogworthy.
+
 
 
 ### Decision: Stale Proposals Audit — Status Field Reconciliation
@@ -1488,6 +1579,7 @@ Proposal status should be updated when work state changes — not accumulated in
 ---
 
 **For:** Scribe (merge to decisions.md), bradygaster (awareness)
+
 
 
 ### 2026-02-09: Tone audit — surgical cleanup of public-facing content
@@ -1551,11 +1643,13 @@ Proposal status should be updated when work state changes — not accumulated in
 **Principle applied:** Light touch. Brady said "don't go overboard." Each agent should still sound like themselves — Verbal is edgy, McManus is polished, Fenster is blunt. The goal was to sand off the "we're so incredible" peaks, not flatten the voice.
 
 
+
 ### 2026-02-08: Release ritual checklist established
 
 **By:** Kobayashi
 **What:** Created `docs/release-checklist.md` — a five-phase release ritual covering pre-release checks, release execution, post-release validation, communication, and rollback. Every step is tagged HUMAN (requires judgment), AUTOMATED (handled by `.github/workflows/release.yml`), or TEAM (owned by another agent). Includes rollback procedures for failed workflows, bad releases, stale npx cache, and `.ai-team/` corruption scenarios.
 **Why:** Brady requested a codified release checklist — a ritual we evolve but don't break. Without a written process, releases depend on tribal knowledge. This checklist makes the release process reproducible by anyone on the team, documents what the automation handles vs. what requires human judgment, and establishes a rollback playbook before we need one. Derived from the release workflow in `.github/workflows/release.yml` and the distribution strategy in Proposal 021.
+
 
 ### 2026-02-08: Release ritual — Lead recommendations
 
@@ -1680,6 +1774,7 @@ Sign-off: Kobayashi + Keaton + Brady
 
 **What I'd warn against:** Don't let the ritual grow. Every "nice to have" checklist item that gets added becomes a reason to skip the whole checklist. Keep the 0.x ritual under 10 items. If something's important enough to be a gate, automate it. If it can't be automated, it better be worth the human time.
 
+
 ### 2026-02-08: Brand voice guidance for visual identity
 **By:** McManus
 **What:** Brand voice guidance for Redfoot (graphic designer) to use when developing Squad's logo and visual identity.
@@ -1802,6 +1897,7 @@ Blog 001 mentioned the original 5. Blog 002 introduced Kobayashi through his wor
 - `.ai-team/agents/mcmanus/history.md` (updated with learnings)
 
 
+
 ### 2026-02-08: Squad visual identity — initial proposals
 
 **By:** Redfoot
@@ -1809,6 +1905,7 @@ Blog 001 mentioned the original 5. Blog 002 introduced Kobayashi through his wor
 **What:** Created visual identity proposal (`docs/proposals/022-squad-visual-identity.md`) with brand analysis, four logo concepts (The Formation, The Bracket, The Glyph, The Stack), brand color palette, and typography recommendations. Recommended Concept C "The Glyph" — a diamond outline with asymmetric inner solid diamond — and shipped an SVG implementation at `docs/assets/squad-logo-proposal.svg`. Defined primary palette anchored on Indigo 500 (`#6366F1`) to harmonize with existing Mermaid diagram colors.
 
 **Why:** Squad has no visual identity. As the product approaches v1 launch (Proposal 014), it needs a logo, color system, and typography that work across every rendering context: terminal (monochrome), GitHub README (dark/light mode), favicon (16px), VS Code sidebar, social cards, and npm. The recommended concept was chosen because it satisfies every constraint with zero adaptation — one SVG, one color, infinite contexts. The brand register matches Squad's tone governance: confident, not flashy; structured, not decorative. Awaiting team feedback before refinement.
+
 
 
 ### 2026-02-08: Error handling patterns for index.js
@@ -1874,10 +1971,12 @@ CI is the quality gate. My own rule from Proposal 013: "No pre-commit hook — C
 - Fenster: Any changes to `index.js` will be validated automatically on push.
 
 
+
 ### 2026-02-09: Coordinator captures user directives before routing
 **By:** Kujan
 **What:** Added a "Directive Capture" section to `squad.agent.md` (Team Mode). When the user states a preference, rule, or scope decision (signaled by phrases like "always…", "never…", "from now on…"), the coordinator writes it to `.ai-team/decisions/inbox/copilot-directive-{timestamp}.md` before routing any work. The format matches standard decision entries so Scribe merges them naturally. Mixed messages (directive + work request) are handled — capture first, route second.
 **Why:** User directives are team-wide decisions that affect all agents. Without capture, they exist only in conversation context and are lost between sessions. The decisions inbox is the correct persistence layer — it feeds into `decisions.md` via Scribe, which all agents read at spawn time. This closes the loop between human intent and team memory.
+
 
 
 ### 2026-02-08: "Feels Heard" — Immediate acknowledgment before agent spawns
@@ -1887,6 +1986,7 @@ CI is the quality gate. My own rule from Proposal 013: "No pre-commit hook — C
 **Why:** When the coordinator spawns background agents, there can be a significant delay before the user sees any response. A blank screen while agents work creates anxiety and breaks the feeling of a responsive team. Immediate acknowledgment makes the experience feel human — like a team lead saying "I'm on it" before diving into work.
 **Where:** `.github/agents/squad.agent.md` — new "Acknowledge Immediately" subsection in Team Mode, placed before Directive Capture and Routing.
 **Scope:** This is the coordinator-level instruction only. Does not change agent spawn templates or post-completion behavior.
+
 
 ### 2026-02-08: Park logo SVGs, keep proposal, redirect Redfoot
 **By:** Brady (via Copilot)
@@ -1935,16 +2035,19 @@ Expanded `test/index.test.js` from 12 tests / 3 suites to **27 tests / 7 suites*
 - Concurrent init processes
 
 
+
 ### 2026-02-09: Silent success mitigation strengthened across all spawn templates
 **By:** Verbal
 **What:** Upgraded the P0 silent success bug workaround in squad.agent.md. All 4 spawn templates now have a 6-line RESPONSE ORDER instruction (was 3 lines) with explicit "write 2-3 sentence summary, no more tool calls after." Added structured filesystem-based silent success detection with two branches (files found → ⚠️ done, no files → ❌ failed). Added HTML comment documenting bug rate (~7-10%), root cause, and three mitigation layers.
 **Why:** The original one-line RESPONSE ORDER was insufficient — agents (especially Scribe, whose entire job is tool calls) still hit the bug. The coordinator also lacked clear guidance on what to do when silent success occurred: should it re-spawn? Report failure? The new detection logic gives a concrete decision tree. The HTML comment ensures future maintainers understand this is a known platform-level issue, not a Squad bug. All changes are safe for all users (ships via npm).
 
 
+
 ### 2026-02-08: Incoming queue architecture direction
 **By:** Brady (via Copilot)
 **What:** SQL as hot working layer, filesystem as durable record. Team members work from SQL, writes flush to disk for permanence. On session restart, rehydrate SQL from the on-disk backlog. The team backlog is the key feature. Presume the team can clone itself (multiple instances of same agent in worktrees). Filesystem is source of truth, SQL is queryable index.
 **Why:** User request — captured for team memory
+
 
 
 ### 2026-02-09: Platform Assessment — Incoming Queue for User Messages
@@ -1960,6 +2063,7 @@ Expanded `test/index.test.js` from 12 tests / 3 suites to **27 tests / 7 suites*
 > "Copilot itSELF has built-in 'todo list' capability, right? If so, maybe we just delegate to copilot to work in each prompt we send in whilst the team is working. Copilot could parse the prompt, take action, maybe drop it into the inbox itself on behalf of scribe?"
 
 ## What Actually Exists
+
 
 ### 1. The SQL `todos` Table — Available but Wrong Scope
 
@@ -1977,6 +2081,7 @@ The Copilot CLI provides a per-session SQLite database with pre-built `todos` an
 
 **Verdict:** The SQL tool is useful for within-session tracking (e.g., tracking which items from a prompt have been dispatched) but cannot serve as a durable incoming queue. Anything that needs to survive the session must go to the filesystem.
 
+
 ### 2. What the Coordinator Can Do Between Spawns
 
 The coordinator has full tool access between spawning agents and collecting results. Specifically:
@@ -1992,6 +2097,7 @@ The coordinator has full tool access between spawning agents and collecting resu
 
 **Key insight:** The coordinator CAN do useful work in the same turn it spawns agents. It already does this — the "Acknowledge Immediately" pattern emits text while tool calls spawn agents. The directive capture pattern writes to the inbox before routing. These happen in the same LLM turn. There is no "idle time" between spawn and collection where additional work could happen — the coordinator emits everything (text, tool calls, file writes) in one turn, then blocks on `read_agent`.
 
+
 ### 3. Platform Constraints — The Hard Truths
 
 **The coordinator is blocked while waiting for agents.** Once the coordinator calls `read_agent` with `wait: true`, it cannot process new messages, make new tool calls, or do any work until the agent returns. This is a single-threaded conversation model — confirmed in my earlier analysis (Proposal 018 human input latency). There is no interrupt mechanism, no message polling API, no yield-and-resume.
@@ -2002,6 +2108,7 @@ The coordinator has full tool access between spawning agents and collecting resu
 - The coordinator's conversation history (LLM context window)
 - The filesystem (`.ai-team/` directory)
 - That's it. No SQL persistence, no in-memory state, no background processes.
+
 
 ### 4. What We Already Have vs. What We'd Build
 
@@ -2029,6 +2136,7 @@ Brady wants step 2 to be smarter — not just directives, but ANY actionable ite
 
 ## Assessment: What's Actually Feasible
 
+
 ### Option A: Enhance Directive Capture (Recommended — Zero New Infrastructure)
 
 Broaden the existing directive capture to capture ALL actionable items from every message, not just "always/never" directives. The coordinator already writes to the inbox — expand what triggers a write.
@@ -2052,6 +2160,7 @@ Broaden the existing directive capture to capture ALL actionable items from ever
 - Messages queued while agents work still wait. The coordinator can't process them until its current turn finishes. This is a hard platform constraint.
 - There's no "background listener" that captures input independently of the coordinator's turn cycle.
 
+
 ### Option B: SQL as Session-Local Work Queue (Marginal Value)
 
 Use the `todos` table to track items within a session — parse prompt into items, insert as todos, update status as agents complete them.
@@ -2063,6 +2172,7 @@ Use the `todos` table to track items within a session — parse prompt into item
 - The filesystem inbox already serves the same purpose more durably
 
 **When it might help:** A single complex session with 10+ items where the coordinator needs to track which are dispatched vs. pending vs. blocked. SQL's query semantics beat flat files for this. But this is an edge case — most prompts have 1-3 actionable items.
+
 
 ### Option C: What Would Require Platform Changes (Not Available Today)
 
@@ -2097,6 +2207,7 @@ The SQL `todos` table is a nice-to-have for within-session tracking of complex m
 *This assessment is honest about platform constraints. The Copilot CLI is single-threaded, session-scoped, and has no background processing for the coordinator. The filesystem is the only durable, cross-session, agent-readable state. Build on that.*
 
 
+
 ### 2026-02-09: Incoming queue — architecture decisions and coordinator design (consolidated)
 **By:** Verbal
 **What:** Proposal 023 v2 establishes three architecture decisions for the incoming queue, incorporating Brady's direction and Kujan's platform assessment:
@@ -2113,10 +2224,12 @@ The coordinator generalizes the directive capture pattern into full message extr
 **Recommendation:** Move to implementation. Phase 1 (extraction + dual-layer writes) is ~40 lines in squad.agent.md. Cloning (Phase 3) should be tested conservatively.
 
 
+
 ### 2026-02-08: State hygiene protocol established
 **By:** Verbal
 **What:** .ai-team/ must NEVER be tracked in git. Main branch = bare minimum product files only. Three-layer protection: .gitignore (prevents tracking), package.json files allowlist (prevents npm distribution), .npmignore (explicit exclusion). Release branch gates what reaches main.
 **Why:** v0.1.0 shipped team state to public GitHub repo. The package.json files array saved us from shipping to npm consumers, but GitHub visibility was still a leak. This protocol ensures it never happens again.
+
 
 ### Decision: README polish + CHANGELOG for v0.1.0
 
@@ -2126,12 +2239,14 @@ The coordinator generalizes the directive capture pattern into full message extr
 
 ## What changed
 
+
 ### README.md
 - Added **Upgrade** subsection under Install — documents `npx github:bradygaster/squad upgrade` with explanation of what it overwrites and what it preserves
 - Added **Known Limitations** section — four bullets: experimental (API/formats may change), Node 22+ required, GitHub Copilot CLI required, knowledge grows with use
 - Updated **Status** line — now reads "Experimental — v0.1.0" instead of just "Experimental"
 - CI badge was already present and correct (no change needed)
 - No tone changes, no structural rewrites — the README was already solid
+
 
 ### CHANGELOG.md (new file)
 - Created at repo root
@@ -2147,20 +2262,24 @@ Brady requested README/docs updates as the content gate for v0.1.0 release. The 
 - All 27 tests pass before and after
 
 
+
 ### 2026-02-08: User directive — short ask_user responses
 **By:** Brady (via Copilot)
 **What:** If ask_user returns a response under 10 characters, treat it as ambiguous and re-confirm with the user before acting. The platform may fabricate default responses from blank input.
 **Why:** User request — captured for team memory. Brady observed the ask_user tool returning "Use your best judgment" when he typed nothing, and the coordinator acted on it as if it were a real response.
+
 
 ### 2026-02-09: PR #2 content integrated with review fixes
 **By:** Fenster
 **What:** Integrated three new features from PR #2 (@spboyer) into squad.agent.md — GitHub Issues Mode, PRD Mode, and Human Team Members — with all must-fixes from Keaton's and Verbal's reviews applied inline.
 **Why:** PR #2 adds substantial new coordinator capabilities (issue lifecycle management, PRD-driven work decomposition, mixed human/AI teams). Keaton's review required keeping Init Mode fast (questions moved post-setup to step 8 instead of re-numbering steps 3-7). Verbal's review required gh CLI detection with MCP fallback, standard spawn template references, ceremony integration notes, worktree awareness, and Scribe/orchestration logging hooks. All fixes applied during integration to avoid a second editing pass.
 
+
 ### 2026-02-08: PR #2 architectural review
 **By:** Keaton
 **What:** Reviewed PR #2 (GitHub Issues Mode, PRD Mode, Human Team Members) from @spboyer. Verdict: Request Changes with 3 must-fixes. (1) Add `gh` CLI detection before GitHub Issues commands — undocumented hard dependency is a trust violation. (2) Add worktree interaction note for parallel issue branch creation. (3) Move Init Mode questions post-team-creation to keep init fast. The features are architecturally sound and well-integrated with existing patterns (spawn templates, routing table, drop-box). Prompt-only implementation is the correct approach. Five should-fixes recommended including ceremony interaction docs, model selection placeholders (Proposal 024 forward compatibility), human reviewer protocol integration, and PRD-to-Issues bridge note. Proposal 025 contains the full assessment.
 **Why:** External contributor PR with 444 lines of coordinator prompt changes requires architectural review to ensure consistency with existing patterns (ceremonies, worktree awareness, reviewer protocol, model selection) and alignment with the v1 sprint plan. The three must-fixes prevent user-facing failures; the should-fixes prevent integration gaps from compounding as the features mature.
+
 
 ### 2026-02-09: Documentation structure and docs/ separation (consolidated)
 **By:** Kobayashi
@@ -2169,6 +2288,7 @@ Brady requested README/docs updates as the content gate for v0.1.0 release. The 
 - `team-docs/` = Internal team documentation (proposals, sprint plans, postmortems, blog drafts). Tracked in git on development branches, excluded from npm. Never merged to main.
 - `.ai-team/` = Runtime team state. Gitignored. Never committed to any branch.
 **Why:** v0.1.0 incident mixed user-facing and internal content in docs/. When internal content was purged from main, user-facing sample-prompts.md was collateral damage. Brady's directive established permanent structural separation to prevent recurrence. Three tiers ensure product docs (public), team docs (internal but tracked), and team state (runtime, never tracked) are never mixed.
+
 
 ### 2026-02-08: Per-agent model selection design
 **By:** Verbal
@@ -2256,6 +2376,7 @@ Shipped `import` subcommand at `npx github:bradygaster/squad import <file> [--fo
 - 92 tests pass, zero regressions. 11 new import-specific tests cover happy path, error cases, round-trip, and history split.
 
 
+
 ### Progressive History Summarization
 
 **By:** Verbal (Prompt Engineer)
@@ -2268,11 +2389,13 @@ Shipped `import` subcommand at `npx github:bradygaster/squad import <file> [--fo
 **Scope:** Prompt engineering only — changes to `.github/agents/squad.agent.md`. No code changes.
 
 
+
 ### 2026-02-10: Skills Phase 1 — Template + Read
 
 **By:** Verbal
 **What:** Skills Phase 1 (Wave 2, Item 2.3) is implemented. SKILL.md format template created at `templates/skill.md`. Example skill `squad-conventions` ships as starter content in `templates/skills/`. Init flow creates `.ai-team/skills/` and copies starter skills. All spawn templates in `squad.agent.md` now instruct agents to read relevant SKILL.md files from `.ai-team/skills/` before working. Skills are read-only in Phase 1 — agents consume but don't create. 81 tests pass (5 new).
 **Why:** Skills are a core v1 feature (Proposals 010, 012). Phase 1 establishes the file format, directory structure, and agent awareness without the complexity of agent skill creation (Phase 2, Wave 3). Starter skill provides immediate value by documenting Squad's own conventions for agents working on the codebase.
+
 
 
 ### 2026-02-10: Skills Phase 2 — Earned Skills
@@ -2281,17 +2404,25 @@ Shipped `import` subcommand at `npx github:bradygaster/squad import <file> [--fo
 **Why:** Phase 1 gave agents read access to skills. Phase 2 closes the loop: agents earn skills from work, skills feed back into routing, knowledge compounds across sessions and projects. This is the feature that makes Squad's skill system self-reinforcing — not just documentation, but a learning flywheel. MCP tool declarations per Proposal 010 Rev 2 and Brady's directive that skills should tell Copilot which tools they need.
 
 
+
 ### 2026-02-09: Contribution blog post policy (consolidated)
 **By:** bradygaster, McManus
-**What:** Every external contribution to Squad gets a blog post highlighting the contributor. Posts live in `team-docs/blog/`, not `docs/blog/`. File naming follows sequential numbering (002, 003, etc.). Frontmatter uses `wave: null` for non-wave posts, with `community` and `contribution` tags. The contributor is always the hero of the post.
+**What:** Every external contribution to Squad gets a blog post highlighting the contributor. Posts live in `team-docs/blog/`, not `docs/blog/`. File naming follows sequential numbering (001c, 002, 003, etc.). Frontmatter uses `wave: null` for non-wave posts, with `community` and `contribution` tags. The contributor is always the hero of the post. Retroactive posts are acceptable — late is better than never. PR #1 blog published as `team-docs/blog/001c-first-pr-amolchanov.md` (retroactive, placed chronologically before PR #2's `002-` blog).
 **Why:** Community contributions are celebrated with visibility. `team-docs/` is internal team docs, not user-facing. McManus owns blog content. Standing policy for all future PRs from external contributors.
+
 ### 2026-02-09: Forwardability and smart upgrade (consolidated)
 **By:** Fenster
 **What:** Squad adopts a forwardability model: file ownership (Squad-owned vs user-owned), `upgrade` subcommand, and version-keyed migration system. Implementation shipped: version delta detection reads installed version from squad.agent.md frontmatter, compares against package version. Migration registry (array of versioned functions) runs applicable migrations in semver order. First migration (0.2.0) creates `.ai-team/skills/`. "Already up to date" path exits early but still runs pending migrations. 8 new tests added.
 **Why:** Users must be able to update squads with new features without losing state. File ownership model ensures upgrades are safe. Migration registry is the delivery mechanism for all future improvements -- additive-only, idempotent, never destructive.
 **Proposal:** `docs/proposals/011-forwardability-and-upgrade-path.md`
+
 ### 2026-02-09: Tiered response modes (consolidated)
 **By:** Kujan, Verbal
 **What:** Four-tier response mode system (Direct/Lightweight/Standard/Full) replaces "every interaction spawns an agent" model. Routing table determines WHO; Response Mode Selection determines HOW based on complexity. Includes: decision table with latency targets, Lightweight Spawn Template (no charter/history/decisions reads), explore agent for read-only queries, "where are we?" as Direct Mode exemplar, context caching (stop re-reading team files after first message), Scribe batching (skip when inbox empty). Anti-pattern #3 updated to reference tiered modes as legitimate exceptions.
 **Why:** Brady's feedback -- "later on, the agents get in the way more than they help." Every interaction paid ~30-35s overhead regardless of complexity. Tiered modes match effort to complexity: Direct ~2-3s, Lightweight ~8-12s, Standard ~25-35s, Full ~40-60s. Context caching saves ~3 tool calls per subsequent message. Combined: late-session friction becomes flow.
 **Proposal:** `docs/proposals/007-agent-persistence-and-latency.md`
+
+### 2026-02-09: Celebration blog post conventions
+**By:** McManus
+**What:** Celebration posts (like `team-docs/blog/003-super-bowl-weekend.md`) use `wave: null` in frontmatter, same schema as community contribution posts. Parallel narrative structure: external event first, project milestone second, connection third — never interleave. Stats go in a table, not prose. Tone ceiling: energy, dry humor, facts-carry-weight. No self-congratulation. Banned words (amazing, incredible, brilliant, game-changing) apply even in celebration posts.
+**Why:** Brady requested the Super Bowl LX / Wave 3 completion celebration post. These conventions ensure future milestone posts maintain consistent quality and tone.

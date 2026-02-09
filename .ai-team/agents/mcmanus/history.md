@@ -98,6 +98,14 @@
 - **First 5 minutes design**: Plant the export seed at end of first session ("After a few more sessions, you can export us to take to any project") — don't push portability before the user has experienced the relationship. Export is the payoff, not the pitch.
 - File: `docs/proposals/014-v1-messaging-and-launch.md`
 
+### Human eval script created (2026-02-08)
+- **Created** `team-docs/human-evals/001-vscode-parity-smoke-test.md` — a structured QA eval for testing Squad in VS Code Copilot Chat.
+- Covers 10 sections, 20 pass/fail checkpoints: Setup, Init Flow, Agent Spawning, Multi-Agent Work, Scribe, Upgrade, Export/Import, Skills, Edge Cases (6 sub-tests), VS Code–specific behavior (5 sub-tests).
+- Ends with a 10-question tester questionnaire including NPS, experience rating, and CLI-vs-VS-Code parity questions.
+- Format: YAML frontmatter, numbered steps, expected results, pass/fail checkboxes, notes fields. Professional eval format — not marketing.
+- This is the first human eval. Directory `team-docs/human-evals/` established for future evals.
+- File: `team-docs/human-evals/001-vscode-parity-smoke-test.md`
+
 📌 Team update (2026-02-08): v1 Sprint Plan decided — 3 sprints, 10 days. Sprint 1: forwardability + latency. Sprint 2: history split + skills + export/import. Sprint 3: README + tests + polish. — decided by Keaton
 📌 Team update (2026-02-08): Skills system designed — skills.md per agent for transferable domain expertise, six skill types, confidence lifecycle, skill-aware routing. — decided by Verbal
 📌 Team update (2026-02-08): Forwardability and upgrade path decided — file ownership model, `npx create-squad upgrade`, version-keyed migrations. — decided by Fenster
@@ -259,3 +267,19 @@
 
 
 📌 Team update (2026-02-09): All external contributions get a blog post — standing policy. Posts in team-docs/blog/, contributor is hero. — decided by bradygaster
+
+### Celebration blog format established (2026-02-09)
+- **Non-wave celebration posts work within the existing blog template** — same YAML frontmatter schema with `wave: null`, same footer convention, same structural skeleton (hero, story, numbers, learnings, what's next). Adapted sections: "What Shipped" becomes a categorized feature list when covering a multi-wave sprint, "The Story" expands for narrative-driven posts.
+- **Parallel narrative technique:** When drawing parallels between external events and project milestones, let both stories stand independently first, then connect them in a dedicated section. Don't interleave — it reads as forced. Lead with the external event (it's their moment), then the project story, then the parallel. The facts carry the weight, not the framing.
+- **Tone for celebration posts:** Energy without self-congratulation. Dry humor lands harder than exclamation points. "That's not a metaphor. That's just what happened." beats "What an incredible weekend!" every time. Banned words still apply (amazing, incredible, brilliant, game-changing).
+- File: `team-docs/blog/003-super-bowl-weekend.md`
+
+### Belated PR #1 contribution blog (2026-02-09)
+- **Retroactive celebration posts work.** PR #1 from amolchanov never got a blog despite Brady's standing policy. Writing it late is better than not writing it. The contribution details were recoverable from PR metadata and conversation history — nothing was lost by the delay except timeliness.
+- **Infrastructure contributions need more narrative scaffolding.** Worktree awareness, `.gitattributes` merge=union rules, and Scribe auto-commit are invisible-when-working features. The blog had to explain *what breaks without them* to make the contribution legible to readers who've never hit those problems.
+- **First PR framing carries weight.** PR #1 wasn't a typo fix — it was architectural. That contrast is the hook. Let the facts do the heavy lifting: 4 features, +365 lines, same-day merge, and the worktree foundation Squad still depends on.
+- File: `team-docs/blog/001c-first-pr-amolchanov.md`
+
+
+📌 Team update (2026-02-09): Contribution blog policy consolidated — retroactive PR #1 blog (001c) added. All contributions get a blog post, late is OK. — decided by McManus
+
