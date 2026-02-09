@@ -1,7 +1,5 @@
 # Squad
 
-[![CI](https://github.com/bradygaster/squad/actions/workflows/ci.yml/badge.svg)](https://github.com/bradygaster/squad/actions/workflows/ci.yml)
-
 **AI agent teams for any project.** A team that grows with your code.
 
 [![Status](https://img.shields.io/badge/status-experimental-blueviolet)](#status)
