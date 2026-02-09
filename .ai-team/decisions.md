@@ -2426,3 +2426,13 @@ Shipped `import` subcommand at `npx github:bradygaster/squad import <file> [--fo
 **By:** McManus
 **What:** Celebration posts (like `team-docs/blog/003-super-bowl-weekend.md`) use `wave: null` in frontmatter, same schema as community contribution posts. Parallel narrative structure: external event first, project milestone second, connection third — never interleave. Stats go in a table, not prose. Tone ceiling: energy, dry humor, facts-carry-weight. No self-congratulation. Banned words (amazing, incredible, brilliant, game-changing) apply even in celebration posts.
 **Why:** Brady requested the Super Bowl LX / Wave 3 completion celebration post. These conventions ensure future milestone posts maintain consistent quality and tone.
+
+### Feature showcase prompts added to sample-prompts.md
+
+**By:** McManus
+**Date:** 2026-02-09
+
+**What:** Added 7 new prompts (#17–#23) in a new "Feature Showcases" section to `docs/sample-prompts.md`. Covers all 9 Wave 2-3 features: export/import, skills, smart upgrade, ceremonies, GitHub Issues Mode, PRD Mode, human team members, tiered response modes, and history summarization. Each prompt is a real project where the feature shows up naturally — no contrived demos. Matches existing format and tone exactly.
+
+**Why:** The file had 16 prompts but zero coverage of the features shipped in Waves 2-3. New users browsing sample prompts had no way to discover export/import, ceremonies, PRD mode, GitHub Issues mode, human team members, or skills. These prompts fill that gap while maintaining the same quality bar.
+

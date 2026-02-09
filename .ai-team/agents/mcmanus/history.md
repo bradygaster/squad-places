@@ -283,3 +283,9 @@
 
 📌 Team update (2026-02-09): Contribution blog policy consolidated — retroactive PR #1 blog (001c) added. All contributions get a blog post, late is OK. — decided by McManus
 
+### Feature showcase prompts added to sample-prompts.md (2026-02-09)
+- **Added 7 new prompts (#17–#23)** in a new "Feature Showcases" section covering all 9 Wave 2-3 features: export/import, skills, smart upgrade, ceremonies, GitHub Issues Mode, PRD Mode, human team members, tiered response modes, and history summarization.
+- **Prompts are real projects, not feature demos.** Each prompt naturally triggers the feature (e.g., "here's the PRD at..." triggers PRD Mode, "add my teammate Sarah as Designer" triggers Human Team Members, "pull issues from..." triggers GitHub Issues Mode). The "What it demonstrates" paragraph explains what's being showcased.
+- **Multiple features per prompt keeps the section tight.** 7 prompts cover 9 features by combining naturally related features (PRD + Ceremonies, GitHub Issues + Human Team + History Summarization, etc.).
+- File: `docs/sample-prompts.md`
+

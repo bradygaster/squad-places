@@ -438,3 +438,148 @@ I want one agent on the Three.js 3D dice rendering and physics, one agent on the
 ```
 
 **What it demonstrates:** A mobile-first project where agents specialize by concern: 3D graphics, touch UX, real-time networking, and game logic. The 3D agent and the gesture agent must coordinate on the tap-to-roll trigger and animation states. The game logic and networking agents share data models for scores and turns. The PWA requirements (offline support, install prompt) and mobile testing (touch events, multi-device Playwright tests) showcase Squad handling production mobile app concerns. This is also a fun, visual demo — you can actually play dice games with the finished product.
+
+---
+
+## Feature Showcases
+
+These prompts are designed to exercise Squad's advanced features — export/import, skills, ceremonies, PRD mode, GitHub Issues, human team members, and more. Each one is a real project where the feature shows up naturally.
+
+---
+
+### 17. Cross-Platform Habit Tracker — Portable Squad
+
+```
+I built a CLI habit tracker with a Squad last month in another repo. I exported the squad with `npx github:bradygaster/squad export` and I have the squad-export.json file ready.
+
+Import it into this repo with `npx github:bradygaster/squad import squad-export.json`.
+
+Now let's build a cross-platform habit tracker with a React Native (Expo) frontend and a Node.js backend:
+- Daily habit check-ins with streaks, miss tracking, and weekly summaries
+- Habit categories (health, learning, productivity) with custom icons
+- Push notification reminders at user-configured times
+- SQLite local-first storage with optional cloud sync (Supabase)
+- Charts: streak heatmap (GitHub-style), weekly completion rate, category breakdown
+- Widget support for iOS and Android home screens
+
+The team should already know my preferences from the last project. Start building.
+```
+
+**What it demonstrates:** Export/import in action. The squad arrives with earned preferences and skills from a previous project — coding style, testing patterns, communication style. The user doesn't re-explain anything. The team picks up where it left off, in a brand new repo. This is the "holy cow, it remembers me" moment.
+
+---
+
+### 18. Open Source Contribution Dashboard — GitHub Issues + Skills
+
+```
+Pull issues from bradygaster/squad. Show me the open issues and let me pick which ones to work on.
+
+While we're at it, the team should build skills as they go — if someone figures out a pattern for testing CLI installers or working with the Copilot Extensions SDK, write it down as a skill so the team gets better over time.
+```
+
+**What it demonstrates:** GitHub Issues Mode — connecting to a real repo, listing the backlog, and letting the user pick issues for agents to claim. Each issue flows through the full lifecycle: branch, implement, PR. The skills instruction shows how agents earn reusable SKILL.md files as they work, building team competence that persists across sessions.
+
+---
+
+### 19. Event-Driven Inventory System — PRD + Ceremonies
+
+```
+Here's the PRD at docs/inventory-prd.md — it describes an event-driven inventory management system for a small warehouse operation.
+
+Before the team starts building, run a design review. I want the Lead to decompose the PRD into work items first, then the team should discuss architecture choices (event sourcing vs. CRUD, message broker selection, data model) before anyone writes code.
+
+Tech constraints from the PRD:
+- Node.js services, PostgreSQL, Redis for event streaming
+- REST API for external integrations, WebSocket for real-time dashboard
+- Barcode scanner input via serial port (node-serialport)
+- Audit log for every inventory mutation
+```
+
+**What it demonstrates:** PRD Mode and Ceremonies working together. The PRD gets ingested and decomposed into work items by the Lead. A design review ceremony runs before implementation — agents align on architecture, surface trade-offs, and make shared decisions. The ceremony creates alignment that prevents rework. This is how a real team operates: read the spec, discuss, then build.
+
+---
+
+### 20. Developer Portfolio Site — Human Team Member + Tiered Responses
+
+```
+I'm building a developer portfolio site. Add my teammate Sarah as Designer — she'll handle visual direction, color palette, and layout decisions. The rest of the team builds it:
+
+- Next.js static site with MDX blog posts
+- Project showcase with live demo embeds (CodeSandbox/StackBlitz)
+- Interactive terminal-style "about me" section (type commands, get responses)
+- Dark/light theme with system preference detection
+- Lighthouse score targets: 100 performance, 100 accessibility
+- Contact form with Resend for email delivery
+- RSS feed and open graph meta tags for social sharing
+
+When work needs Sarah's design input, pause and ask her. Don't guess on visual decisions.
+```
+
+**What it demonstrates:** Human team members and tiered response modes. Adding Sarah as Designer puts a real person on the roster — when work routes to her domain (color choices, layout, typography), Squad pauses and asks for her input instead of guessing. Meanwhile, the tiered response system handles the spectrum: quick questions get instant answers (Direct mode), config tweaks get lightweight edits, and the full build fans out across multiple agents (Full mode). The team adapts its effort to the task size automatically.
+
+---
+
+### 21. API Client SDK Generator — Skills + Smart Upgrade
+
+```
+Before we start, run `npx github:bradygaster/squad` to make sure we're on the latest version.
+
+Now build an SDK generator that takes an OpenAPI 3.1 spec and produces typed client libraries:
+- TypeScript SDK with fetch-based HTTP client, Zod runtime validation, and full JSDoc
+- Python SDK with httpx, Pydantic models, and type hints
+- Auto-generated test suites for both SDKs (mock server from the spec)
+- CLI tool: `sdkgen generate --spec api.yaml --lang typescript --output ./sdk/`
+- Watch mode: re-generate when the spec file changes
+- Changelog diff: when the spec changes, output a human-readable summary of what changed in the API
+
+Each language generator is a plugin. The architecture should make adding a Go or Rust generator later trivial.
+
+As the team works, they should write skills for patterns they discover — OpenAPI parsing edge cases, code generation techniques, test mocking strategies. These should be reusable on future SDK projects.
+```
+
+**What it demonstrates:** Smart upgrade and skills. Running `npx github:bradygaster/squad` in an existing repo detects version differences and migrates — the team gets new capabilities without losing any state. As agents build the SDK generator, they write SKILL.md files for patterns they discover (OpenAPI parsing quirks, code generation idioms). Those skills persist and inform future work — the next time this squad tackles an API project, it arrives with earned expertise.
+
+---
+
+### 22. Community Recipe Book — GitHub Issues + Human Team + History Summarization
+
+```
+Pull issues from our-org/community-recipes. These are feature requests from our users for a community recipe sharing platform.
+
+Add my teammate Alex as Content Lead — they'll review recipe data models and taxonomy decisions. When there's a question about how to categorize cuisines or structure ingredient lists, ask Alex.
+
+The platform:
+- Next.js app with Prisma + PostgreSQL
+- User-submitted recipes with rich text editor (Tiptap)
+- Ingredient parser that handles natural language ("2 large eggs, beaten" → structured data)
+- Dietary tags with smart detection (scan ingredients for common allergens)
+- Recipe scaling (adjust servings, recalculate quantities)
+- Social features: favorites, collections, comments, user profiles
+- Full-text search with filters (cuisine, dietary, cook time, difficulty)
+
+We've been working on this for a few sessions now. The Scribe should summarize older history entries to keep things compact — we don't need the play-by-play from three sessions ago, just the decisions and learnings.
+```
+
+**What it demonstrates:** Three features in one natural workflow. GitHub Issues Mode pulls real user requests from the backlog. A human team member (Alex) owns content decisions — the team pauses for their input on taxonomy and data modeling. History summarization keeps the team's memory compact after multiple sessions: the Scribe progressively summarizes older entries, archiving the originals so nothing is lost but the working context stays lean. This is what a mature, multi-session project looks like.
+
+---
+
+### 23. IoT Dashboard — Full Ceremony Lifecycle + PRD + Export
+
+```
+Here's the PRD at specs/iot-dashboard.md — it describes a real-time IoT sensor dashboard for a small manufacturing floor.
+
+Run a design review before building. After the first milestone ships, run a retro — I want the team to reflect on what worked and what didn't.
+
+Requirements from the PRD:
+- React dashboard with real-time sensor charts (Recharts + WebSocket)
+- Node.js ingestion service accepting MQTT messages from sensors
+- TimescaleDB for time-series storage with automatic data retention policies
+- Alert rules engine: threshold alerts, rate-of-change alerts, dead sensor detection
+- Multi-tenant: each manufacturing client sees only their sensors
+- Historical data export to CSV and JSON
+
+When we're done, export the squad — I want to bring this team's knowledge to our next IoT project.
+```
+
+**What it demonstrates:** The full ceremony lifecycle plus PRD Mode and export. A design review ceremony runs before the team touches code — agents align on architecture for a complex real-time system. After the first milestone, a retro ceremony captures what worked and what to improve. PRD Mode structures the entire build around a spec document. When the project wraps, `npx github:bradygaster/squad export` captures everything the team learned — MQTT patterns, time-series strategies, alert engine design — as a portable snapshot ready for the next project.
