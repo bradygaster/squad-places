@@ -289,3 +289,20 @@
 - **Multiple features per prompt keeps the section tight.** 7 prompts cover 9 features by combining naturally related features (PRD + Ceremonies, GitHub Issues + Human Team + History Summarization, etc.).
 - File: `docs/sample-prompts.md`
 
+### Super Bowl Weekend post — edit pass and honest assessment (2026-02-09)
+- **Brady's instinct was right.** The original post leaned too heavily on the Seahawks parallel. The Super Bowl angle was the *reason* to write the post but not the *substance* of the post. "Both were supposed to be impossible" was forced hype — shipping a roadmap in a weekend is ambitious, not impossible.
+- **What was cut:** The entire "The Game" section (3 paragraphs of Seahawks narrative), the "Yeah" closer with "That's it. That's the post." meme format, the "isn't this amazing" energy throughout. The "by halftime" quip about Shayne's PR was cute but performative.
+- **What was kept/added:** The sprint metrics (real substance), the feature list (now includes Wave 2.5 explicitly), Seahawks get one line of context instead of three paragraphs. Added a "What We Learned" section with actual insight about weekend sprints and community contributions.
+- **Status set to draft.** Brady said he might delete it — the rewrite gives him a version worth keeping, but it's his call. If the concept still doesn't land, the v0.2.0 release post covers the same features with more depth.
+- **Tone lesson:** Celebration posts that rely on external events for energy are fragile. The sprint stands on its own. The Super Bowl is a time marker, not a metaphor.
+- File: `team-docs/blog/003-super-bowl-weekend.md`
+
+### v0.2.0 release blog post (2026-02-09)
+- **Headline is the portability story.** "Your Squad Comes With You" — possessive pronoun per v1 messaging guidance. The hero sentence focuses on what persists across projects (preferences, decisions, earned skills), not on feature counts.
+- **Structure follows blog template** with an added "Install / Upgrade" section (release posts need actionable commands). Hero, What Shipped (10 items with agent attribution), The Story (5 paragraphs), By the Numbers, What We Learned, Install/Upgrade, What's Next.
+- **Shayne Boyer credited prominently.** Three features attributed to @spboyer with PR #2 callout on every bullet. The Story section gives the community contribution its own paragraph. Contributor is the hero of that part of the narrative.
+- **Narrative arc:** v0.1.0 proved it works → v0.2.0 makes it yours. The portability + skills combination is framed as the reason to invest in a squad long-term. "Without portability, agents are disposable. With it, they're an asset that compounds."
+- **Skills messaging:** "Earned skills beat configured skills" — aligns with v1 messaging ("not a template, that's a skill learned across projects"). Confidence lifecycle explained simply: low → medium → high.
+- **Tone matches best existing posts.** Dry, factual, lets the features speak. No cheerleading. "The test suite tells the reliability story" instead of "incredible test coverage improvement."
+- File: `team-docs/blog/004-v020-release.md`
+

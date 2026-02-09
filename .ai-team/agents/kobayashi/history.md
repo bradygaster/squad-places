@@ -91,3 +91,20 @@
 
 
 📌 Team update (2026-02-09): Export + Import CLI shipped — squads are now fully portable via squad-export.json. Round-trip at 100% fidelity. History split is pattern-based. — decided by Fenster
+
+- **Release process documented** at `team-docs/release-process.md`. Internal reference covering branch flow (dev → release → main), workflow mechanics with line references, file filtering (KEEP_FILES/KEEP_DIRS), npx distribution model, version management, and a mermaid diagram of the full flow.
+- **v0.2.0 prep completed:** CHANGELOG.md updated with Wave 2, Wave 2.5 (PR #2), and Wave 3 features; package.json bumped to 0.2.0; squad.agent.md version header confirmed correct at `"0.0.0-source"` (stamped at install time). 92 tests pass.
+- **Branch state at prep time:** On `wave-2` branch, 4 commits ahead of `dev`. Must merge wave-2 → dev → release before triggering release workflow.
+- **`release` branch exists** locally and on remote — part of the branch strategy alongside `dev` and `main`.
+
+- **v0.2.0 release pipeline audit (2026-02-09):** Full end-to-end audit of every exclusion mechanism. Verdict: SAFE. Three independent protection layers confirmed working: (1) release workflow KEEP_FILES allowlist (8 files + templates/), (2) package.json `files` allowlist (3 patterns → 19 files in tarball), (3) `.npmignore` denylist as backup. `npm pack --dry-run` verified: exactly 19 product files, zero internal state. Dual-allowlist design makes accidental leaks structurally impossible.
+- **Current main branch has pre-workflow artifacts** — `docs/`, `test/`, `CHANGELOG.md`, `.github/workflows/` exist on main from before the filtered-copy workflow was created. These will be cleaned automatically when v0.2.0 release workflow runs (it does `git rm -rf .` then copies only KEEP_FILES/KEEP_DIRS). No manual intervention needed.
+- **Observation: `CHANGELOG.md` not in KEEP_FILES** — intentional omission. Changelog is available on dev branch and via GitHub Releases auto-generated notes. Not a safety issue.
+- **Recommendation filed:** Optional tarball content verification step (file count assertion) as a nice-to-have for future hardening. Not blocking v0.2.0.
+- **docs/ and CHANGELOG.md added to release pipeline (2026-02-09):** Brady's directive — docs/ is user-facing and should ship to main. Changes: (1) Added `CHANGELOG.md` to KEEP_FILES and `docs` to KEEP_DIRS in release.yml; (2) Added `"docs/**/*"` and `"CHANGELOG.md"` to package.json `files` array; (3) Removed `docs/` exclusion from `.npmignore`. `team-docs/` and `.ai-team/` remain excluded. Updated workflow header comment and `.npmignore` header to reflect new shipping list. 92 tests pass.
+
+📌 Team update (2026-02-09): Release ritual consolidated — checklist and lead recommendations merged — decided by Keaton, Kobayashi
+
+
+📌 Team update (2026-02-09): docs/ and CHANGELOG.md now included in release pipeline (KEEP_FILES, KEEP_DIRS, package.json files, .npmignore updated). Brady's directive. — decided by Kobayashi
+

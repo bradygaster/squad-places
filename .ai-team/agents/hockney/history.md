@@ -5,46 +5,20 @@
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
 - **Created:** 2026-02-07
 
+## Core Context
+
+_Summarized from initial assessment (2026-02-07). Full entries in `history-archive.md`._
+
+- **Squad is an npx CLI** that copies `squad.agent.md` (coordinator) and `templates/` into user repos, plus pre-creates `.ai-team/` directory structure (inbox, orchestration-log, casting).
+- **Started with zero test coverage** — no test files, no framework, no CI. Key risk areas identified: symlinks, filesystem errors, incomplete installs, cross-platform paths, ANSI in non-TTY.
+- **Test strategy evolved** from `tap` to `node:test` + `node:assert` (zero dependencies) — integration-heavy (80% integration, 20% unit), spawn `index.js` in isolated temp dirs.
+- **Three non-negotiable tests**: init happy path, init idempotency, export/import round-trip. If any fail, don't ship.
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### Initial Assessment (2026-02-07)
-
-**What Squad Does:**
-- `index.js` is an npx-runnable CLI that copies files into a user's repo
-- Copies `.github/agents/squad.agent.md` (the coordinator agent definition)
-- Copies `templates/` → `.ai-team-templates/` (agent templates for initialization)
-- Pre-creates directories: `.ai-team/decisions/inbox/`, `.ai-team/orchestration-log/`, `.ai-team/casting/`
-- Outputs colored terminal messages showing what was created
-
-**Key Files:**
-- `index.js` — the installer script (Node CLI)
-- `package.json` — declares this as `@bradygaster/create-squad`, bin entry point
-- `.github/agents/squad.agent.md` — the coordinator agent (32KB, orchestrates the team)
-- `templates/` — seed files for new teams (charters, policies, routing, etc.)
-
-**Current Test Coverage: Zero**
-- No test files (`*.test.js`, `*.spec.js`)
-- No test framework in `package.json`
-- No CI/CD validation
-
-**What Could Break:**
-- Symlinks in source directories (infinite loop or unexpected copies)
-- Filesystem errors (permissions, disk full, read-only) → raw stack traces
-- Incomplete prior install → we skip re-copying but don't validate completeness
-- Cross-platform path handling (Windows vs Unix)
-- ANSI color codes in non-TTY environments
-- Node version assumptions (no engines field)
-
-**Test Strategy (Planned):**
-- Use `tap` for test framework (fast, modern, good for CLI testing)
-- Integration test: run `index.js` in temp dir, validate file creation
-- Error handling test: simulate filesystem failures, validate error messages
-- Idempotency test: run twice, ensure no breakage
-- Cross-platform validation (Windows, macOS, Linux)
-
-📌 Team update (2026-02-08): Proposal-first workflow adopted — all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
+📌 Team update (2026-02-08): Proposal-first workflow adopted— all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
 📌 Team update (2026-02-08): Stay independent, optimize around Copilot — Squad will not become a Copilot SDK product. Filesystem-backed memory preserved as killer feature. — decided by Kujan
 📌 Team update (2026-02-08): Stress testing prioritized — Squad must build a real project using its own workflow to validate orchestration under real conditions. — decided by Keaton
 📌 Team update (2026-02-08): DevRel polish identified — six onboarding gaps to close: install output, sample-prompts linking, "Why Squad?" section, casting elevation, troubleshooting, demo video. — decided by McManus
@@ -311,3 +285,161 @@ px create-squad upgrade now overwrites Squad-owned files. Consider adding npm te
 
 
 📌 Team update (2026-02-09): Skills Phase 1 + Phase 2 shipped — agents now read SKILL.md files before working and can write SKILL.md files from real work. Skills live in .ai-team/skills/{name}/SKILL.md. Confidence lifecycle: low→medium→high. — decided by Verbal
+
+### npm Pack Dry-Run Audit (v0.2.0 Release Gate)
+
+**What I Did:**
+- Ran `npm pack --dry-run` from repo root — captured full output of what ships in the tarball
+- Cross-checked every included file for sensitive content (agent codenames, internal paths, personal info)
+- Verified completeness of product files against requirements
+- Analyzed package size and file composition
+
+**npm pack --dry-run output (19 files, 130.6 KB unpacked, 43.1 KB packed):**
+```
+79.1kB .github/agents/squad.agent.md
+1.1kB  LICENSE
+10.8kB README.md
+19.4kB index.js
+620B   package.json
+74B    templates/casting-history.json
+753B   templates/casting-policy.json
+22B    templates/casting-registry.json
+1.0kB  templates/ceremonies.md
+1.9kB  templates/charter.md
+275B   templates/history.md
+1.1kB  templates/orchestration-log.md
+1.4kB  templates/raw-agent-output.md
+886B   templates/roster.md
+1.2kB  templates/routing.md
+1.6kB  templates/run-output.md
+5.2kB  templates/scribe-charter.md
+611B   templates/skill.md
+3.5kB  templates/skills/squad-conventions/SKILL.md
+```
+
+**Exclusion Verification (all PASS):**
+- `.ai-team/` — NOT in package ✅
+- `team-docs/` — NOT in package ✅
+- `.ai-team-templates/` — NOT in package ✅
+- `.github/workflows/` — NOT in package ✅
+- `test/` — NOT in package ✅
+- `docs/` — NOT in package ✅
+
+**Sensitive Content Check (PASS):**
+- No internal team state paths (`.ai-team/agents/keaton/` etc.) in shipped files
+- Agent codenames (Fenster, Hockney, Scribe) appear in `squad.agent.md` lines 133-138 and 665 — these are **product examples** showing how the coordinator formats acknowledgment messages and reads the scribe charter. This is correct product behavior, not internal leakage.
+- "Brady" appears 4 times in `squad.agent.md` (lines 31, 184, 213, 1463) — all are illustrative examples in the coordinator prompt (greeting example, routing example, direct-mode exemplar, human team member roster example). Standard author-name-in-examples pattern. No personal info beyond what's in package.json.
+- No internal team decisions, memories, or sprint plans in any shipped file.
+
+**Product Completeness (all PASS):**
+- index.js ✅ INCLUDED (19.4kB)
+- package.json ✅ INCLUDED (620B)
+- README.md ✅ INCLUDED (10.8kB)
+- templates/ ✅ INCLUDED (14 files including skills/)
+- .github/agents/squad.agent.md ✅ INCLUDED (79.1kB)
+- LICENSE ✅ INCLUDED (1.1kB)
+- CHANGELOG.md — NOT included (npm does not auto-include CHANGELOG when `files` field is specified; this is expected npm behavior, not a bug)
+
+**Edge Cases:**
+- Package size: 43.1 KB compressed — very reasonable for a CLI tool
+- Largest file: squad.agent.md at 79.1kB (60% of unpacked size) — expected, it's the coordinator prompt
+- No binary files included
+- No surprisingly large files
+- Total 19 files — clean and minimal
+
+**VERDICT: ✅ PASS — The npm package is clean and complete for v0.2.0.**
+
+Three-layer protection is working as designed:
+1. `package.json` `files` allowlist — only permits `index.js`, `.github/agents/squad.agent.md`, `templates/**/*`
+2. `.npmignore` — explicitly excludes `.ai-team/`, `.ai-team-templates/`, `docs/`, `team-docs/`, `test/`, `.github/workflows/`
+3. `.gitignore` — prevents `.ai-team/` from being committed (runtime state)
+
+The `files` field is the primary gate. Even if `.npmignore` were deleted, only the allowlisted files would ship. Defense in depth is solid.
+
+### Re-verification After docs/CHANGELOG Addition (v0.2.0)
+
+**Context:** Brady requested inclusion of `docs/` and `CHANGELOG.md` in the release pipeline. Changes were made to `package.json` (files field), `.npmignore` (docs/ exclusion removed), `release.yml` (KEEP_FILES/KEEP_DIRS updated), and `team-docs/release-process.md`.
+
+**npm pack --dry-run results: 38 files, 253.6 KB unpacked, 84.1 KB packed**
+
+```
+79.1kB  .github/agents/squad.agent.md
+4.8kB   CHANGELOG.md
+1.1kB   LICENSE
+10.8kB  README.md
+2.3kB   docs/features/ceremonies.md
+2.3kB   docs/features/export-import.md
+2.5kB   docs/features/github-issues.md
+2.0kB   docs/features/human-team-members.md
+3.8kB   docs/features/memory.md
+2.4kB   docs/features/prd-mode.md
+2.7kB   docs/features/response-modes.md
+2.6kB   docs/features/skills.md
+16.1kB  docs/guide.md
+1.6kB   docs/README.md
+41.5kB  docs/sample-prompts.md
+5.4kB   docs/scenarios/existing-repo.md
+6.8kB   docs/scenarios/issue-driven-dev.md
+4.0kB   docs/scenarios/new-project.md
+4.4kB   docs/scenarios/team-portability.md
+2.8kB   docs/scenarios/upgrading.md
+7.9kB   docs/tour-first-session.md
+7.1kB   docs/tour-github-issues.md
+19.4kB  index.js
+659B    package.json
+74B     templates/casting-history.json
+753B    templates/casting-policy.json
+22B     templates/casting-registry.json
+1.0kB   templates/ceremonies.md
+1.9kB   templates/charter.md
+275B    templates/history.md
+1.1kB   templates/orchestration-log.md
+1.4kB   templates/raw-agent-output.md
+886B    templates/roster.md
+1.2kB   templates/routing.md
+1.6kB   templates/run-output.md
+5.2kB   templates/scribe-charter.md
+611B    templates/skill.md
+3.5kB   templates/skills/squad-conventions/SKILL.md
+```
+
+**CHECK 2 — NEW INCLUSIONS:**
+- docs/ directory and ALL contents (18 files across 3 subdirs) ✅ PASS
+- CHANGELOG.md (4.8kB) ✅ PASS
+
+**CHECK 3 — CONTINUED EXCLUSIONS:**
+- .ai-team/ NOT in package ✅ PASS
+- team-docs/ NOT in package ✅ PASS
+- .ai-team-templates/ NOT in package ✅ PASS
+- test/ NOT in package ✅ PASS
+- .github/workflows/ NOT in package ✅ PASS
+
+**CHECK 4 — REQUIRED FILES PRESENT:**
+- index.js ✅ PASS
+- package.json ✅ PASS
+- README.md ✅ PASS
+- LICENSE ✅ PASS
+- .github/agents/squad.agent.md ✅ PASS
+- templates/ (14 files) ✅ PASS
+
+**CHECK 5 — release.yml:**
+- CHANGELOG.md in KEEP_FILES ✅ PASS (line 77)
+- docs in KEEP_DIRS ✅ PASS (line 86)
+- .ai-team/ NOT in KEEP_FILES or KEEP_DIRS ✅ PASS
+
+**CHECK 6 — .npmignore:**
+- docs/ NOT listed as excluded ✅ PASS (removed)
+- .ai-team/ IS listed as excluded ✅ PASS (line 7)
+- team-docs/ IS listed as excluded ✅ PASS (line 11)
+
+**CHECK 7 — npm test:**
+- 92 tests, 17 suites, 0 failures ✅ PASS
+- Duration: 6.4 seconds
+
+**VERDICT: ✅ YES — The release pipeline is correct for v0.2.0.**
+
+Package grew from 19 files / 130.6 KB to 38 files / 253.6 KB (unpacked). The increase is entirely from docs/ (18 files, ~110 KB) and CHANGELOG.md (4.8 KB). All exclusions remain intact. Tests all pass. Three-layer protection still solid — `package.json` files field now includes `docs/**/*` and `CHANGELOG.md`, `.npmignore` no longer blocks docs/, and `release.yml` copies both to main.
+
+
+📌 Team update (2026-02-09): docs/ and CHANGELOG.md now included in release pipeline (KEEP_FILES, KEEP_DIRS, package.json files, .npmignore updated). Brady's directive. — decided by Kobayashi
+

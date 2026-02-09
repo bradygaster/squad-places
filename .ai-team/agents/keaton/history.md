@@ -5,50 +5,21 @@
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
 - **Created:** 2026-02-07
 
+## Core Context
+
+_Summarized from initial architecture review and proposal-first design (2026-02-07). Full entries in `history-archive.md`._
+
+- **Squad uses distributed context windows** — coordinator at ~1.5% overhead, veteran agents at ~4.4%, leaving 94% for reasoning. This inverts the traditional multi-agent context bloat problem.
+- **Architecture patterns**: drop-box for concurrent writes (inbox → Scribe merge), parallel fan-out by default (multiple `task` calls in one turn), casting system for persistent character names, memory compounding via per-agent `history.md`.
+- **Proposal-first workflow governs all meaningful changes** — required sections (Problem → Solution → Trade-offs → Alternatives → Success Criteria) force complete thinking. 48-hour review timeline. Cancelled proposals kept as learning artifacts.
+- **Key trade-offs**: coordinator complexity (32KB) is a maintenance surface; parallel execution depends on agents following shared memory protocols; casting adds personality at the cost of init complexity.
+- **Compound decisions are the strategic model** — each feature makes the next easier. Proposals are the alignment mechanism that makes this possible.
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### 2026-02-07: Initial architecture review
-
-**Core insight:** Squad's architecture is based on distributed context windows. Coordinator uses ~1.5% overhead (1,900 tokens), veteran agents use ~4.4% (5,600 tokens at 12 weeks), leaving 94% for reasoning. This inverts the traditional multi-agent problem where context gets bloated with shared state.
-
-**Key files:**
-- `index.js` — Installer script (65 lines). Copies `squad.agent.md` to `.github/agents/` and templates to `.ai-team-templates/`. Pre-creates inbox, orchestration-log, and casting directories.
-- `.github/agents/squad.agent.md` — Coordinator agent definition (32KB). Handles init mode (team formation, casting), team mode (routing, spawning, parallel fan-out). This is the heaviest file in the system.
-- `templates/` — Charter, history, roster, routing, and casting templates. Copied to user projects as `.ai-team-templates/` for reference.
-- `docs/sample-prompts.md` — 16 project scenarios from CLI tools to .NET migrations. Demonstrates parallel work, multi-domain coordination, real infrastructure concerns.
-
-**Architecture patterns:**
-- **Drop-box for shared writes:** Agents write decisions to `.ai-team/decisions/inbox/{agent-name}-{slug}.md`. Scribe merges to canonical `decisions.md`. Eliminates write conflicts.
-- **Parallel fan-out by default:** Coordinator spawns agents in background mode unless there's a hard data dependency (file that doesn't exist yet) or reviewer gate (approval required). Multiple `task` tool calls in one turn = true parallelism.
-- **Casting system:** Persistent character names from thematic universes (The Usual Suspects, Alien, Firefly, etc.). Registry stored in `.ai-team/casting/registry.json`. Names stick across sessions, making teams feel coherent.
-- **Memory compounding:** Each agent appends learnings to its own `history.md` after every session. Over time, agents remember project conventions, user preferences, and architectural decisions. Reduces repeated context setting.
-
-**Trade-offs identified:**
-- Coordinator complexity (32KB) is necessary for full orchestration but becomes a maintenance surface. Future work: templatize repeated patterns or extract routing logic.
-- Parallel execution depends on agents respecting shared memory protocols (read decisions.md, write to inbox). If an agent skips this, decisions don't propagate.
-- Casting adds personality but increases init complexity. Policy files, registry files, and history tracking all need to be maintained. Worth it for user experience, but not free.
-
-### 2026-02-07: Proposal-first workflow design
-
-**Core insight:** Squad's mission is beating the industry to what customers need next. That requires compound decisions where each feature makes the next easier. Proposals are the alignment mechanism that makes compound decisions possible.
-
-**Key principles:**
-- **Proposals for meaningful change:** New features, architecture shifts, major refactors, agent design changes, messaging overhauls, breaking changes. Rule: if you'd want to know before merge, it needs a proposal.
-- **Skip proposals for obvious work:** Bug fixes, minor polish, test additions, doc updates (unless policy-changing), dependency updates. Rule: if it's obviously right and reversible, just do it.
-- **Format matters:** Required sections (Summary, Problem, Solution, Trade-offs, Alternatives, Success Criteria) force complete thinking. Located at `docs/proposals/{number}-{slug}.md`.
-- **Review is multi-stage:** Domain specialists (Keaton for architecture, Verbal for AI strategy, others for their areas) + bradygaster always gets final sign-off. Timeline: 48 hours max.
-- **Evolution over perfection:** Before approval, edit directly. After approval, file amendments as new proposals. Cancelled proposals stay in the repo as learning artifacts.
-
-**Trade-offs identified:**
-- Proposals slow down spontaneous shipping but prevent architectural drift. Worth it for compound decision-making.
-- Overhead on small changes is real, but "no proposal needed" category covers most of these.
-- Agents must learn to write proposals (not just code), but that's a feature — architectural thinking is a skill we want agents to develop.
-
-**Why this matters:** Proposal-first is itself a compound decision. By establishing this pattern now, we make future process improvements easier (every process change gets the same review treatment). It's also the first test of whether agents can participate in meta-work (defining how the team works, not just executing tasks).
-
-📌 Team update (2026-02-08): Proposal-first workflow adopted — all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
+📌 Team update (2026-02-08): Proposal-first workflow adopted— all meaningful changes require proposals before execution. Write to `docs/proposals/`, review gates apply. — decided by Keaton + Verbal
 📌 Team update (2026-02-08): Stay independent, optimize around Copilot — Squad will not become a Copilot SDK product. Filesystem-backed memory preserved as killer feature. — decided by Kujan
 📌 Team update (2026-02-08): Stress testing prioritized — Squad must build a real project using its own workflow to validate orchestration under real conditions. — decided by Keaton
 📌 Team update (2026-02-08): Baseline testing needed — zero automated tests today; `tap` framework + integration tests required before broader adoption. — decided by Hockney
@@ -427,3 +398,103 @@ Audited all 25 proposal files in `docs/proposals/`. Every `Status:` field was st
 
 📌 Team update (2026-02-09): Celebration blog conventions established — wave:null frontmatter, parallel narrative structure, stats in tables, tone ceiling applies. — decided by McManus
 
+### 2026-02-10: Comprehensive Proposal Status Audit
+
+**What:** Audited all 25+ proposals in `team-docs/proposals/` and updated every status to match what actually shipped. 18 proposals marked "Approved ✅ Shipped," 6 marked "Deferred to Horizon," 4 already had correct statuses (superseded/deferred). Updated stale "[Pending]" fields on shipped proposals. Fixed test count on 013 (12 → 92).
+
+**Why it matters:** Proposal statuses had drifted — features that shipped across Waves 1-3 still said "Accepted" or "Implemented" with no indication they'd actually landed. The lifecycle amendment (001a) defined these statuses for a reason. Now Brady can grep for "Shipped" and see exactly what we've delivered.
+
+**Pattern observed:** The team was good at writing proposals and shipping features but inconsistent about closing the loop on status updates. This is a process gap — agents should update proposal statuses as part of their post-work history writes, not wait for a manual audit.
+
+### 2026-02-10: Critical Release Safety Audit for v0.2.0
+
+**Requested by:** Brady — needs 100% confidence that internal files never reach users via `npm publish` or `npx github:bradygaster/squad`.
+
+**Verdict: YES — safe for v0.2.0 release.** Three independent layers of protection all verified clean.
+
+**Layer 1 — `package.json` `files` whitelist (PRIMARY GATE):**
+The `files` field explicitly whitelists only: `index.js`, `.github/agents/squad.agent.md`, `templates/**/*`. npm also auto-includes `package.json`, `README.md`, and `LICENSE`. This is a positive-inclusion list — anything not listed is excluded by default, regardless of `.npmignore` or `.gitignore`. This is the strongest possible protection.
+
+**Layer 2 — `.npmignore` blacklist (DEFENSE-IN-DEPTH):**
+Explicitly excludes: `.ai-team/`, `.ai-team-templates/`, `docs/`, `team-docs/`, `test/`, `.github/workflows/`, `.gitattributes`, `.vscode/`, OS artifacts. This layer is technically redundant when `files` is present (npm uses `files` as the primary gate), but it serves as documentation and a safety net if `files` were ever accidentally removed.
+
+**Layer 3 — Release workflow filtered copy (`release.yml`):**
+The `main` branch itself only ever contains product files. The workflow does a `git rm -rf .` on main and copies only whitelisted files (`KEEP_FILES` + `KEEP_DIRS`). Since `npx github:bradygaster/squad` pulls from `main`, users can never see non-product files even if the npm-level protections were bypassed.
+
+**Verified via `npm pack --dry-run` — exactly 19 files in the tarball:**
+- `index.js` (CLI entry point)
+- `package.json` (metadata)
+- `README.md` (auto-included by npm)
+- `LICENSE` (auto-included by npm)
+- `.github/agents/squad.agent.md` (coordinator agent)
+- 14 template files in `templates/` (charter, history, roster, routing, orchestration-log, run-output, raw-agent-output, scribe-charter, casting-policy.json, casting-registry.json, casting-history.json, ceremonies.md, skill.md, skills/squad-conventions/SKILL.md)
+
+**What is EXCLUDED and WHY:**
+| Excluded | Mechanism |
+|---|---|
+| `.ai-team/` | `files` whitelist (not listed), `.npmignore` (explicit), workflow (not in KEEP_FILES/KEEP_DIRS) |
+| `.ai-team-templates/` | `files` whitelist, `.npmignore` (explicit), workflow |
+| `team-docs/` | `files` whitelist, `.npmignore` (explicit), workflow |
+| `docs/` | `files` whitelist, `.npmignore` (explicit), workflow |
+| `test/` | `files` whitelist, `.npmignore` (explicit), workflow |
+| `.github/workflows/` | `files` whitelist, `.npmignore` (explicit), workflow |
+| `CHANGELOG.md` | `files` whitelist, workflow (not in KEEP_FILES) |
+| `.gitattributes` | `files` whitelist, `.npmignore` (explicit) — note: IS in workflow KEEP_FILES for main branch |
+
+**Edge case analysis:**
+1. **New internal directory added?** Protected by `files` whitelist — anything not in `[index.js, .github/agents/squad.agent.md, templates/**/*]` is excluded automatically. No action needed.
+2. **`.npmignore` accidentally deleted?** `files` field still protects. The whitelist is the primary gate, not the blacklist.
+3. **`files` field accidentally removed from `package.json`?** This is the one risk. Without `files`, npm falls back to `.npmignore` (blacklist), which currently covers all known internal directories. But any NEW directory not listed in `.npmignore` would leak. **Mitigation:** The release workflow's filtered copy ensures `main` never has those files anyway.
+4. **Both `files` AND `.npmignore` removed?** Workflow layer still protects — `main` only has product files.
+5. **Direct `npm publish` from dev branch (bypassing workflow)?** This is the highest-risk scenario. If someone ran `npm publish` from `dev` (which has `.ai-team/`, `team-docs/`, etc.), the `files` whitelist would still protect. Only the 19 verified files would be included. **But:** this package isn't published to npm — it's distributed via GitHub. So `npm publish` is not part of the normal flow.
+
+**Minor note:** `CHANGELOG.md` is excluded from the npm tarball (not in `files` whitelist) but is also excluded from the release workflow's `KEEP_FILES`. This is intentional — changelog is available on GitHub but not shipped to users. Consistent across all three layers.
+
+**Conclusion:** Belt-and-suspenders-and-full-body-armor. Three independent layers, all verified. The `files` whitelist alone is sufficient. The `.npmignore` is insurance. The workflow is a vault door. Safe for v0.2.0.
+
+### Updated release-process.md: docs/ and CHANGELOG.md now ship
+
+Brady flagged that `docs/` and `CHANGELOG.md` should ship to main (and to users). Updated `team-docs/release-process.md` to reflect this:
+
+1. **"What Ships vs. What Doesn't" tables** — Moved `docs/` and `CHANGELOG.md` from "Never ships" to "Ships to main" with descriptions: "User-facing documentation (feature reference, scenarios, guides)" and "Release history and version notes".
+2. **Filtered copy section** — Added `CHANGELOG.md` to KEEP_FILES and `docs/` to KEEP_DIRS.
+3. **Three-layer distribution protection** — Updated `package.json files` description to include `docs/**/*` and `CHANGELOG.md`.
+4. **`.npmignore` description** — Removed `docs/` from the exclusion list since it now ships.
+
+
+📌 Team update (2026-02-09): Portable Squads consolidated — architecture, platform, and experience merged into single decision — decided by Keaton, Kujan, Verbal
+📌 Team update (2026-02-09): Squad DM consolidated — architecture and experience design merged — decided by Keaton, Verbal
+📌 Team update (2026-02-09): Release ritual consolidated — checklist and lead recommendations merged — decided by Keaton, Kobayashi
+
+### 2026-02-10: Final Architecture Review — Updated Release Pipeline (docs/ + CHANGELOG.md)
+
+**Verdict: YES — the updated release pipeline is architecturally sound.**
+
+**Three-layer protection verified end-to-end:**
+
+| What | Layer 1: `package.json` `files` | Layer 2: `.npmignore` | Layer 3: Workflow `KEEP_FILES`/`KEEP_DIRS` | Ships? |
+|---|---|---|---|---|
+| `index.js` | ✅ listed | not excluded | ✅ KEEP_FILES | ✅ YES |
+| `templates/` | ✅ `templates/**/*` | not excluded | ✅ KEEP_DIRS | ✅ YES |
+| `docs/` | ✅ `docs/**/*` | not excluded | ✅ KEEP_DIRS | ✅ YES |
+| `CHANGELOG.md` | ✅ listed | not excluded | ✅ KEEP_FILES | ✅ YES |
+| `.github/agents/squad.agent.md` | ✅ listed | not excluded | ✅ KEEP_FILES | ✅ YES |
+| `.ai-team/` | ❌ not listed | ✅ excluded | ❌ not in KEEP | ❌ NO |
+| `team-docs/` | ❌ not listed | ✅ excluded | ❌ not in KEEP | ❌ NO |
+| `test/` | ❌ not listed | ✅ excluded | ❌ not in KEEP | ❌ NO |
+| `.github/workflows/` | ❌ not listed | ✅ excluded | ❌ not in KEEP | ❌ NO |
+
+**All three layers are consistent.** No contradictions found.
+
+**Edge case: `docs/` vs `team-docs/`:**
+- `docs/` — User-facing documentation (features, scenarios, guides, sample prompts, tours). 17 files, all appropriate for users. Ships correctly.
+- `team-docs/` — Internal team artifacts (proposals, blog drafts, sprint plans, release process docs). Excluded by all three layers. Never ships.
+- These are distinct directory paths with no overlap risk.
+
+**Verified via `npm pack --dry-run`:** 38 files in tarball. Includes `CHANGELOG.md`, 17 docs files, `index.js`, `squad.agent.md`, 14 templates, `package.json`, `README.md`, `LICENSE`. Zero internal files leaked.
+
+**`.npmignore` comment header updated correctly:** Line 3 reads "The product ships: index.js, templates/, docs/, CHANGELOG.md, .github/agents/squad.agent.md" — matches reality.
+
+**`release-process.md` is consistent:** "What Ships" table, filtered copy section, and three-layer description all updated to reflect docs/ and CHANGELOG.md inclusion.
+
+**No remaining concerns.** The pipeline is clean, consistent, and defense-in-depth. Ready for next release.

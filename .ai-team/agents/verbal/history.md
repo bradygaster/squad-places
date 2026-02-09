@@ -425,6 +425,74 @@
 
 **File path:** `docs/proposals/023-incoming-queue.md`
 
+### 2026-02-09: Code-level leak audit for v0.2.0
+
+**Audit scope:** Full review of `index.js`, all `templates/` files, `.github/agents/squad.agent.md`, and `package.json` for internal state leakage vectors when users run `npx github:bradygaster/squad`.
+
+**Findings — index.js: SAFE**
+- `root = __dirname` (source package) vs `dest = process.cwd()` (user's repo) — clean separation throughout.
+- `init` copies ONLY from `root/templates/` and `root/.github/agents/squad.agent.md` — never from `root/.ai-team/`.
+- `upgrade` overwrites only Squad-owned files (squad.agent.md, .ai-team-templates/) — never touches user's `.ai-team/`.
+- `export` reads exclusively from `dest/.ai-team/` (user's repo) — no source repo references.
+- `import` reads user-provided JSON and writes to `dest/.ai-team/` — no source repo references.
+- No code path ever reads from `root/.ai-team/`. All `root`-prefixed paths are: `root/package.json`, `root/.github/agents/squad.agent.md`, `root/templates/`.
+
+**Findings — templates/: SAFE**
+- All templates use placeholder syntax (`{Name}`, `{Role}`, `{user name}`) — no team-specific names.
+- `casting-registry.json` is empty (`{"agents": {}}`), `casting-history.json` is empty.
+- `casting-policy.json` contains only universe definitions (allowlist + capacity) — generic, no team state.
+- `skills/squad-conventions/SKILL.md` describes Squad's own codebase conventions — appropriate for the product repo, clean for distribution.
+- No references to Keaton, Verbal, Fenster, Brady, or any Squad Squad agent names in any template file.
+
+**Findings — squad.agent.md: LOW RISK (cosmetic, not a leak)**
+- Contains "Brady" in 4 places: line 31 (greeting example), line 184 (routing example), line 213 (direct mode example), line 1463 (mixed roster example).
+- Contains "Fenster" in 2 places: lines 133/136 (acknowledgment examples).
+- Contains "Ripley", "Dallas", "Hockney" as example names in spawn template examples.
+- These are ALL illustrative examples in the coordinator prompt, NOT injected team state. They're equivalent to "e.g., Alice" in documentation.
+- Since Squad uses "The Usual Suspects" universe for its own team, these examples happen to overlap with our actual agent names, but they're generic examples showing how casting works — any universe's names could appear here.
+- "Brady" in examples is slightly more personal (it's the author's name used as a greeting example and human member example), but this is visible in the source repo anyway and is documentation, not state.
+- **Verdict: No functional leak.** The coordinator prompt teaches users how Squad works. These are examples, not our team's decisions, histories, or learnings.
+
+**Findings — package.json files field: SAFE**
+- `"files"` field is an allowlist: only `index.js`, `.github/agents/squad.agent.md`, and `templates/**/*` ship in the npm package.
+- `.ai-team/` is doubly excluded: not in the `files` allowlist AND explicitly in `.npmignore`.
+- `team-docs/`, `docs/`, `test/` are all excluded from the package.
+
+**Findings — runtime behavior: SAFE**
+- When a user runs Squad in their repo, `__dirname` points to the installed npm package location (e.g., `~/.npm/_npx/.../node_modules/@bradygaster/create-squad/`), not our source repo.
+- `process.cwd()` points to the user's project directory.
+- No code path confuses source repo with user repo.
+- The only `root`-prefixed file reads are: `package.json`, `squad.agent.md`, and `templates/` — all shipped product files.
+
+### Docs content audit for shipping (2026-02-08)
+
+**Context:** Release pipeline updated to include `docs/` and `CHANGELOG.md` in the npm package. Full audit of every file in docs/ for internal state leakage.
+
+**4 issues found and fixed:**
+
+1. **docs/README.md** — Had a line linking to `team-docs/` with text "Internal team docs live in team-docs/". Removed — users should not see references to our internal team directory.
+
+2. **docs/scenarios/new-project.md** — Used our actual team agent names (Verbal, McManus, Keaton, Fenster) as the example team in the walkthrough. Replaced with Ocean's Eleven names (Danny, Rusty, Linus, Basher) — a different fictional universe that doesn't overlap with our internal team.
+
+3. **docs/scenarios/team-portability.md** — Same issue: import output and tips referenced Verbal, McManus, Keaton, Fenster. Replaced with Ocean's Eleven names to match new-project.md.
+
+4. **CHANGELOG.md line 64** — "What doesn't ship" section listed `docs/` as excluded. Removed `docs/` from that list since docs now ships.
+
+**14 files confirmed SAFE:** guide.md, sample-prompts.md, tour-first-session.md, tour-github-issues.md, all 8 features/*.md files, scenarios/existing-repo.md, scenarios/issue-driven-dev.md, scenarios/upgrading.md.
+
+**Key judgment calls:**
+- `bradygaster` in `npx github:bradygaster/squad` commands: SAFE — this is the package author, appropriate for public docs.
+- `bradygaster/ProductCatalogApp` and `bradygaster/IncomingOrderProcessor` in sample-prompts.md: SAFE — these are public GitHub repos used as demo targets.
+- "Hey Brady" in tour-first-session.md line 40: SAFE — it's an example of Squad greeting the user by their git config name, with explanation.
+- `.ai-team/` path references throughout docs: SAFE — these describe the product's file structure, not our internal team state.
+- Fictional universe names (Ripley, Dallas, Hicks, Lambert, Neo, Trinity, Morpheus, Tank, Kane): SAFE — these are product examples from Alien, The Matrix, etc.
+- Scribe agent references: SAFE — Scribe is a product concept (silent memory manager), not an internal team member.
+
+**Potential future risks (thinking three moves ahead):**
+1. If someone adds a migration that copies from `.ai-team/` instead of `templates/`, it would leak. The migration pattern should be documented as "never read from root/.ai-team/".
+2. If `squad.agent.md` ever gains dynamic content injection at build time (e.g., stamping team data), that could leak. Currently only version stamping occurs — safe.
+3. The `export` command helpfully warns "Review agent histories before sharing — they may contain project-specific information." Good. But the warning is about the USER's data, not ours — still correct.
+
 📌 Team update (2026-02-08): Incoming queue architecture direction — SQL as hot working layer, filesystem as durable store, team backlog as key feature, agents can clone across worktrees — decided by Brady
 
 
@@ -560,3 +628,30 @@
 
 📌 Team update (2026-02-09): Celebration blog conventions established — wave:null frontmatter, parallel narrative structure, stats in tables, tone ceiling applies. — decided by McManus
 
+
+### Scripted demo pipeline design (2026-02-09)
+
+- **100% scripted = six layers per step**: Input (exact keystrokes + timing), expected output (regex/substring verification), timing (ms-level pauses), voiceover cues, annotations, cut points. The test: if a dry-run passes automated output matching, the recording will succeed first take.
+- **YAML as demo script format**: Machine-parseable for verification and automation, generates human-readable cheat sheets for Brady. Each step is a structured block with input, expected_output, timing, voiceover, annotations, and cut_point fields.
+- **vhs by Charm as recording tool**: Declarative .tape files map directly to our script format. Produces GIF/MP4/WebM from one source. CI-friendly, version-controllable, deterministic. Compensate for no output verification with a separate Node.js dry-run step. Compensate for no mouse/browser with manual-record splice segments.
+- **Five demo scenarios cover the full value surface**: First Session (core workflow, 3min), GitHub Issues (native workflow integration, 4min), Export/Import (portability/memory, 2min), Where Are We? (instant status, 1min), PRD Intake (product-to-engineering bridge, 3min). Each has defined pre-requisites, key beats, and what makes it impressive.
+- **Demos-to-docs pipeline**: Single recording → GIFs for README, MP4 for YouTube, WebM for web, social clips from trims, screenshots for thumbnails, voiceover text for blog posts. Maintenance rule: if a demo breaks, CI breaks.
+- **Proposal 026 status: Draft** — awaiting Brady's review. Builds on Proposal 004 (beat format) and Proposal 005 (video content strategy). Does not replace them; adds the automation and precision layer they lack.
+
+### 2025-07-15: User-Facing Documentation — Product Guide, First Session Tour, GitHub Issues Tour
+
+**Context:** Created comprehensive user-facing documentation as three documents in docs/.
+
+**Key learnings:**
+- The coordinator spec (squad.agent.md) is the single source of truth for features. The CHANGELOG fills gaps for features like GitHub Issues Mode, PRD Mode, and Human Team Members that were added via PR #2 but aren't fully detailed in the spec body.
+- Response modes (Direct/Lightweight/Standard/Full) are described in the CHANGELOG but lack detailed spec in the coordinator. Documented with approximate timing ranges from the task description since those reflect real-world observations.
+- Silent success bug (~7-10%) is a platform-level issue with a three-layer mitigation: agent-side RESPONSE ORDER, coordinator-side filesystem detection, and inbox-driven Scribe spawn. Must be documented honestly as a known limitation.
+- Skills have two phases: Phase 1 (read-only starter skills bundled at init) and Phase 2 (earned skills written by agents with confidence lifecycle low → medium → high).
+- Export/import includes progressive history summarization — histories are split into portable knowledge vs. project-specific learnings during import.
+- Ceremonies have auto and manual triggers, before/after timing, cooldown to prevent cascading, and facilitator pattern where the Lead spawns each participant as a sub-task.
+- Human team members have badge, pause-on-route, stale reminders, and reviewer integration — designed for decisions that require a real person.
+- Documentation structure: guide.md covers all features as reference, tour-first-session.md is a follow-along walkthrough for new users, tour-github-issues.md is a focused walkthrough for the issues workflow.
+
+📌 Team update (2026-02-09): Portable Squads consolidated — architecture, platform, and experience merged into single decision — decided by Keaton, Kujan, Verbal
+📌 Team update (2026-02-09): Skills system consolidated — open standard with MCP tool declarations, merging 4 independent analyses — decided by Kujan, Verbal
+📌 Team update (2026-02-09): Squad DM consolidated — architecture and experience design merged — decided by Keaton, Verbal
