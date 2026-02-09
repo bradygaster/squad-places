@@ -2879,3 +2879,9 @@ Draft — awaiting Brady's review before implementation begins.
 
 
 
+
+
+### 2026-02-09: Preview branch added to release pipeline
+**By:** Kobayashi
+**What:** Release workflow (`.github/workflows/release.yml`) split into two-phase pipeline. Phase 1 ("preview") runs tests, validates version, builds filtered product files, and pushes to a `preview` branch. Phase 2 ("ship") validates the preview branch content, pushes to main, tags, creates GitHub Release, and verifies npx resolution. Both phases are triggered via `workflow_dispatch` with an `action` choice input (preview/ship) and a version string. The `KEEP_FILES` and `KEEP_DIRS` allowlists are defined once as workflow-level env vars — both phases reference the same lists (DRY). The ship phase includes a validation step that checks every file on the preview branch against the allowlist before pushing to main. Documentation updated in `team-docs/release-process.md` with new mermaid diagram and step-by-step descriptions.
+**Why:** Brady wants a human review checkpoint before anything ships. The preview branch gives him an exact mirror of what main will become — he can `git checkout preview` locally and inspect exactly what ships. This is simpler than environment protection rules or approval gates while providing the same human checkpoint. The two-phase approach in a single workflow keeps the Actions UI clean (one workflow, two actions) and avoids the complexity of cross-workflow coordination.
