@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/create-squad",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Add an AI agent team to any project",
   "bin": {
     "create-squad": "./index.js"
@@ -8,7 +8,9 @@
   "files": [
     "index.js",
     ".github/agents/squad.agent.md",
-    "templates/**/*"
+    "templates/**/*",
+    "docs/**/*",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "test": "node --test test/*.test.js"
