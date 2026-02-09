@@ -1,6 +1,6 @@
 # Proposal 005: Video Content Strategy — "Wait, What?"
 
-**Status:** Deferred  
+**Status:** Approved — Deferred to Horizon  
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-07  
 **Requested by:** bradygaster  

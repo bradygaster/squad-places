@@ -583,3 +583,145 @@ When we're done, export the squad — I want to bring this team's knowledge to o
 ```
 
 **What it demonstrates:** The full ceremony lifecycle plus PRD Mode and export. A design review ceremony runs before the team touches code — agents align on architecture for a complex real-time system. After the first milestone, a retro ceremony captures what worked and what to improve. PRD Mode structures the entire build around a spec document. When the project wraps, `npx github:bradygaster/squad export` captures everything the team learned — MQTT patterns, time-series strategies, alert engine design — as a portable snapshot ready for the next project.
+
+---
+
+## v0.2.0 Feature Prompts
+
+Quick prompts that exercise specific v0.2.0 features. Use these to try out individual capabilities without building a full project.
+
+---
+
+### Export & Import
+
+```
+Export this squad so I can use it in another repo.
+```
+
+```
+npx github:bradygaster/squad export
+```
+
+```
+Import the squad from my previous project: npx github:bradygaster/squad import squad-export.json
+```
+
+```
+Export just the team state — I want to send the snapshot to a colleague starting a similar project.
+```
+
+```
+I imported a squad from another repo. Show me what the team remembers from the previous project.
+```
+
+---
+
+### GitHub Issues
+
+```
+Connect to our GitHub repo and pull the open issues. Show me the backlog.
+```
+
+```
+Which issues are highest priority? Let the Lead triage and assign them to the right agents.
+```
+
+```
+Work issue #42 — the Lead should break it down and assign the right agent. Create a branch, implement, and open a PR.
+```
+
+```
+Show me all issues the team has completed this session. Summarize what was done for each one.
+```
+
+```
+Close issue #15 and merge the PR — the tester confirmed it passes.
+```
+
+---
+
+### PRD Mode
+
+```
+Here's our PRD at docs/product-requirements.md — ingest it and decompose it into work items.
+```
+
+```
+Show me the work items from the PRD. Which ones are ready to start and which are blocked?
+```
+
+```
+The PRD has been updated — re-read docs/product-requirements.md and flag any new or changed requirements.
+```
+
+```
+Map the PRD work items to team members. Who owns what?
+```
+
+---
+
+### Human Team Members
+
+```
+Add my teammate Jordan as Designer — they'll handle visual direction and UX decisions.
+```
+
+```
+Remove the human designer from the team — we're past the design phase.
+```
+
+```
+When work involves database schema decisions, route it to Alex instead of having the AI decide.
+```
+
+```
+Show me the team roster. Which members are AI and which are human?
+```
+
+```
+The frontend needs a color palette. Pause and ask Jordan — don't guess on visual decisions.
+```
+
+---
+
+### Skills
+
+```
+What skills has the team earned so far? Show me the full skill inventory.
+```
+
+```
+Show me the confidence levels for the frontend agent's skills. Which ones are mature?
+```
+
+```
+The backend agent figured out a caching pattern that works well. Write it as a skill so the team remembers it.
+```
+
+```
+Which skills have decayed? Are there any the team should refresh by practicing again?
+```
+
+---
+
+### Ceremonies
+
+```
+Run a retro — I want the team to reflect on what worked and what didn't this sprint.
+```
+
+```
+Before we start building, run a design review. The Lead should present the architecture and the team should challenge it.
+```
+
+```
+Run a standup — each agent reports what they did, what they're doing next, and any blockers.
+```
+
+```
+Create a custom ceremony called "Demo Day" where each agent presents what they built and the team gives feedback.
+```
+
+```
+Schedule a retro after every third session automatically.
+```

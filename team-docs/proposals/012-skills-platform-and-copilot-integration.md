@@ -3,7 +3,7 @@
 **Author:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-08  
 **Revised:** 2026-02-09  
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Triggered by:** bradygaster — clarified that "skills" means Claude-and-Copilot-compliant skills adhering to the Anthropic SKILL.md standard (agentskills.io). Also requested: MCP tool declaration in skills so Copilot can wire up the right MCP servers.
 
 ---

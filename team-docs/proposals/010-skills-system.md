@@ -3,7 +3,7 @@
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-08  
 **Revised:** 2026-02-09 — Aligned with Agent Skills standard (SKILL.md format), added MCP tool declarations  
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Triggered by:** bradygaster — *"when i say skills i mean claude-and-copilot-compliant skills that adhere to the anthropic 'skills.md' way"* and *"could we also find a way to be able to tell copilot which mcp tools our skills would need?"*  
 **Builds on:** Proposal 008 (Portable Squads), Proposal 007 (Progressive Trust)
 

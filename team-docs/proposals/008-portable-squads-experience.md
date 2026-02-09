@@ -2,7 +2,7 @@
 
 **Author:** Verbal (Prompt Engineer & AI Strategist)  
 **Date:** 2026-02-08  
-**Status:** Accepted. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
+**Status:** Approved ✅ Shipped. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Triggered by:** bradygaster — *"let's say i work on a project with my squad, and i end up loving my squad, but my project ends and i want to take my squad with me. like an 'export my squad so i can re-inject it later into another project.' HOLY CRAP that's it."*  
 **Companion to:** Keaton's architecture proposal (TBD)
 
@@ -465,5 +465,5 @@ Ship this before anyone else realizes it's possible.
 ---
 
 **Review requested from:** Keaton (architecture companion), McManus (messaging), bradygaster (vision alignment)  
-**Approved by:** [Pending]  
-**Implemented:** [Pending]
+**Approved by:** bradygaster  
+**Implemented:** Wave 2 — Export CLI shipped

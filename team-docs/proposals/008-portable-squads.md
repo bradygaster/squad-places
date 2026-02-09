@@ -1,6 +1,6 @@
 # Proposal 008: Portable Squads
 
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster
@@ -455,6 +455,6 @@ The emphasis shifts from the project to the relationship. Squad stops being infr
 ---
 
 **Review requested from:** Verbal (knowledge extraction strategy), Fenster (CLI implementation), Hockney (testing the round-trip), bradygaster (final sign-off — this is his vision)  
-**Approved by:** [Pending]  
-**Implemented:** [Pending]  
+**Approved by:** bradygaster  
+**Implemented:** Wave 2 — Export CLI shipped  
 **Retrospective:** [Pending]

@@ -1,6 +1,6 @@
 # Proposal 013: V1 Test Strategy
 
-**Status:** Accepted — 12 tests shipped; expansion tracked in Proposal 019 Wave 1  
+**Status:** Approved ✅ Shipped — 92 tests now; expansion tracked in Proposal 019 Wave 1  
 **Authored by:** Hockney (Tester)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster

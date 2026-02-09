@@ -3,7 +3,7 @@
 **Author:** Verbal (Prompt Engineer)  
 **Date:** 2026-02-09  
 **Revised:** 2026-02-09  
-**Status:** Revised Draft  
+**Status:** Revised Draft — Deferred to Horizon  
 **Requested by:** bradygaster  
 **Triggered by:** Brady — *"copilot itSELF has built-in 'todo list' capability, right? if so, maybe we just delegate to copilot to work in each prompt we send in whilst the team is working."*  
 **Incorporates:** Kujan's platform assessment (`decisions/inbox/kujan-incoming-queue-assessment.md`), Brady's architecture direction (`decisions/inbox/copilot-directive-20260208T1933.md`)

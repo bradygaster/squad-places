@@ -1,6 +1,6 @@
 # Proposal 024: Per-Agent Model Selection
 
-**Status:** Draft
+**Status:** Draft — Deferred to Horizon
 **Author:** Verbal
 **Date:** 2026-02-08
 

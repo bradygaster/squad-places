@@ -1,6 +1,6 @@
 # Proposal 014a: "Where Are We?" — Messaging Beat Amendment
 
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-09  
 **Amends:** Proposal 014 (V1 Messaging and Launch)  

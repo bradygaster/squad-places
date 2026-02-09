@@ -1,6 +1,6 @@
 # Proposal 001a: Proposal Lifecycle Amendment
 
-**Status:** Implemented  
+**Status:** Approved ✅ Shipped  
 **Authored by:** Keaton (Lead)  
 **Date:** 2026-02-09  
 **Requested by:** bradygaster  

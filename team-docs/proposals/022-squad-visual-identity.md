@@ -1,6 +1,6 @@
 # Proposal 022: Squad Visual Identity — Initial Proposals
 
-**Status:** Draft  
+**Status:** Draft — Deferred to Horizon  
 **Author:** Redfoot (Graphic Designer)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster  

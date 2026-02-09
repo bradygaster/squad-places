@@ -184,14 +184,21 @@ graph TB
     R -->|learns| HR["history.md"]
     T -->|learns| HT["history.md"]
 
-    style C fill:#6366f1,color:#fff
-    style A fill:#3b82f6,color:#fff
-    style K fill:#3b82f6,color:#fff
-    style R fill:#3b82f6,color:#fff
-    style T fill:#3b82f6,color:#fff
-    style S fill:#6b7280,color:#fff
-    style team fill:none,stroke:#3b82f6,stroke-width:2px,stroke-dasharray:5 5
-    style memory fill:none,stroke:#8b5cf6,stroke-width:2px,stroke-dasharray:5 5
+    style U fill:#000,color:#fff,stroke:#333
+    style C fill:#000,color:#fff,stroke:#333
+    style A fill:#000,color:#fff,stroke:#333
+    style K fill:#000,color:#fff,stroke:#333
+    style R fill:#000,color:#fff,stroke:#333
+    style T fill:#000,color:#fff,stroke:#333
+    style S fill:#000,color:#fff,stroke:#333
+    style D fill:#000,color:#fff,stroke:#333
+    style L fill:#000,color:#fff,stroke:#333
+    style HA fill:#000,color:#fff,stroke:#333
+    style HK fill:#000,color:#fff,stroke:#333
+    style HR fill:#000,color:#fff,stroke:#333
+    style HT fill:#000,color:#fff,stroke:#333
+    style team fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
+    style memory fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
 ```
 
 ### Context Window Budget

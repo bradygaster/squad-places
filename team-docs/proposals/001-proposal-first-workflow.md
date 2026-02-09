@@ -1,6 +1,6 @@
 # Proposal 001: Proposal-First Workflow
 
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Authored by:** Keaton + Verbal  
 **Date:** 2026-02-07  
 **Requested by:** bradygaster

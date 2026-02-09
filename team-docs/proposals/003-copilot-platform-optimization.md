@@ -2,7 +2,7 @@
 
 **Author:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-07  
-**Status:** Deferred  
+**Status:** Approved — Deferred to Horizon  
 
 ---
 
@@ -424,6 +424,6 @@ Squad is already well-architected for Copilot. The core patterns — `task` tool
 
 ---
 
-**Approved by:** [Pending]  
-**Implemented:** [Pending]  
+**Approved by:** bradygaster (partially — Phase 1 items folded into shipped features)  
+**Implemented:** Partial — Phase 1 items (agents read own charters, Scribe in parallel, spawn descriptions) shipped in Waves 1-2. Phase 2-4 deferred to Horizon.  
 **Retrospective:** [Pending]

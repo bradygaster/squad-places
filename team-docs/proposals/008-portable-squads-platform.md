@@ -2,7 +2,7 @@
 
 **Author:** Kujan (Copilot SDK Expert)  
 **Date:** 2026-02-08  
-**Status:** Accepted. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
+**Status:** Approved ✅ Shipped. Note: references `@bradygaster/create-squad`; distribution is now GitHub-only via `npx github:bradygaster/squad` per Proposal 019a.  
 **Triggered by:** bradygaster — portable squads: export your team from one project, import into another
 
 ---
@@ -606,6 +606,6 @@ The only genuinely hard problem is history splitting. v0.1 punts this to the use
 ---
 
 **Review requested from:** Keaton (architecture), Fenster (implementation), bradygaster (product direction)  
-**Approved by:** [Pending]  
-**Implemented:** [Pending]  
+**Approved by:** bradygaster  
+**Implemented:** Wave 2 — Export CLI shipped  
 **Retrospective:** [Pending]

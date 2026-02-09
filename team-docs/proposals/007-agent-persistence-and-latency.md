@@ -2,8 +2,8 @@
 
 **Authors:** Kujan (Copilot SDK Expert) + Verbal (Prompt Engineer)  
 **Date:** 2026-02-08  
-**Status:** Accepted  
-**Triggered by:** bradygaster — *"it seems later on, the agents get in the way more than they help"*
+**Status:** Approved ✅ Shipped  
+**Triggered by:**bradygaster — *"it seems later on, the agents get in the way more than they help"*
 
 ---
 
@@ -477,6 +477,6 @@ The goal: **by message 10, Squad should feel faster than at message 1** — beca
 ---
 
 **Review requested from:** Keaton (architecture), bradygaster (experience validation)  
-**Approved by:** [Pending]  
-**Implemented:** [Pending]  
+**Approved by:** bradygaster  
+**Implemented:** Wave 2 — Tiered response modes, context caching, Scribe batching, coordinator direct handling, progressive history summarization  
 **Retrospective:** [Pending]

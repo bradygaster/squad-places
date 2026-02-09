@@ -1,6 +1,6 @@
 # Proposal 014: V1 Messaging, README, and Launch Plan — "Throw MY Squad at It"
 
-**Status:** Accepted  
+**Status:** Approved ✅ Shipped  
 **Author:** McManus (DevRel)  
 **Date:** 2026-02-08  
 **Requested by:** bradygaster  

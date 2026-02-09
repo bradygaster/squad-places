@@ -124,14 +124,21 @@ graph TB
     R -->|learns| HR["history.md"]
     T -->|learns| HT["history.md"]
 
-    style C fill:#6366f1,color:#fff
-    style A fill:#3b82f6,color:#fff
-    style K fill:#3b82f6,color:#fff
-    style R fill:#3b82f6,color:#fff
-    style T fill:#3b82f6,color:#fff
-    style S fill:#6b7280,color:#fff
-    style team fill:none,stroke:#3b82f6,stroke-width:2px,stroke-dasharray:5 5
-    style memory fill:none,stroke:#8b5cf6,stroke-width:2px,stroke-dasharray:5 5
+    style U fill:#000,color:#fff,stroke:#333
+    style C fill:#000,color:#fff,stroke:#333
+    style A fill:#000,color:#fff,stroke:#333
+    style K fill:#000,color:#fff,stroke:#333
+    style R fill:#000,color:#fff,stroke:#333
+    style T fill:#000,color:#fff,stroke:#333
+    style S fill:#000,color:#fff,stroke:#333
+    style D fill:#000,color:#fff,stroke:#333
+    style L fill:#000,color:#fff,stroke:#333
+    style HA fill:#000,color:#fff,stroke:#333
+    style HK fill:#000,color:#fff,stroke:#333
+    style HR fill:#000,color:#fff,stroke:#333
+    style HT fill:#000,color:#fff,stroke:#333
+    style team fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
+    style memory fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
 ```
 
 ### Context Window Budget
@@ -219,6 +226,18 @@ The Coordinator enforces this. No self-review of rejected work.
 
 ---
 
+## What's New in v0.2.0
+
+- [**Export & Import CLI**](docs/features/export-import.md) — Portable team snapshots for moving squads between repos
+- [**GitHub Issues Mode**](docs/features/github-issues.md) — Issue-driven development with `gh` CLI integration
+- [**PRD Mode**](docs/features/prd-mode.md) — Product requirements decomposition into work items
+- [**Human Team Members**](docs/features/human-team-members.md) — Mixed AI/human teams with routing
+- [**Skills System**](docs/features/skills.md) — Earned knowledge with confidence lifecycle
+- [**Tiered Response Modes**](docs/features/response-modes.md) — Direct/Lightweight/Standard/Full response depth
+- [**Smart Upgrade**](docs/scenarios/upgrading.md) — Version-aware upgrades with migrations
+
+---
+
 ## Install
 
 ```bash
@@ -250,6 +269,6 @@ This overwrites `squad.agent.md` and `.ai-team-templates/`. It never touches `.a
 
 ## Status
 
-🟣 **Experimental** — v0.1.0. Contributors welcome.
+🟣 **Experimental** — v0.2.0. Contributors welcome.
 
 Conceived by [@bradygaster](https://github.com/bradygaster).
