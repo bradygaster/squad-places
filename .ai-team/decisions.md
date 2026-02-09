@@ -107,16 +107,6 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 
 **Why:** The team is more valuable than the project. Without portability, users rebuild from scratch every time. Opens path to squad sharing (v2) and registries (v3). Aligns with Proposal 007 (both modify history structure, complementary). Requires Hockney's testing infrastructure for round-trip validation. Template changes are backward-compatible.
 
-### 2026-02-08: Agent persistence and latency reduction — tiered response modes
-
-**By:** Kujan + Verbal
-
-**What:** Proposed a tiered response system (Direct → Lightweight → Standard → Full) to replace the current "every interaction spawns an agent" model. Key changes: (1) Coordinator skips re-reading team.md/routing.md/registry.json after first message (context caching), (2) Scribe only spawns when inbox has files to merge, (3) Coordinator may handle trivial single-line tasks directly without spawning, (4) Lightweight spawn template for simple scoped tasks that skips history.md and decisions.md reads, (5) Progressive history summarization for mature projects.
-
-**Why:** Brady's feedback: "later on, the agents get in the way more than they help." Root cause is that every interaction pays the same 9-10 tool call overhead (~30-35s) regardless of task complexity. By message 10, trivial tasks take 30+ seconds for what should be a 5-second change. P0 fixes (context caching + Scribe batching) are zero-risk instruction changes that save ~12-17s per message. P1 fixes (tiered modes + coordinator direct handling) transform the late-session experience from friction to flow.
-
-**Proposal:** `docs/proposals/007-agent-persistence-and-latency.md`
-
 ### 2026-02-08: Portable squads — export/import design and platform feasibility
 
 **By:** Kujan
@@ -174,39 +164,6 @@ Squad adopts a proposal-first workflow for all meaningful changes (features, arc
 **Why:** Portable squads (Proposal 008) solved "your team knows YOU." Skills solve "your team knows how to DO THINGS." Combined: a squad arrives at a new React project already knowing the user's preferences AND React's patterns. Day one productive. Nobody in the industry has agent skills as a portable, earned, transferable concept. This is the feature that makes squad sharing (marketplace) actually valuable — the difference between a costume and competence. Skills compound across projects: each export captures more, each import starts from a higher baseline. Implementation phased across 6 releases, starting with template + instruction changes only (zero code changes in Phase 1).
 
 **Depends on:** Proposal 008 (Portable Squads) for export/import integration; Proposal 007 (Persistence) for progressive summarization of skills.
-
-### 2026-02-08: Forwardability and upgrade path
-
-**By:** Fenster
-**Date:** 2026-02-08
-
-**What:** Squad adopts a forwardability model based on three principles:
-
-1. **File ownership model.** Every file Squad touches is classified as Squad-owned (overwrite on upgrade), user-owned (never touch), or additive-only (create if missing). `squad.agent.md` and `.ai-team-templates/` are Squad-owned. Everything in `.ai-team/agents/`, `decisions.md`, and `casting/` is user-owned.
-
-2. **`npx create-squad upgrade` subcommand.** Backs up `squad.agent.md`, overwrites it with the latest version, refreshes templates, runs version-specific migrations, creates new directories. Never touches user state. Always backs up before overwriting.
-
-3. **Version-keyed migration system.** Migrations are idempotent functions keyed by version range. Each migration moves `.ai-team/` state forward (e.g., adding `## Portable Knowledge` sections to histories). Migrations are non-destructive, fault-tolerant, and ordered. A failed migration logs an error but doesn't abort the upgrade.
-
-**Why:** The current installer skips files that already exist. This was correct for v0.1 (don't clobber) but blocks upgrades entirely. When we ship a better `squad.agent.md`, existing users never get it. Brady requires forwardability — users should be able to update their squads with new features.
-
-The file ownership model ensures upgrades are safe. The migration system ensures state evolves correctly. The backup strategy ensures recoverability.
-
-**Implementation:**
-- Phase 1 (v0.1.1): Version stamping — add `squad_version` to frontmatter, write `.squad-version` metadata, show version in output
-- Phase 2 (v0.2.0): Upgrade command — argument routing, `upgradeSquad()`, migration framework, backup + overwrite
-- Phase 3 (v0.2.1): Dry-run, backup, and force flags
-- Phase 4 (v0.3.0): Customization detection via content hashing
-
-No new dependencies. `index.js` stays under 150 lines. Aligns with Proposal 008's export/import subcommands — all share the same argument routing pattern.
-
-**What Doesn't Change:**
-- Default `npx create-squad` behavior (init flow) is unchanged
-- User-owned files are never modified by the upgrade system
-- No new dependencies in `package.json`
-- The coordinator reads `squad.agent.md` fresh every session — overwriting it IS the upgrade
-
-**Proposal:** `docs/proposals/011-forwardability-and-upgrade-path.md`
 
 ### 2026-02-08: Skills platform architecture and v1 Copilot integration
 
@@ -394,25 +351,6 @@ The plan lists the export manifest schema and import flow as if they're straight
 
 Export depends on history split (2.1) AND skills (2.2). Both are prompt-engineering changes to `squad.agent.md`. Until agents are actually writing to the new history format and skills.md, there's nothing meaningful to export. The plan acknowledges this dependency but underestimates the testing overhead: you need a squad that has actually USED the new formats to verify export captures them correctly.
 
-### Revised estimate
-
-- Export command implementation: **3-4 hours**
-- Import command implementation: **3-4 hours**
-- Manifest validation: **2 hours**
-- History heuristic (or deciding to punt it): **1-2 hours**
-- Round-trip testing: **2 hours**
-- **Total: 11-14 hours** (not 6)
-
-### Recommendation
-
-Ship export-only in Sprint 2. Import is Sprint 3. Export is useful immediately (backup/audit). Import without thorough testing is dangerous — it creates broken squads.
-
----
-
-## 3. P0 Priority Check: Silent Success Bug (Proposal 015)
-
-**Assessment: This MUST be Sprint 0. Before everything else.**
-
 ### Why it blocks the sprint plan
 
 The silent success bug means ~40% of agent spawns lose their response text. The sprint plan's entire development process uses Squad to build Squad. If Verbal writes the tiered response mode changes to `squad.agent.md` and the coordinator reports "did not produce a response," we've lost work. If I implement forwardability and my response vanishes, Brady sees failure where there was success.
@@ -432,16 +370,6 @@ Every change in Proposal 015 is a prompt instruction change to `squad.agent.md`:
 ### The trust argument
 
 Brady said "human trust is P0." If Squad reports "agent did not produce a response" when the agent actually wrote a 45KB proposal, that's a trust-destroying moment. The user thinks the system failed. The system actually succeeded. This is worse than an actual failure — at least real failures are honest.
-
-### Recommendation
-
-Ship Proposal 015 as Sprint 0. One hour of work. Zero risk. Immediately makes the rest of the sprint more reliable. Don't start Sprint 1 without this.
-
----
-
-## 4. My Re-sequencing
-
-Given "human trust is P0," here's the order I'd build in:
 
 ### Sprint 0: Trust Foundation (Day 0, ~2 hours)
 
@@ -2246,3 +2174,124 @@ Brady requested README/docs updates as the content gate for v0.1.0 release. The 
 **By:** Verbal
 **What:** Designed a per-agent model selection system with four layers: user override (highest priority) → charter `## Model` field → registry `model` field → deterministic auto-selection algorithm. Auto-selection maps role categories to model tiers (Designer → Opus for vision, Tester/Scribe → Haiku for speed, Lead/Dev → Sonnet for balance). Task complexity signals can bump the tier (architecture decisions → Opus, simple renames → Haiku). Charter template and registry schema both get model fields; charter wins on conflict because the agent's self-declared rationale is more authoritative. Phase 1 is zero code changes — coordinator instructions only. Model auto-selection is a hard dependency: it must ship with or before charter model fields so the feature is zero-config by default. Delegation support: agent-to-agent spawns read the target's charter `## Model` field; the model preference is self-declared and travels with the agent regardless of who spawns it.
 **Why:** Current uniform model selection wastes money on simple tasks (Scribe doing file merges on Sonnet), undersells complex tasks (Keaton making architecture decisions on Sonnet), and creates capability mismatches (Redfoot designing visuals on a text-first model). Brady's directive: "We don't want Redfoot using Claude Sonnet to design imagery." The model must match the agent's capabilities. This design makes model selection automatic, transparent, and overridable.
+
+
+# Export CLI Implemented (Item 2.4)
+
+**Date:** 2026-02-09
+**Author:** Fenster
+**Status:** Completed
+**Proposal:** 019 (Item 2.4)
+**Depends on:** Item 2.2 (Smart Upgrade), Item 2.3 (Skills Phase 1)
+
+## What
+
+Shipped `npx github:bradygaster/squad export [--out <path>]` — produces a `squad-export.json` portable snapshot containing casting state, agent charters/histories, and skills.
+
+## Implementation
+
+- Export handler added to `index.js` after help block, before source validation (export doesn't need installer source files)
+- Validates squad existence via `.ai-team/team.md` — fatal error if missing
+- Reads casting files (registry.json, policy.json, history.json) with individual try/catch — missing files skipped
+- Scans `.ai-team/agents/*/` for charter.md and history.md per agent
+- Scans `.ai-team/skills/*/SKILL.md` for skill definitions
+- `--out <path>` flag via `process.argv.indexOf('--out')` — no parser dependency
+- Help text updated with export command description
+- 9 tests added covering all specified scenarios
+
+## Manifest Schema (v1.0)
+
+```json
+{
+  "version": "1.0",
+  "exported_at": "ISO 8601 timestamp",
+  "squad_version": "from package.json",
+  "casting": { "registry": {}, "policy": {}, "history": {} },
+  "agents": { "name": { "charter": "string", "history": "string" } },
+  "skills": ["SKILL.md contents"]
+}
+```
+
+## Constraints Honored
+
+- Zero dependencies
+- Windows compatible (all `path.join()`)
+- Existing 69 tests unaffected (4 pre-existing failures in templates/migrations unrelated to export)
+- 9 new export tests all pass
+
+## What's Next
+
+- Import CLI (Item 3.1) will consume this format
+- History curation remains manual in v1 per Proposal 008
+
+
+# Decision: Import CLI Implementation (Sprint Task 3.1)
+
+**Author:** Fenster (Core Developer)
+**Date:** 2026-02-09
+**Status:** Completed
+
+## Context
+
+Wave 2 delivered the `export` subcommand. Wave 3 requires the `import` counterpart to complete the portability story. Per Proposal 008, squads must be portable across projects via JSON manifest files.
+
+## Decision
+
+Shipped `import` subcommand at `npx github:bradygaster/squad import <file> [--force]`. Key design decisions:
+
+1. **Collision detection with archival, not deletion.** When `.ai-team/` exists and `--force` is used, the old squad is moved to `.ai-team-archive-{timestamp}/`. No data is ever destroyed. Timestamp format uses `YYYYMMDD-HH-mm-ss` (no colons — Windows-safe).
+
+2. **History split is pattern-based, not LLM-assisted.** Section headers are classified as portable or project-specific using regex patterns. This is deterministic and zero-dependency. LLM-assisted classification is deferred to v0.2 per Proposal 008.
+
+3. **Project-specific files are NOT imported.** `decisions.md` and `team.md` are created empty. These are project-local state that doesn't transfer. Casting state (registry, policy, history) transfers unconditionally.
+
+4. **Skills imported by frontmatter name extraction.** The `name` field from SKILL.md YAML frontmatter determines the directory name. Portable and deterministic.
+
+5. **Casting ceremony skipped on import.** Per Proposal 008, imported squads arrive with pre-populated names, universe, and relationships. No interactive setup needed.
+
+## Consequences
+
+- Squad portability is now a complete feature: export → import round-trip at 100% fidelity (tested).
+- History split is conservative — some portable content may end up in project learnings. This is safer than the reverse (project-specific content treated as portable).
+- 92 tests pass, zero regressions. 11 new import-specific tests cover happy path, error cases, round-trip, and history split.
+
+
+### Progressive History Summarization
+
+**By:** Verbal (Prompt Engineer)
+**Date:** Wave 3, Item 3.3
+
+**What:** Added progressive history summarization to the Scribe's responsibilities in `squad.agent.md`. When any agent's `history.md` exceeds ~3,000 tokens (~12KB), the Scribe summarizes entries older than 2 weeks into a `## Core Context` section and archives originals to `history-archive.md`. Added `history-archive.md` to Source of Truth Hierarchy table.
+
+**Why:** Agent startup cost must stay constant regardless of project age. Without summarization, history.md grows unbounded, consuming more context window on every spawn. This mechanism preserves all information (archive keeps originals) while keeping the working history file compact. The 2-week recency window ensures recent context stays detailed; older learnings get distilled into patterns.
+
+**Scope:** Prompt engineering only — changes to `.github/agents/squad.agent.md`. No code changes.
+
+
+### 2026-02-10: Skills Phase 1 — Template + Read
+
+**By:** Verbal
+**What:** Skills Phase 1 (Wave 2, Item 2.3) is implemented. SKILL.md format template created at `templates/skill.md`. Example skill `squad-conventions` ships as starter content in `templates/skills/`. Init flow creates `.ai-team/skills/` and copies starter skills. All spawn templates in `squad.agent.md` now instruct agents to read relevant SKILL.md files from `.ai-team/skills/` before working. Skills are read-only in Phase 1 — agents consume but don't create. 81 tests pass (5 new).
+**Why:** Skills are a core v1 feature (Proposals 010, 012). Phase 1 establishes the file format, directory structure, and agent awareness without the complexity of agent skill creation (Phase 2, Wave 3). Starter skill provides immediate value by documenting Squad's own conventions for agents working on the codebase.
+
+
+### 2026-02-10: Skills Phase 2 — Earned Skills
+**By:** Verbal
+**What:** Agents can now write SKILL.md files from real work. Skill extraction instruction added to all standard spawn templates (step 3 in "AFTER your work"). Confidence lifecycle defined (low→medium→high, monotonic). Coordinator does skill-aware routing — checks `.ai-team/skills/` before spawning and injects relevant skill references. `templates/skill.md` extended with optional `tools` field for MCP tool declarations. All changes are prompt engineering in `squad.agent.md` and `templates/skill.md` — zero code changes.
+**Why:** Phase 1 gave agents read access to skills. Phase 2 closes the loop: agents earn skills from work, skills feed back into routing, knowledge compounds across sessions and projects. This is the feature that makes Squad's skill system self-reinforcing — not just documentation, but a learning flywheel. MCP tool declarations per Proposal 010 Rev 2 and Brady's directive that skills should tell Copilot which tools they need.
+
+
+### 2026-02-09: Contribution blog post policy (consolidated)
+**By:** bradygaster, McManus
+**What:** Every external contribution to Squad gets a blog post highlighting the contributor. Posts live in `team-docs/blog/`, not `docs/blog/`. File naming follows sequential numbering (002, 003, etc.). Frontmatter uses `wave: null` for non-wave posts, with `community` and `contribution` tags. The contributor is always the hero of the post.
+**Why:** Community contributions are celebrated with visibility. `team-docs/` is internal team docs, not user-facing. McManus owns blog content. Standing policy for all future PRs from external contributors.
+### 2026-02-09: Forwardability and smart upgrade (consolidated)
+**By:** Fenster
+**What:** Squad adopts a forwardability model: file ownership (Squad-owned vs user-owned), `upgrade` subcommand, and version-keyed migration system. Implementation shipped: version delta detection reads installed version from squad.agent.md frontmatter, compares against package version. Migration registry (array of versioned functions) runs applicable migrations in semver order. First migration (0.2.0) creates `.ai-team/skills/`. "Already up to date" path exits early but still runs pending migrations. 8 new tests added.
+**Why:** Users must be able to update squads with new features without losing state. File ownership model ensures upgrades are safe. Migration registry is the delivery mechanism for all future improvements -- additive-only, idempotent, never destructive.
+**Proposal:** `docs/proposals/011-forwardability-and-upgrade-path.md`
+### 2026-02-09: Tiered response modes (consolidated)
+**By:** Kujan, Verbal
+**What:** Four-tier response mode system (Direct/Lightweight/Standard/Full) replaces "every interaction spawns an agent" model. Routing table determines WHO; Response Mode Selection determines HOW based on complexity. Includes: decision table with latency targets, Lightweight Spawn Template (no charter/history/decisions reads), explore agent for read-only queries, "where are we?" as Direct Mode exemplar, context caching (stop re-reading team files after first message), Scribe batching (skip when inbox empty). Anti-pattern #3 updated to reference tiered modes as legitimate exceptions.
+**Why:** Brady's feedback -- "later on, the agents get in the way more than they help." Every interaction paid ~30-35s overhead regardless of complexity. Tiered modes match effort to complexity: Direct ~2-3s, Lightweight ~8-12s, Standard ~25-35s, Full ~40-60s. Context caching saves ~3 tool calls per subsequent message. Combined: late-session friction becomes flow.
+**Proposal:** `docs/proposals/007-agent-persistence-and-latency.md`

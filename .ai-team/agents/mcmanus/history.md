@@ -243,3 +243,19 @@
 📌 Team update (2026-02-09): PR #2 integrated — GitHub Issues Mode, PRD Mode, Human Team Members added to coordinator with review fixes (gh CLI detection, post-setup questions, worktree guidance). — decided by Fenster
 📌 Team update (2026-02-09): Documentation structure formalized — docs/ is user-facing only, team-docs/ for internal, .ai-team/ is runtime state. Three-tier separation is permanent. — decided by Kobayashi
 📌 Team update (2026-02-09): Per-agent model selection designed — 4-layer priority (user override → charter → registry → auto-select). Role-to-model mapping: Designer→Opus, Tester/Scribe→Haiku, Lead/Dev→Sonnet. — decided by Verbal
+
+### Community contribution blog format (2026-02-09)
+- **Blog location for team-internal posts:** `team-docs/blog/` — distinct from `docs/blog/` (user-facing). Community contribution posts use the same frontmatter schema as wave posts but with `wave: null` and tags including `community` and `contribution`.
+- **Contributor celebration pattern:** A-plot is the contribution, B-plot is the integration story. Contributor is the hero. Attribution on every bullet in "What Shipped." Integration details kept brief.
+- **Tone calibration for external contributors:** Extra care on kindness-first. No "we fixed their code" framing — integration fixes are presented as collaborative refinement, not correction. Contributor's test infrastructure gets explicit credit.
+- **File naming:** `002-first-community-pr.md` — sequential numbering continues from wave posts even across categories.
+- File: `team-docs/blog/002-first-community-pr.md`
+
+
+📌 Team update (2026-02-09): Tiered response modes shipped — Direct/Lightweight/Standard/Full modes replace uniform spawn overhead. Agents may now be spawned with lightweight template (no charter/history/decisions reads) for simple tasks. — decided by Verbal
+
+
+📌 Team update (2026-02-09): Skills Phase 1 + Phase 2 shipped — agents now read SKILL.md files before working and can write SKILL.md files from real work. Skills live in .ai-team/skills/{name}/SKILL.md. Confidence lifecycle: low→medium→high. — decided by Verbal
+
+
+📌 Team update (2026-02-09): All external contributions get a blog post — standing policy. Posts in team-docs/blog/, contributor is hero. — decided by bradygaster

@@ -479,3 +479,80 @@
 📌 Team update (2026-02-09): If ask_user returns < 10 characters, treat as ambiguous and re-confirm — platform may fabricate default responses from blank input. — decided by Brady
 📌 Team update (2026-02-09): PR #2 integrated — GitHub Issues Mode, PRD Mode, Human Team Members added to coordinator with review fixes (gh CLI detection, post-setup questions, worktree guidance). — decided by Fenster
 📌 Team update (2026-02-09): Documentation structure formalized — docs/ is user-facing only, team-docs/ for internal, .ai-team/ is runtime state. Three-tier separation is permanent. — decided by Kobayashi
+
+### 2026-02-09: Tiered Response Modes — Implementation (Wave 2, Item 2.1)
+
+**What was built:**
+- Four-tier response mode system (Direct/Lightweight/Standard/Full) added to `squad.agent.md` as a new `### Response Mode Selection` section after Routing.
+- Decision table maps request complexity signals to response modes with target latency for each tier.
+- Lightweight Spawn Template — stripped-down prompt that skips charter inline, history read, and decisions read. Cuts ~6-8 tool calls from simple tasks.
+- Explore agent variant for read-only Lightweight queries (Haiku model, fastest path).
+- "Where are we?" established as the canonical Direct Mode exemplar — coordinator answers from context, zero spawn overhead.
+
+**Key design decisions:**
+- **Upgrade bias, never downgrade:** When uncertain between tiers, always go one tier higher. This prevents under-serving at the cost of marginal latency. The user should never feel like they got a degraded response.
+- **Routing and mode selection are separate concerns:** WHO (routing table) vs. HOW (mode selection) are independent decisions. This keeps both sections clean and composable — a routing change doesn't break mode selection and vice versa.
+- **Lightweight is not degraded mode:** The framing matters. Lightweight should feel like a warmed-up coworker skipping the small talk, not a system cutting corners. The prompt template reflects this — it's focused, not stripped.
+- **Scribe batching rule:** Scribe only spawns when the inbox has files OR session logging is needed. Direct and Lightweight interactions that produce no decisions skip Scribe entirely. This saves ~8-12s on trivial interactions.
+- **Context caching note:** Coordinator told to stop re-reading team.md/routing.md/registry.json after first message. These are already in context. Saves 3 parallel tool calls per subsequent message.
+
+**Patterns established:**
+- Mode exemplars as prompt engineering technique — concrete examples for each tier anchor the coordinator's classification judgment better than abstract rules alone.
+- The four-tier spectrum (Direct → Lightweight → Standard → Full) is extensible. Future tiers (e.g., "Speculative" for proactive work) slot in naturally.
+- Anti-pattern #3 updated to reference tiered modes explicitly, preventing the old "always spawn" rule from conflicting with Direct/Lightweight modes.
+
+### 2026-02-10: Skills Phase 1 — Template + Read (Wave 2, Item 2.3)
+
+**What was built:**
+- SKILL.md format template at `templates/skill.md` — YAML frontmatter (name, description, domain, confidence, source) + markdown body (Context, Patterns, Examples, Anti-Patterns). Ships with npm package.
+- Example skill `templates/skills/squad-conventions/SKILL.md` — documents Squad's own conventions: zero dependencies, node:test, fatal() pattern, ANSI constants, file structure, Windows compatibility, init idempotency.
+- Skills-aware instruction added to all 5 spawn templates in `squad.agent.md`: "If `.ai-team/skills/` exists and contains SKILL.md files, read relevant ones before working." Phase 1 is read-only — agents consume skills but don't create them.
+- Init flow updated in `index.js`: creates `.ai-team/skills/` directory and copies starter skills from `templates/skills/` on first init. Uses skip-if-exists pattern (checks if skills dir is empty before copying).
+- `.ai-team/skills/` added to the file tree listing in `squad.agent.md`.
+- 5 new tests: skills directory creation on init, starter skill content verification, skills not overwritten on re-init. Existing template tests updated to handle subdirectories.
+
+**Key design decisions:**
+- **Skills dir created in init flow, not just migration.** New installs get `.ai-team/skills/` immediately. Upgrades get it via the existing 0.2.0 migration. Both paths converge to the same state.
+- **Starter skills copy only when skills dir is empty.** If the user already has skills (from upgrade migration or manual creation), init doesn't clobber them. Same skip-if-exists philosophy as ceremonies.md.
+- **Read-only in Phase 1.** Agents are instructed to read skills, not write them. Phase 2 (Wave 3) will add agent skill creation. This keeps the blast radius small — prompt changes only, minimal code changes.
+- **All spawn templates updated, including ceremony and PRD decomposition.** Consistency across all agent entry points. Skills should be available regardless of how an agent is spawned.
+
+**Patterns established:**
+- Template subdirectories as shipped content — `templates/skills/` is the first subdirectory in templates. Test updates handle this by skipping directories in content-match loops.
+- The SKILL.md format follows the Agent Skills standard (agentskills.io) per Proposal 010 Rev 2 decision. Standard compliance enables ecosystem portability.
+
+### 2026-02-10: Skills Phase 2 — Earned Skills (Wave 3, Item 3.2)
+
+**What was built:**
+- Skill extraction instruction added to all 3 standard spawn templates (background, sync, generic) in the "AFTER your work" section. Agents now write SKILL.md files to .ai-team/skills/{skill-name}/SKILL.md when they identify reusable patterns. Source: "earned", confidence: "low" for first observations.
+- Skill confidence lifecycle section added to squad.agent.md near the routing table. Three levels: low (first observation) → medium (confirmed by multiple agents/sessions) → high (established, team-agreed). Confidence only goes up. Bumps happen when an agent independently validates a skill by applying it.
+- Skill-aware routing added after the routing table. Coordinator checks .ai-team/skills/ for domain-relevant skills before spawning and injects relevant skill references into spawn prompts.
+- MCP tool declarations added to 	emplates/skill.md frontmatter. Optional 	ools field lets skills declare which MCP tools are relevant to their patterns (name, description, when).
+- Updated skills directory comment in the init file tree from "read-only for agents" to "agents read and earn."
+
+**Key design decisions:**
+- **Skill extraction is step 3, not a separate section.** Placed inside the existing "AFTER your work" block to keep it in the agent's natural workflow — no new section headers, no context budget waste.
+- **"MUST update these files" replaces "MUST update two files."** Changed wording to accommodate the third step without being numerically rigid.
+- **Confidence lifecycle is near routing, not buried in templates.** The coordinator needs to understand confidence to make routing decisions. Placing it between routing and mode selection keeps it adjacent to the logic that uses it.
+- **Tools field is commented-out YAML in template.** Shows the format without requiring it. Agents see the structure; they fill it in when applicable. Avoids empty arrays in every skill.
+- **Skill-aware routing is a note, not a table row.** It's a behavioral instruction for the coordinator, not a signal-action mapping. Keeping it as a paragraph after the table is cleaner than forcing it into the table structure.
+
+**Patterns established:**
+- Earned skills as organic output — agents extract skills from real work, not from explicit "learn this" commands. This is Squad's unique value: standard-compliant skills generated automatically.
+- Monotonic confidence — never downgrade. This prevents oscillation and ensures skills only get stronger over time. An agent that disagrees with a skill should note it in history, not weaken the skill.
+- Skill extraction as prompt instruction, not code — all of Phase 2 is prompt engineering. Zero changes to index.js or tests. The skill system grows through instructions, not infrastructure.
+
+### Progressive history summarization (Wave 3)
+
+- **Constant startup cost**: Agent context windows don't grow unbounded. History.md is capped at ~3,000 tokens (~12KB). Older entries get distilled into a `## Core Context` section; originals move to `history-archive.md`. This keeps agent spawn prompts fast regardless of project age.
+- **Scribe owns summarization**: Added as step 6 in the Scribe spawn prompt. Runs at most once per Scribe spawn, after commit. Checks ALL agents' histories, not just the one that just worked.
+- **Zero information loss**: Archive preserves original entries verbatim. Core Context is a living summary updated each summarization pass. `## Project Learnings (from import)` section is exempt.
+- **Source of Truth table updated**: Added `history-archive.md` row — derived/append-only, written by Scribe, read-only by owning agent.
+
+📌 Team update (2026-02-09): Tiered response modes shipped — Direct/Lightweight/Standard/Full modes replace uniform spawn overhead. Agents may now be spawned with lightweight template (no charter/history/decisions reads) for simple tasks. — decided by Verbal
+
+
+📌 Team update (2026-02-09): Skills Phase 1 + Phase 2 shipped — agents now read SKILL.md files before working and can write SKILL.md files from real work. Skills live in .ai-team/skills/{name}/SKILL.md. Confidence lifecycle: low→medium→high. — decided by Verbal
+
+
+📌 Team update (2026-02-09): Export + Import CLI shipped — squads are now fully portable via squad-export.json. Round-trip at 100% fidelity. History split is pattern-based. — decided by Fenster

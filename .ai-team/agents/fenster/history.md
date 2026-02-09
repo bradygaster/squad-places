@@ -185,3 +185,42 @@
 📌 Team update (2026-02-09): PR #2 architectural review completed — 3 must-fixes, 5 should-fixes. All must-fixes applied during integration. — decided by Keaton
 📌 Team update (2026-02-09): Documentation structure formalized — docs/ is user-facing only, team-docs/ for internal, .ai-team/ is runtime state. Three-tier separation is permanent. — decided by Kobayashi
 📌 Team update (2026-02-09): Per-agent model selection designed — 4-layer priority (user override → charter → registry → auto-select). Role-to-model mapping: Designer→Opus, Tester/Scribe→Haiku, Lead/Dev→Sonnet. — decided by Verbal
+
+### Smart Upgrade with Migration Registry (Sprint Task 2.2)
+
+- **Version delta detection shipped.** `upgrade` now reads the installed version from squad.agent.md's YAML frontmatter (`version: "X.Y.Z"` regex), compares against pkg.version using a zero-dependency `compareSemver()`, and reports the delta: `"upgraded coordinator from 0.0.1 to 0.1.0"`. Legacy installs without a version header are treated as `0.0.0` and reported as `"from unknown"`.
+- **"Already up to date" fast path.** When installed version matches pkg.version, upgrade prints `"Already up to date (v0.1.0)"` and exits 0. Still runs pending migrations on this path to handle interrupted prior upgrades.
+- **Migration registry pattern established.** Array of `{ version, description, run(dest) }` objects. Migrations are filtered by `compareSemver(migration.version, oldVersion) > 0`, sorted by version, executed in order. Each migration is wrapped in try/catch — failures warn but don't abort. All migrations are idempotent (use `mkdirSync({ recursive: true })`).
+- **First migration: `.ai-team/skills/` directory.** Keyed to version `0.2.0`. Creates the skills directory for Skills Phase 1 (item 2.3). Uses `recursive: true` so it's safe to run multiple times.
+- **Old version captured before writes.** `readInstalledVersion()` is called before `copyFileSync` overwrites the agent file. The old version is hoisted to module scope so both the delta reporter and the migration runner can reference it.
+- **Existing tests adapted.** Four upgrade tests now write an explicit old version (`0.0.1`) to squad.agent.md before running upgrade, so they exercise the actual upgrade path instead of hitting the new "already up to date" exit.
+- **8 new tests added** — 4 for version delta detection (older version, same version, missing header, clean exit), 4 for migrations (skills creation, idempotency, skip-past-versions, interrupted-upgrade recovery). Total: 69 tests, all passing.
+- **index.js grew from 146 to ~250 lines.** Still zero dependencies. All paths use `path.join()`. Windows safe.
+
+### Export CLI Implementation (Sprint Task 2.4)
+
+- **`export` subcommand shipped.** `npx github:bradygaster/squad export` produces `squad-export.json` — a portable JSON snapshot of the entire squad state. Reads casting files (registry, policy, history), agent directories (charter.md, history.md per agent), and skills (SKILL.md per skill directory). Missing files are gracefully skipped; missing squad (`team.md` absent) produces a clean fatal error.
+- **`--out <path>` flag for custom output location.** Reads from `process.argv.indexOf('--out')` — no dependency needed. Defaults to `squad-export.json` in cwd. Uses `path.resolve()` for the custom path to handle both relative and absolute paths.
+- **Export runs before source validation.** The export handler is placed after the help block but before the source file checks (`squad.agent.md`, `templates/` existence). Export reads from `.ai-team/` in cwd — it doesn't need the installer's source files. This means export works even from a standalone `index.js` copy.
+- **Manifest schema is v1.0.** Fields: `version`, `exported_at` (ISO 8601), `squad_version` (from package.json), `casting` (object with registry/policy/history), `agents` (keyed by agent name, each with charter/history strings), `skills` (array of SKILL.md contents).
+- **Warning message included.** After successful export, prints a caution about reviewing agent histories before sharing — they may contain project-specific information. This aligns with Proposal 008's decision that history needs manual curation in v1.
+- **9 new tests added** — valid JSON output, casting state inclusion, agent charters and histories, skills inclusion, `--out` custom path, graceful failure without squad, success/warning messaging, missing casting files, help text mention. Total passing: 78 (74 pass, 4 pre-existing failures unrelated to export).
+- **index.js grew from ~250 to ~320 lines.** Still zero dependencies. All paths use `path.join()`. Windows safe.
+
+### Import CLI Implementation (Sprint Task 3.1)
+
+- **`import` subcommand shipped.** `npx github:bradygaster/squad import <file> [--force]` imports a squad from a JSON export file. Validates version `1.0`, required fields (casting, agents, skills), creates full `.ai-team/` directory structure, writes casting state, agent charters/histories, and skills.
+- **Collision detection with archival.** If `.ai-team/` exists without `--force`, import fails with a clear message. With `--force`, the existing squad is moved to `.ai-team-archive-{timestamp}/` (using `YYYYMMDD-HH-mm-ss` format — Windows-safe, no colons). The old squad is preserved, never deleted.
+- **History split for portability.** Imported agent histories are split into Portable Knowledge (conventions, patterns, architecture) and Project Learnings (file paths, sprint plans, PR-specific context). Project learnings are preserved under a `## Project Learnings (from import — {source})` header. Pattern-based classification: section headers like "Key File Paths", "Sprint Plan", "PR #" are project-specific; "Runtime Architecture", "Windows Compatibility", "Learnings" are portable.
+- **Import marker on every agent.** Each imported agent's history starts with `📌 Imported from {source} on {date}` to clearly identify the import origin and date.
+- **Casting ceremony skipped.** Names, universe, and relationships arrive pre-populated from the export. No interactive ceremony needed — the team is ready to work.
+- **Project-specific files reset.** `decisions.md` and `team.md` are created empty — these are project-specific and don't transfer. Standard directories (decisions/inbox, orchestration-log, log, skills) are created.
+- **Skills imported by name.** Skill names are extracted from SKILL.md frontmatter `name` field and used as directory names. Falls back to `skill-{index}` if no name found.
+- **11 new tests added** — valid import structure, collision detection (no --force), --force archival, round-trip (init → export → import), missing file, invalid JSON, wrong version, history split markers, success messaging, help text, missing argument. Total: 92 tests, all passing.
+- **index.js grew from ~320 to ~480 lines.** Still zero dependencies. All paths use `path.join()`. Windows safe.
+
+
+📌 Team update (2026-02-09): Tiered response modes shipped — Direct/Lightweight/Standard/Full modes replace uniform spawn overhead. Agents may now be spawned with lightweight template (no charter/history/decisions reads) for simple tasks. — decided by Verbal
+
+
+📌 Team update (2026-02-09): Skills Phase 1 + Phase 2 shipped — agents now read SKILL.md files before working and can write SKILL.md files from real work. Skills live in .ai-team/skills/{name}/SKILL.md. Confidence lifecycle: low→medium→high. — decided by Verbal
