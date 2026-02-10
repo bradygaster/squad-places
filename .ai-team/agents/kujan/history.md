@@ -56,37 +56,11 @@ _Summarized from initial platform assessment and deep onboarding (2026-02-07). F
 
 ## Learnings
 
-- **2026-02-10: Full Model Catalog Research (Proposal 024a)** — Researched and documented all 16 models available via the `task` tool's `model` parameter across 3 providers (Anthropic: 6 models, OpenAI: 9 models, Google: 1 model) and 3 tiers (premium, standard, fast/cheap). Key findings:
-  - The platform offers far more diversity than Proposal 024's original 3-model mapping (Opus/Sonnet/Haiku). Brady was right to push back.
-  - OpenAI Codex variants (GPT-5.2-Codex, GPT-5.1-Codex-Max) are genuinely strong contenders for code-heavy tasks — may outperform Claude Sonnet for pure code generation.
-  - Gemini 3 Pro (Preview) offers cognitive diversity value for reviews/audits — different training yields different perspectives, which is signal not noise.
-  - Provider diversity is a resilience play, not just a quality play. Single-provider dependency is a real operational risk for multi-agent systems.
-  - Anthropic remains the safest default family (best instruction following, proven in agent workflows), with OpenAI as specialist for code and Google as specialist for diversity.
-  - Opus 4.6 fast mode is an underappreciated option — premium quality at reduced latency for time-sensitive decisions (reviewer gates).
-  - The expanded role-to-model mapping covers 11 roles × 2 models (default + specialist) with clear switching criteria.
-  - Honest about knowledge gaps: Gemini 3 Pro Preview behavior may change, cross-provider prompt portability is untested, exact cost ratios unknown on the platform.
-  - Output: `team-docs/proposals/024a-model-catalog.md` — reference document for Verbal's selection algorithm (sprint item 4.1).
-- **2026-02-10: GitHub API Capabilities Assessment (Proposal 028a)** — Empirically tested all GitHub MCP server tools, `gh` CLI commands, and agent access patterns for Issues and Projects management. Key findings:
-  - MCP tools are **read-only for Issues** — no create/update/close. All writes must go through `gh` CLI.
-  - **Zero MCP tools exist for GitHub Projects V2** — entire Projects workflow depends on `gh project` commands.
-  - `task` and `general-purpose` sub-agents **CAN** access MCP tools AND `gh` CLI — they can self-serve GitHub operations without coordinator mediation.
-  - `explore` sub-agents have **NO MCP or shell access** — local filesystem only (grep/glob/view).
-  - GitHub Projects is **blocked by missing token scope** (`project`). Fix: Brady runs `gh auth refresh -s project` once.
-  - Current token scopes: `gist`, `read:org`, `repo`, `workflow` — sufficient for Issues, insufficient for Projects.
-  - Rate limits are generous: 5,000 REST/hour, 5,000 GraphQL/hour, 30 searches/minute. Normal Squad operations use <5% capacity.
-  - Only real rate limit risk: Search API (30/min) during batch operations — prefer list operations over search.
-  - Recommended two-channel pattern: MCP for reads (structured data), `gh` CLI for writes (only option).
-  - Full issue lifecycle verified: create → label → comment → close → read back via MCP. All working.
-  - Output: `team-docs/proposals/028a-github-api-capabilities.md` and `.ai-team/decisions/inbox/kujan-github-api-assessment.md`.
+_Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 
-- **2026-02-10: Async Comms Feasibility Assessment (Proposal 030)** — Updated feasibility assessment for async squad communication, superseding Proposal 017. Brady un-deferred this feature to TOP PRIORITY for 0.3.0. Key findings:
-  - **CCA-as-squad-member is the breakthrough.** Copilot Coding Agent reads `squad.agent.md` (same file Squad uses as coordinator prompt). Adding CCA guidance to that file gives Brady async work assignment via GitHub Issues + Mobile for ~2-4 hours of prompt engineering. Zero new infrastructure.
-  - **CCA + GitHub Issues is async communication through GitHub's own surfaces.** Issue → assign @copilot → CCA works under Squad governance → PR → Brady reviews on phone. Not conversational, but functional async comms with zero build cost.
-  - **Copilot SDK confirmed mature enough for Telegram bridge.** Multi-turn, custom tools, model selection, streaming all verified. Nested sessions (task equivalent) remain the UNVERIFIED gate — need a 1-day spike.
-  - **Connector ranking:** CCA+Issues (ship now, free) > Telegram (ship 0.3.0 if SDK spike passes) > Discord (0.4.0) > GitHub Discussions (fallback) > Teams (0.4.0+, best per-repo but highest build cost) > Slack (0.5.0+).
-  - **Per-repo solution varies by platform:** GitHub Issues = native per-repo. Telegram = groups per repo. Teams = channels per repo (best). Discord = channels per repo.
-  - **Two-tier MVP recommended:** Tier 1 (CCA guidance, 2-4h, prompt-only) + Tier 2 (Telegram bridge, 8-16h, new code). Ship Tier 1 in 0.3.0 Wave 2 guaranteed; Tier 2 conditional on SDK spike.
-  - Output: `team-docs/proposals/030-async-comms-feasibility.md`.
+- **2026-02-10: Model Catalog (024a)** — Documented 16 models across 3 providers (Anthropic 6, OpenAI 9, Google 1), 3 tiers. OpenAI Codex strong for code tasks. Provider diversity = resilience play. 11-role mapping with defaults + specialists. Output: `team-docs/proposals/024a-model-catalog.md`.
+- **2026-02-10: GitHub API Assessment (028a)** — MCP tools are read-only for Issues; all writes via `gh` CLI. Zero MCP tools for Projects V2. `task`/`general-purpose` agents have full access; `explore` has none. Projects blocked by missing `project` scope (`gh auth refresh -s project`). Rate limits generous (5K/hr REST+GraphQL). Output: `team-docs/proposals/028a-github-api-capabilities.md`.
+- **2026-02-10: Async Comms Feasibility (030)** — CCA-as-squad-member is the breakthrough: `squad.agent.md` + CCA guidance = async work via Issues for 2-4h prompt engineering, zero infrastructure. Copilot SDK confirmed for Telegram bridge (8-16h, conditional on nested session spike). Ranking: CCA+Issues > Telegram > Discord > Discussions > Teams > Slack. Two-tier MVP: Tier 1 (CCA, guaranteed) + Tier 2 (Telegram, conditional). Output: `team-docs/proposals/030-async-comms-feasibility.md`.
 
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — your model catalog research (024a) and GitHub API assessment (028a) are foundational inputs. — decided by Keaton
 
