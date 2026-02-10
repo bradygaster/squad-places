@@ -1,8 +1,12 @@
 # Proposal 024: Per-Agent Model Selection
 
-**Status:** Draft — Deferred to Horizon
-**Author:** Verbal
-**Date:** 2026-02-08
+**Status:** Approved ✅  
+**Authors:** Verbal (original design + algorithm), Kujan (model catalog research), Keaton (consolidation + approval)  
+**Date:** 2026-02-08 (original), 2026-02-10 (consolidated)  
+**Sprint:** v0.3.0 Wave 1, Items 4.1–4.4  
+**Companion documents:** [024a — Model Catalog](024a-model-catalog.md) (full 8-dimension analysis), [024b — Algorithm Detail](024b-model-selection-algorithm.md) (design rationale + integration notes)
+
+---
 
 ## Problem
 
@@ -16,256 +20,356 @@ Every agent spawn uses the same model — `claude-sonnet-4` via `general-purpose
 
 Brady's directive: *"We don't want Redfoot using Claude Sonnet to design imagery."* The model must match the agent's capabilities.
 
+---
+
 ## Design
 
-### 1. Charter-Level Model Field
+### Selection Priority (4-Layer)
 
-Add an optional `model` field to the charter template under a new `## Model` section:
+The coordinator resolves a model for every spawn. Four layers, checked in order. First match wins.
+
+| Priority | Source | Example | Override Behavior |
+|----------|--------|---------|-------------------|
+| **1. User Override** | User explicitly names a model or gives a budget/quality directive | "Use opus for this" / "Save costs" | Overrides all other layers. Session-wide directives persist until contradicted. |
+| **2. Charter Preference** | Agent's charter `## Model` section with `Preferred` ≠ `auto` | `Preferred: claude-opus-4.5` (Designer needs vision) | Agent declared its own needs with rationale. |
+| **3. Task-Aware Auto-Selection** | Coordinator evaluates role + task characteristics → picks best model | Lead doing architecture proposal → bumped to premium | The core algorithm. See below. |
+| **4. Default Fallback** | No other layer matched | Any agent, any task | `claude-sonnet-4.5`. Always works with zero configuration. |
+
+**Layer 1 — User override detection:**
+- Explicit model name: "use claude-opus-4.6", "spawn on haiku", "use gpt-5.2-codex"
+- Budget directives: "save costs" → drop all non-essential spawns to fast/cheap tier
+- Quality directives: "use the best model" → bump all spawns to premium tier
+- Per-agent override: "use opus for Keaton" → applies only to that agent
+- Session-wide: "always use sonnet" → applies to all spawns until contradicted
+
+### Task-Aware Auto-Selection Logic
+
+When Layers 1–2 don't apply, the coordinator uses role + task signals. This is the 80% case.
+
+**Step 1 — Role-Based Default:**
+
+| Role Category | Default Model | Tier | Why |
+|---------------|--------------|------|-----|
+| Lead / Architect | `claude-sonnet-4.5` | Standard | Strong reasoning + balanced cost. Bumped to premium for proposals. |
+| Core Dev / Backend / Frontend | `claude-sonnet-4.5` | Standard | Best general code generation quality at reasonable cost. |
+| Tester / QA | `claude-haiku-4.5` | Fast | Test generation is structured, pattern-heavy. Speed > depth. |
+| Designer / Visual | `claude-opus-4.5` | Premium | Vision-capable. Required for image analysis and visual reasoning. |
+| DevRel / Writer | `claude-sonnet-4.5` | Standard | Prose quality needs solid reasoning. Not as deep as architecture. |
+| Scribe / Logger | `claude-haiku-4.5` | Fast | Mechanical file operations. Speed and cost matter, depth doesn't. |
+| Platform / Infra | `claude-sonnet-4.5` | Standard | Platform analysis needs standard reasoning. |
+| Prompt Engineer | `claude-sonnet-4.5` | Standard | Meta-reasoning about agents. Bumped to premium for complex designs. |
+| Reviewer | `claude-sonnet-4.5` | Standard | Judgment calls. Bumped to premium for gate decisions. |
+| Git / Release | `claude-haiku-4.5` | Fast | Mechanical operations. Changelogs, tags, version bumps. |
+
+**Step 2 — Task Complexity Override** (apply at most ONE — no cascading):
+
+- **Bump UP to premium:** architecture proposals, reviewer gates, security audits, multi-agent coordination (output feeds 3+ agents), design system architecture, complex prompt architecture
+- **Bump DOWN to fast/cheap:** typo fixes, renames, boilerplate, scaffolding, changelogs, version bumps, mechanical file operations
+- **Switch to code specialist (`gpt-5.2-codex`):** large multi-file refactors, complex implementation from detailed spec, heavy code generation (500+ lines)
+- **Switch to analytical diversity (`gemini-3-pro-preview`):** code reviews where a second perspective helps, security reviews, architecture reviews after a rejection
+
+**Step 3 — Provider Diversity Triggers** (optional — a tool, not a religion):
+
+| Trigger | Consider | Why |
+|---------|----------|-----|
+| Code review (not implementation) | `gemini-3-pro-preview` | Different training data catches different issues. |
+| Heavy code generation (multi-file) | `gpt-5.2-codex` | OpenAI Codex variants optimized for code generation. |
+| Second-opinion after a rejection | Different provider than original reviewer | Cognitive diversity on re-review. |
+
+**When NOT to diversify:** first-time spawns with complex charters (stick to Anthropic — charters are Anthropic-optimized), Scribe or mechanical tasks (use cheapest), when user set a provider preference.
+
+### Charter Template — `## Model` Section
+
+Add to `templates/charter.md` after `## Boundaries`, before `## Collaboration`:
 
 ```markdown
 ## Model
 
+- **Preferred:** auto
+- **Rationale:** Coordinator selects the best model based on role and task complexity
+- **Fallback:** Standard chain — the coordinator handles fallback automatically
+```
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `Preferred` | A valid model ID (e.g., `claude-opus-4.5`) or `auto` | The model this agent should spawn on. `auto` delegates to auto-selection. |
+| `Rationale` | Free text | Why this model. Forces justification. Prevents "opus for everything" cargo-culting. |
+| `Fallback` | `Premium chain`, `Standard chain`, `Fast chain` | Which fallback chain when preferred model is unavailable. Defaults to the chain matching the preferred model's tier. |
+
+**Examples:**
+
+```markdown
+## Model
 - **Preferred:** claude-opus-4.5
-- **Rationale:** Vision-capable model required for graphic design work — image analysis, color reasoning, visual composition
+- **Rationale:** Vision-capable model required for image analysis, color reasoning, visual composition
+- **Fallback:** Premium chain
 ```
-
-**Field semantics:**
-- `Preferred` — the model the coordinator SHOULD use when spawning this agent. Not a hard constraint — the coordinator can override based on task complexity or user directive.
-- `Rationale` — WHY this model. Forces the charter author to justify the choice. Prevents cargo-culting "just use opus for everything."
-- If the `## Model` section is omitted entirely, the coordinator falls through to the auto-selection algorithm (Section 5).
-
-**Charter template change** (in `templates/charter.md`):
 
 ```markdown
 ## Model
-
-- **Preferred:** {model or "auto"}
-- **Rationale:** {Why this model — capability needs, cost considerations, or "auto" for coordinator selection}
+- **Preferred:** claude-haiku-4.5
+- **Rationale:** Mechanical file operations — speed and cost matter, depth doesn't
+- **Fallback:** Fast chain
 ```
 
-Setting `Preferred` to `auto` explicitly opts into auto-selection. Omitting the section entirely has the same effect.
-
-### 2. Model Auto-Selection Algorithm
-
-When no charter model is specified (or `auto` is set), the coordinator applies a deterministic algorithm. Three inputs, in priority order:
-
-**Priority 1 — User override (highest)**
-If the user says "use opus for everything" or "use haiku to save costs," that directive overrides all other logic. The coordinator notes the override in the spawn and applies it.
-
-**Priority 2 — Charter preference**
-If the charter has a `## Model` section with a specific model (not `auto`), use it.
-
-**Priority 3 — Role-based default (auto-selection)**
-
-Role categories mapped to model tiers:
-
-| Role Category | Default Model | Rationale |
-|---|---|---|
-| **Lead / Architect** | `claude-sonnet-4` | Deep reasoning for cross-cutting decisions. Upgrade to Opus for architecture proposals. |
-| **Core Dev / Backend / Frontend** | `claude-sonnet-4` | Good balance of reasoning and speed for implementation work. |
-| **Tester / QA** | `claude-haiku-4.5` | Test generation is structured and pattern-heavy. Speed > depth. |
-| **Designer / Visual** | `claude-opus-4.5` | Vision-capable. Required for image reasoning, color analysis, visual composition. |
-| **DevRel / Writer** | `claude-sonnet-4` | Prose quality needs good reasoning. Not as deep as architecture. |
-| **Scribe / Logger** | `claude-haiku-4.5` | Mechanical file operations. Cheapest model that can follow instructions. |
-| **Platform / Infra** | `claude-sonnet-4` | Standard reasoning for platform analysis and feasibility. |
-| **Prompt Engineer / AI** | `claude-sonnet-4` | Meta-reasoning about agent design. Sonnet is sufficient; Opus for complex proposals. |
-
-**Priority 4 — Task complexity override**
-
-Even after role-based selection, the coordinator can bump the model tier based on task signals:
-
-| Signal | Effect |
-|---|---|
-| Task contains "architecture," "design system," "proposal" | Bump to Opus if currently Sonnet |
-| Task contains "review," "audit," "security" | Bump to Sonnet if currently Haiku |
-| Task contains "quick," "simple," "rename," "typo" | Drop to Haiku if currently Sonnet |
-| Task is a reviewer gate (approval/rejection decision) | Bump to Sonnet minimum |
-| Multi-file coordination (agent output feeds 3+ other agents) | Bump to Opus |
-
-The coordinator applies AT MOST ONE bump. No cascading upgrades.
-
-### 3. Registry Integration
+### Registry Integration
 
 Add a `model` field to `casting/registry.json` entries:
 
 ```json
 {
-  "agents": {
-    "redfoot": {
-      "persistent_name": "Redfoot",
-      "universe": "The Usual Suspects",
-      "created_at": "2026-02-08T17:58:00.000Z",
-      "legacy_named": false,
-      "status": "active",
-      "model": "claude-opus-4.5"
-    },
-    "hockney": {
-      "persistent_name": "Hockney",
-      "universe": "The Usual Suspects",
-      "created_at": "2026-02-07T23:18:31.762Z",
-      "legacy_named": false,
-      "status": "active",
-      "model": "claude-haiku-4.5"
-    }
+  "redfoot": {
+    "persistent_name": "Redfoot",
+    "model": "claude-opus-4.5"
+  },
+  "hockney": {
+    "persistent_name": "Hockney",
+    "model": "claude-haiku-4.5"
   }
 }
 ```
 
-**Resolution order when both registry and charter specify a model:**
+**Resolution order:** User override → Charter `## Model` → Registry `model` → Auto-selection.
 
-1. User override (always wins)
-2. Charter `## Model` field (agent's own declaration — closer to the work)
-3. Registry `model` field (team-level configuration — set during casting)
-4. Auto-selection algorithm (fallback)
+Charter wins over registry on conflict. The agent's self-declared needs (with rationale) are more authoritative than the casting-time default. Registry exists for the team-level view — the coordinator reads it during routing to quickly see model assignments without opening every charter.
 
-**Why both locations?**
+### Delegation Support
 
-- **Registry** is the team-level view. The coordinator reads it during routing to quickly see model assignments across all agents without opening every charter. It's also where the `casting` ceremony writes the initial model assignment.
-- **Charter** is the agent-level declaration. The agent "knows" what model it needs and why. It's self-documenting — you read Redfoot's charter and immediately understand the model requirement.
-- On conflict, charter wins over registry. The agent's self-declared needs (with rationale) are more authoritative than the casting-time default.
+Model selection works for **every spawn path:**
 
-### 4. Coordinator Changes
+- **Coordinator → Agent:** Full 4-layer algorithm. The primary path.
+- **Agent → Sub-agent:** Read target's charter `## Model` → use `Preferred` value. If `auto` or missing, omit `model` parameter (platform default). Agents don't need the full auto-selection algorithm.
+- **Ceremony → Agent:** Coordinator controls these spawns. Same as coordinator → agent.
 
-**squad.agent.md spawn template modification:**
+**Key principle:** The charter `## Model` field travels with the agent. Anyone spawning that agent reads the same charter and gets the same model preference.
 
-The coordinator already reads the charter before spawning (inline charter pattern). The change is: after reading the charter, extract the `## Model` field and pass it to the `task` tool's `model` parameter.
+---
 
-Updated spawn flow:
+## Model Catalog
+
+16 models across 3 providers. Full characterization in [Proposal 024a](024a-model-catalog.md).
+
+| Model ID | Provider | Tier | Best Fit |
+|----------|----------|------|----------|
+| `claude-opus-4.6` | Anthropic | Premium | Deepest reasoning. Architecture proposals, reviewer gates, complex cross-cutting decisions. |
+| `claude-opus-4.6-fast` | Anthropic | Premium | Time-sensitive premium work. Reviews with deadlines, quick architecture gut-checks. |
+| `claude-opus-4.5` | Anthropic | Premium | Vision-capable. Designer/Visual roles, creative + analytical reasoning. |
+| `claude-sonnet-4.5` | Anthropic | Standard | The workhorse. Core Dev, Backend, Frontend, DevRel, Platform. Best balance of quality/speed/cost. |
+| `claude-sonnet-4` | Anthropic | Standard | Previous-gen fallback. Reliable when Sonnet 4.5 specific behavior is needed. |
+| `claude-haiku-4.5` | Anthropic | Fast | Fastest, cheapest. Scribe, Tester, simple code tasks, mechanical ops. |
+| `gpt-5.2-codex` | OpenAI | Standard | Heavy code generation. Large refactors, multi-file implementations. |
+| `gpt-5.2` | OpenAI | Standard | General OpenAI alternative. Provider diversity for non-code tasks. |
+| `gpt-5.1-codex-max` | OpenAI | Standard | Hard code problems. Complex debugging, large-scale codebase analysis. |
+| `gpt-5.1-codex` | OpenAI | Standard | Proven code-focused. Cross-provider diversity for code-heavy work. |
+| `gpt-5.1` | OpenAI | Standard | Solid general-purpose fallback in the OpenAI family. |
+| `gpt-5` | OpenAI | Standard | Legacy compatibility. Predictable, well-understood behavior. |
+| `gpt-5.1-codex-mini` | OpenAI | Fast | Budget code tasks. Simple scaffolding, boilerplate. Code-aware but cheap. |
+| `gpt-5-mini` | OpenAI | Fast | Fastest OpenAI. Mechanical tasks where OpenAI provider is preferred. |
+| `gpt-4.1` | OpenAI | Fast | Ultra-budget. Structured output, well-understood behavior at lowest cost. |
+| `gemini-3-pro-preview` | Google | Standard | Cross-provider reviews, analytical diversity. Different "perspective" on problems. |
+
+**Default models by tier:**
+- **Premium:** `claude-opus-4.6` — deepest reasoning available
+- **Standard:** `claude-sonnet-4.5` — best balance of quality, speed, cost
+- **Fast/Cheap:** `claude-haiku-4.5` — fastest, cheapest, capable enough for structured tasks
+
+---
+
+## Fallback Resilience
+
+**This is the most important section.** Brady's critical directive: the system must NOT break when a model is unavailable. Models may be blocked by Copilot plan restrictions, org policy, regional availability, deprecation, rate limiting, or any other reason.
+
+### Detection
+
+The coordinator detects model unavailability when:
+1. Spawn returns an error message mentioning the model, availability, or access
+2. Agent completes instantly with no meaningful work and an error in its output
+3. Platform rejects the model parameter before the agent starts
+
+On any of these signals: **do not narrate the failure.** Silently retry with the next model in the fallback chain.
+
+### Fallback Chains by Tier
+
+Each tier has an ordered fallback chain. The coordinator walks the chain top-to-bottom. Cross-provider by design — if an Anthropic model fails, the next attempt is often OpenAI, handling provider-wide outages, not just single-model issues.
 
 ```
-1. Read charter.md → extract ## Model → Preferred value
-2. If no charter model → check registry.json → model field
-3. If no registry model → run auto-selection algorithm (role + task signals)
-4. If user override active → use that instead
-5. Spawn with: task(agent_type: "general-purpose", model: "{selected_model}", ...)
+Premium Chain:
+  claude-opus-4.6
+  → claude-opus-4.6-fast
+  → claude-opus-4.5
+  → claude-sonnet-4.5
+  → (omit model param)
+
+Standard Chain:
+  claude-sonnet-4.5
+  → gpt-5.2-codex
+  → claude-sonnet-4
+  → gpt-5.2
+  → (omit model param)
+
+Fast/Cheap Chain:
+  claude-haiku-4.5
+  → gpt-5.1-codex-mini
+  → gpt-4.1
+  → gpt-5-mini
+  → (omit model param)
 ```
 
-**Spawn template addition** (new line in the prompt section):
+### Fallback Rules
 
-```
-- **`model`**: `"{selected_model}"` — selected from charter preference, registry, or auto-selection. Include rationale in coordinator's internal reasoning.
-```
+1. **Maximum 3 retries.** If the first 3 models in a chain fail, skip directly to `(omit model param)`. Don't burn time walking a 5-model chain.
+2. **Silent by default.** The user sees the final successful spawn, not the failures. The coordinator does NOT say "Tried X, failed. Trying Y..."
+3. **Log failures internally.** When a fallback occurs, note it in the orchestration log: `Model fallback: claude-opus-4.6 → claude-sonnet-4.5 (original unavailable)`. Internal only — user doesn't see it unless they ask.
+4. **Respect user provider preferences.** If the user said "use Claude," fall back within Anthropic only: `opus-4.6 → opus-4.6-fast → opus-4.5 → sonnet-4.5 → sonnet-4 → (omit model param)`. Don't cross to GPT unless the user didn't specify a provider.
+5. **Never fall back UP in tier.** A fast/cheap fallback should not land on a premium model. Chains are tier-scoped.
 
-**Coordinator instruction addition** (new section in squad.agent.md):
+### Nuclear Fallback
 
-```markdown
-### Model Selection
+`(omit model param)` — calling the `task` tool WITHOUT specifying `model` at all — lets the platform choose its own default. This is the bottom of every chain because:
+- It always works (the platform always has a default)
+- It requires no user configuration
+- It's the behavior Squad had before model selection existed
+- If even this fails, the spawn has a platform-level problem, not a model problem
 
-Before spawning an agent, determine the model:
+---
 
-1. Check the user's message for model directives ("use opus," "save costs," "fast mode")
-2. Read the agent's charter `## Model` section for a `Preferred` value
-3. Check `casting/registry.json` for a `model` field on the agent entry
-4. If none specified, apply role-based defaults:
-   - Lead/Architect → claude-sonnet-4 (bump to opus for proposals/architecture)
-   - Core Dev → claude-sonnet-4
-   - Tester/QA → claude-haiku-4.5
-   - Designer/Visual → claude-opus-4.5 (vision-capable required)
-   - Scribe/Logger → claude-haiku-4.5
-   - DevRel/Writer → claude-sonnet-4
-5. Apply task complexity override (see Model Auto-Selection table)
-6. Pass the selected model to the `task` tool's `model` parameter
+## Charter Template Section
 
-Never auto-select a model the platform doesn't support. Valid models:
-claude-opus-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-sonnet-4,
-claude-haiku-4.5, gpt-5.2, gpt-5.1-codex, gpt-5.1, gpt-5,
-gpt-5.1-codex-mini, gpt-5-mini, gemini-3-pro-preview
-```
-
-### 5. Cross-Vendor Model Support
-
-The `task` tool supports models beyond Claude. The auto-selection algorithm should be vendor-aware:
-
-| Vendor | Models | Best For |
-|---|---|---|
-| **Anthropic** | opus-4.6/4.5, sonnet-4.5/4, haiku-4.5 | Default tier. Full range from premium to budget. |
-| **OpenAI** | gpt-5.2, gpt-5.1-codex, gpt-5, gpt-5-mini | Cross-vendor diversity. Codex variants for heavy code gen. |
-| **Google** | gemini-3-pro-preview | Alternative reasoning. Good for second opinions. |
-
-**Charter model field accepts any valid model string**, not just Claude models. A team could configure:
+Add to `templates/charter.md`:
 
 ```markdown
 ## Model
 
-- **Preferred:** gpt-5.1-codex
-- **Rationale:** OpenAI Codex excels at large-scale code generation tasks
+- **Preferred:** auto
+- **Rationale:** Coordinator selects the best model based on role and task complexity
+- **Fallback:** Standard chain — the coordinator handles fallback automatically
 ```
 
-The coordinator validates the model string against the known valid list before spawning. Unknown models fall through to auto-selection with a warning.
+---
 
-### 6. User-Facing Documentation
+## Coordinator Prompt Section
 
-**What users see in the roster:**
-
-When the user asks "show my team" or inspects the casting, model assignments should be visible:
-
-```
-🎬 Your Squad (The Usual Suspects):
-
-  Keaton    — Lead              [claude-sonnet-4]
-  Verbal    — Prompt Engineer   [claude-sonnet-4]
-  McManus   — DevRel            [claude-sonnet-4]
-  Fenster   — Core Dev          [claude-sonnet-4]
-  Hockney   — Tester            [claude-haiku-4.5]
-  Redfoot   — Graphic Designer  [claude-opus-4.5]
-  Scribe    — Scribe            [claude-haiku-4.5]
-```
-
-**How users configure:**
-
-1. **At casting time** — When a new agent is cast, the coordinator assigns a default model based on role. Written to `registry.json`.
-2. **In the charter** — Users (or agents) can edit the `## Model` section of any charter to change the preference. Charter overrides registry.
-3. **At spawn time** — Users can say "use opus for this task" or "save costs, use haiku" in their message. Overrides everything for that spawn.
-4. **Globally** — Users can say "always use sonnet for everything" and the coordinator respects it for the session. Could be persisted to a team-level config in future.
-
-**What users see at spawn time:**
-
-The coordinator should note the model choice in its routing output:
-
-```
-Spawning Redfoot (claude-opus-4.5 — vision-capable, per charter preference) ...
-Spawning Hockney (claude-haiku-4.5 — fast mode for test generation) ...
-Spawning Keaton (claude-opus-4.6 — bumped from sonnet for architecture proposal) ...
-```
-
-This makes model selection transparent. Users can see WHY a model was chosen and override if they disagree.
-
-### 7. Delegation Support
-
-Model selection must work for **every spawn path**, not just coordinator → agent. There are three delegation patterns today, and model selection must be consistent across all of them:
-
-**Pattern A: Coordinator → Agent (primary)**
-The coordinator reads the charter, resolves the model, and passes it to the `task` tool. This is the flow described in Sections 1-6 above. Works today.
-
-**Pattern B: Agent → Sub-agent (intra-team delegation)**
-Some agents spawn other agents directly. For example:
-- Lead delegates a sub-task to Backend during a complex architecture implementation
-- Reviewer rejects work and spawns a different agent to revise
-- Charter template says: *"On rejection, I may require a different agent to revise (not the original author) or request a new specialist be spawned."*
-
-When an agent spawns another agent, it should read the target agent's charter `## Model` field and pass it to the `task` tool's `model` parameter — the same resolution order the coordinator uses. If the spawning agent doesn't have access to the registry or auto-selection table, it falls through to the charter preference or omits the `model` parameter (platform default).
-
-**Charter template addition** for agents that may delegate:
+Ready-to-paste `### Model Selection` text for `squad.agent.md`:
 
 ```markdown
-When spawning another agent, read their charter.md and extract the `## Model` 
-section. Pass the `Preferred` value as the `model` parameter to the `task` tool.
-If no `## Model` section exists, omit the `model` parameter (platform default applies).
+### Model Selection
+
+Before spawning an agent, determine which model to use. Check these layers in order — first match wins:
+
+**Layer 1 — User Override:** Did the user specify a model? ("use opus", "save costs", "use gpt-5.2-codex for this"). If yes, use that model. Session-wide directives ("always use haiku") persist until contradicted.
+
+**Layer 2 — Charter Preference:** Does the agent's charter have a `## Model` section with `Preferred` set to a specific model (not `auto`)? If yes, use that model.
+
+**Layer 3 — Task-Aware Auto-Selection:** Match the agent's role to a default model, then adjust for task complexity:
+
+| Role | Default Model | Bump to Premium When |
+|------|--------------|---------------------|
+| Lead / Architect | `claude-sonnet-4.5` | Architecture proposals, cross-cutting decisions, multi-agent coordination plans |
+| Core Dev / Backend / Frontend | `claude-sonnet-4.5` | — (use Codex specialist for heavy code gen — see below) |
+| Tester / QA | `claude-haiku-4.5` | Complex test strategy requiring analysis (bump to sonnet) |
+| Designer / Visual | `claude-opus-4.5` | Design system architecture needing deep reasoning (bump to opus-4.6) |
+| DevRel / Writer | `claude-sonnet-4.5` | — |
+| Scribe / Logger | `claude-haiku-4.5` | — (never bump Scribe) |
+| Platform / Infra | `claude-sonnet-4.5` | Security audits, threat modeling |
+| Prompt Engineer | `claude-sonnet-4.5` | Complex multi-agent pattern design, prompt architecture |
+| Reviewer | `claude-sonnet-4.5` | Approval/rejection gates with downstream consequences |
+| Git / Release | `claude-haiku-4.5` | — (never bump mechanical ops) |
+
+**Task Complexity Adjustments** (apply at most ONE):
+- **Bump UP to premium:** architecture proposals, reviewer gates, security audits, multi-agent coordination, design system architecture
+- **Bump DOWN to fast/cheap:** typo fixes, renames, boilerplate, scaffolding, changelogs, version bumps
+- **Switch to code specialist (`gpt-5.2-codex`):** large multi-file refactors, complex implementation from spec, heavy code generation
+- **Switch to analytical diversity (`gemini-3-pro-preview`):** code reviews where a second perspective helps, security reviews, architecture reviews after a rejection
+
+**Layer 4 — Default:** If nothing else matched, use `claude-sonnet-4.5`. This always works with zero configuration.
+
+**Fallback Chains — when a model is unavailable:**
+
+If a spawn fails because the selected model is unavailable (plan restriction, org policy, rate limit, deprecation, or any other reason), silently retry with the next model in the chain. Do NOT tell the user about fallback attempts. Maximum 3 retries before jumping to the nuclear fallback.
+
+```
+Premium:  claude-opus-4.6 → claude-opus-4.6-fast → claude-opus-4.5 → claude-sonnet-4.5 → (omit model param)
+Standard: claude-sonnet-4.5 → gpt-5.2-codex → claude-sonnet-4 → gpt-5.2 → (omit model param)
+Fast:     claude-haiku-4.5 → gpt-5.1-codex-mini → gpt-4.1 → gpt-5-mini → (omit model param)
 ```
 
-**Pattern C: Ceremony-triggered spawns**
-Ceremonies (e.g., review gates) can trigger agent spawns. The coordinator controls these spawns, so Pattern A applies — no special handling needed.
+`(omit model param)` = call the `task` tool WITHOUT the `model` parameter. The platform uses its built-in default. This is the nuclear fallback — it always works.
 
-**Key principle:** The charter `## Model` field travels with the agent. Anyone spawning that agent — coordinator, fellow agent, or ceremony — reads the same charter and gets the same model preference. The agent's model needs are self-declared, not caller-determined.
+**Fallback rules:**
+- If the user specified a provider ("use Claude"), fall back within that provider only before hitting nuclear
+- Never fall back UP in tier — a fast/cheap task should not land on a premium model
+- Log fallbacks to the orchestration log for debugging, but never surface to the user unless asked
 
-**Delegation-specific auto-selection:**
+**Spawn output format — show the model choice:**
 
-When an agent (not the coordinator) spawns another agent, it likely doesn't have the full auto-selection algorithm. Simplified rule for agent-to-agent delegation:
+When spawning, include the model in your acknowledgment:
 
-1. Read the target agent's charter `## Model` → if present, use it
-2. Otherwise, omit the `model` parameter → platform default (Sonnet)
+```
+🔧 Fenster (claude-sonnet-4.5) — refactoring auth module
+🎨 Redfoot (claude-opus-4.5 · vision) — designing color system
+📋 Scribe (claude-haiku-4.5 · fast) — logging session
+⚡ Keaton (claude-opus-4.6 · bumped for architecture) — reviewing proposal
+🔬 Hockney (gpt-5.2-codex · code specialist) — large refactor across 12 files
+```
 
-This keeps delegation simple while still respecting charter preferences. The full auto-selection algorithm (role mapping, task complexity bumps) is coordinator-only — agents don't need that complexity.
+Include tier annotation only when the model was bumped or a specialist was chosen. Default-tier spawns just show the model name.
+
+**Adding the model parameter to spawns:**
+
+Pass the resolved model as the `model` parameter on every `task` tool call:
+
+```
+agent_type: "general-purpose"
+model: "claude-sonnet-4.5"
+mode: "background"
+description: "Fenster: refactoring auth module"
+prompt: |
+  ...
+```
+
+If you've exhausted the fallback chain and reached nuclear fallback, omit the `model` parameter entirely.
+
+**Valid models (current platform catalog):**
+
+Premium: `claude-opus-4.6`, `claude-opus-4.6-fast`, `claude-opus-4.5`
+Standard: `claude-sonnet-4.5`, `claude-sonnet-4`, `gpt-5.2-codex`, `gpt-5.2`, `gpt-5.1-codex-max`, `gpt-5.1-codex`, `gpt-5.1`, `gpt-5`, `gemini-3-pro-preview`
+Fast/Cheap: `claude-haiku-4.5`, `gpt-5.1-codex-mini`, `gpt-5-mini`, `gpt-4.1`
+```
+
+---
+
+## Implementation Plan
+
+From [Proposal 027](027-v030-sprint-plan.md) — v0.3.0 Wave 1, Items 4.1–4.4.
+
+| ID | Item | Owner | Effort | Depends On |
+|----|------|-------|--------|------------|
+| **4.1** | Model auto-selection algorithm in coordinator — add `### Model Selection` section to `squad.agent.md`, 4-layer priority, role-to-model mapping, task complexity overrides, `model` parameter on all `task` calls | Verbal + Kujan | 3–4h | — |
+| **4.2** | Charter `## Model` section + template update — `Preferred`, `Rationale`, `Fallback` fields, delegation support, default `auto` | Verbal | 1–2h | 4.1 |
+| **4.3** | Registry `model` field + migration — schema update, `templates/casting-registry.json` update, additive upgrade migration populating defaults from role-to-model mapping | Fenster | 2–3h | 4.1 |
+| **4.4** | Model selection tests — registry model field in migration, charter template validation, registry schema, upgrade path tests | Hockney | 2–3h | 4.1, 4.2, 4.3 |
+
+**Phase 1 (Items 4.1):** Coordinator instructions + auto-selection. Zero code changes — pure prompt engineering. The coordinator already spawns agents; this adds a `model` parameter to existing spawns.
+
+**Phase 2 (Items 4.2–4.3):** Charter + registry integration. Template additions + additive migration. No destructive changes.
+
+**Wave 2 follow-up (Item 5.3):** Model visibility in spawn output — Verbal, 1h, depends on 4.1.
+
+---
+
+## Success Criteria
+
+- [ ] Redfoot spawns on a vision-capable model (Opus) without any user configuration
+- [ ] Scribe/Hockney spawn on Haiku by default, cutting cost and latency for mechanical tasks
+- [ ] User can say "use opus for everything" and it works
+- [ ] User can say "save costs" and the coordinator drops all agents to the cheapest viable model
+- [ ] Model choice is visible and explainable at spawn time
+- [ ] Zero existing behavior breaks — agents without model config get Sonnet 4.5 (current default)
+- [ ] Agent-to-agent delegation respects the target agent's charter model preference
+- [ ] Model unavailability is handled silently — fallback chains terminate, nuclear fallback always works
+- [ ] No user-facing error when any single model or provider is unavailable
+
+---
 
 ## Trade-offs
 
@@ -274,60 +378,27 @@ This keeps delegation simple while still respecting charter preferences. The ful
 | Charter model > Registry model | Agents can "demand" expensive models. Mitigated by coordinator judgment + user override. |
 | Haiku default for Tester/Scribe | Risk of quality issues on complex test scenarios. Mitigated by task complexity bumps. |
 | Deterministic algorithm over LLM judgment | Less flexible, but predictable and debuggable. Coordinator can still apply judgment on top. |
-| Model strings in charter (not enums) | Future models work without charter format changes. Risk of typos. Mitigated by validation. |
-| Simplified delegation model selection | Agent-to-agent spawns only check charter, not full auto-selection. Acceptable — most delegations are to known agents with charter model fields. |
+| Cross-provider fallback chains | Prompt portability risk — charters are Anthropic-optimized. Mitigated by conservative cross-provider usage. |
+| Silent fallback (no user notification) | Users may not know they're on a fallback model. Mitigated by orchestration log capture. |
+| 3-retry max before nuclear | May skip viable models in the chain. Acceptable — nuclear fallback always works, and 3 retries covers the common cases. |
 
-## Alternatives Considered
+---
 
-1. **Model selection purely in registry.json** — Rejected. The charter is the agent's self-description; it should declare its own needs. Registry-only means the agent can't explain WHY it needs a particular model.
+## What's Deferred
 
-2. **LLM-based model selection** — Rejected for v1. Having the coordinator "think about" which model to use adds latency and unpredictability. Deterministic algorithm first; LLM judgment as a v2 refinement.
+| Feature | Why Not Now | Revisit When |
+|---------|-------------|--------------|
+| **Model cost reporting** | Polish, not leverage. Auto-selection delivers 90% of value. | User feedback requests it |
+| **Override persistence** | Session-level overrides work. Persistence can wait. | v0.4.0 |
+| **Prompt portability testing** | Cross-provider execution works but charters are untested on non-Anthropic models. | After cross-provider spawns are observed in production |
+| **Budget mode** | Team-level cost cap. Needs model cost data first. | After cost reporting ships |
+| **Model performance tracking** | Log model × task outcomes over time. Needs production data. | v0.4.0+ |
+| **Skills model requirements** | SKILL.md declaring model preferences. Needs proven skills system. | v0.4.0+ |
 
-3. **Per-task model (no agent default)** — Rejected. Agents have inherent capability needs (Redfoot ALWAYS needs vision). Per-task-only would require the coordinator to re-derive this every spawn.
+---
 
-4. **Separate `model-config.json`** — Rejected. Splits configuration across too many files. Registry + charter is sufficient.
+## Open Questions (Resolved)
 
-## Dependencies
-
-- **Hard dependency: Model auto-selection must ship with or before any charter model field.** Without auto-selection, users must manually configure every agent's model. The auto-selection algorithm makes the feature zero-config by default.
-- Coordinator instruction changes (`squad.agent.md`)
-- Charter template update (`templates/charter.md`)
-- Registry schema update (`casting/registry.json`)
-- Forwardability: upgrade migration to add `model` field to existing registries (uses role-based defaults)
-
-## Implementation Phases
-
-**Phase 1 — Coordinator instructions + auto-selection (zero code changes)**
-- Add Model Selection section to `squad.agent.md`
-- Coordinator uses role-based defaults when spawning
-- Pass `model` parameter to `task` tool calls
-- No charter or registry changes yet — pure instruction change
-
-**Phase 2 — Charter + registry integration**
-- Add `## Model` section to `templates/charter.md`
-- Add `model` field to `casting/registry.json` schema
-- Coordinator reads charter model before applying auto-selection
-- Migration: existing agents get model field based on role
-
-**Phase 3 — User-facing polish**
-- Model visibility in roster display
-- Model choice logging in coordinator output
-- User override persistence (session-level "always use X")
-- Cost reporting (optional: show token estimates per model tier)
-
-## Success Criteria
-
-- Redfoot spawns on a vision-capable model (Opus) without any user configuration
-- Scribe/Hockney spawn on Haiku by default, cutting cost for mechanical tasks
-- User can say "use opus for everything" and it works
-- User can say "save costs" and the coordinator drops all agents to the cheapest viable model
-- Model choice is visible and explainable at spawn time
-- Zero existing behavior breaks — agents without model config get Sonnet (current default)
-- Agent-to-agent delegation respects the target agent's charter model preference
-- Model selection works identically whether spawn originates from coordinator, fellow agent, or ceremony
-
-## Open Questions
-
-1. Should the coordinator log model selection reasoning to the orchestration log? (Probably yes — useful for debugging cost.)
-2. Should model selection be part of the portable squad export? (Yes — it's part of the agent's identity.)
-3. Should there be a team-level "budget mode" that caps all agents at Sonnet? (Deferred to v2.)
+1. ~~Should the coordinator log model selection reasoning?~~ **Yes** — to orchestration log, not user-facing.
+2. ~~Should model selection be part of portable squad export?~~ **Yes** — it's part of the agent's identity.
+3. ~~Should there be a team-level "budget mode"?~~ **Deferred** — needs cost reporting first.

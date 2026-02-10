@@ -130,3 +130,15 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 📌 Team update (2026-02-10): Label taxonomy (39 labels, 7 namespaces) drives entire GitHub-native workflow. — decided by bradygaster, Verbal
 
 📌 Team update (2026-02-10): CCA governance must be self-contained in squad.agent.md (cannot read .ai-team/). — decided by Kujan
+
+## Learnings
+
+- **2026-02-10: Proposal 033 — Project Boards (Issue #6, community contribution)**
+  - **@londospark opened Issue #6 requesting GitHub Project Board support.** First community feature request with a concrete technical proposal. Well-structured: 3-layer architecture (GraphQL → Board Init → Task Management), identifies token scope requirements, specifies V2 API need.
+  - **Deferred to v0.4.0.** Brady's v0.3.0 directive is clear: ONE feature (032 — proposals as GitHub Issues). Boards are a dashboard layer that depends on the label/issue infrastructure shipping in v0.3.0. Boards without labels are empty columns.
+  - **GraphQL via `gh api graphql`, not npm packages.** The zero-dependency constraint is strategic, not accidental. `gh api graphql` handles auth and the protocol. Adding `graphql-request` would be Squad's first `node_modules` — a bigger decision than this feature warrants.
+  - **Labels are authoritative, boards are projections.** One-way sync: labels → board columns. No reverse sync. The board is a view, not a source of truth. This matches 032c's "labels are the state machine" principle.
+  - **5-column board, not 3.** The issue proposed Todo/In Progress/Done. Our label taxonomy has 8 statuses, mapped to 5 active columns: Backlog, Ready, In Progress, Blocked, Done.
+  - **Provider abstraction matters here.** ADO has native boards. GitLab has label-driven boards. GitHub Projects V2 is GraphQL-only. The capability negotiation pattern (032a §2.8) handles this — `projectBoards: boolean` in getCapabilities().
+  - **Key learning: community contributions validate the direction.** An external contributor independently proposed the same GitHub-native surface strategy we've been designing. This confirms the v0.3.0 bet — making GitHub the collaboration surface is what people want.
+  - **Key file paths:** `team-docs/proposals/033-project-boards.md`, `.ai-team/decisions/inbox/keaton-project-boards.md`
