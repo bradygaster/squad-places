@@ -51,3 +51,7 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 📌 Team update (2026-02-09): Preview branch added to release pipeline — two-phase workflow: preview then ship. Brady eyeballs preview before anything hits main. — decided by Kobayashi
 
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — per-agent model selection, team backlog, Demo 1. — decided by Keaton
+
+
+📌 Team update (2026-02-10): Marketing site architecture consolidated — Jekyll on GitHub Pages, docs/ is source root, blog from team-docs/blog/, no content reproduction. McManus (content) + Fenster (infrastructure) for Phase 1. — decided by bradygaster, Keaton, McManus
+📌 Team update (2026-02-10): GitHub Issues/PR integration must not break CLI conversations — CLI is primary surface, GitHub integration is additive only. — decided by bradygaster

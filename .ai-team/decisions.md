@@ -1374,27 +1374,6 @@ The npm documentation states that for git dependencies, the package is "packaged
 **Kobayashi's note:** The product was already correctly isolated by the existing `files` field. The `.npmignore` I added is insurance and documentation — it makes the separation visible to anyone reading the repo. Zero behavioral change. Zero risk. Ship it.
 
 
-### 2026-02-09: Public hygiene and tone governance
-
-**By:** bradygaster (human)
-
-**Directives:**
-
-1. **All content must be SFW, polite, respectful, growth-attitude.** This is now a permanent rule.
-
-2. **Tone for the Squad Squad:** Dry, funny, but not jerks. Modeled after The Usual Suspects — not flowery AI talk, not self-congratulatory, not mean. Honest and thorough.
-
-3. **Don't complement ourselves a lot.** No "amazing work team!" energy. Just report what happened.
-
-4. **Kindness first** attitude in all public-facing content — logs, blogs, proposals, decisions.
-
-5. **Thorough logging** — be honest about what happened (including bugs, failures, missteps). Growth vibe.
-
-6. **Stale proposals** — audit and update status fields. Superseded proposals should say so.
-
-7. **Blog content** — follow the blog format from docs/blog/template.md. Each milestone is blogworthy.
-
-
 ### Decision: Stale Proposals Audit — Status Field Reconciliation
 
 **By:** Keaton (Lead)
@@ -2620,3 +2599,48 @@ The model selection algorithm (sprint item 4.1) must consider all 16 available m
 **By:** bradygaster, McManus
 **What:** Two standing blog policies: (1) Every external contribution gets a blog post highlighting the contributor. Posts live in `team-docs/blog/`, not `docs/blog/`. File naming follows sequential numbering. Frontmatter uses `wave: null` for non-wave posts with `community` and `contribution` tags. Contributor is always the hero. Retroactive posts are acceptable. (2) Celebration posts (milestones, events) use the same `wave: null` frontmatter. Parallel narrative structure: external event first, project milestone second, connection third. Stats in tables, not prose. Tone ceiling: energy, dry humor, facts-carry-weight. No self-congratulation. Banned words apply.
 **Why:** Consistent quality and tone across all team blog content. Community contributions are celebrated with visibility. McManus owns blog content.
+### 2026-02-10: GitHub integration must not break CLI conversations
+**By:** bradygaster (via Copilot)
+**What:** Whatever we do with GitHub Issues/PR conversation support, it must not interfere with or degrade CLI conversations. CLI experience is primary. GitHub integration is additive — it cannot break what already works.
+**Why:** User request — CLI is the core product surface, GitHub integration is secondary
+
+
+### 2026-02-10: Marketing site — Jekyll on GitHub Pages (consolidated)
+**By:** bradygaster, Keaton, McManus
+**What:** Marketing site uses Jekyll on GitHub Pages with the following architecture:
+- `docs/` is the Jekyll source root — no separate site directory, no content copying
+- Markdown files in docs/ are the single source of truth; Jekyll renders them to HTML in place
+- Existing markdown files get YAML front matter added; Jekyll renders them with custom layouts
+- GitHub Pages configured to serve from `docs/` on `main` branch using classic deployment
+- No separate HTML build step — GitHub Pages handles it natively
+- New infrastructure files: `_config.yml`, `_layouts/`, `_includes/`, `index.md` (landing page), `assets/css/`
+- Blog renders from `team-docs/blog/` via Jekyll collection; only posts with `status: published` appear
+- Landing page is separate from README.md (same facts, different structure and audience)
+- Everything in `team-docs/` and `.ai-team/` excluded from site except published blog posts
+- All landing page copy follows the straight-facts directive
+- Phase 1 is 5-8 hours, assigned to McManus (content) + Fenster (infrastructure)
+- Supersedes all prior marketing site directives
+**Why:** Brady's priorities are (1) no content reproduction and (2) HTML output. Jekyll-in-docs satisfies both — it renders markdown where it lives instead of copying to a build directory. Every alternative (Docusaurus, VitePress, Hugo) requires a build pipeline producing a second copy. GitHub Pages runs Jekyll natively with zero CI configuration. The `docs/` directory already exists with 16+ well-structured markdown files. Adding Jekyll infrastructure is purely additive — no product code changes, no new dependencies. McManus's content plan ensures docs render directly, blog uses status frontmatter, and the three-tier separation (docs = public site, team-docs = internal, .ai-team = runtime) has a concrete consumer.
+### 2026-02-10: Public-facing content tone — facts only (consolidated)
+**By:** bradygaster, McManus
+**What:** Two-phase tone directive for all public-facing material:
+
+**Phase 1 (2026-02-09):** General tone governance:
+- All content must be SFW, polite, respectful, growth-attitude (permanent rule)
+- Dry, funny, but not jerks — modeled after The Usual Suspects
+- No self-congratulation; just report what happened
+- Kindness first in all public-facing content
+- Thorough logging — honest about what happened including bugs and failures
+
+**Phase 2 (2026-02-10):** Straight facts only (stricter refinement):
+- No editorial commentary, sales language, narrative framing, rhetorical hooks
+- No quoting team members' reactions to features
+- Every sentence states what a feature is, how it works, what it depends on, or what it replaces
+- Technical specifics (numbers, model counts, API details) required
+- Attribution (who built what) required
+- Deferred items must state what they depend on
+- Applies to all blog posts in `team-docs/blog/` and all public-facing written material
+- Banned words: amazing, incredible, brilliant, game-changing. No meme closers.
+- First application: Blog post `005-v030-give-it-a-brain.md` rewritten under this directive
+
+**Why:** Brady's tone governance (02-09) established the baseline: honest, respectful, no self-congratulation. The facts-only directive (02-10) tightened this further: no editorial voice at all, just factual statements. McManus recorded and applied the detailed rules. These stack — Phase 2 is a strict subset of Phase 1.

@@ -89,6 +89,21 @@ _Summarized from initial architecture review and proposal-first design (2026-02-
   - **Updated sprint scope:** v0.3.0 is now 4 bets (model selection, backlog capture, demo infra, GitHub Issue sync), 16 items across 2 waves, 31-43h estimated. Still well under v0.2.0's 55-71h.
   - **Learning:** My instinct to protect scope is right most of the time. But when the scope addition is low-risk prompt engineering with zero code changes, the deferral instinct can be too conservative. Read the risk profile, not just the item count.
 
+- **2026-02-10: Marketing Site Architecture (Proposal 029)**
+  - **Architecture decision: Jekyll on GitHub Pages with `docs/` as the source root.** The `docs/` directory already has 16+ well-structured markdown files (guide, features, scenarios, tours, sample prompts). Jekyll renders them in-place — add YAML front matter, add `_config.yml`, add `_layouts/`. No separate site directory, no content copying, no build pipeline.
+  - **Key constraint: no content reproduction.** Brady's #1 priority. Every alternative (Docusaurus, VitePress, Hugo, separate `site/` dir) requires a build step that copies content to an output directory. Jekyll-in-docs is the only architecture where the source IS the output directory.
+  - **Landing page decision: separate `index.md`.** `docs/README.md` serves GitHub's directory view (file listing context). `docs/index.md` serves the website (marketing context — "what is this, why should I care"). Different audiences, different content, not reproduction.
+  - **GitHub Pages config: classic mode, not Actions.** Serve from `docs/` on `main`. Zero CI configuration. Jekyll builds natively. Actions workflow only needed if we later require unsupported plugins.
+  - **npm shipping trade-off accepted.** Jekyll files (`_config.yml`, `_layouts/`, etc.) will ship in the npm package since `docs/**/*` is in `package.json` `files`. These are small, inert files. Not worth adding `.npmignore` rules for.
+  - **Content boundary: `docs/` = public site, `team-docs/` = internal, `.ai-team/` = runtime.** Reinforces the three-tier separation established by Kobayashi.
+  - **Phase 1 scope: 5-8 hours.** Front matter on 16 files, `_config.yml`, layouts, includes, landing page, CSS. Assigned to McManus (content/design) + Fenster (Jekyll infrastructure). No product code changes.
+  - **Key file paths:** Proposal at `team-docs/proposals/029-marketing-site.md`. Decision at `.ai-team/decisions/inbox/keaton-marketing-site-architecture.md`.
+
 📌 Team update (2026-02-10): Model selection consolidated (024+024a+024b) — single approved spec for v0.3.0 Wave 1. — decided by Keaton
 📌 Team update (2026-02-10): GitHub-native planning (028) Phase 1 promoted to v0.3.0 by Brady. — decided by Brady
 📌 Team update (2026-02-10): Model fallback resilience is mandatory — nuclear fallback guarantees no broken spawns. — decided by Brady
+📌 Team update (2026-02-10): Marketing site architecture decided — Jekyll on GitHub Pages, docs/ is the source root, no content reproduction. Phase 1: 5-8h. — decided by Keaton
+
+
+📌 Team update (2026-02-10): GitHub Issues/PR integration must not break CLI conversations — CLI is primary surface, GitHub integration is additive only. — decided by bradygaster
+📌 Team update (2026-02-10): Tone directive consolidated — all public-facing material must be straight facts only. No editorial voice, sales language, or narrative framing. Stacks on existing banned-words and tone governance rules. — decided by bradygaster, McManus

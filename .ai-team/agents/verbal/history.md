@@ -87,3 +87,7 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 📌 Team update (2026-02-10): Model catalog expanded to 16 models across 3 providers — selection algorithm must consider full catalog, not just 3 Anthropic models. — decided by Kujan
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — model selection (024 Phases 1-2), team backlog (023 Phases 1-2), Demo 1 infrastructure. Two waves, 28-39h. — decided by Keaton
+
+
+📌 Team update (2026-02-10): Marketing site architecture consolidated — Jekyll on GitHub Pages, docs/ is source root, blog from team-docs/blog/, no content reproduction. McManus (content) + Fenster (infrastructure) for Phase 1. — decided by bradygaster, Keaton, McManus
+📌 Team update (2026-02-10): Tone directive consolidated — all public-facing material must be straight facts only. No editorial voice, sales language, or narrative framing. Stacks on existing banned-words and tone governance rules. — decided by bradygaster, McManus
