@@ -79,6 +79,15 @@ _Summarized from initial platform assessment and deep onboarding (2026-02-07). F
   - Full issue lifecycle verified: create → label → comment → close → read back via MCP. All working.
   - Output: `team-docs/proposals/028a-github-api-capabilities.md` and `.ai-team/decisions/inbox/kujan-github-api-assessment.md`.
 
+- **2026-02-10: Async Comms Feasibility Assessment (Proposal 030)** — Updated feasibility assessment for async squad communication, superseding Proposal 017. Brady un-deferred this feature to TOP PRIORITY for 0.3.0. Key findings:
+  - **CCA-as-squad-member is the breakthrough.** Copilot Coding Agent reads `squad.agent.md` (same file Squad uses as coordinator prompt). Adding CCA guidance to that file gives Brady async work assignment via GitHub Issues + Mobile for ~2-4 hours of prompt engineering. Zero new infrastructure.
+  - **CCA + GitHub Issues is async communication through GitHub's own surfaces.** Issue → assign @copilot → CCA works under Squad governance → PR → Brady reviews on phone. Not conversational, but functional async comms with zero build cost.
+  - **Copilot SDK confirmed mature enough for Telegram bridge.** Multi-turn, custom tools, model selection, streaming all verified. Nested sessions (task equivalent) remain the UNVERIFIED gate — need a 1-day spike.
+  - **Connector ranking:** CCA+Issues (ship now, free) > Telegram (ship 0.3.0 if SDK spike passes) > Discord (0.4.0) > GitHub Discussions (fallback) > Teams (0.4.0+, best per-repo but highest build cost) > Slack (0.5.0+).
+  - **Per-repo solution varies by platform:** GitHub Issues = native per-repo. Telegram = groups per repo. Teams = channels per repo (best). Discord = channels per repo.
+  - **Two-tier MVP recommended:** Tier 1 (CCA guidance, 2-4h, prompt-only) + Tier 2 (Telegram bridge, 8-16h, new code). Ship Tier 1 in 0.3.0 Wave 2 guaranteed; Tier 2 conditional on SDK spike.
+  - Output: `team-docs/proposals/030-async-comms-feasibility.md`.
+
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — your model catalog research (024a) and GitHub API assessment (028a) are foundational inputs. — decided by Keaton
 
 
