@@ -1,4 +1,0 @@
-### 2026-02-10: Async comms strategy — two-tier MVP with CCA-first approach
-**By:** Kujan (Copilot SDK Expert)
-**What:** Proposal 030 recommends a two-tier async communication MVP for 0.3.0: (1) CCA-as-squad-member via `squad.agent.md` CCA guidance section — 2-4h prompt engineering, zero new infrastructure, gives Brady async work assignment from phone via GitHub Issues. (2) Telegram bridge via Copilot SDK — 8-16h new code, gives conversational async chat, conditional on SDK nested session spike passing. CCA is the floor, Telegram is the ceiling. Ship both, CCA first. Connector ranking: CCA+Issues > Telegram > Discord > Discussions > Teams > Slack.
-**Why:** Brady un-deferred async comms to TOP PRIORITY for 0.3.0. CCA angle didn't exist in the original Proposal 017 and changes the entire strategy — it gives async comms through GitHub's native surfaces with near-zero build cost. Supersedes Proposal 017 feasibility assessment.
