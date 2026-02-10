@@ -37,6 +37,10 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
   console.log(`             Overwrites: squad.agent.md, .ai-team-templates/`);
   console.log(`             Never touches: .ai-team/ (your team state)`);
+  console.log(`  ${BOLD}export${RESET}     Export squad to a portable JSON snapshot`);
+  console.log(`             Default: squad-export.json (use --out <path> to override)`);
+  console.log(`  ${BOLD}import${RESET}     Import squad from an export file`);
+  console.log(`             Usage: import <file> [--force]`);
   console.log(`  ${BOLD}help${RESET}       Show this help message`);
   console.log(`\nFlags:`);
   console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
@@ -58,6 +62,269 @@ function copyRecursive(src, target) {
   } catch (err) {
     fatal(`Failed to copy ${path.relative(root, src)}: ${err.message}`);
   }
+}
+
+// --- Export subcommand ---
+if (cmd === 'export') {
+  const teamMd = path.join(dest, '.ai-team', 'team.md');
+  if (!fs.existsSync(teamMd)) {
+    fatal('No squad found — run init first');
+  }
+
+  const manifest = {
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    squad_version: pkg.version,
+    casting: {},
+    agents: {},
+    skills: []
+  };
+
+  // Read casting state
+  const castingDir = path.join(dest, '.ai-team', 'casting');
+  for (const file of ['registry.json', 'policy.json', 'history.json']) {
+    const filePath = path.join(castingDir, file);
+    try {
+      if (fs.existsSync(filePath)) {
+        manifest.casting[file.replace('.json', '')] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      }
+    } catch (err) {
+      console.error(`${RED}✗${RESET} Warning: could not read casting/${file}: ${err.message}`);
+    }
+  }
+
+  // Read agents
+  const agentsDir = path.join(dest, '.ai-team', 'agents');
+  try {
+    if (fs.existsSync(agentsDir)) {
+      for (const entry of fs.readdirSync(agentsDir)) {
+        const agentDir = path.join(agentsDir, entry);
+        if (!fs.statSync(agentDir).isDirectory()) continue;
+        const agent = {};
+        const charterPath = path.join(agentDir, 'charter.md');
+        const historyPath = path.join(agentDir, 'history.md');
+        if (fs.existsSync(charterPath)) agent.charter = fs.readFileSync(charterPath, 'utf8');
+        if (fs.existsSync(historyPath)) agent.history = fs.readFileSync(historyPath, 'utf8');
+        manifest.agents[entry] = agent;
+      }
+    }
+  } catch (err) {
+    console.error(`${RED}✗${RESET} Warning: could not read agents: ${err.message}`);
+  }
+
+  // Read skills
+  const skillsDir = path.join(dest, '.ai-team', 'skills');
+  try {
+    if (fs.existsSync(skillsDir)) {
+      for (const entry of fs.readdirSync(skillsDir)) {
+        const skillFile = path.join(skillsDir, entry, 'SKILL.md');
+        if (fs.existsSync(skillFile)) {
+          manifest.skills.push(fs.readFileSync(skillFile, 'utf8'));
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`${RED}✗${RESET} Warning: could not read skills: ${err.message}`);
+  }
+
+  // Determine output path
+  const outIdx = process.argv.indexOf('--out');
+  const outPath = (outIdx !== -1 && process.argv[outIdx + 1])
+    ? path.resolve(process.argv[outIdx + 1])
+    : path.join(dest, 'squad-export.json');
+
+  try {
+    fs.writeFileSync(outPath, JSON.stringify(manifest, null, 2) + '\n');
+  } catch (err) {
+    fatal(`Failed to write export file: ${err.message}`);
+  }
+
+  const displayPath = path.relative(dest, outPath) || path.basename(outPath);
+  console.log(`${GREEN}✓${RESET} Exported squad to ${displayPath}`);
+  console.log(`${DIM}⚠ Review agent histories before sharing — they may contain project-specific information${RESET}`);
+  process.exit(0);
+}
+
+// --- Import subcommand ---
+if (cmd === 'import') {
+  const importFile = process.argv[3];
+  if (!importFile) {
+    fatal('Usage: squad import <file> [--force]');
+  }
+
+  const importPath = path.resolve(importFile);
+  if (!fs.existsSync(importPath)) {
+    fatal(`Import file not found: ${importFile}`);
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(importPath, 'utf8'));
+  } catch (err) {
+    fatal(`Invalid JSON in import file: ${err.message}`);
+  }
+
+  if (manifest.version !== '1.0') {
+    fatal(`Unsupported export version: ${manifest.version || 'missing'} (expected 1.0)`);
+  }
+  if (!manifest.agents || typeof manifest.agents !== 'object') {
+    fatal('Invalid export file: missing or invalid "agents" field');
+  }
+  if (!manifest.casting || typeof manifest.casting !== 'object') {
+    fatal('Invalid export file: missing or invalid "casting" field');
+  }
+  if (!Array.isArray(manifest.skills)) {
+    fatal('Invalid export file: missing or invalid "skills" field');
+  }
+
+  const aiTeamDir = path.join(dest, '.ai-team');
+  const hasForce = process.argv.includes('--force');
+
+  // Collision detection
+  if (fs.existsSync(aiTeamDir)) {
+    if (!hasForce) {
+      fatal('A squad already exists here. Use --force to replace (current squad will be archived).');
+    }
+    // Archive existing squad
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '-').slice(0, 19);
+    const archiveDir = path.join(dest, `.ai-team-archive-${ts}`);
+    fs.renameSync(aiTeamDir, archiveDir);
+  }
+
+  // Create directory structure
+  fs.mkdirSync(path.join(aiTeamDir, 'casting'), { recursive: true });
+  fs.mkdirSync(path.join(aiTeamDir, 'decisions', 'inbox'), { recursive: true });
+  fs.mkdirSync(path.join(aiTeamDir, 'orchestration-log'), { recursive: true });
+  fs.mkdirSync(path.join(aiTeamDir, 'log'), { recursive: true });
+  fs.mkdirSync(path.join(aiTeamDir, 'skills'), { recursive: true });
+
+  // Write empty project-specific files
+  fs.writeFileSync(path.join(aiTeamDir, 'decisions.md'), '');
+  fs.writeFileSync(path.join(aiTeamDir, 'team.md'), '');
+
+  // Write casting state
+  for (const [key, value] of Object.entries(manifest.casting)) {
+    fs.writeFileSync(path.join(aiTeamDir, 'casting', `${key}.json`), JSON.stringify(value, null, 2) + '\n');
+  }
+
+  // Determine source project name from filename
+  const sourceProject = path.basename(importPath, '.json');
+  const importDate = new Date().toISOString().split('T')[0];
+
+  // Write agents
+  const agentNames = Object.keys(manifest.agents);
+  for (const name of agentNames) {
+    const agent = manifest.agents[name];
+    const agentDir = path.join(aiTeamDir, 'agents', name);
+    fs.mkdirSync(agentDir, { recursive: true });
+
+    if (agent.charter) {
+      fs.writeFileSync(path.join(agentDir, 'charter.md'), agent.charter);
+    }
+
+    // History split: separate portable knowledge from project learnings
+    let historyContent = '';
+    if (agent.history) {
+      historyContent = splitHistory(agent.history, sourceProject);
+    }
+    historyContent = `📌 Imported from ${sourceProject} on ${importDate}. Portable knowledge carried over; project learnings from previous project preserved below.\n\n` + historyContent;
+    fs.writeFileSync(path.join(agentDir, 'history.md'), historyContent);
+  }
+
+  // Write skills
+  for (const skillContent of manifest.skills) {
+    const nameMatch = skillContent.match(/^name:\s*["']?(.+?)["']?\s*$/m);
+    const skillName = nameMatch ? nameMatch[1].trim().toLowerCase().replace(/\s+/g, '-') : `skill-${manifest.skills.indexOf(skillContent)}`;
+    const skillDir = path.join(aiTeamDir, 'skills', skillName);
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), skillContent);
+  }
+
+  // Determine universe for messaging
+  let universe = 'unknown';
+  if (manifest.casting.policy && manifest.casting.policy.universe) {
+    universe = manifest.casting.policy.universe;
+  }
+
+  // Output
+  console.log(`${GREEN}✓${RESET} Imported squad from ${path.basename(importPath)}`);
+  console.log(`  ${agentNames.length} agents: ${agentNames.join(', ')}`);
+  console.log(`  ${manifest.skills.length} skills imported`);
+  console.log(`  Casting: ${universe} universe preserved`);
+  console.log();
+  console.log(`${DIM}⚠ Project-specific learnings are marked in agent histories — review if needed${RESET}`);
+  console.log();
+  console.log(`Next steps:`);
+  console.log(`  1. Open Copilot and select Squad`);
+  console.log(`  2. Tell the team about this project — they'll adapt`);
+  console.log();
+  process.exit(0);
+}
+
+// Split history into portable knowledge and project learnings
+function splitHistory(history, sourceProject) {
+  const lines = history.split('\n');
+  const portable = [];
+  const projectLearnings = [];
+
+  // Sections that are project-specific by nature
+  const projectSectionPatterns = [
+    /^##\s*key file paths/i,
+    /^##\s*sprint/i,
+    /^##\s*pr\s*#/i,
+    /^##\s*file system/i,
+    /^##\s*session/i,
+    /^###\s*key file paths/i,
+    /^###\s*sprint/i,
+    /^###\s*pr\s*#/i,
+    /^###\s*file system/i,
+    /^###\s*session/i,
+  ];
+
+  // Sections that are portable by nature
+  const portableSectionPatterns = [
+    /^##\s*learnings/i,
+    /^##\s*portable knowledge/i,
+    /^###\s*runtime architecture/i,
+    /^###\s*windows compatibility/i,
+    /^###\s*critical paths/i,
+    /^###\s*forwardability/i,
+    /^##\s*team updates/i,
+  ];
+
+  let currentSection = 'portable';
+  let inProjectSection = false;
+
+  for (const line of lines) {
+    // Check if this line starts a new section
+    if (/^#{1,3}\s/.test(line)) {
+      const isProjectSection = projectSectionPatterns.some(p => p.test(line));
+      const isPortableSection = portableSectionPatterns.some(p => p.test(line));
+
+      if (isProjectSection) {
+        inProjectSection = true;
+      } else if (isPortableSection) {
+        inProjectSection = false;
+      }
+      // Lines starting with 📌 are team updates — portable
+    }
+
+    if (inProjectSection) {
+      projectLearnings.push(line);
+    } else {
+      portable.push(line);
+    }
+  }
+
+  let result = '';
+  if (portable.length > 0) {
+    result += portable.join('\n');
+  }
+  if (projectLearnings.length > 0) {
+    result += `\n\n## Project Learnings (from import — ${sourceProject})\n\n`;
+    result += projectLearnings.join('\n');
+  }
+  return result;
 }
 
 // Validate source files exist
@@ -85,11 +352,73 @@ function stampVersion(filePath) {
   fs.writeFileSync(filePath, content.replace('version: "0.0.0-source"', `version: "${pkg.version}"`));
 }
 
+// Read version from squad.agent.md frontmatter
+function readInstalledVersion(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const match = content.match(/^version:\s*"([^"]+)"/m);
+    return match ? match[1] : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+// Compare semver strings: -1 (a<b), 0 (a==b), 1 (a>b)
+function compareSemver(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+  }
+  return 0;
+}
+
+// Migration registry — additive-only operations keyed by version
+const migrations = [
+  {
+    version: '0.2.0',
+    description: 'Create .ai-team/skills/ directory',
+    run(dest) {
+      const skillsDir = path.join(dest, '.ai-team', 'skills');
+      fs.mkdirSync(skillsDir, { recursive: true });
+    }
+  }
+];
+
+// Run migrations applicable for upgrading from oldVersion to newVersion
+function runMigrations(dest, oldVersion) {
+  const applicable = migrations
+    .filter(m => compareSemver(m.version, oldVersion) > 0)
+    .sort((a, b) => compareSemver(a.version, b.version));
+  for (const m of applicable) {
+    try {
+      m.run(dest);
+    } catch (err) {
+      console.error(`${RED}✗${RESET} Migration failed (${m.version}: ${m.description}): ${err.message}`);
+    }
+  }
+  return applicable.length;
+}
+
 // Copy agent file (Squad-owned — overwrite on upgrade)
 const agentSrc = path.join(root, '.github', 'agents', 'squad.agent.md');
 const agentDest = path.join(dest, '.github', 'agents', 'squad.agent.md');
 
+// Capture old version BEFORE any writes (used for delta reporting + migration filtering)
+const oldVersion = isUpgrade ? readInstalledVersion(agentDest) : null;
+
 if (isUpgrade) {
+  const isAlreadyCurrent = oldVersion && oldVersion !== '0.0.0' && compareSemver(oldVersion, pkg.version) === 0;
+
+  if (isAlreadyCurrent) {
+    // Still run missing migrations in case a prior upgrade was interrupted
+    runMigrations(dest, oldVersion);
+    console.log(`${GREEN}✓${RESET} Already up to date (v${pkg.version})`);
+    process.exit(0);
+  }
+
   try {
     fs.mkdirSync(path.dirname(agentDest), { recursive: true });
     fs.copyFileSync(agentSrc, agentDest);
@@ -97,7 +426,9 @@ if (isUpgrade) {
   } catch (err) {
     fatal(`Failed to upgrade squad.agent.md: ${err.message}`);
   }
-  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/agents/squad.agent.md (v${pkg.version})`);
+
+  const fromLabel = oldVersion === '0.0.0' || !oldVersion ? 'unknown' : oldVersion;
+  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} coordinator from ${fromLabel} to ${pkg.version}`);
 } else if (fs.existsSync(agentDest)) {
   console.log(`${DIM}squad.agent.md already exists — skipping (run 'upgrade' to update)${RESET}`);
 } else {
@@ -111,16 +442,27 @@ if (isUpgrade) {
   console.log(`${GREEN}✓${RESET} .github/agents/squad.agent.md (v${pkg.version})`);
 }
 
-// Pre-create drop-box, orchestration-log, and casting directories (additive-only)
+// Pre-create drop-box, orchestration-log, casting, and skills directories (additive-only)
 const inboxDir = path.join(dest, '.ai-team', 'decisions', 'inbox');
 const orchLogDir = path.join(dest, '.ai-team', 'orchestration-log');
 const castingDir = path.join(dest, '.ai-team', 'casting');
+const skillsDir = path.join(dest, '.ai-team', 'skills');
 try {
   fs.mkdirSync(inboxDir, { recursive: true });
   fs.mkdirSync(orchLogDir, { recursive: true });
   fs.mkdirSync(castingDir, { recursive: true });
+  fs.mkdirSync(skillsDir, { recursive: true });
 } catch (err) {
   fatal(`Failed to create .ai-team/ directories: ${err.message}`);
+}
+
+// Copy starter skills (skip if any skills already exist)
+if (!isUpgrade) {
+  const skillsSrc = path.join(root, 'templates', 'skills');
+  if (fs.existsSync(skillsSrc) && fs.readdirSync(skillsDir).length === 0) {
+    copyRecursive(skillsSrc, skillsDir);
+    console.log(`${GREEN}✓${RESET} .ai-team/skills/ (starter skills)`);
+  }
 }
 
 // Copy default ceremonies config
@@ -160,6 +502,9 @@ const templatesDest = path.join(dest, '.ai-team-templates');
 if (isUpgrade) {
   copyRecursive(templatesSrc, templatesDest);
   console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .ai-team-templates/`);
+
+  // Run migrations applicable for this version jump
+  runMigrations(dest, oldVersion || '0.0.0');
 } else if (fs.existsSync(templatesDest)) {
   console.log(`${DIM}.ai-team-templates/ already exists — skipping (run 'upgrade' to update)${RESET}`);
 } else {

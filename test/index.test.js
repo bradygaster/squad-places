@@ -320,6 +320,10 @@ describe('upgrade subcommand', () => {
     assert.ok(templateFiles.length > 0, 'should have template files');
     fs.writeFileSync(path.join(templatesDir, templateFiles[0]), 'old template content');
 
+    // Simulate an older installed version so upgrade doesn't short-circuit
+    const agentFile = path.join(tmpDir, '.github', 'agents', 'squad.agent.md');
+    fs.writeFileSync(agentFile, 'version: "0.0.1"\nold agent content');
+
     runCmd(tmpDir, 'upgrade');
 
     // All template files should match source (skip directories)
@@ -350,6 +354,10 @@ describe('upgrade subcommand', () => {
   });
 
   it('outputs upgrade confirmation messages', () => {
+    // Simulate an older installed version so upgrade doesn't short-circuit
+    const agentFile = path.join(tmpDir, '.github', 'agents', 'squad.agent.md');
+    fs.writeFileSync(agentFile, 'version: "0.0.1"\nold agent content');
+
     const output = runCmd(tmpDir, 'upgrade');
     assert.ok(output.includes('upgraded'), 'should mention upgraded');
     assert.ok(output.includes('untouched') || output.includes('safe'),
@@ -482,6 +490,10 @@ describe('squad workflow files', () => {
     const workflowFile = path.join(tmpDir, '.github', 'workflows', 'sync-squad-labels.yml');
     fs.writeFileSync(workflowFile, 'old workflow content');
 
+    // Simulate an older installed version so upgrade doesn't short-circuit
+    const agentFile = path.join(tmpDir, '.github', 'agents', 'squad.agent.md');
+    fs.writeFileSync(agentFile, 'version: "0.0.1"\nold agent content');
+
     runCmd(tmpDir, 'upgrade');
 
     const expected = fs.readFileSync(path.join(ROOT, 'templates', 'workflows', 'sync-squad-labels.yml'), 'utf8');
@@ -491,6 +503,11 @@ describe('squad workflow files', () => {
 
   it('upgrade output mentions workflow files', () => {
     runInit(tmpDir);
+
+    // Simulate an older installed version so upgrade doesn't short-circuit
+    const agentFile = path.join(tmpDir, '.github', 'agents', 'squad.agent.md');
+    fs.writeFileSync(agentFile, 'version: "0.0.1"\nold agent content');
+
     const output = runCmd(tmpDir, 'upgrade');
     assert.ok(output.includes('workflow'), 'should mention workflows in upgrade output');
   });

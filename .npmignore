@@ -1,16 +1,13 @@
 # Squad Squad — team state and development files
 # These are excluded from the distributed package.
-# The product ships: index.js, templates/, .github/agents/squad.agent.md
+# The product ships: index.js, templates/, docs/, CHANGELOG.md, .github/agents/squad.agent.md
 # (also enforced by package.json "files" field)
 
 # Squad Squad (the AI team that builds Squad)
 .ai-team/
 .ai-team-templates/
 
-# User-facing docs (viewed on GitHub, not needed in package)
-docs/
-
-# Team docs (proposals, sprint plans — internal)
+# Internal team docs (proposals, sprint plans — never shipped)
 team-docs/
 
 # Tests

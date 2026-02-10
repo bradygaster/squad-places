@@ -1,7 +1,5 @@
 # Squad
 
-[![CI](https://github.com/bradygaster/squad/actions/workflows/ci.yml/badge.svg)](https://github.com/bradygaster/squad/actions/workflows/ci.yml)
-
 **AI agent teams for any project.** A team that grows with your code.
 
 [![Status](https://img.shields.io/badge/status-experimental-blueviolet)](#status)
@@ -124,29 +122,38 @@ graph TB
     R -->|learns| HR["history.md"]
     T -->|learns| HT["history.md"]
 
-    style C fill:#6366f1,color:#fff
-    style A fill:#3b82f6,color:#fff
-    style K fill:#3b82f6,color:#fff
-    style R fill:#3b82f6,color:#fff
-    style T fill:#3b82f6,color:#fff
-    style S fill:#6b7280,color:#fff
-    style team fill:none,stroke:#3b82f6,stroke-width:2px,stroke-dasharray:5 5
-    style memory fill:none,stroke:#8b5cf6,stroke-width:2px,stroke-dasharray:5 5
+    style U fill:#000,color:#fff,stroke:#333
+    style C fill:#000,color:#fff,stroke:#333
+    style A fill:#000,color:#fff,stroke:#333
+    style K fill:#000,color:#fff,stroke:#333
+    style R fill:#000,color:#fff,stroke:#333
+    style T fill:#000,color:#fff,stroke:#333
+    style S fill:#000,color:#fff,stroke:#333
+    style D fill:#000,color:#fff,stroke:#333
+    style L fill:#000,color:#fff,stroke:#333
+    style HA fill:#000,color:#fff,stroke:#333
+    style HK fill:#000,color:#fff,stroke:#333
+    style HR fill:#000,color:#fff,stroke:#333
+    style HT fill:#000,color:#fff,stroke:#333
+    style team fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
+    style memory fill:none,stroke:#fff,stroke-width:2px,stroke-dasharray:5 5
 ```
 
 ### Context Window Budget
 
 Real numbers. No hand-waving.
 
-| What | Tokens | % of 128K context | When |
-|------|--------|-------------------|------|
-| **Coordinator** (squad.agent.md) | ~1,900 | 1.5% | Every message |
-| **Agent at Week 1** (charter + seed) | ~850 | 0.7% | When spawned |
-| **Agent at Week 4** (+ 15 learnings, 8 decisions) | ~1,900 | 1.5% | When spawned |
-| **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~5,600 | 4.4% | When spawned |
-| **Remaining for actual work** | **~120,000** | **94%** | Always |
+Both Claude Sonnet 4 and Claude Opus 4 have a **200K token** standard context window. Each agent runs in its own window, so the coordinator is the only shared overhead.
 
-The coordinator uses 1.5% of context. A 12-week veteran agent uses 4.4%. That leaves **94% of the context window for reasoning about your code** — not for remembering who it is.
+| What | Tokens | % of 200K context | When |
+|------|--------|--------------------|------|
+| **Coordinator** (squad.agent.md) | ~13,200 | 6.6% | Every message |
+| **Agent at Week 1** (charter + seed history + decisions) | ~1,250 | 0.6% | When spawned |
+| **Agent at Week 4** (+ 15 learnings, 8 decisions) | ~3,300 | 1.7% | When spawned |
+| **Agent at Week 12** (+ 50 learnings, 47 decisions) | ~9,000 | 4.5% | When spawned |
+| **Remaining for actual work** | **~187,000** | **93%+** | Always |
+
+The coordinator uses 6.6% of context. A 12-week veteran agent uses 4.5% — but in **its own window**, not yours. That leaves **93%+ of the coordinator's context for reasoning about your code**, and each spawned agent gets nearly its entire 200K window for the actual task. Fan out to 5 agents and you're working with **~1M tokens** of total reasoning capacity — without paying for a larger model.
 
 ### Memory Architecture
 
@@ -214,6 +221,18 @@ Team members with review authority (Tester, Lead) can **reject** work. On reject
 - A **new specialist** is spawned for the task
 
 The Coordinator enforces this. No self-review of rejected work.
+
+---
+
+## What's New in v0.2.0
+
+- [**Export & Import CLI**](docs/features/export-import.md) — Portable team snapshots for moving squads between repos
+- [**GitHub Issues Mode**](docs/features/github-issues.md) — Issue-driven development with `gh` CLI integration
+- [**PRD Mode**](docs/features/prd-mode.md) — Product requirements decomposition into work items
+- [**Human Team Members**](docs/features/human-team-members.md) — Mixed AI/human teams with routing
+- [**Skills System**](docs/features/skills.md) — Earned knowledge with confidence lifecycle
+- [**Tiered Response Modes**](docs/features/response-modes.md) — Direct/Lightweight/Standard/Full response depth
+- [**Smart Upgrade**](docs/scenarios/upgrading.md) — Version-aware upgrades with migrations
 
 ---
 
@@ -293,6 +312,6 @@ This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow file
 
 ## Status
 
-🟣 **Experimental** — v0.1.0. Contributors welcome.
+🟣 **Experimental** — v0.2.0. Contributors welcome.
 
 Conceived by [@bradygaster](https://github.com/bradygaster).
