@@ -62,3 +62,6 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 📌 Team update (2026-02-10): Clean branch config at init time — filter squad state from designated branches — decided by bradygaster
 
 📌 Team update (2026-02-10): `squad:` label convention standardized for GitHub Issues — decided by Keaton, McManus
+
+
+📌 Team update (2026-02-10): Async comms strategy decided — two-tier MVP: CCA-as-squad-member (2-4h, prompt-only) + Telegram bridge (8-16h, conditional on SDK spike). CCA is the floor. — decided by Kujan

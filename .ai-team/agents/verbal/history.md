@@ -96,3 +96,6 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 📌 Team update (2026-02-10): 0.3.0 priorities: async comms > GitHub-native > CCA adoption — decided by bradygaster
 
 📌 Team update (2026-02-10): `squad:` label convention standardized — update coordinator prompts — decided by Keaton, McManus
+
+
+📌 Team update (2026-02-10): Async comms strategy decided — two-tier MVP: CCA-as-squad-member (2-4h, prompt-only) + Telegram bridge (8-16h, conditional on SDK spike). CCA is the floor. — decided by Kujan

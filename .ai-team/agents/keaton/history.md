@@ -90,3 +90,6 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 📌 Team update (2026-02-10): `squad:` label convention standardized (consolidated Keaton + McManus) — decided by Keaton, McManus
 
 📌 Team update (2026-02-10): Clean branch config at init time — repo owners choose protected branches — decided by bradygaster
+
+
+📌 Team update (2026-02-10): Async comms strategy decided — two-tier MVP: CCA-as-squad-member (2-4h, prompt-only) + Telegram bridge (8-16h, conditional on SDK spike). CCA is the floor. — decided by Kujan
