@@ -14,7 +14,13 @@
     "Breaking Bad",
     "Lost",
     "Marvel Cinematic Universe",
-    "DC Universe"
+    "DC Universe",
+    "Monty Python",
+    "Doctor Who",
+    "Attack on Titan",
+    "The Lord of the Rings",
+    "Succession",
+    "Severance"
   ],
   "universe_capacity": {
     "The Usual Suspects": 6,
@@ -30,6 +36,12 @@
     "Breaking Bad": 12,
     "Lost": 18,
     "Marvel Cinematic Universe": 25,
-    "DC Universe": 18
+    "DC Universe": 18,
+    "Monty Python": 9,
+    "Doctor Who": 16,
+    "Attack on Titan": 12,
+    "The Lord of the Rings": 14,
+    "Succession": 10,
+    "Severance": 8
   }
 }
