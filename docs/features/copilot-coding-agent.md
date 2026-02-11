@@ -49,6 +49,12 @@ npx github:bradygaster/squad copilot --auto-assign
 npx github:bradygaster/squad copilot --off
 ```
 
+### In conversation
+
+Say something like **"I want to add copilot to the squad"** in a Squad session. The coordinator will add @copilot to the roster.
+
+> **Note:** If your project has features named "copilot" (e.g., a Copilot extension), the coordinator may misinterpret the phrase as project work. Use the CLI in that case.
+
 ### During team setup (new projects)
 
 Squad asks if you want to include the coding agent during `init`. Say **yes** and it's added to the roster with a default capability profile.
