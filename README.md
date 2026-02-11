@@ -275,6 +275,7 @@ Squad installs three GitHub Actions workflows:
 
 - GitHub Actions must be enabled on the repository
 - The `GITHUB_TOKEN` needs `issues: write` and `contents: read` permissions
+- For @copilot auto-assign: a classic PAT with `repo` scope stored as `COPILOT_ASSIGN_TOKEN` repo secret (see [setup guide](docs/features/copilot-coding-agent.md#copilot_assign_token-required-for-auto-assign))
 - For automated issue work: [Copilot coding agent](https://docs.github.com/en/copilot) must be enabled on the repo
 
 ### Session Awareness

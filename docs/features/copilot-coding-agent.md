@@ -4,17 +4,39 @@ Add the GitHub Copilot coding agent to your Squad as an autonomous team member. 
 
 ---
 
+## Prerequisites
+
+Before enabling @copilot on your Squad, ensure:
+
+1. **Copilot coding agent is enabled** on the repository (Settings → Copilot → Coding agent)
+2. **`copilot-setup-steps.yml`** exists in `.github/` (defines the agent's environment)
+3. **GitHub Actions** are enabled on the repository
+
+---
+
+## Quick Start
+
+```bash
+# 1. Add @copilot to your squad with auto-assign
+npx github:bradygaster/squad copilot --auto-assign
+
+# 2. Create a classic PAT for auto-assignment (see below)
+#    https://github.com/settings/tokens/new → check "repo" scope
+
+# 3. Add the PAT as a repo secret
+gh secret set COPILOT_ASSIGN_TOKEN
+
+# 4. Commit and push
+git add .github/ .ai-team/ && git commit -m "feat: add copilot to squad" && git push
+
+# 5. Test — label any issue with squad:copilot
+```
+
+---
+
 ## Enabling @copilot
 
-### During team setup (new projects)
-
-Squad asks if you want to include the coding agent during init. Say **yes** and it's added to the roster with a capability profile.
-
-### In conversation (existing teams)
-
-Say **`/squad-bot`** in a Squad session. The coordinator will add @copilot to the roster and ask about auto-assign.
-
-### Via CLI
+### Via CLI (recommended)
 
 ```bash
 # Add @copilot to the team
@@ -26,6 +48,32 @@ npx github:bradygaster/squad copilot --auto-assign
 # Remove from the team
 npx github:bradygaster/squad copilot --off
 ```
+
+### During team setup (new projects)
+
+Squad asks if you want to include the coding agent during `init`. Say **yes** and it's added to the roster with a default capability profile.
+
+---
+
+## COPILOT_ASSIGN_TOKEN (required for auto-assign)
+
+The `squad-issue-assign` workflow needs a **classic Personal Access Token** to assign `copilot-swe-agent[bot]` to issues. The default `GITHUB_TOKEN` cannot do this.
+
+### Create the token
+
+1. Go to https://github.com/settings/tokens/new
+2. **Note:** `squad-copilot-assign`
+3. **Expiration:** 90 days (or your preference)
+4. **Scopes:** check **`repo`** (full control of private repositories)
+5. Click **Generate token**
+
+### Add as repo secret
+
+```bash
+gh secret set COPILOT_ASSIGN_TOKEN --repo owner/repo
+```
+
+> **Why a classic PAT?** Fine-grained PATs return `403 Resource not accessible` for this endpoint. The REST API for assigning `copilot-swe-agent[bot]` requires a classic PAT with `repo` scope. The `GITHUB_TOKEN` silently ignores the assignment.
 
 ---
 
@@ -61,27 +109,15 @@ The profile is editable. The Lead can suggest updates based on experience:
 
 ---
 
-## Auto-Assign
+## Auto-Assign Flow
 
-When enabled, the `squad-issue-assign` workflow automatically assigns `@copilot` on the GitHub issue when work is routed to it — so the coding agent picks it up without manual intervention.
+When the `squad:copilot` label is added to an issue:
 
-### Setup
+1. **Step 1** — Workflow posts a routing comment (uses `GITHUB_TOKEN`)
+2. **Step 2** — Workflow assigns `copilot-swe-agent[bot]` to the issue (uses `COPILOT_ASSIGN_TOKEN`)
+3. **Step 3** — Coding agent picks up the issue, creates a `copilot/*` branch, and opens a draft PR
 
-Auto-assign requires a **classic Personal Access Token** (PAT) stored as a repo secret:
-
-1. Create a classic PAT at https://github.com/settings/tokens/new with `repo` scope
-2. Add it as a repo secret named `COPILOT_ASSIGN_TOKEN`:
-   ```bash
-   gh secret set COPILOT_ASSIGN_TOKEN --repo owner/repo
-   ```
-
-### Enable
-
-```bash
-npx github:bradygaster/squad copilot --auto-assign
-```
-
-Or set it manually in `team.md` by changing `<!-- copilot-auto-assign: false -->` to `<!-- copilot-auto-assign: true -->`.
+The workflow automatically detects the repo's default branch (`main`, `master`, etc.).
 
 ---
 
