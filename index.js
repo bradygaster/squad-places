@@ -37,6 +37,8 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
   console.log(`             Overwrites: squad.agent.md, .ai-team-templates/`);
   console.log(`             Never touches: .ai-team/ (your team state)`);
+  console.log(`  ${BOLD}copilot${RESET}    Add/remove the Copilot coding agent (@copilot)`);
+  console.log(`             Usage: copilot [--off] [--auto-assign]`);
   console.log(`  ${BOLD}export${RESET}     Export squad to a portable JSON snapshot`);
   console.log(`             Default: squad-export.json (use --out <path> to override)`);
   console.log(`  ${BOLD}import${RESET}     Import squad from an export file`);
@@ -62,6 +64,124 @@ function copyRecursive(src, target) {
   } catch (err) {
     fatal(`Failed to copy ${path.relative(root, src)}: ${err.message}`);
   }
+}
+
+// --- Copilot subcommand ---
+if (cmd === 'copilot') {
+  const teamMd = path.join(dest, '.ai-team', 'team.md');
+  if (!fs.existsSync(teamMd)) {
+    fatal('No squad found — run init first, then add the copilot agent.');
+  }
+
+  const isOff = process.argv.includes('--off');
+  const autoAssign = process.argv.includes('--auto-assign');
+  let content = fs.readFileSync(teamMd, 'utf8');
+  const hasCopilot = content.includes('🤖 Coding Agent');
+
+  if (isOff) {
+    if (!hasCopilot) {
+      console.log(`${DIM}Copilot coding agent is not on the team — nothing to remove${RESET}`);
+      process.exit(0);
+    }
+    // Remove the Coding Agent section
+    content = content.replace(/\n## Coding Agent\n[\s\S]*?(?=\n## |\n*$)/, '');
+    fs.writeFileSync(teamMd, content);
+    console.log(`${GREEN}✓${RESET} Removed @copilot from the team roster`);
+
+    // Remove copilot-instructions.md
+    const instructionsDest = path.join(dest, '.github', 'copilot-instructions.md');
+    if (fs.existsSync(instructionsDest)) {
+      fs.unlinkSync(instructionsDest);
+      console.log(`${GREEN}✓${RESET} Removed .github/copilot-instructions.md`);
+    }
+    process.exit(0);
+  }
+
+  // Adding copilot
+  if (hasCopilot) {
+    // Update auto-assign if requested
+    if (autoAssign) {
+      content = content.replace('<!-- copilot-auto-assign: false -->', '<!-- copilot-auto-assign: true -->');
+      fs.writeFileSync(teamMd, content);
+      console.log(`${GREEN}✓${RESET} Enabled @copilot auto-assign`);
+    } else {
+      console.log(`${DIM}@copilot is already on the team${RESET}`);
+    }
+    process.exit(0);
+  }
+
+  // Add Coding Agent section before Project Context
+  const autoAssignValue = autoAssign ? 'true' : 'false';
+  const copilotSection = `
+## Coding Agent
+
+<!-- copilot-auto-assign: ${autoAssignValue} -->
+
+| Name | Role | Charter | Status |
+|------|------|---------|--------|
+| @copilot | Coding Agent | — | 🤖 Coding Agent |
+
+### Capabilities
+
+**🟢 Good fit — auto-route when enabled:**
+- Bug fixes with clear reproduction steps
+- Test coverage (adding missing tests, fixing flaky tests)
+- Lint/format fixes and code style cleanup
+- Dependency updates and version bumps
+- Small isolated features with clear specs
+- Boilerplate/scaffolding generation
+- Documentation fixes and README updates
+
+**🟡 Needs review — route to @copilot but flag for squad member PR review:**
+- Medium features with clear specs and acceptance criteria
+- Refactoring with existing test coverage
+- API endpoint additions following established patterns
+- Migration scripts with well-defined schemas
+
+**🔴 Not suitable — route to squad member instead:**
+- Architecture decisions and system design
+- Multi-system integration requiring coordination
+- Ambiguous requirements needing clarification
+- Security-critical changes (auth, encryption, access control)
+- Performance-critical paths requiring benchmarking
+- Changes requiring cross-team discussion
+
+`;
+
+  // Insert before "## Project Context" if it exists, otherwise append
+  if (content.includes('## Project Context')) {
+    content = content.replace('## Project Context', copilotSection + '## Project Context');
+  } else {
+    content = content.trimEnd() + '\n' + copilotSection;
+  }
+
+  fs.writeFileSync(teamMd, content);
+  console.log(`${GREEN}✓${RESET} Added @copilot (Coding Agent) to team roster`);
+  if (autoAssign) {
+    console.log(`${GREEN}✓${RESET} Auto-assign enabled — squad-labeled issues will be assigned to @copilot`);
+  }
+
+  // Copy copilot-instructions.md
+  const instructionsSrc = path.join(root, 'templates', 'copilot-instructions.md');
+  const instructionsDest = path.join(dest, '.github', 'copilot-instructions.md');
+  if (fs.existsSync(instructionsSrc)) {
+    fs.mkdirSync(path.dirname(instructionsDest), { recursive: true });
+    fs.copyFileSync(instructionsSrc, instructionsDest);
+    console.log(`${GREEN}✓${RESET} .github/copilot-instructions.md`);
+  }
+
+  console.log();
+  console.log(`${BOLD}@copilot is on the team.${RESET}`);
+  console.log(`The coding agent will pick up issues matching its capability profile.`);
+  if (!autoAssign) {
+    console.log(`Run with ${BOLD}--auto-assign${RESET} to auto-assign @copilot on squad-labeled issues.`);
+  }
+  console.log();
+  console.log(`${BOLD}Required:${RESET} Add a classic PAT (repo scope) as a repo secret for auto-assignment:`);
+  console.log(`  1. Create token:  ${DIM}https://github.com/settings/tokens/new${RESET}`);
+  console.log(`  2. Set secret:    ${DIM}gh secret set COPILOT_ASSIGN_TOKEN${RESET}`);
+  console.log();
+  process.exit(0);
 }
 
 // --- Export subcommand ---
@@ -415,6 +535,40 @@ if (isUpgrade) {
   if (isAlreadyCurrent) {
     // Still run missing migrations in case a prior upgrade was interrupted
     runMigrations(dest, oldVersion);
+
+    // Even if already current, update copilot-instructions.md if @copilot is enabled
+    const copilotInstructionsSrc = path.join(root, 'templates', 'copilot-instructions.md');
+    const copilotInstructionsDest = path.join(dest, '.github', 'copilot-instructions.md');
+    const teamMd = path.join(dest, '.ai-team', 'team.md');
+    const copilotEnabled = fs.existsSync(teamMd)
+      && fs.readFileSync(teamMd, 'utf8').includes('🤖 Coding Agent');
+    if (copilotEnabled && fs.existsSync(copilotInstructionsSrc)) {
+      fs.mkdirSync(path.dirname(copilotInstructionsDest), { recursive: true });
+      fs.copyFileSync(copilotInstructionsSrc, copilotInstructionsDest);
+      console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/copilot-instructions.md`);
+    }
+
+    // Always update squad-owned workflows even when version matches
+    const workflowsSrcEarly = path.join(root, 'templates', 'workflows');
+    const workflowsDestEarly = path.join(dest, '.github', 'workflows');
+    if (fs.existsSync(workflowsSrcEarly) && fs.statSync(workflowsSrcEarly).isDirectory()) {
+      const wfFiles = fs.readdirSync(workflowsSrcEarly).filter(f => f.endsWith('.yml'));
+      fs.mkdirSync(workflowsDestEarly, { recursive: true });
+      for (const file of wfFiles) {
+        fs.copyFileSync(path.join(workflowsSrcEarly, file), path.join(workflowsDestEarly, file));
+      }
+      console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} squad workflows (${wfFiles.length} files)`);
+    }
+
+    // Always refresh squad.agent.md (may have changed on same version via branch)
+    try {
+      fs.mkdirSync(path.dirname(agentDest), { recursive: true });
+      fs.copyFileSync(agentSrc, agentDest);
+      stampVersion(agentDest);
+    } catch (err) {
+      // Non-fatal in early-exit path
+    }
+
     console.log(`${GREEN}✓${RESET} Already up to date (v${pkg.version})`);
     process.exit(0);
   }
@@ -473,6 +627,21 @@ if (!fs.existsSync(ceremoniesDest)) {
   console.log(`${GREEN}✓${RESET} .ai-team/ceremonies.md`);
 } else {
   console.log(`${DIM}ceremonies.md already exists — skipping${RESET}`);
+}
+
+// copilot-instructions.md — managed by `squad copilot` subcommand
+// On upgrade, update if @copilot is enabled on the team
+const copilotInstructionsSrc = path.join(root, 'templates', 'copilot-instructions.md');
+const copilotInstructionsDest = path.join(dest, '.github', 'copilot-instructions.md');
+if (isUpgrade) {
+  const teamMd = path.join(dest, '.ai-team', 'team.md');
+  const copilotEnabled = fs.existsSync(teamMd)
+    && fs.readFileSync(teamMd, 'utf8').includes('🤖 Coding Agent');
+  if (copilotEnabled && fs.existsSync(copilotInstructionsSrc)) {
+    fs.mkdirSync(path.dirname(copilotInstructionsDest), { recursive: true });
+    fs.copyFileSync(copilotInstructionsSrc, copilotInstructionsDest);
+    console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/copilot-instructions.md`);
+  }
 }
 
 // Append merge=union rules for append-only .ai-team/ files
@@ -546,6 +715,15 @@ if (fs.existsSync(workflowsSrc) && fs.statSync(workflowsSrc).isDirectory()) {
 
 if (isUpgrade) {
   console.log(`\n${DIM}.ai-team/ untouched — your team state is safe${RESET}`);
+
+  // Hint about new features available after upgrade
+  const teamMd = path.join(dest, '.ai-team', 'team.md');
+  const copilotEnabled = fs.existsSync(teamMd)
+    && fs.readFileSync(teamMd, 'utf8').includes('🤖 Coding Agent');
+  if (!copilotEnabled) {
+    console.log(`\n${BOLD}New:${RESET} @copilot coding agent support is now available.`);
+    console.log(`  Run ${BOLD}npx squad copilot${RESET} to add it to your team.`);
+  }
 }
 
 console.log();
