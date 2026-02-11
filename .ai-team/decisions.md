@@ -2981,3 +2981,26 @@ Brady's direction: "People think we need more universes." Current allowlist (14 
 **What:** Squad uses "milestones" instead of "sprints" for release planning units. Waves are feature-gated milestones, not time-boxed sprints. This aligns with GitHub's native Milestones feature and more accurately describes how Squad ships — when the work is done, not when a timer expires.
 **Why:** Fritz suggested it during his video coverage. It's more accurate: Squad doesn't enforce time-boxed cadence. GitHub Milestones are a native platform concept we can integrate with. "Sprint" implies Scrum process overhead that doesn't exist here.
 
+### 2026-02-11: Copilot Client Parity Gap — Issue #10
+
+**Date:** 2026-02-11  
+**Owner:** Keaton  
+**Status:** Approved ✅  
+**Related Issues:** #9 (community question), #10 (tracking issue)
+
+**Problem:** Squad was designed for and tested on the **GitHub Copilot CLI**. The architecture assumes certain CLI-specific tools exist: `task` tool (sub-agent spawning), `/delegate` slash command (background work + PR creation), `/tasks` slash command (background agent management), per-agent model selection parameter. These tools either don't exist or have different names in VS Code, JetBrains, and GitHub.com. Squad's feature set degrades on non-CLI surfaces.
+
+**Root Cause:** Tool naming is API surface. Squad's orchestration layer (markdown + prompts) is platform-agnostic. The *tooling* assumptions are not.
+
+**Solution:** File Issue #10 as a **P1 tracking issue** to: (1) Systematically validate Squad's tool usage across all Copilot surfaces (CLI, VS Code, JetBrains, GitHub.com), (2) Identify which patterns work where and which degrade, (3) Define fallback strategies (if `task` doesn't exist, what's Plan B?), (4) Determine if graceful degradation is acceptable or if we need cross-client abstraction.
+
+**Architecture Implication:** Future proposals that assume sub-agent spawning (like Proposal 032) need a **"Fallback" section** documenting what happens when `task` is unavailable. Examples: GitHub Actions workflow (higher latency, async via comment loop), Deferred to v0.4.0 (feature requires CLI), Graceful no-op (feature silently disabled on non-CLI).
+
+**Trade-offs:** Short-term: Document the gap, don't try to fix all clients in v0.3.0. Long-term: Cross-client parity becomes a requirement; may need platform abstraction layer or client-specific prompts. Risk: If VS Code lacks critical tooling, Squad's value prop collapses on that surface.
+
+**Rationale:** (1) Transparency > overpromising — community question (#9) revealed undocumented limitation. (2) Data-driven fallback — don't guess at cross-client behavior; test it. (3) Proposal precedent — Proposals 032+ will assume this gap is documented and fallback strategies are defined.
+
+**Success Criteria:** [x] Respond to Issue #9 with honest explanation. [x] File Issue #10 as P1 tracking. [ ] Validate Squad behavior on VS Code. [ ] Validate Squad behavior on JetBrains. [ ] Validate Squad behavior on GitHub.com. [ ] Define fallback strategies per client. [ ] Update squad.agent.md with compatibility matrix.
+
+**Next Steps:** (1) Brady reviews Issue #10 and prioritizes cross-client validation. (2) Verbal or future agent runs spike: "Test Squad on VS Code with runSubagent". (3) Results inform Proposal 034+ (cross-client compatibility layer, if needed).
+

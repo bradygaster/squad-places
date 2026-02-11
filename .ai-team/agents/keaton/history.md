@@ -158,3 +158,14 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 
 
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
+
+- **2026-02-11: Issue #9 triage and GitHub-native client parity (Keaton decision)**
+  - **Issue #9 from @miketsui3a:** Raised a valid question—no `task` tool in VS Code Copilot, only `runSubagent`. This exposed a critical gap: Squad conflates CLI-specific tooling with core architecture.
+  - **Root cause:** Squad was designed on and for the Copilot CLI. The `task` tool (sub-agent spawn) is CLI-specific; VS Code exposes `runSubagent`. `/delegate` (user-facing background work) is also CLI-specific. Squad's coordinator assumes these tools exist.
+  - **Posted response to #9:** Clarified the distinction (CLI `task` vs VS Code `runSubagent`, user-facing `/delegate` vs agent-facing `task`), documented current parity limitation (CLI only), and committed to filing a tracking issue.
+  - **Filed Issue #10 (Copilot client parity):** Created P1 tracking issue to systematically validate Squad across CLI, VS Code, JetBrains, and GitHub.com. Key unknowns: sub-agent spawning tool names, async execution patterns, MCP discovery, model selection support. Success = graceful degradation where features unavailable.
+  - **Key learning: Tool naming is API surface.** Squad's architecture (markdown + prompts) is portable. The tooling assumptions (task, /delegate, /tasks, model override) are not. This is a **platform abstraction gap**, not an architecture flaw.
+  - **Architecture implication:** Future proposals that assume sub-agent spawning need a "CLI fallback" section. If `task` doesn't exist, what's the Plan B? (GitHub Actions? Async comment loop? Deferred to v0.4.0?)
+  - **Key file paths:** Issue #9 (community question), Issue #10 (tracking), `.ai-team/agents/keaton/history.md` (this entry).
+
+📌 Team update (2026-02-11): Copilot client parity gap identified — Issue #10 filed as P1 tracking. Squad works fully only on CLI; other clients need validation and potential graceful degradation. — decided by Keaton

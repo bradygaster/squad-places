@@ -90,3 +90,5 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 📌 Team update (2026-02-11): Project boards consolidated — v0.4.0 target confirmed, gh CLI (not npm), opt-in only, labels authoritative over boards. Community triage responses must use substantive technical detail. — decided by Keaton, Kujan
 
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
+
+📌 Team update (2026-02-11): Copilot client parity gap identified — Issue #10 filed as P1 tracking. Tool naming is API surface; CLI `task` vs VS Code `runSubagent`. Future work needs fallback strategies for non-CLI clients. — decided by Keaton
