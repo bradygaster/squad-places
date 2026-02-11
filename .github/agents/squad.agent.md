@@ -22,10 +22,6 @@ Check: Does `.ai-team/team.md` exist?
 - **No** → Init Mode
 - **Yes** → Team Mode
 
-### Adding the Copilot Coding Agent
-
-The coding agent is added via the CLI: `npx github:bradygaster/squad copilot`. Once added, the Copilot Coding Agent Member section describes how it works with the team.
-
 ---
 
 ## Init Mode
@@ -102,8 +98,9 @@ The `union` merge driver keeps all lines from both sides, which is correct for a
      → If yes, follow the GitHub Issues Mode flow to connect and list the backlog.
    - *"Are any humans joining the team? (names and roles, or just AI for now)"*
      → If yes, add human members to the roster per the Human Team Members section.
-   - *"Want to include the Copilot coding agent? Run `npx github:bradygaster/squad copilot` to add it — it picks up issues autonomously."*
-     → This is informational — the CLI handles the actual setup.
+   - *"Want to include the Copilot coding agent (@copilot)? It can pick up issues autonomously — bug fixes, tests, small features. (yes/no)"*
+     → If yes, follow the Copilot Coding Agent Member section to add @copilot to the roster.
+     → Also ask: *"Should squad-labeled issues auto-assign to @copilot? (yes/no)"*
    - These are additive. The user can answer all, some, or skip entirely. Don't block on these — if the user skips or gives a task instead, proceed immediately.
    - **PRD provided?** → Run the PRD Mode intake flow: spawn Lead to decompose, present work items.
    - **GitHub repo provided?** → Run the GitHub Issues Mode flow: connect, list backlog, let user pick issues.
@@ -202,7 +199,7 @@ The routing table determines **WHO** handles work. After routing, use Response M
 |--------|--------|
 | Names someone ("Ripley, fix the button") | Spawn that agent |
 | "Team" or multi-domain question | Spawn 2-3+ relevant agents in parallel, synthesize |
-| Coding agent — adding/removing | Inform user to use CLI: `npx github:bradygaster/squad copilot` (do NOT create a new cast member) |
+| "add team member copilot" | Add @copilot to the roster per the Copilot Coding Agent Member section — this is NOT a new cast member, it is the GitHub Copilot coding agent |
 | Human member management ("add Brady as PM", routes to human) | Follow Human Team Members (see that section) |
 | Issue suitable for @copilot ("this looks like a copilot task") | Check capability profile in team.md, suggest routing to @copilot if it's a good fit |
 | Ceremony request ("design meeting", "run a retro") | Run the matching ceremony from `ceremonies.md` (see Ceremonies) |
@@ -1498,24 +1495,17 @@ Example roster with mixed team:
 
 The GitHub Copilot coding agent (`@copilot`) can join the Squad as an autonomous team member. Unlike AI agents (spawned in Copilot chat sessions) and humans (who work outside the system), the coding agent works asynchronously — it picks up assigned issues, creates `copilot/*` branches, and opens draft PRs.
 
-### Adding @copilot — Use the CLI
+### Adding @copilot — "add team member copilot"
 
-The coding agent is managed via the CLI, not chat commands:
+When the user says **"add team member copilot"** (or similar — e.g., "add copilot to the team", "I want copilot on the squad"), add @copilot to the roster. This is NOT a new cast member — do NOT cast a name from the universe. @copilot is always named "@copilot".
 
-```bash
-# Add @copilot to the team
-npx github:bradygaster/squad copilot
+**Steps:**
+1. Add the Coding Agent section to `team.md` (see @copilot Roster Format below)
+2. Ask: *"Should squad-labeled issues auto-assign to @copilot? (yes/no)"*
+3. Set `<!-- copilot-auto-assign: true/false -->` based on the answer
+4. Announce: *"🤖 @copilot joined the team as Coding Agent. I'll route suitable issues to it based on the capability profile."*
 
-# Add with auto-assign enabled
-npx github:bradygaster/squad copilot --auto-assign
-
-# Remove @copilot from the team
-npx github:bradygaster/squad copilot --off
-```
-
-The CLI modifies `team.md` directly and copies `copilot-instructions.md`. After running, the coordinator sees @copilot on the roster and includes it in triage/routing.
-
-Users can also manually edit `team.md` to add/modify/remove the @copilot entry or its capability profile.
+The user can also add @copilot via the CLI: `npx github:bradygaster/squad copilot`
 
 ### How the Coding Agent Differs
 
