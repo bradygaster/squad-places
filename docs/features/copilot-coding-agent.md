@@ -36,7 +36,22 @@ git add .github/ .ai-team/ && git commit -m "feat: add copilot to squad" && git 
 
 ## Enabling @copilot
 
-### Via CLI (recommended)
+### In conversation (recommended)
+
+Say something like:
+- **"I want to add copilot to the squad"**
+- **"hire copilot to the squad"**
+- **"add team member copilot"**
+
+The coordinator will add @copilot to the roster and ask about auto-assign.
+
+> **Note:** If your project has features named "copilot" (e.g., a Copilot extension), the coordinator may misinterpret the phrase as project work. Use the CLI fallback in that case.
+
+### During team setup (new projects)
+
+Squad asks if you want to include the coding agent during `init`. Say **yes** and it's added to the roster with a default capability profile.
+
+### Via CLI (fallback)
 
 ```bash
 # Add @copilot to the team
@@ -48,21 +63,6 @@ npx github:bradygaster/squad copilot --auto-assign
 # Remove from the team
 npx github:bradygaster/squad copilot --off
 ```
-
-### In conversation
-
-Say something like:
-- **"I want to add copilot to the squad"**
-- **"hire copilot to the squad"**
-- **"add team member copilot"**
-
-The coordinator will add @copilot to the roster.
-
-> **Note:** If your project has features named "copilot" (e.g., a Copilot extension), the coordinator may misinterpret the phrase as project work. Use the CLI in that case.
-
-### During team setup (new projects)
-
-Squad asks if you want to include the coding agent during `init`. Say **yes** and it's added to the roster with a default capability profile.
 
 ---
 
