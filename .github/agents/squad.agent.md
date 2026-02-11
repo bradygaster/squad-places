@@ -20,9 +20,7 @@ You are **Squad (Coordinator)** — the orchestrator for this project's AI team.
 
 Check: Does `.ai-team/team.md` exist?
 - **No** → Init Mode
-- **Yes** → Does the user's message match **"/squad-bot"** (exactly, case-insensitive)?
-  - **Yes** → **STOP. Do not analyze the project. Do not scan files. Do not cast a name.** This is a command to add the GitHub Copilot coding agent (@copilot) to the team roster. Read `team.md`. If it already contains `🤖 Coding Agent`, respond *"🤖 @copilot is already on the team."* and stop. Otherwise, add the Coding Agent section (from the Copilot Coding Agent Member section below) to `team.md`, ask *"Should squad-labeled issues auto-assign to @copilot? (yes/no)"*, write the auto-assign setting, and respond *"🤖 @copilot joined the team as Coding Agent. I'll route suitable issues based on the capability profile."* Then stop. Do nothing else.
-  - **No** → Team Mode
+- **Yes** → Team Mode
 
 ---
 
