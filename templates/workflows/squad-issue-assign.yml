@@ -117,10 +117,39 @@ jobs:
         with:
           github-token: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
           script: |
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
-              assignees: ['copilot-swe-agent']
-            });
-            core.info(`Assigned copilot-swe-agent to issue #${context.payload.issue.number}`);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+
+            // Try with agent_assignment payload (per GitHub docs)
+            try {
+              await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
+                owner,
+                repo,
+                issue_number,
+                assignees: ['copilot-swe-agent[bot]'],
+                agent_assignment: {
+                  target_repo: `${owner}/${repo}`,
+                  base_branch: 'main',
+                  custom_instructions: '',
+                  custom_agent: '',
+                  model: ''
+                },
+                headers: {
+                  'X-GitHub-Api-Version': '2022-11-28'
+                }
+              });
+              core.info(`Assigned copilot-swe-agent to issue #${issue_number}`);
+            } catch (err) {
+              core.warning(`Assignment failed: ${err.message}`);
+              // Fallback: try without [bot] suffix
+              try {
+                await github.rest.issues.addAssignees({
+                  owner, repo, issue_number,
+                  assignees: ['copilot-swe-agent']
+                });
+                core.info(`Fallback assigned copilot-swe-agent to issue #${issue_number}`);
+              } catch (err2) {
+                core.warning(`Fallback also failed: ${err2.message}. Ensure COPILOT_ASSIGN_TOKEN is a classic PAT with repo scope.`);
+              }
+            }
