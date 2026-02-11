@@ -150,3 +150,6 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
+
+📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
+

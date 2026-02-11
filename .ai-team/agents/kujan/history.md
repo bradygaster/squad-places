@@ -92,3 +92,6 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
 
 📌 Team update (2026-02-11): Copilot client parity gap identified — Issue #10 filed as P1 tracking. Tool naming is API surface; CLI `task` vs VS Code `runSubagent`. Future work needs fallback strategies for non-CLI clients. — decided by Keaton
+
+📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
+

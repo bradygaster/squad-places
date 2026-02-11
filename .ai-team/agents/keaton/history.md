@@ -169,3 +169,15 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
   - **Key file paths:** Issue #9 (community question), Issue #10 (tracking), `.ai-team/agents/keaton/history.md` (this entry).
 
 📌 Team update (2026-02-11): Copilot client parity gap identified — Issue #10 filed as P1 tracking. Squad works fully only on CLI; other clients need validation and potential graceful degradation. — decided by Keaton
+
+- **2026-02-11: Messaging Platform Selection for Squad DM — Discord chosen as MVP connector**
+  - **Facilitated discussion with Kujan and Verbal.** Brady's inputs: no Telegram (prefers Discord), users asking for Teams, concerned about GitHub-specific lock-in closing the door on AzDO/GitLab.
+  - **Discord replaces Telegram as the v0.3.0 MVP connector.** Build cost delta is minimal (~30-70 LOC over Telegram). Discord's channel-per-repo is native, rich embeds give per-agent color identity, and the dev community already lives there. Brady's preference aligns with the technical and UX analysis.
+  - **Three-tier delivery confirmed:** Tier 1 = CCA-as-squad-member via GitHub Issues (2-4h, prompt-only). Tier 1b = Discord webhook notifications for one-way alerts (30 min). Tier 2 = Discord conversational bridge via Copilot SDK (8-16h).
+  - **GitHub integrations are notification-only, not messaging.** GitHub-for-Teams app delivers event cards but is not programmable. Copilot Extensions are the wrong architecture. GitHub Actions webhooks can push one-way alerts to Discord/Teams for free.
+  - **Platform lock-in is architecturally mitigated.** Squad DM Gateway must have zero GitHub-specific imports. Adapters are thin and replaceable (discord.js, Bot Framework SDK, etc.). CCA is GitHub-only but additive, not foundational.
+  - **DM output is platform-neutral, adapters handle rendering.** Prompt produces markdown summary. Discord adapter renders as rich embeds with agent colors. Teams adapter renders as Adaptive Cards. No per-platform prompt variants needed.
+  - **Teams is the v0.4.0 second connector.** Best per-repo organization (channels within a Team). Higher build cost (Azure Bot Service registration). Not MVP but next.
+  - **Key file paths:** `team-docs/proposals/030a-dm-platform-experience-analysis.md` (Verbal), `team-docs/proposals/030a-connector-recommendation-update.md` (Kujan), `.ai-team/decisions/inbox/keaton-messaging-platform.md`
+
+📌 Team update (2026-02-11): Discord is v0.3.0 MVP messaging connector for Squad DM, replacing Telegram. Three-tier delivery: CCA (prompt-only) → Discord webhooks (30 min) → Discord bridge (8-16h). Teams is v0.4.0. Squad DM Gateway must have zero GitHub-specific imports. — decided by Keaton, Kujan, Verbal

@@ -3004,3 +3004,29 @@ Brady's direction: "People think we need more universes." Current allowlist (14 
 
 **Next Steps:** (1) Brady reviews Issue #10 and prioritizes cross-client validation. (2) Verbal or future agent runs spike: "Test Squad on VS Code with runSubagent". (3) Results inform Proposal 034+ (cross-client compatibility layer, if needed).
 
+
+
+### 2026-02-11: Discord is the v0.3.0 MVP messaging connector for Squad DM
+**By:** Keaton
+**What:** Discord replaces Telegram as the first rich messaging connector for Squad DM. The v0.3.0 delivery is three tiers: (1) CCA-as-squad-member via GitHub Issues (2-4h, prompt-only, unchanged), (1b) Discord webhook notifications for one-way alerts (30 min, new), (2) Discord conversational bridge via Copilot SDK (8-16h, replaces Telegram bridge). Teams is the second connector target for v0.4.0. Telegram is deprioritized per Brady's explicit preference.
+**Why:** Brady prefers Discord over Telegram. The team analysis confirms this is the right call on multiple axes:
+- **Technical (Kujan):** Build cost delta is ~30-70 LOC (~1 hour) over Telegram. Discord's `discord.js` library is mature. Channel-per-repo is native (no workarounds). Bot setup is straightforward via Discord Developer Portal.
+- **Experience (Verbal):** Discord wins the "text my squad from my phone" feeling. Rich embeds with per-agent colors give instant visual identity. 2000-char message limit naturally enforces DM summary mode. The dev community already lives on Discord — no mental model shift for users.
+- **Per-repo:** Discord server with text channels per repo (`#squad`, `#other-project`) maps cleanly. Superior to Telegram groups, comparable to Teams channels but lighter weight.
+- **Lock-in:** Zero. `discord.js` has no GitHub coupling. The Squad DM Gateway architecture keeps the messaging layer platform-agnostic — swapping Discord for Teams or Slack later is an adapter change, not an architecture change.
+
+### 2026-02-11: GitHub integrations are notification-only, not a messaging replacement
+**By:** Keaton
+**What:** GitHub-for-Teams, Copilot Extensions, and GitHub Actions webhooks provide one-way notification capabilities but cannot replace building a conversational bot. GitHub-for-Teams delivers event cards (push, PR, issue events) but is not programmable or extensible. Copilot Extensions are the wrong architecture for messaging bridges. GitHub Actions can push webhook notifications to Discord/Teams for free (one-way alerts).
+**Why:** Brady asked whether GitHub's existing integrations could give us messaging "for free." The answer is: partially. One-way notifications (CI failure → Discord alert) are free via GitHub Actions webhooks. Conversational messaging (Brady asks a question → agents respond) requires a bot. This confirms the two-tier architecture: GitHub-native for work assignment (CCA), purpose-built bot for conversation (Discord).
+
+### 2026-02-11: Squad DM Gateway must have zero GitHub-specific imports
+**By:** Keaton
+**What:** The shared Squad DM Gateway layer (message routing, agent spawning, response formatting) must never import GitHub-specific libraries or APIs. Platform adapters (Discord, Teams, Slack) are thin and replaceable. The gateway is the shared core. This preserves the path to Azure DevOps and GitLab support.
+**Why:** Brady's concern about platform lock-in is valid and architecturally addressable. The adapter pattern keeps options open: Discord adapter imports `discord.js`, Teams adapter imports Bot Framework SDK, but the gateway itself is platform-agnostic. If Squad adds ADO or GitLab hosting support later, the messaging layer requires zero changes — only the hosting/auth layer adapts. CCA is GitHub-only by nature but is additive (Tier 1), not foundational.
+
+### 2026-02-11: DM output mode should be platform-aware via adapter formatting
+**By:** Keaton
+**What:** The DM output mode prompt produces a platform-neutral summary (markdown with structured fields). Each platform adapter transforms this into native rendering: Discord rich embeds with agent-color sidebars, Teams Adaptive Cards with action buttons, etc. The prompt itself does not need per-platform variants — the adapter handles presentation.
+**Why:** Verbal's analysis showed that Discord embeds, Teams Adaptive Cards, and Telegram markdown all support the same core pattern (agent identity + summary + link + actions) but with different rendering primitives. Making the prompt platform-neutral and the adapter platform-specific is cleaner than maintaining N prompt variants. Agent personality (emoji + name + role) is preserved identically across all platforms — only the visual container changes.
+
