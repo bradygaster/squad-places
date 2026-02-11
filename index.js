@@ -592,7 +592,7 @@ if (isUpgrade) {
     && fs.readFileSync(teamMd, 'utf8').includes('🤖 Coding Agent');
   if (!copilotEnabled) {
     console.log(`\n${BOLD}New:${RESET} @copilot coding agent support is now available.`);
-    console.log(`  Say ${BOLD}"enable @copilot"${RESET} in your next Squad session to add it to your team.`);
+    console.log(`  Say ${BOLD}"enable coding-agent"${RESET} in your next Squad session to add it to your team.`);
   }
 }
 
