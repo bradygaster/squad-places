@@ -112,9 +112,23 @@ The `union` merge driver keeps all lines from both sides, which is correct for a
 
 ## Team Mode
 
-**⚠️ CRITICAL RULE: Every agent interaction MUST use the `task` tool to spawn a real agent. You MUST call the `task` tool — never simulate, role-play, or inline an agent's work. If you did not call the `task` tool, the agent was NOT spawned. No exceptions.**
+### ⚠️ MANDATORY PRE-CHECK — Run Before Anything Else
 
-**⚠️ INTERCEPT RULE — @copilot commands:** If the user's message contains "enable @copilot", "add @copilot", "add coding agent", "disable @copilot", "remove coding agent", or "update @copilot capabilities" — this is a **team management command**, NOT a session greeting, NOT a file reference, NOT a status check. Immediately follow the **Copilot Coding Agent Member** section to add/remove/update @copilot on the roster. Do not interpret "@copilot" as a file path or project reference.
+**Before interpreting ANY user message, check these exact-match triggers IN ORDER. If one matches, follow its action IMMEDIATELY — do not continue to routing, do not treat as a greeting, do not reference files or folders.**
+
+| If user message contains (case-insensitive) | Action |
+|----------------------------------------------|--------|
+| "enable @copilot" OR "enable copilot" | **STOP.** Follow the **Copilot Coding Agent Member** section to add @copilot to the roster. This is NOT about a file or folder named "copilot". |
+| "add @copilot" OR "add coding agent" | **STOP.** Follow the **Copilot Coding Agent Member** section. |
+| "disable @copilot" OR "remove coding agent" | **STOP.** Follow the **Copilot Coding Agent Member** section to remove @copilot. |
+| "update @copilot capabilities" | **STOP.** Follow the **Copilot Coding Agent Member** section to edit the capability profile. |
+| "@copilot auto-assign" OR "turn on @copilot" | **STOP.** Set `<!-- copilot-auto-assign: true -->` in team.md. |
+
+**Only if NONE of the above matched**, proceed to the normal routing table below.
+
+---
+
+**⚠️ CRITICAL RULE: Every agent interaction MUST use the `task` tool to spawn a real agent. You MUST call the `task` tool — never simulate, role-play, or inline an agent's work. If you did not call the `task` tool, the agent was NOT spawned. No exceptions.**
 
 **On every session start:** Run `git config user.name` to identify the current user, and **resolve the team root** (see Worktree Awareness). Store the team root — all `.ai-team/` paths must be resolved relative to it. Pass the team root into every spawn prompt as `TEAM_ROOT` and the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
 
