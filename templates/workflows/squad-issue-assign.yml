@@ -45,7 +45,21 @@ jobs:
 
             let assignedMember = null;
             if (isCopilotAssignment) {
+              // @copilot is the GitHub Copilot coding agent — always valid, no roster lookup needed
               assignedMember = { name: '@copilot', role: 'Coding Agent' };
+
+              // Always assign @copilot to the issue so the coding agent picks it up
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  assignees: ['copilot']
+                });
+                core.info(`Assigned @copilot to issue #${issue.number}`);
+              } catch (err) {
+                core.warning(`Could not assign @copilot: ${err.message}`);
+              }
             } else {
               let inMembersTable = false;
               for (const line of lines) {
@@ -77,34 +91,15 @@ jobs:
               return;
             }
 
-            // Auto-assign @copilot if enabled and this is a copilot assignment
-            if (isCopilotAssignment && copilotAutoAssign) {
-              try {
-                await github.rest.issues.addAssignees({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  assignees: ['copilot']
-                });
-                core.info(`Auto-assigned @copilot to issue #${issue.number}`);
-              } catch (err) {
-                core.warning(`Could not auto-assign @copilot: ${err.message}`);
-              }
-            }
-
             // Post assignment acknowledgment
             let comment;
             if (isCopilotAssignment) {
-              const autoAssignNote = copilotAutoAssign
-                ? `@copilot has been assigned and will pick this up automatically.`
-                : `Assign @copilot on this issue to start autonomous work.`;
-
               comment = [
                 `### 🤖 Routed to @copilot (Coding Agent)`,
                 '',
                 `**Issue:** #${issue.number} — ${issue.title}`,
                 '',
-                autoAssignNote,
+                `@copilot has been assigned and will pick this up automatically.`,
                 '',
                 `> The coding agent will create a \`copilot/*\` branch and open a draft PR.`,
                 `> Review the PR as you would any team member's work.`,
