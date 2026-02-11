@@ -93,3 +93,5 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
 
+- **UTF-8 emoji mojibake in test file.** `test/index.test.js` had 8 instances of garbled emoji strings (e.g. `≡ƒæñ` instead of `👤`, `≡ƒôî` instead of `📌`, `≡ƒñû` instead of `🤖`, `≡ƒƒó`/`≡ƒƒí`/`≡ƒö┤` instead of `🟢`/`🟡`/`🔴`). Root cause: file was likely saved or transferred through a system that re-encoded UTF-8 multibyte sequences as Latin-1/CP1252. Fixed all 8 instances to use real Unicode codepoints matching what `index.js` and `squad.agent.md` produce. All 118 tests pass.
+

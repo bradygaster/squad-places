@@ -153,3 +153,5 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
 
+
+📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton

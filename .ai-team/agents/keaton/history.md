@@ -181,3 +181,21 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
   - **Key file paths:** `team-docs/proposals/030a-dm-platform-experience-analysis.md` (Verbal), `team-docs/proposals/030a-connector-recommendation-update.md` (Kujan), `.ai-team/decisions/inbox/keaton-messaging-platform.md`
 
 📌 Team update (2026-02-11): Discord is v0.3.0 MVP messaging connector for Squad DM, replacing Telegram. Three-tier delivery: CCA (prompt-only) → Discord webhooks (30 min) → Discord bridge (8-16h). Teams is v0.4.0. Squad DM Gateway must have zero GitHub-specific imports. — decided by Keaton, Kujan, Verbal
+
+- **2026-02-11: Proposal 034 — MCP Integration for Squad Agents (Issue #11, Fritz's Request)**
+  - **Fritz (@csharpfritz) filed Issue #11 requesting MCP integration.** His ask is concrete and well-motivated: (1) interact with MCP services configured in mcp.json, (2) enable Trello board management alongside GitHub Issues, (3) enable Aspire dashboard monitoring during deployments. All valid extensions of Squad's provider-agnostic architecture.
+  - **Identified the critical unknown: Copilot platform behavior.** Does the platform automatically inject MCP tools into spawned agents when mcp.json is configured? This is the gate for all downstream decisions. WI-1 (spike) answers this in 2-3 hours. Without this answer, we can't recommend a confident path.
+  - **Designed three options by effort level:**
+    - Option A (Platform-Native, zero work): MCP tools auto-inject, Squad does nothing. Risk: silent failures if assumption is wrong.
+    - Option B (Awareness Layer, 4-6 hours): Coordinator reads mcp.json, lists available tools to agents. Low risk, unlocks all of Fritz's use cases.
+    - Option C (Routing Integration, 8-12 hours): Awareness + ceremonies (Trello sync, Aspire checks, etc.). Premature — ceremonies should emerge from real usage.
+  - **Recommended Option B.** It's pragmatic: do the minimum (discovery) that unlocks both use cases without committing to ceremonies we haven't validated. All prompt-level, zero npm dependencies (jq parsing is trivial). WI-1 spike gates the commitment.
+  - **Fritz's use cases are the design drivers.** Trello = sync between GitHub Issues (code) and Trello boards (planning). Aspire = monitor metrics/logs during deployment, decide to proceed or rollback. Both achievable with awareness layer.
+  - **v0.3.0 Wave 2 or v0.4.0 timing.** Depends on WI-1 results. If platform auto-injection is confirmed, slip into v0.3.0 (3-4 hours, low risk). If uncertain, defer to v0.4.0 and resolve platform questions first.
+  - **Posted comment on Issue #11** thanking Fritz, sharing proposal highlights inline (since links to local files don't work), asking for feedback on priorities and other MCP services.
+  - **Key learning: Not all unknowns are equal.** This one (platform behavior) is a blocker for all implementation work. Spent proposal time clarifying the unknown rather than speculating past it. WI-1 validates the whole direction upfront.
+  - **Key file paths:** `team-docs/proposals/034-mcp-integration.md`, `.ai-team/decisions/inbox/keaton-mcp-integration.md`, GitHub Issue #11 comment (posted).
+
+📌 Team update (2026-02-11): Proposal 034 — MCP Integration architecture designed. Recommendation: Option B (Awareness Layer, 4-6h). Blocks on WI-1 platform behavior validation. Fritz's use cases: Trello board sync + Aspire dashboard monitoring. — decided by Keaton
+
+📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton

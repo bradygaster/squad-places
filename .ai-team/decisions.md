@@ -3030,3 +3030,89 @@ Brady's direction: "People think we need more universes." Current allowlist (14 
 **What:** The DM output mode prompt produces a platform-neutral summary (markdown with structured fields). Each platform adapter transforms this into native rendering: Discord rich embeds with agent-color sidebars, Teams Adaptive Cards with action buttons, etc. The prompt itself does not need per-platform variants — the adapter handles presentation.
 **Why:** Verbal's analysis showed that Discord embeds, Teams Adaptive Cards, and Telegram markdown all support the same core pattern (agent identity + summary + link + actions) but with different rendering primitives. Making the prompt platform-neutral and the adapter platform-specific is cleaner than maintaining N prompt variants. Agent personality (emoji + name + role) is preserved identically across all platforms — only the visual container changes.
 
+
+
+
+# Decision: MCP Integration Direction for Squad
+
+**Author:** Keaton (Lead)  
+**Date:** 2026-02-11  
+**Requested by:** Brady (from Fritz's Issue #11)  
+**Status:** Awaiting Brady's decision
+
+---
+
+## Problem
+
+Fritz (@csharpfritz) has requested that Squad agents be able to interact with MCP services configured in `mcp.json`. Specifically: Trello board management and Aspire dashboard monitoring during deployments. This is a valid extension of Squad's provider-agnostic architecture.
+
+---
+
+## Recommendation
+
+**Pursue Option B (Awareness Layer)** — low-effort MCP discovery that answers Fritz's use cases without speculating about platform behavior.
+
+### Why Option B
+
+1. **Option A (Platform-Native) is risky.** It assumes Copilot platform auto-injects MCP tools. If it doesn't, agents fail silently.
+2. **Option B adds safety.** Explicit discovery prevents surprises and enables intelligent routing.
+3. **Option C is premature.** Ceremonies should emerge from real usage, not speculation.
+4. **Zero dependencies maintained.** `jq` parsing of `mcp.json` is trivial.
+
+### Implementation
+
+**Phase 1: Validation Spike (WI-1)** — 2-3 hours
+- Test MCP tool availability in Copilot CLI
+- Answer: does the platform auto-inject? How do agents access?
+- Document findings
+
+**Phase 2: Discovery (WI-2)** — 3-4 hours (if WI-1 is green)
+- Coordinator reads `mcp.json` at session start
+- Pass available tools list to agent spawns
+- All prompt-level changes, no code modifications
+
+**Phase 3: Routing Docs (WI-3)** — 2-3 hours (after WI-2)
+- Update `routing.md` with MCP tool → agent mappings
+- Document Trello sync and Aspire monitoring ceremonies
+- User-facing documentation
+
+### Effort & Risk
+
+- **Total:** 7-10 hours if WI-1 validates platform behavior
+- **Risk:** Medium — depends on Copilot platform MCP support
+- **Mitigation:** WI-1 spike gates everything else
+
+---
+
+## Fritz's Use Cases (Design Drivers)
+
+**Trello:** Sync between GitHub Issues (code work) and Trello boards (planning/roadmap).
+
+**Aspire:** Monitor dashboards during deployments — error rates, latency, resource usage. Validate deployment success before promoting to production.
+
+Both are achievable with awareness layer (Option B). Ceremonies can be documented without code changes.
+
+---
+
+## Timeline
+
+- **v0.3.0 Wave 2:** If WI-1 shows platform auto-injection works, we can slip MCP discovery into v0.3.0 (3-4 hours, low risk)
+- **v0.4.0 Wave 1:** If WI-1 is inconclusive, defer to v0.4.0 and resolve platform questions first
+
+---
+
+## Next Steps
+
+1. **Brady approval:** Proceed with proposal and WI-1 spike?
+2. **WI-1 execution:** Keaton validates platform MCP support
+3. **Community feedback:** Fritz responds to proposal comment on Issue #11 with priorities/feedback
+4. **Decision:** After WI-1, decide v0.3.0 vs v0.4.0 placement
+
+---
+
+## Context Files
+
+- **Proposal:** `team-docs/proposals/034-mcp-integration.md`
+- **Issue:** GitHub Issue #11 (Feature: Enable MCP use)
+- **Related:** Proposal 032a (Provider Abstraction), 032c (Label Taxonomy)
+
