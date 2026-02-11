@@ -51,7 +51,12 @@ npx github:bradygaster/squad copilot --off
 
 ### In conversation
 
-Say something like **"I want to add copilot to the squad"** in a Squad session. The coordinator will add @copilot to the roster.
+Say something like:
+- **"I want to add copilot to the squad"**
+- **"hire copilot to the squad"**
+- **"add team member copilot"**
+
+The coordinator will add @copilot to the roster.
 
 > **Note:** If your project has features named "copilot" (e.g., a Copilot extension), the coordinator may misinterpret the phrase as project work. Use the CLI in that case.
 
