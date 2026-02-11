@@ -19,7 +19,7 @@ jobs:
       - name: Identify assigned member and trigger work
         uses: actions/github-script@v7
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -50,11 +50,11 @@ jobs:
               // @copilot is the GitHub Copilot coding agent — always valid, no roster lookup needed
               assignedMember = { name: '@copilot', role: 'Coding Agent' };
 
-              // Assign @copilot using gh CLI (the documented way for the coding agent)
+              // Assign @copilot using gh CLI
               const { execSync } = require('child_process');
               try {
-                execSync(`gh issue edit ${issue.number} --add-assignee "@copilot"`, {
-                  env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN }
+                execSync(`gh issue edit ${issue.number} --repo ${process.env.GITHUB_REPOSITORY} --add-assignee copilot`, {
+                  env: { ...process.env }
                 });
                 core.info(`Assigned @copilot to issue #${issue.number}`);
               } catch (err) {
