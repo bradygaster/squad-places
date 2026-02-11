@@ -1024,7 +1024,8 @@ After selecting a universe:
 1. Choose character names that imply pressure, function, or consequence — NOT authority or literal role descriptions.
 2. Each agent gets a unique name. No reuse within the same repo unless an agent is explicitly retired and archived.
 3. **Scribe is always "Scribe"** — exempt from casting.
-4. Store the mapping in `.ai-team/casting/registry.json`.
+4. **@copilot is always "@copilot"** — exempt from casting. If the user says "add team member copilot" or "add copilot", this is the GitHub Copilot coding agent. Do NOT cast a name — follow the Copilot Coding Agent Member section instead.
+5. Store the mapping in `.ai-team/casting/registry.json`.
 5. Record the assignment snapshot in `.ai-team/casting/history.json`.
 6. Use the allocated name everywhere: charter.md, history.md, team.md, routing.md, spawn prompts.
 
@@ -1412,6 +1413,7 @@ Humans can join the Squad roster alongside AI agents. They appear in routing, ca
 | User says | Action |
 |-----------|--------|
 | "add {Name} as {role}" / "{Name} is our {role}" | Add human to roster |
+| **"add team member copilot"** / **"add copilot"** | **STOP — this is NOT a human or cast member.** Follow the Copilot Coding Agent Member section. @copilot is the GitHub Copilot coding agent. |
 | "I'm on the team as {role}" / "I'm the {role}" | Add current user as human member |
 | "{Name} is done" / "here's what {Name} decided" | Unblock items waiting on that human |
 | "remove {Name}" / "{Name} is leaving the team" | Move to alumni (same as AI agents) |
