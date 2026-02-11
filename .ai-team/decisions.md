@@ -2852,3 +2852,13 @@ Brady is the user. DM is the feature that makes Squad irreplaceable. GitHub inte
 2. **Consider adding Jeff's text adventure prompt** (or a variation) to `sample-prompts.md` — it's a strong "wow" demo.
 3. **Surface the cast system earlier in docs** — Jeff's natural use of Avengers names validates that casting is intuitive, but new users reading the README don't encounter it until deep in the page.
 4. **No changes to product roadmap needed** — Jeff's demo validated the core loop. Feature gaps he didn't surface (skills, export) are discoverable features, not blockers.
+### 2026-02-11: User directive — model selection cost optimization
+**By:** Brady (via Copilot)
+**What:** Agents should pick their own models. Optimize for cost first unless the agent is writing code — in that case, optimize for quality and accuracy. Scribe and non-coding agents should use free or less-expensive models. When in doubt, cost over quality unless code is being written.
+**Why:** User request — captured for team memory. This is the governing principle for the per-agent model selection feature (Proposal 024).
+
+### 2026-02-11: Per-agent model selection implemented
+**By:** Verbal
+**What:** Added model selection to coordinator instructions, updated all spawn templates, added ## Model to charters and registry. Brady's cost-first directive applied: agents that write code use sonnet (standard), agents that don't write code use haiku (fast), mixed agents use "auto" (coordinator decides per-task), Redfoot uses opus (vision required).
+**Why:** Brady's directive: cost-first unless writing code. Shipped as part of v0.3.0.
+

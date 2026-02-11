@@ -62,3 +62,5 @@
 
 
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — Scribe merge is Wave 2 integration item. — decided by Keaton
+
+📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal

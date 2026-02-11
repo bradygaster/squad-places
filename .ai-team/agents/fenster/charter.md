@@ -35,6 +35,12 @@
 
 **If I review others' work:** On rejection, I may require a different agent to revise (not the original author) or request a new specialist be spawned. The Coordinator enforces this.
 
+## Model
+
+- **Preferred:** claude-sonnet-4.5
+- **Rationale:** Core developer — writes code. Quality and accuracy first for implementation, refactoring, and runtime work.
+- **Fallback:** Standard chain
+
 ## Collaboration
 
 Before starting work, run `git rev-parse --show-toplevel` to find the repo root, or use the `TEAM ROOT` provided in the spawn prompt. All `.ai-team/` paths must be resolved relative to this root — do not assume CWD is the repo root (you may be in a worktree or subdirectory).

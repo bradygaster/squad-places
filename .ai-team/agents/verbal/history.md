@@ -134,3 +134,19 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 📌 Team update (2026-02-11): Fritz video analysis merged — messaging takeaways: 'Markdown, not magic' as trust signal, surface cast system earlier in docs, quantifiable output is strongest demo beat — decided by McManus
 
+- **2026-02-11: Per-Agent Model Selection — Implementation (Proposal 024 Phases 1-2)** — Implemented Brady's cost-first directive across the full model selection system. Key decisions:
+
+  - **Brady's directive supersedes Proposal 024's role-based defaults.** Original design had Tester on haiku, DevRel on sonnet. Brady's rule is simpler: writing code → quality first (sonnet), not writing code → cost first (haiku). This changed Tester from haiku to sonnet (writes test code) and DevRel from sonnet to haiku (writes docs, not code).
+
+  - **Layer 4 default changed from sonnet to haiku.** "When in doubt, cost over quality unless code is being written." The fallback for unknown agents/tasks should be cheap, not expensive.
+
+  - **"auto" for mixed agents.** Keaton and Verbal do both code-adjacent work and non-code work. Setting them to "auto" lets the coordinator pick per-task rather than locking to one tier. Registry stores "auto" — coordinator decides at spawn time.
+
+  - **Scribe template hardcoded to haiku.** Scribe always gets `model: "claude-haiku-4.5"` directly in the template — no resolution needed. Scribe is always mechanical, always cheap.
+
+  - **All 9 spawn templates updated with `model` parameter.** Background, sync, generic, lightweight, explore, Scribe, ceremony facilitator, PRD decomposition — every `task` tool call now includes `model: "{resolved_model}"`.
+
+  - **Files modified:** `.github/agents/squad.agent.md` (model selection section + all spawn templates), `templates/charter.md` (## Model template), `.ai-team/casting/registry.json` (model fields), all 9 agent charters in `.ai-team/agents/*/charter.md`.
+
+
+📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal

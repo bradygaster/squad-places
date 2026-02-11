@@ -155,3 +155,5 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 
 📌 Team update (2026-02-11): Fritz video analysis merged — product signal: v0.2.0 features (skills, export, triage) not discovered in demo, parallel execution not visually apparent, iteration loop not demoed — decided by McManus
 
+
+📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal

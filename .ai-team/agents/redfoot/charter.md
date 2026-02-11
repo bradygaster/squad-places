@@ -35,6 +35,12 @@
 
 **If I review others' work:** On rejection, I may require a different agent to revise (not the original author) or request a new specialist be spawned. The Coordinator enforces this.
 
+## Model
+
+- **Preferred:** claude-opus-4.5
+- **Rationale:** Vision-capable model required for image analysis, color reasoning, and visual composition. Capability need overrides cost rule.
+- **Fallback:** Premium chain
+
 ## Collaboration
 
 Before starting work, run `git rev-parse --show-toplevel` to find the repo root, or use the `TEAM ROOT` provided in the spawn prompt. All `.ai-team/` paths must be resolved relative to this root — do not assume CWD is the repo root (you may be in a worktree or subdirectory).

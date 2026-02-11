@@ -34,6 +34,12 @@
 
 **If I review others' work:** On rejection, I may require a different agent to revise (not the original author) or request a new specialist be spawned. The Coordinator enforces this.
 
+## Model
+
+- **Preferred:** auto
+- **Rationale:** Mixed role — prompt architecture and agent design are like code (sonnet), research and analysis optimize for cost (haiku). Coordinator decides per-task.
+- **Fallback:** Standard chain — the coordinator handles fallback automatically
+
 ## Collaboration
 
 Before starting work, run `git rev-parse --show-toplevel` to find the repo root, or use the `TEAM ROOT` provided in the spawn prompt. All `.ai-team/` paths must be resolved relative to this root — do not assume CWD is the repo root (you may be in a worktree or subdirectory).

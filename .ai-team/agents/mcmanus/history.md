@@ -106,3 +106,5 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 
 📌 Team update (2026-02-11): Blog post 007 (first video coverage) and Fritz video messaging analysis merged to decisions.md — decided by McManus
 
+
+📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
