@@ -413,7 +413,7 @@ describe('error handling', () => {
   });
 
   it('fatal() exits with code 1 on error', () => {
-    // Run index.js from a fake root missing source files — triggers source validation fatal()
+    // Run index.js from a fake root missing source files ΓÇö triggers source validation fatal()
     const fakeRoot = path.join(tmpDir, 'fake-pkg');
     fs.mkdirSync(fakeRoot);
     fs.copyFileSync(INDEX, path.join(fakeRoot, 'index.js'));
@@ -580,7 +580,7 @@ describe('edge cases', () => {
 
 // --- Smart upgrade with migrations ---
 
-describe('smart upgrade — version delta', () => {
+describe('smart upgrade ΓÇö version delta', () => {
   let tmpDir;
 
   beforeEach(() => {
@@ -625,7 +625,7 @@ describe('smart upgrade — version delta', () => {
   });
 });
 
-describe('smart upgrade — migrations', () => {
+describe('smart upgrade ΓÇö migrations', () => {
   let tmpDir;
 
   beforeEach(() => {
@@ -646,12 +646,12 @@ describe('smart upgrade — migrations', () => {
       '.ai-team/skills/ should be created by migration');
   });
 
-  it('migrations are idempotent — running upgrade twice does not error', () => {
+  it('migrations are idempotent ΓÇö running upgrade twice does not error', () => {
     const agentFile = path.join(tmpDir, '.github', 'agents', 'squad.agent.md');
     fs.writeFileSync(agentFile, '---\nversion: "0.0.1"\n---\nold');
     runCmd(tmpDir, 'upgrade');
 
-    // Second upgrade — now versions match, hits "already up to date" path
+    // Second upgrade ΓÇö now versions match, hits "already up to date" path
     // which still runs migrations. Should not error.
     const result = runCmdStatus(tmpDir, 'upgrade');
     assert.equal(result.exitCode, 0, 'second upgrade should exit 0');
@@ -665,11 +665,11 @@ describe('smart upgrade — migrations', () => {
     fs.writeFileSync(agentFile, '---\nversion: "99.0.0"\n---\nfuture');
 
     // 99.0.0 != pkg.version so it will do full upgrade, and migrations
-    // run against oldVersion=99.0.0 — 0.2.0 is NOT > 99.0.0, so migration is skipped.
+    // run against oldVersion=99.0.0 ΓÇö 0.2.0 is NOT > 99.0.0, so migration is skipped.
     // Note: skills dir already exists from init (created in init flow), but the
     // migration itself is correctly skipped based on version comparison.
     runCmd(tmpDir, 'upgrade');
-    // The dir exists (from init), but the migration was skipped — verify upgrade succeeds
+    // The dir exists (from init), but the migration was skipped ΓÇö verify upgrade succeeds
     assert.ok(fs.existsSync(path.join(tmpDir, '.ai-team', 'skills')),
       '.ai-team/skills/ should exist (created during init)');
   });
@@ -682,7 +682,7 @@ describe('smart upgrade — migrations', () => {
 
     // The "already up to date" path runs migrations against oldVersion=pkg.version
     // and 0.2.0 > pkg.version only if pkg.version < 0.2.0.
-    // Current pkg.version is 0.1.0, so 0.2.0 > 0.1.0 is true → migration runs.
+    // Current pkg.version is 0.1.0, so 0.2.0 > 0.1.0 is true ΓåÆ migration runs.
     const output = runCmd(tmpDir, 'upgrade');
     assert.ok(output.includes('Already up to date'), 'should be up to date');
     assert.ok(fs.existsSync(path.join(tmpDir, '.ai-team', 'skills')),
@@ -782,7 +782,7 @@ describe('squad.agent.md prompt content', () => {
     });
 
     it('documents the human badge', () => {
-      assert.ok(agentMd.includes('👤 Human'), 'missing 👤 Human badge');
+      assert.ok(agentMd.includes('≡ƒæñ Human'), 'missing ≡ƒæñ Human badge');
     });
 
     it('documents differences from AI agents', () => {
@@ -985,7 +985,7 @@ describe('import subcommand', () => {
       agents: {
         fenster: {
           charter: '# Fenster Charter\nCore developer.',
-          history: '# Project Context\n\n## Learnings\n\n### Runtime Architecture\n- No runtime\n\n### Key File Paths\n- index.js\n\n📌 Team update: something happened'
+          history: '# Project Context\n\n## Learnings\n\n### Runtime Architecture\n- No runtime\n\n### Key File Paths\n- index.js\n\n≡ƒôî Team update: something happened'
         },
         keaton: {
           charter: '# Keaton Charter\nLead architect.',
@@ -1072,7 +1072,7 @@ describe('import subcommand', () => {
       'new agent should exist after import');
   });
 
-  it('round-trip: init → export → import preserves agents', () => {
+  it('round-trip: init ΓåÆ export ΓåÆ import preserves agents', () => {
     // Init a squad
     const srcDir = path.join(tmpDir, 'source');
     fs.mkdirSync(srcDir);
@@ -1139,7 +1139,7 @@ describe('import subcommand', () => {
     const history = fs.readFileSync(path.join(targetDir, '.ai-team', 'agents', 'fenster', 'history.md'), 'utf8');
 
     // Should have import marker
-    assert.ok(history.includes('📌 Imported from'), 'should have import marker');
+    assert.ok(history.includes('≡ƒôî Imported from'), 'should have import marker');
     assert.ok(history.includes('Portable knowledge carried over'), 'should mention portable knowledge');
 
     // Portable content should be present
@@ -1175,5 +1175,120 @@ describe('import subcommand', () => {
     const result = runCmdStatus(tmpDir, 'import');
     assert.equal(result.exitCode, 1, 'should exit 1');
     assert.ok(result.stderr.includes('Usage'), 'should show usage');
+  });
+});
+
+describe('copilot subcommand', () => {
+  let tmpDir;
+
+  function initWithTeam(dir) {
+    runInit(dir);
+    // Init creates directories but not team.md (coordinator does that)
+    // Create a minimal team.md so the copilot subcommand can proceed
+    const teamDir = path.join(dir, '.ai-team');
+    fs.mkdirSync(teamDir, { recursive: true });
+    fs.writeFileSync(path.join(teamDir, 'team.md'), '# The Squad\n\n## Project Context\n\nNo context yet.\n');
+  }
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'squad-copilot-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('fails when no squad exists', () => {
+    const { status } = runCmdStatus(tmpDir, 'copilot');
+    assert.notEqual(status, 0, 'should fail without a squad');
+  });
+
+  it('adds @copilot to team.md with capability profile', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const teamMd = fs.readFileSync(path.join(tmpDir, '.ai-team', 'team.md'), 'utf8');
+    assert.ok(teamMd.includes('≡ƒñû Coding Agent'), 'should have coding agent badge');
+    assert.ok(teamMd.includes('@copilot'), 'should have @copilot name');
+    assert.ok(teamMd.includes('≡ƒƒó Good fit'), 'should have capability profile');
+    assert.ok(teamMd.includes('≡ƒƒí Needs review'), 'should have needs-review tier');
+    assert.ok(teamMd.includes('≡ƒö┤ Not suitable'), 'should have not-suitable tier');
+  });
+
+  it('creates .github/copilot-instructions.md', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const dest = path.join(tmpDir, '.github', 'copilot-instructions.md');
+    assert.ok(fs.existsSync(dest), 'copilot-instructions.md should be created');
+    const content = fs.readFileSync(dest, 'utf8');
+    assert.ok(content.includes('Squad'), 'should reference Squad');
+    assert.ok(content.includes('.ai-team/team.md'), 'should reference team.md');
+  });
+
+  it('sets auto-assign when --auto-assign flag is used', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot --auto-assign');
+    const teamMd = fs.readFileSync(path.join(tmpDir, '.ai-team', 'team.md'), 'utf8');
+    assert.ok(teamMd.includes('<!-- copilot-auto-assign: true -->'), 'should have auto-assign enabled');
+  });
+
+  it('defaults auto-assign to false without flag', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const teamMd = fs.readFileSync(path.join(tmpDir, '.ai-team', 'team.md'), 'utf8');
+    assert.ok(teamMd.includes('<!-- copilot-auto-assign: false -->'), 'should have auto-assign disabled');
+  });
+
+  it('reports already on team if run twice', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const out = runCmd(tmpDir, 'copilot');
+    assert.ok(out.includes('already on the team'), 'should note already added');
+  });
+
+  it('enables auto-assign on existing copilot member', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    runCmd(tmpDir, 'copilot --auto-assign');
+    const teamMd = fs.readFileSync(path.join(tmpDir, '.ai-team', 'team.md'), 'utf8');
+    assert.ok(teamMd.includes('<!-- copilot-auto-assign: true -->'), 'should update to auto-assign');
+  });
+
+  it('removes @copilot with --off flag', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    runCmd(tmpDir, 'copilot --off');
+    const teamMd = fs.readFileSync(path.join(tmpDir, '.ai-team', 'team.md'), 'utf8');
+    assert.ok(!teamMd.includes('≡ƒñû Coding Agent'), 'should remove coding agent');
+  });
+
+  it('does not overwrite copilot-instructions.md on upgrade when @copilot is not enabled', () => {
+    initWithTeam(tmpDir);
+    const dest = path.join(tmpDir, '.github', 'copilot-instructions.md');
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, 'user customized');
+    runCmd(tmpDir, 'upgrade');
+    const content = fs.readFileSync(dest, 'utf8');
+    assert.equal(content, 'user customized', 'upgrade should not touch copilot-instructions.md when @copilot is not enabled');
+  });
+
+  it('upgrades copilot-instructions.md when @copilot is enabled on the team', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const dest = path.join(tmpDir, '.github', 'copilot-instructions.md');
+    fs.writeFileSync(dest, 'old version');
+    runCmd(tmpDir, 'upgrade');
+    const content = fs.readFileSync(dest, 'utf8');
+    assert.notEqual(content, 'old version', 'upgrade should overwrite copilot-instructions.md when @copilot is enabled');
+    assert.ok(content.includes('Squad'), 'should contain latest template content');
+  });
+
+  it('copilot-instructions.md content matches source template', () => {
+    initWithTeam(tmpDir);
+    runCmd(tmpDir, 'copilot');
+    const dest = path.join(tmpDir, '.github', 'copilot-instructions.md');
+    const src = path.join(ROOT, 'templates', 'copilot-instructions.md');
+    const destContent = fs.readFileSync(dest, 'utf8');
+    const srcContent = fs.readFileSync(src, 'utf8');
+    assert.equal(destContent, srcContent, 'should copy template exactly');
   });
 });

@@ -230,6 +230,7 @@ The Coordinator enforces this. No self-review of rejected work.
 - [**GitHub Issues Mode**](docs/features/github-issues.md) — Issue-driven development with `gh` CLI integration
 - [**PRD Mode**](docs/features/prd-mode.md) — Product requirements decomposition into work items
 - [**Human Team Members**](docs/features/human-team-members.md) — Mixed AI/human teams with routing
+- [**Copilot Coding Agent**](docs/features/copilot-coding-agent.md) — Add @copilot for autonomous issue work with capability-based routing
 - [**Skills System**](docs/features/skills.md) — Earned knowledge with confidence lifecycle
 - [**Tiered Response Modes**](docs/features/response-modes.md) — Direct/Lightweight/Standard/Full response depth
 - [**Smart Upgrade**](docs/scenarios/upgrading.md) — Version-aware upgrades with migrations
@@ -256,6 +257,7 @@ Labels are auto-created from your team roster via the `sync-squad-labels` workfl
 |-------|---------|
 | `squad` | Triage inbox — Lead reviews and assigns |
 | `squad:{name}` | Assigned to a specific squad member |
+| `squad:copilot` | Assigned to @copilot for autonomous coding agent work |
 
 Labels sync automatically when `.ai-team/team.md` changes, or you can trigger the workflow manually.
 
@@ -273,6 +275,7 @@ Squad installs three GitHub Actions workflows:
 
 - GitHub Actions must be enabled on the repository
 - The `GITHUB_TOKEN` needs `issues: write` and `contents: read` permissions
+- For @copilot auto-assign: a classic PAT with `repo` scope stored as `COPILOT_ASSIGN_TOKEN` repo secret (see [setup guide](docs/features/copilot-coding-agent.md#copilot_assign_token-required-for-auto-assign))
 - For automated issue work: [Copilot coding agent](https://docs.github.com/en/copilot) must be enabled on the repo
 
 ### Session Awareness
