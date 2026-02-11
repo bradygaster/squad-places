@@ -18,8 +18,6 @@ jobs:
 
       - name: Identify assigned member and trigger work
         uses: actions/github-script@v7
-        env:
-          COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -46,6 +44,15 @@ jobs:
             if (isCopilotAssignment) {
               // @copilot is the GitHub Copilot coding agent — always valid, no roster lookup needed
               assignedMember = { name: '@copilot', role: 'Coding Agent' };
+
+              // Assign copilot-swe-agent to the issue
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                assignees: ['copilot-swe-agent']
+              });
+              core.info(`Assigned copilot-swe-agent to issue #${issue.number}`);
             } else {
               let inMembersTable = false;
               for (const line of lines) {
@@ -112,32 +119,3 @@ jobs:
             });
 
             core.info(`Issue #${issue.number} assigned to ${assignedMember.name} (${assignedMember.role})`);
-
-      # Separate step for copilot assignment using PAT
-      - name: Assign @copilot coding agent
-        if: github.event.label.name == 'squad:copilot'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const issue_number = context.payload.issue.number;
-
-            await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
-              owner,
-              repo,
-              issue_number,
-              assignees: ['copilot-swe-agent[bot]'],
-              agent_assignment: {
-                target_repo: `${owner}/${repo}`,
-                base_branch: 'main',
-                custom_instructions: 'Pick this up based on the issue description. Follow repo conventions; add/update tests as appropriate.',
-                custom_agent: '',
-                model: ''
-              },
-              headers: {
-                accept: 'application/vnd.github+json',
-                'x-github-api-version': '2022-11-28'
-              }
-            });
