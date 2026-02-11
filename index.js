@@ -548,19 +548,19 @@ if (isUpgrade) {
       console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .github/copilot-instructions.md`);
     }
 
-    // Always update squad-owned workflows even when version matches
-    const workflowsSrcEarly = path.join(root, 'templates', 'workflows');
-    const workflowsDestEarly = path.join(dest, '.github', 'workflows');
-    if (fs.existsSync(workflowsSrcEarly) && fs.statSync(workflowsSrcEarly).isDirectory()) {
-      const wfFiles = fs.readdirSync(workflowsSrcEarly).filter(f => f.endsWith('.yml'));
-      fs.mkdirSync(workflowsDestEarly, { recursive: true });
+    // Refresh squad-owned files even when version matches
+    const workflowsSrc = path.join(root, 'templates', 'workflows');
+    const workflowsDest = path.join(dest, '.github', 'workflows');
+    if (fs.existsSync(workflowsSrc) && fs.statSync(workflowsSrc).isDirectory()) {
+      const wfFiles = fs.readdirSync(workflowsSrc).filter(f => f.endsWith('.yml'));
+      fs.mkdirSync(workflowsDest, { recursive: true });
       for (const file of wfFiles) {
-        fs.copyFileSync(path.join(workflowsSrcEarly, file), path.join(workflowsDestEarly, file));
+        fs.copyFileSync(path.join(workflowsSrc, file), path.join(workflowsDest, file));
       }
       console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} squad workflows (${wfFiles.length} files)`);
     }
 
-    // Always refresh squad.agent.md (may have changed on same version via branch)
+    // Refresh squad.agent.md
     try {
       fs.mkdirSync(path.dirname(agentDest), { recursive: true });
       fs.copyFileSync(agentSrc, agentDest);
