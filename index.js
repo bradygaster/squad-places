@@ -177,6 +177,10 @@ if (cmd === 'copilot') {
     console.log(`Run with ${BOLD}--auto-assign${RESET} to auto-assign @copilot on squad-labeled issues.`);
   }
   console.log();
+  console.log(`${BOLD}Required:${RESET} Add a classic PAT (repo scope) as a repo secret for auto-assignment:`);
+  console.log(`  1. Create token:  ${DIM}https://github.com/settings/tokens/new${RESET}`);
+  console.log(`  2. Set secret:    ${DIM}gh secret set COPILOT_ASSIGN_TOKEN${RESET}`);
+  console.log();
   process.exit(0);
 }
 
