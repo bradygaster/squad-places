@@ -18,6 +18,9 @@ jobs:
 
       - name: Identify assigned member and trigger work
         uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SQUAD_TOKEN: ${{ secrets.SQUAD_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -47,6 +50,39 @@ jobs:
             if (isCopilotAssignment) {
               // @copilot is the GitHub Copilot coding agent — always valid, no roster lookup needed
               assignedMember = { name: '@copilot', role: 'Coding Agent' };
+
+              // Assign coding agent via REST API with agent_assignment payload
+              try {
+                const response = await fetch(
+                  `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/issues/${issue.number}/assignees`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Accept': 'application/vnd.github+json',
+                      'Authorization': `Bearer ${process.env.SQUAD_TOKEN || process.env.GITHUB_TOKEN}`,
+                      'X-GitHub-Api-Version': '2022-11-28'
+                    },
+                    body: JSON.stringify({
+                      assignees: ['copilot-swe-agent[bot]'],
+                      agent_assignment: {
+                        target_repo: `${context.repo.owner}/${context.repo.repo}`,
+                        base_branch: 'main',
+                        custom_instructions: '',
+                        custom_agent: '',
+                        model: ''
+                      }
+                    })
+                  }
+                );
+                if (!response.ok) {
+                  const body = await response.text();
+                  core.warning(`Could not assign @copilot (${response.status}): ${body}`);
+                } else {
+                  core.info(`Assigned @copilot to issue #${issue.number}`);
+                }
+              } catch (err) {
+                core.warning(`Could not assign @copilot: ${err.message}`);
+              }
             } else {
               let inMembersTable = false;
               for (const line of lines) {
@@ -86,13 +122,9 @@ jobs:
                 '',
                 `**Issue:** #${issue.number} — ${issue.title}`,
                 '',
-                `To start autonomous work, assign @copilot to this issue:`,
-                '```',
-                `gh issue edit ${issue.number} --add-assignee copilot`,
-                '```',
-                `Or use the **Assignees** sidebar on the right →`,
+                `@copilot has been assigned and will pick this up automatically.`,
                 '',
-                `> Once assigned, the coding agent will create a \`copilot/*\` branch and open a draft PR.`,
+                `> The coding agent will create a \`copilot/*\` branch and open a draft PR.`,
                 `> Review the PR as you would any team member's work.`,
               ].join('\n');
             } else {
