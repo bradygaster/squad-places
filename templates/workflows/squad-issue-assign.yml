@@ -19,8 +19,7 @@ jobs:
       - name: Identify assigned member and trigger work
         uses: actions/github-script@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SQUAD_TOKEN: ${{ secrets.SQUAD_TOKEN }}
+          COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -40,9 +39,6 @@ jobs:
             const content = fs.readFileSync(teamFile, 'utf8');
             const lines = content.split('\n');
 
-            // Check if @copilot auto-assign is enabled
-            const copilotAutoAssign = content.includes('<!-- copilot-auto-assign: true -->');
-
             // Check if this is a coding agent assignment
             const isCopilotAssignment = memberName === 'copilot';
 
@@ -50,39 +46,6 @@ jobs:
             if (isCopilotAssignment) {
               // @copilot is the GitHub Copilot coding agent — always valid, no roster lookup needed
               assignedMember = { name: '@copilot', role: 'Coding Agent' };
-
-              // Assign coding agent via REST API with agent_assignment payload
-              try {
-                const response = await fetch(
-                  `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/issues/${issue.number}/assignees`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Accept': 'application/vnd.github+json',
-                      'Authorization': `Bearer ${process.env.SQUAD_TOKEN || process.env.GITHUB_TOKEN}`,
-                      'X-GitHub-Api-Version': '2022-11-28'
-                    },
-                    body: JSON.stringify({
-                      assignees: ['copilot-swe-agent[bot]'],
-                      agent_assignment: {
-                        target_repo: `${context.repo.owner}/${context.repo.repo}`,
-                        base_branch: 'main',
-                        custom_instructions: '',
-                        custom_agent: '',
-                        model: ''
-                      }
-                    })
-                  }
-                );
-                if (!response.ok) {
-                  const body = await response.text();
-                  core.warning(`Could not assign @copilot (${response.status}): ${body}`);
-                } else {
-                  core.info(`Assigned @copilot to issue #${issue.number}`);
-                }
-              } catch (err) {
-                core.warning(`Could not assign @copilot: ${err.message}`);
-              }
             } else {
               let inMembersTable = false;
               for (const line of lines) {
@@ -149,3 +112,32 @@ jobs:
             });
 
             core.info(`Issue #${issue.number} assigned to ${assignedMember.name} (${assignedMember.role})`);
+
+      # Separate step for copilot assignment using PAT
+      - name: Assign @copilot coding agent
+        if: github.event.label.name == 'squad:copilot'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+
+            await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
+              owner,
+              repo,
+              issue_number,
+              assignees: ['copilot-swe-agent[bot]'],
+              agent_assignment: {
+                target_repo: `${owner}/${repo}`,
+                base_branch: 'main',
+                custom_instructions: 'Pick this up based on the issue description. Follow repo conventions; add/update tests as appropriate.',
+                custom_agent: '',
+                model: ''
+              },
+              headers: {
+                accept: 'application/vnd.github+json',
+                'x-github-api-version': '2022-11-28'
+              }
+            });
