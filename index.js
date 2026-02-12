@@ -472,7 +472,8 @@ function stampVersion(filePath) {
   // Replace version field
   content = content.replace(/^version:\s*"[^"]*"/m, `version: "${pkg.version}"`);
   // Replace version in name field to show in agent picker UI
-  content = content.replace(/^name:\s*Squad\s*\(v[^)]*\)/m, `name: Squad (v${pkg.version})`);
+  // Handles both "Squad" and "Squad (vX.Y.Z)" formats
+  content = content.replace(/^name:\s*Squad(?:\s*\([^)]*\))?$/m, `name: Squad (v${pkg.version})`);
   fs.writeFileSync(filePath, content);
 }
 

@@ -85,7 +85,7 @@ You can also check your installed version from the command line:
 npx github:bradygaster/squad --version
 ```
 
-The output will show your installed version (e.g., `0.3.0`).
+The output will show your installed version (e.g., `X.Y.Z`).
 
 ---
 
