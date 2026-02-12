@@ -470,9 +470,9 @@ const isUpgrade = cmd === 'upgrade';
 function stampVersion(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
   // Replace version field
-  content = content.replace('version: "0.0.0-source"', `version: "${pkg.version}"`);
+  content = content.replace(/^version:\s*"[^"]*"/m, `version: "${pkg.version}"`);
   // Replace version in name field to show in agent picker UI
-  content = content.replace('name: Squad (v0.0.0-source)', `name: Squad (v${pkg.version})`);
+  content = content.replace(/^name:\s*Squad\s*\(v[^)]*\)/m, `name: Squad (v${pkg.version})`);
   fs.writeFileSync(filePath, content);
 }
 

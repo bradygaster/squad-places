@@ -64,17 +64,17 @@ Example: upgrading to v0.2.0 creates `.ai-team/skills/` if it doesn't already ex
 The version is displayed in the agent picker across all Copilot hosts (VS Code, CLI, Visual Studio):
 
 ```yaml
-name: Squad (v0.3.0)
+name: Squad (vX.Y.Z)
 ```
 
-When you select agents in Copilot, you'll see **"Squad (v0.3.0)"** in the dropdown — making it immediately clear which version you're running.
+When you select agents in Copilot, you'll see **"Squad (vX.Y.Z)"** in the dropdown — making it immediately clear which version you're running.
 
 ### 2. Version Field (For Reference)
 
 The frontmatter also includes a standalone version field:
 
 ```yaml
-version: "0.3.0"
+version: "X.Y.Z"
 ```
 
 ### 3. CLI Check
@@ -85,9 +85,7 @@ You can also check your installed version from the command line:
 npx github:bradygaster/squad --version
 ```
 
-```
-0.3.0
-```
+The output will show your installed version (e.g., `0.3.0`).
 
 ---
 
