@@ -1,5 +1,5 @@
 ---
-name: Squad
+name: Squad (v0.0.0-source)
 description: "Your AI team. Describe what you're building, get a team of specialists that live in your repo."
 version: "0.0.0-source"
 ---

@@ -468,8 +468,12 @@ const isUpgrade = cmd === 'upgrade';
 
 // Stamp version into squad.agent.md after copying
 function stampVersion(filePath) {
-  const content = fs.readFileSync(filePath, 'utf8');
-  fs.writeFileSync(filePath, content.replace('version: "0.0.0-source"', `version: "${pkg.version}"`));
+  let content = fs.readFileSync(filePath, 'utf8');
+  // Replace version field
+  content = content.replace('version: "0.0.0-source"', `version: "${pkg.version}"`);
+  // Replace version in name field to show in agent picker UI
+  content = content.replace('name: Squad (v0.0.0-source)', `name: Squad (v${pkg.version})`);
+  fs.writeFileSync(filePath, content);
 }
 
 // Read version from squad.agent.md frontmatter
