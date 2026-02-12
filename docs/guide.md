@@ -2,7 +2,7 @@
 
 ## What Is Squad?
 
-Squad gives you an AI development team through GitHub Copilot CLI. You describe what you're building. Squad proposes a team of specialists — lead, frontend, backend, tester — that live in your repo as files. Each agent runs in its own context window, reads its own knowledge, and writes back what it learned. They persist across sessions, share decisions, and get better the more you use them.
+Squad gives you an AI development team through GitHub Copilot. You describe what you're building. Squad proposes a team of specialists — lead, frontend, backend, tester — that live in your repo as files. Each agent runs in its own context window, reads its own knowledge, and writes back what it learned. They persist across sessions, share decisions, and get better the more you use them.
 
 It is not a chatbot wearing hats. Each team member is spawned as a real sub-agent with its own tools, its own memory, and its own area of expertise.
 
@@ -16,10 +16,12 @@ npx github:bradygaster/squad
 
 **Requirements:**
 - Node.js 22+
-- GitHub Copilot CLI (the `copilot` command)
+- GitHub Copilot (CLI, VS Code, Visual Studio, or Coding Agent)
 - A git repository (Squad stores team state in `.ai-team/`)
 
 This copies `squad.agent.md` into `.github/agents/` and installs templates into `.ai-team-templates/`. Your actual team (`.ai-team/`) is created at runtime when you first talk to Squad.
+
+**Note:** When you select Squad from the agent picker, you'll see the version number in the name (e.g., "Squad (v0.3.0)"). This helps you confirm which version is installed.
 
 ---
 
@@ -379,7 +381,7 @@ The coordinator uses 6.6% of its window. A 12-week veteran agent uses 4.5% — b
 - **Silent success bug** — approximately 7–10% of background agent spawns complete all their file writes but return no text response. This is a platform-level issue. Squad detects it by checking the filesystem for work product and reports what it finds. Work is not lost.
 - **Platform latency** — response times depend on the Copilot platform. Complex multi-agent tasks take 40–60 seconds. Simple questions are answered in 2–3 seconds.
 - **Node 22+** — requires Node.js 22.0.0 or later.
-- **GitHub Copilot CLI only** — no other runtimes are supported.
+- **GitHub Copilot required** — Squad works across Copilot hosts (CLI, VS Code, Visual Studio, Coding Agent).
 - **First session is the least capable** — agents improve as they accumulate history. Give it a few sessions before judging.
 
 ---
