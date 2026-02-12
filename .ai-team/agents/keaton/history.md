@@ -209,3 +209,18 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
 📌 Team update (2026-02-12): Release process hardened with branch protection rules and CI/CD-only writes to preview/main — decided by Kobayashi and Brady
 
 📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0. GO (Conditional) — pending Brady's project token scope grant. 3-phase implementation plan (17-26 squad-hours), agent assignments finalized. — decided by Keaton
+
+- **2026-02-11: Proposal 034 — Squad Pings You (Notification Architecture)**
+  - **Brady's vision:** "It needs to feel like I'm not in the team room, they are, and they need me so they pinged me." He wants notifications on his phone (Teams or iMessage) when squad agents hit a wall requiring human input.
+  - **Architectural decision: Squad ships ZERO notification infrastructure.** This is an MCP integration pattern — the consumer brings their own notification MCP server (Teams, iMessage, Discord, webhook). Squad teaches agents WHEN and HOW to notify via a skill.
+  - **Three-layer architecture:** (1) Notification skill at .ai-team/skills/human-notification/SKILL.md teaches agents when to ping, (2) MCP tool abstraction (no hardcoded tool names), (3) Consumer's MCP server (user-configured in .vscode/mcp.json).
+  - **Notification trigger taxonomy:** BLOCKED (work cannot proceed), ERROR (unrecoverable failure), DECISION (strategic choice needed), COMPLETE (opt-in only, for completion notifications).
+  - **Platform-agnostic message format:** Agent name + emoji + type badge + context + action + link. Platform-specific renderers: Teams (Adaptive Cards), iMessage (plain text), webhook (JSON payload).
+  - **Primary path: Microsoft Teams.** Brady said "ideal, especially per-repo channels." Teams channels-per-repo is native, Incoming Webhooks are simple (POST JSON to URL), mobile UX is enterprise-standard. Official MCP server exists: @microsoft/teams.mcp.
+  - **Secondary path: iMessage (Mac-only).** Zero account setup, instant delivery. Limitations: requires macOS with Messages.app running, cannot run headless. MCP server exists: imessage-mcp or imsg CLI.
+  - **Graceful degradation:** If no MCP server is configured, agents log the notification attempt and continue. Notifications are an enhancement, not a requirement.
+  - **Integration with existing features:** Human Team Members get BLOCKED notifications when work routes to them. Ralph can escalate stale work via notifications (opt-in). Coordinator triggers notifications when agents return blocked.
+  - **Zero maintenance burden for Squad:** The consumer owns the MCP server, credentials, and delivery mechanism. When Teams changes their API, the MCP server maintainer updates the server — not Squad.
+  - **Sprint estimate:** 1.8 squad-days (core) + 0.3 squad-days (Ralph integration, optional). Target version: 0.3.0 (alongside GitHub-native proposals).
+  - **Key file paths:** 	eam-docs/proposals/034-notification-architecture.md (full spec), .ai-team/skills/human-notification/SKILL.md (agent-facing skill), future docs/notifications.md (consumer setup guide).
+

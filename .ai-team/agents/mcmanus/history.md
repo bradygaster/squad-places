@@ -172,3 +172,11 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 📌 Team update (2026-02-12): Tips & Tricks documentation decision approved — user-facing guide on prompt patterns, parallel work, decisions as permanent rules, pitfall recovery — decided by McManus
 
 📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0 implementation. McManus assigned Phase 3 (WI-6: documentation). Feature is GO conditional on Brady granting project token scope. — decided by Keaton
+
+- **Squad Pings You documentation (2026-02-12)** — `docs/features/notifications.md`. Consumer-facing guide to setting up squad notifications. Key structure: Overview (2-3 sentences) → How It Works (architecture: skill-based, bring-your-own MCP) → Quick Start paths (Teams webhook/official, iMessage, Discord, custom webhook) → Triggers table → Notification format with examples → Configuration (chooseable triggers, quiet hours) → Troubleshooting (MCP startup, webhook validity, frequency control) → Architecture notes. Style: Straight facts, no adjectives, shows concrete examples, concise procedural steps. Brady's vision applied: "they pinged me" framing, actionable messages with links. Supports zero-auth paths (webhooks) and full-auth paths (Azure AD).
+
+## Learnings
+
+- **Straight facts tone directive (2026-02-10)** — Applied to notifications docs: facts only, no "amazing" or "incredible", energy from specificity (concrete notification examples, architecture clarity), no narrative framing or sales language. Every sentence states what a feature is, how it works, what it depends on, or what it replaces.
+- **File structure conventions** — Feature docs live in `docs/features/` with cross-references using relative markdown links. See Also section at bottom links to related features and guides. Headings use `##` for major sections, `###` for subsections, tables for comparison data.
+- **MCP ecosystem basics** — Squad uses MCP servers for external integrations. Configuration lives in `.vscode/mcp.json` with command/args/env structure. Environment variables pass secrets and configuration. The `human-notification` skill teaches agents when to invoke the MCP server.
