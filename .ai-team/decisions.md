@@ -4009,3 +4009,104 @@ Document is self-contained and can be cross-referenced in README or featured in 
 This doc assumes the user has installed Squad and formed a team. It's about effectiveness, not mechanics.
 
 
+
+### 2026-02-12: Universe allowlist expansion
+**By:** Fenster
+**What:** Added 11 new universes to the casting allowlist (Adventure Time, Futurama, Seinfeld, The Office, Cowboy Bebop, Fullmetal Alchemist, Stranger Things, The Expanse, Arcane, Ted Lasso, Dune). Updated both `.github/agents/squad.agent.md` and `.ai-team/casting/policy.json`. Closed issue #21.
+**Why:** The existing 20-universe list was genre-heavy on heist/crime films and light on animation, anime, sitcoms, and workplace comedy. Community request (Gabe, issue #21) for Adventure Time was the catalyst. The 10 additional universes were selected to diversify genre coverage — adding sitcom (Seinfeld, The Office), anime (Cowboy Bebop, Fullmetal Alchemist), animation (Futurama, Arcane), horror/drama (Stranger Things), hard sci-fi (The Expanse), sports/comedy (Ted Lasso), and epic sci-fi (Dune). Capacity values set conservatively (8–15) based on named character pools. Two constraint entries added where protagonist avoidance improves casting variety.
+
+
+# Issue #6 (Project Boards) — Go/No-Go Assessment
+
+**Date:** 2026-02-11  
+**By:** Keaton (Lead)  
+**Status:** Go (Conditional v0.4.0)  
+**Posted:** https://github.com/bradygaster/squad/issues/6#issuecomment-3888277477
+
+---
+
+## What
+
+Project Boards (V2) integration for Squad is **approved for v0.4.0 implementation**. The feature is architecturally sound, technically feasible with zero npm dependencies, and has clear 3-phase implementation plan.
+
+---
+
+## Why
+
+1. **Validated architecture:** Labels drive automation (source of truth), boards provide visualization (read-only projection). No state conflicts. Complements existing 032/032c/PR#5 work.
+
+2. **Zero-dependency confirmed:** Kujan's 033a assessment proved `gh project *` CLI covers all 12 required operations. GitHub MCP server has zero Projects V2 tools. No npm packages needed.
+
+3. **Single blocker is fixable:** Missing `project` token scope is not a design problem. Brady runs `gh auth refresh -s project` once, feature is unblocked. Graceful degradation handles missing scope at runtime.
+
+4. **Clear sprint decomposition:** 17-26 squad-hours across 3 agents, 3 phases:
+   - Phase 1 (Foundation): Validate CLI commands work, define provider interface (WI-1, WI-2)
+   - Phase 2 (Integration): Coordinator prompts + sync workflow (WI-3, WI-4) — can parallelize Fenster + Verbal
+   - Phase 3 (Polish): Query/display + docs (WI-5, WI-6) — can parallelize Verbal + McManus
+
+5. **Community signal matters:** @londospark's Issue #6 is the first external feature request with concrete technical proposal. Shipping it demonstrates we listen and move fast. v0.4.0 is achievable in 12-16 calendar days if phases 2-3 overlap.
+
+---
+
+## Rationale
+
+**v0.4.0, not v0.3.0:** Brady's directive for v0.3.0 is ONE feature (proposals as GitHub Issues, 032). Project boards sit on top of the label/issue foundation that 032/032c/PR#5 build. The right sequence is labels first (v0.3.0), boards as a dashboard (v0.4.0). This is not deferral, it's architecture.
+
+**Zero-dependency constraint holds:** Proposal 033 initially suggested GraphQL client library. Kujan's 033a recommendation is `gh project *` CLI commands exclusively. This preserves our zero-dependency architecture and is more maintainable long-term.
+
+**Provider abstraction from day 1:** While GitHub-only on Day 1, the design documents cross-provider mapping (GitHub/ADO/GitLab). 033a shows each provider has equivalent operations. No future architectural rework needed.
+
+---
+
+## Prerequisites
+
+**Brady must run before squad starts:**
+```bash
+gh auth refresh -s project
+```
+
+Grants `project` scope to the token. One-time interactive step, ~10 seconds. Verify:
+```bash
+gh auth status 2>&1 | grep "project"
+```
+
+If scope is missing at runtime, graceful degradation kicks in: board operations skip silently, user gets a message with fix instructions.
+
+---
+
+## Agent Assignments
+
+- **Fenster (Core Dev):** WI-1 (validate GraphQL commands), WI-2 (provider interface), WI-4 (sync workflow)
+- **Verbal (Prompt Engineer):** WI-3 (board init prompts), WI-5 (board query/display)
+- **McManus (DevRel):** WI-6 (documentation)
+
+---
+
+## Risks Mitigated
+
+| Risk | Mitigation |
+|------|-----------|
+| `gh project item-edit` ID handling unreliable | Phase 1 is a focused validation gate; if it fails, we reassess |
+| Token scope becomes unavailable | Graceful degradation + clear user messaging |
+| Board sync becomes noisy | Sync is label-driven and silent; no issue comments |
+| GraphQL field IDs change per-project | Expected behavior; WI-1 documents 4-step discovery; team.md caches IDs |
+| Prompt bloat in coordinator | Verbal's core skill; if needed, we split functionality |
+
+---
+
+## Next Steps
+
+1. Brady grants `project` scope
+2. Fenster begins Phase 1 (WI-1 validation)
+3. After Phase 1 gate passes, Verbal + Fenster start Phase 2 in parallel
+4. After Phase 2, Verbal + McManus start Phase 3 in parallel
+
+---
+
+## Decision Reference
+
+Full proposal: `team-docs/proposals/033-project-boards.md`  
+API assessment: `team-docs/proposals/033a-projects-v2-api-assessment.md`  
+GitHub issue: Issue #6 (londospark)  
+Public comment: https://github.com/bradygaster/squad/issues/6#issuecomment-3888277477
+

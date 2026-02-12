@@ -95,3 +95,7 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 - **UTF-8 emoji mojibake in test file.** `test/index.test.js` had 8 instances of garbled emoji strings (e.g. `≡ƒæñ` instead of `👤`, `≡ƒôî` instead of `📌`, `≡ƒñû` instead of `🤖`, `≡ƒƒó`/`≡ƒƒí`/`≡ƒö┤` instead of `🟢`/`🟡`/`🔴`). Root cause: file was likely saved or transferred through a system that re-encoded UTF-8 multibyte sequences as Latin-1/CP1252. Fixed all 8 instances to use real Unicode codepoints matching what `index.js` and `squad.agent.md` produce. All 118 tests pass.
 
+- **Universe allowlist expansion (issue #21).** Added Adventure Time (community request from Gabe) plus 10 new universes to the allowlist in both `.github/agents/squad.agent.md` and `.ai-team/casting/policy.json`. New universes: Futurama, Seinfeld, The Office, Cowboy Bebop, Fullmetal Alchemist, Stranger Things, The Expanse, Arcane, Ted Lasso, Dune. Selection rationale: filled genre gaps (sitcom, anime, animation, workplace comedy, hard sci-fi, sports/comedy). Total universes went from 20 → 31. Constraints added for The Office (avoid Michael Scott at scale) and Dune (combine book/film, avoid Paul unless required). Closed issue #21.
+
+
+📌 Team update (2026-02-12): Universe expansion complete — 11 new universes (Adventure Time, Futurama, Seinfeld, The Office, Cowboy Bebop, Fullmetal Alchemist, Stranger Things, The Expanse, Arcane, Ted Lasso, Dune) added to casting allowlist. Issue #21 closed. — decided by Fenster

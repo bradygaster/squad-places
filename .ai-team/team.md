@@ -21,6 +21,19 @@
 | [Kobayashi](https://en.wikipedia.org/wiki/The_Usual_Suspects) | Git & Release Engineer | `.ai-team/agents/kobayashi/charter.md` | ✅ Active |
 | [Redfoot](https://en.wikipedia.org/wiki/The_Usual_Suspects) | Graphic Designer | `.ai-team/agents/redfoot/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.ai-team/agents/scribe/charter.md` | 📋 Silent |
+| Ralph | Work Monitor | — | 🔄 Monitor |
+
+<!-- copilot-auto-assign: true -->
+
+| Name | Role | Charter | Status |
+|------|------|---------|--------|
+| @copilot | Coding Agent | — | 🤖 Coding Agent |
+
+### Capabilities
+
+🟢 Good fit: Bug fixes, test coverage, lint fixes, dependency updates, small features, scaffolding, doc fixes
+🟡 Needs review: Medium features with clear specs, refactoring with tests, API additions
+🔴 Not suitable: Architecture decisions, multi-system design, ambiguous requirements, security-critical changes
 
 ## Project Context
 

@@ -58,7 +58,10 @@ _Summarized from initial architecture review and proposal-first design (2026-02-
 
 ## Learnings
 
-_Summarized 2026-02-10 learnings (full entries available in session logs):_
+_Summarized 2026-02-10+ learnings (full entries available in session logs):_
+
+- **2026-02-10+: Issue #6 (Project Boards) — Go/No-Go Assessment**
+  - **Verdict: GO (Conditional v0.4.0).** Projects V2 integration is architecturally sound and technically feasible with zero npm dependencies using `gh project *` CLI commands. Kujan's 033a assessment confirmed: 12 operations map cleanly to CLI, MCP server has zero Projects tools, provider abstraction works for GitHub/ADO/GitLab. Single prerequisite: Brady must grant `project` token scope (`gh auth refresh -s project`). Three-phase sprint plan: Phase 1 (6-9h foundation validation), Phase 2 (7-11h integration, parallelizable), Phase 3 (4-6h polish). Total 17-26h across Fenster (core), Verbal (prompts), McManus (docs). v0.4.0 timing is intentional — labels + issues (v0.3.0) are the foundation; boards are the dashboard (v0.4.0). Posted as comment on Issue #6 at https://github.com/bradygaster/squad/issues/6#issuecomment-3888277477.
 
 - **2026-02-10: Model Selection (024 consolidated)** — Merged 024+024a+024b into single spec. 4-layer selection priority, 16-model catalog condensed to 4 columns, nuclear fallback for resilience. Status: Approved ✅ for v0.3.0 Wave 1.
 - **2026-02-10: v0.3.0 Sprint Plan (027)** — 4 bets: model selection, backlog capture, demo infra, GitHub Issue sync. 2 waves, 31-43h. v0.2.0 gave hands; v0.3.0 gives a brain. Cut aggressively: no Squad DM, no agent negotiation, no speculative execution.
@@ -204,3 +207,5 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 📌 Team update (2026-02-12): Branching strategy finalized — feature branches (squad/{issue}-{slug}) to dev via PR, release pipeline handles preview→main — decided by Keaton, analyzed by Fenster, hardened by Kobayashi
 
 📌 Team update (2026-02-12): Release process hardened with branch protection rules and CI/CD-only writes to preview/main — decided by Kobayashi and Brady
+
+📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0. GO (Conditional) — pending Brady's project token scope grant. 3-phase implementation plan (17-26 squad-hours), agent assignments finalized. — decided by Keaton

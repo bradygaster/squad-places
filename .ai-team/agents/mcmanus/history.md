@@ -170,3 +170,5 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 
 
 📌 Team update (2026-02-12): Tips & Tricks documentation decision approved — user-facing guide on prompt patterns, parallel work, decisions as permanent rules, pitfall recovery — decided by McManus
+
+📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0 implementation. McManus assigned Phase 3 (WI-6: documentation). Feature is GO conditional on Brady granting project token scope. — decided by Keaton

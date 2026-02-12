@@ -16,6 +16,7 @@ How to decide who handles what.
 | Visual identity, logos, brand assets, design | Redfoot | Logo design, icons, brand guidelines, visual consistency |
 | Code review | Keaton | Review PRs, check quality, architectural consistency |
 | Session logging | Scribe | Automatic — never needs routing |
+| Bug fixes, test coverage, lint fixes, small features, scaffolding | @copilot 🤖 | Auto-assigned when issue matches 🟢 capability profile |
 
 ## Rules
 
