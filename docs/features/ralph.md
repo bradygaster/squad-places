@@ -14,9 +14,9 @@ When you're in a Copilot session, Ralph self-chains the coordinator's work loop:
 2. Ralph checks GitHub for more: untriaged issues, assigned-but-unstarted items, draft PRs, failing CI
 3. Work found → triage, assign, spawn agents
 4. Results collected → Ralph checks again **immediately** — no pause, no asking permission
-5. Board clear → Ralph idles
+5. Board clear → Ralph enters **idle-watch** — polls every 10 minutes (configurable) for new work
 
-**Ralph never stops on his own while work remains.** He keeps cycling through the backlog until every issue is closed, every PR is merged, and CI is green. The only things that stop Ralph: the board is clear, you say "idle", or the session ends.
+**Ralph never stops on his own while work remains.** He keeps cycling through the backlog until every issue is closed, every PR is merged, and CI is green. When the board clears, Ralph doesn't fully stop — he enters idle-watch mode and periodically checks for new work. The only things that fully stop Ralph: you say "idle"/"stop", or the session ends.
 
 ### Between Sessions (GitHub Actions Heartbeat)
 
@@ -36,7 +36,8 @@ This creates a fully autonomous loop for `@copilot` — heartbeat triages → as
 | "Ralph, go" / "Ralph, start monitoring" | Activates the work-check loop |
 | "Keep working" / "Work until done" | Activates Ralph |
 | "Ralph, status" / "What's on the board?" | Runs one check cycle, reports results |
-| "Ralph, idle" / "Take a break" | Stops the loop |
+| "Ralph, check every N minutes" | Sets the idle-watch polling interval (e.g., "Ralph, check every 30 minutes") |
+| "Ralph, idle" / "Take a break" | Fully stops the loop and idle-watch polling |
 | "Ralph, scope: just issues" | Monitors only issues, skips PRs/CI |
 
 ## What Ralph Monitors
@@ -61,7 +62,43 @@ Ralph doesn't run silently forever. Every 3-5 rounds, Ralph reports and **keeps 
    Continuing... (say "Ralph, idle" to stop)
 ```
 
-Ralph does **not** ask permission to continue — he keeps working. The only things that stop Ralph: the board is clear, you say "idle"/"stop", or the session ends.
+Ralph does **not** ask permission to continue — he keeps working. The only things that fully stop Ralph: you say "idle"/"stop", or the session ends. A clear board puts Ralph into idle-watch mode, not full stop.
+
+## Idle-Watch Mode
+
+When the board clears, Ralph doesn't fully stop. He enters **idle-watch** — a polling mode that automatically re-checks for new work on a timer.
+
+```
+📋 Board is clear. Ralph is watching — next check in 10 minutes.
+   (say "Ralph, idle" to fully stop)
+```
+
+### How it works
+
+1. Board clears → Ralph enters idle-watch
+2. After {poll_interval} minutes (default: 10), Ralph re-scans GitHub
+3. New work found → resumes the active work loop automatically
+4. Still no work → waits another {poll_interval} minutes and checks again
+5. Repeats until you say "Ralph, idle" or the session ends
+
+### Configuring the interval
+
+You can adjust the polling interval at any time:
+
+| What you say | Interval |
+|---|---|
+| "Ralph, check every 5 minutes" | 5 min |
+| "Ralph, check every 15 minutes" | 15 min |
+| "Ralph, poll every 30 minutes" | 30 min |
+
+The default is **10 minutes**. The interval only affects idle-watch — when actively processing work, Ralph scans immediately after each batch.
+
+### Idle-watch vs. full idle
+
+| Mode | Behavior | How to enter |
+|---|---|---|
+| **Idle-watch** | Polls for new work every N minutes | Automatic when board clears |
+| **Full idle** | Completely stopped, no polling | Say "Ralph, idle" or "stop" |
 
 ## Ralph's Board View
 
@@ -100,7 +137,7 @@ on:
 
 ## Notes
 
-- Ralph is session-scoped — his state (active/idle, round count, stats) resets each session
+- Ralph is session-scoped — his state (active/idle/watching, round count, poll interval, stats) resets each session
 - Ralph appears on the roster like Scribe: `| Ralph | Work Monitor | — | 🔄 Monitor |`
 - Ralph is exempt from universe casting — always "Ralph"
 - The heartbeat workflow is the between-session complement to in-session Ralph
