@@ -224,3 +224,5 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
   - **Sprint estimate:** 1.8 squad-days (core) + 0.3 squad-days (Ralph integration, optional). Target version: 0.3.0 (alongside GitHub-native proposals).
   - **Key file paths:** 	eam-docs/proposals/034-notification-architecture.md (full spec), .ai-team/skills/human-notification/SKILL.md (agent-facing skill), future docs/notifications.md (consumer setup guide).
 
+
+📌 Team update (2026-02-12): Squad Notification Architecture (Proposal 034) merged into decisions.md — MCP integration pattern, Teams primary, iMessage secondary, skill-based trigger system (BLOCKED/ERROR/DECISION/COMPLETE). — decided by Keaton
