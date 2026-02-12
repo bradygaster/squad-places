@@ -8,6 +8,19 @@ It is not a chatbot wearing hats. Each team member is spawned as a real sub-agen
 
 ---
 
+## Supported Platforms
+
+Squad is designed for **GitHub Copilot CLI** and ships with full support for that environment.
+
+**Current state:**
+- ✅ **GitHub Copilot CLI** — fully supported. This is the primary platform. Uses the stable `task` tool for sub-agent spawning.
+- 🚧 **VS Code Copilot** — partial support tracked in [#10](https://github.com/bradygaster/squad/issues/10). VS Code uses a different tool (`runSubagent`) that doesn't yet support Squad's parallel execution model (`mode: "background"`) or typed agent selection.
+- ❌ **Other platforms** — Visual Studio, JetBrains IDEs, and other runtimes are not supported.
+
+If you're using VS Code, Squad will run but with limitations. Follow [#10](https://github.com/bradygaster/squad/issues/10) for cross-client support progress.
+
+---
+
 ## Installation
 
 ```bash
@@ -18,8 +31,43 @@ npx github:bradygaster/squad
 - Node.js 22+
 - GitHub Copilot CLI (the `copilot` command)
 - A git repository (Squad stores team state in `.ai-team/`)
+- **`gh` CLI** — required for GitHub Issues, PRs, Ralph, and Project Boards ([install](https://cli.github.com/))
 
 This copies `squad.agent.md` into `.github/agents/` and installs templates into `.ai-team-templates/`. Your actual team (`.ai-team/`) is created at runtime when you first talk to Squad.
+
+### GitHub CLI Authentication
+
+Squad uses the `gh` CLI for all GitHub API operations — issues, PRs, labels, project boards, and Ralph's work monitoring. You must authenticate before using any of these features.
+
+**Quick start:**
+
+```bash
+gh auth login
+```
+
+Choose **GitHub.com**, **HTTPS**, and authenticate with your browser or a Personal Access Token (PAT Classic).
+
+**Verify it worked:**
+
+```bash
+gh auth status
+```
+
+**Additional scopes** — some features require scopes beyond the default:
+
+| Feature | Required Scope | Command |
+|---------|---------------|---------|
+| Issues, PRs, Ralph | `repo` (included by default) | — |
+| Project Boards | `project` | `gh auth refresh -s project` |
+
+The `gh auth refresh` command adds scopes to your existing token — it takes about 10 seconds and you only need to do it once.
+
+**Troubleshooting:**
+
+- **"gh: command not found"** — Install the GitHub CLI from https://cli.github.com/
+- **"HTTP 401" or "authentication required"** — Run `gh auth login` to re-authenticate
+- **Project board commands fail** — Run `gh auth refresh -s project` to add the `project` scope
+- **"Resource not accessible by integration"** — Your token may lack the `repo` scope. Re-authenticate with a PAT Classic that has `repo` and `project` scopes
 
 ---
 
