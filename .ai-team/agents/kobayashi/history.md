@@ -59,3 +59,10 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
 
 📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton
+
+## Learnings
+
+- **v0.3.0 release entry created** — Added comprehensive CHANGELOG.md entry documenting five shipped features (per-agent model selection, Ralph work monitor, @copilot integration, universe expansion, milestones rename), four Changed items (tests, emoji fixes, agent.md expansion, index.js upgrade fix), and community contributions (2 PRs from @spboyer, 4 new issues from external contributors). Entry follows v0.2.0 format (Added/Changed/Community sections) and preserves content tree with v0.2.0 and v0.1.0 below. Date: 2026-02-11.
+
+
+📌 Team update (2026-02-12): Cross-client sub-agent API research complete — squad.agent.md uses task tool exclusively for CLI platform, VS Code uses runSubagent, no unification planned — research by Kujan

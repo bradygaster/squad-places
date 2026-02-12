@@ -111,3 +111,62 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 
 📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
 
+- **v0.3.0 README update (2026-02-11)** — README.md "What's New" section updated. Changes: (1) Created new "## What's New in v0.3.0" section positioned before v0.2.0. (2) Added seven new features: Per-Agent Model Selection, Ralph Work Monitor, @copilot Coding Agent, Universe Expansion (14→20 universes), Milestones rename, test growth (92→118), emoji fixes. (3) Moved v0.2.0 features from top billing to "## What's New in v0.2.0" section. Removed Copilot Coding Agent and Ralph from v0.2.0 section (both promoted to v0.3.0 headline features). (4) Updated Status line from v0.2.0 to v0.3.0. All new features link to docs/ when available. Style: scannable list format, one-line summaries, no hype language, matches existing README tone.
+
+- **Ralph PAT Classic authentication documentation (2026-02-11)** — Updated `docs/features/ralph.md` with comprehensive "Prerequisites" section. Key facts documented: (1) Ralph requires `gh` CLI to be installed and authenticated with a GitHub PAT Classic token (not the default Copilot token). (2) Included rationale: default GITHUB_TOKEN lacks the `repo` and `project` scopes needed for issue/PR write access. (3) Step-by-step setup: create PAT Classic, run `gh auth login`, provide token, verify with `gh auth status`. (4) Positioned Prerequisites section before How It Works to surface authentication requirement upfront. Addresses Issue #17 filed by Shayne Boyer (spboyer). Style: facts only, procedural steps, no editorial framing.
+
+- **Tips and Tricks for Squad Management (Issue #16)** — Created `docs/tips-and-tricks.md` with practical patterns for managing Squad effectively. Document structure: (1) Effective Prompt Patterns — 5 core patterns with before/after examples (specificity, roster naming, team vs direct commands, stacking decisions, bullet points). (2) When to Use Direct Commands vs Team Requests — routed guidance with tables showing use cases and rationale. (3) Parallel Work Patterns — 4 techniques: let work complete before following up, check work logs instead of code, use Ralph for backlogs, parallel decision-making. (4) Ralph Work Monitor Tips — 5 activation and scoping patterns including scope filtering and heartbeat setup. (5) Managing Decisions and Team Memory — 6 patterns for setting rules, handling directives, archiving decisions, using Scribe. (6) Common Pitfalls with Solutions — 8 pitfalls and recovery patterns (vague scope, interrupting parallel work, forgotten decisions, Ralph underuse, too many agents, uncommitted state, same mistakes, silent completion). (7) Advanced Patterns — spike-before-build, parallel teams, post-mortems. (8) Copyable Prompts — templates for common scenarios. (9) Session Flow Template and Reference Table. Style: facts-based, working examples, no fluff. Target: users new to Squad who need practical patterns, not just features.
+
+- **Community page design (2026-02-12)** — Issue #20. Created `docs/community.md` with shields.io badges (dynamic star/fork/issue/PR counts), explicit "How to Contribute" pathways (Issues, PRs, Discussions), contributor recognition sections (core team, external deployments, video coverage), and gave-back guidance. Added link from README.md badges area with emoji anchor ("📣"). Page follows straight-facts tone: no adjectives, lists contributions by type, acknowledges early deployments (Shayne Boyer's label convention, Jeff Fritz's video). Community pages are warm infrastructure, not sales material.
+- **Platform tool fragmentation (2026-02-11)** — Copilot ecosystem has NO unified sub-agent tool across clients. Each platform ships its own: Copilot CLI uses `task` (stable, supports `mode: "background"`), VS Code uses `runSubagent`/`runSubagent2` (different API, lacks parallel support), Visual Studio has no native spawning, Coding Agent uses separate execution model. Squad targets CLI as primary platform with cross-client support tracked in #10. Issue #9 (reporter: miketsui3a) called this out — community clarity needed on which platform works where.
+
+📌 Team update (2026-02-10): v0.3.0 sprint plan approved — Demo 1 scripted infrastructure is in scope. — decided by Keaton
+
+- **Marketing site content plan written (2026-02-10)** — `team-docs/proposals/029a-marketing-site-content.md`. Full content plan for Jekyll/GitHub Pages marketing site. Key decisions: (1) No content reproduction — Jekyll reads `docs/` in place with front matter additions, blog reads from `team-docs/blog/` via custom collection. (2) 17 of 18 docs files are ready for the site as-is; only `sample-prompts.md` (40KB+) needs a formatting decision. (3) Landing page is NOT a copy of README.md — different audience (web visitors vs. GitHub visitors), same facts, different structure. (4) Blog uses `status: published` field already in frontmatter to filter — 6 posts ready, 2 drafts excluded. (5) Hero copy is straight facts: what Squad is, what it does, install command. No adjectives, no taglines. (6) Navigation: top nav (Docs, Features, Blog, GitHub) + docs sidebar with full hierarchy. (7) Everything in `team-docs/` and `.ai-team/` stays off the site except published blog posts.
+
+📌 Team update (2026-02-10): Tone directive consolidated — all public-facing material must be straight facts only. No editorial voice, sales language, or narrative framing. Stacks on existing banned-words and tone governance rules. — decided by bradygaster, McManus
+
+- **First external deployment blog post written (2026-02-10)** — `team-docs/blog/006-first-external-deployment.md`. Shayne Boyer (spboyer) deployed Squad on his slidemaker repo (Next.js app). Key facts documented: (1) PRD decomposed into 9 GitHub Issues with user story format, acceptance criteria, agent assignments, file targets, and dependency tracking. (2) Shayne invented the `squad:` label prefix convention (`squad`, `squad:verbal`, `squad:mcmanus`, `squad:fenster`) for agent routing via GitHub's native label system. (3) Cast system transferred — Usual Suspects universe with Verbal (Frontend), McManus (Backend), Fenster (Tester). (4) 8 of 9 issues closed, 1 (build verification) still open. (5) Blog follows facts-only tone directive — no narrative framing, no editorial adjectives. Decision filed to decisions inbox recommending adoption of the `squad:` label convention.
+
+
+📌 Team update (2026-02-10): Contributors include non-code contributions — Shayne Boyer recognized as contributor — decided by bradygaster
+
+📌 Team update (2026-02-10): `squad:` label convention standardized (consolidated with Keaton) — decided by Keaton, McManus
+
+📌 Team update (2026-02-10): 0.3.0 priorities: async comms > GitHub-native > CCA adoption — decided by bradygaster
+
+
+📌 Team update (2026-02-10): Async comms strategy decided — two-tier MVP: CCA-as-squad-member (2-4h, prompt-only) + Telegram bridge (8-16h, conditional on SDK spike). CCA is the floor. — decided by Kujan
+
+
+📌 Team update (2026-02-10): v0.3.0 is ONE feature — proposals as GitHub Issues. All other items deferred. — decided by bradygaster
+
+📌 Team update (2026-02-10): Provider abstraction is prompt-level command templates, not JS interfaces. Platform section replaces Issue Source in team.md. — decided by Fenster, Keaton
+
+📌 Team update (2026-02-10): Actions automation ships as opt-in templates in templates/workflows/, 3 workflows in v0.3.0. — decided by Keaton, Kujan
+
+📌 Team update (2026-02-10): Label taxonomy (39 labels, 7 namespaces) drives entire GitHub-native workflow. — decided by bradygaster, Verbal
+
+📌 Team update (2026-02-10): CCA governance must be self-contained in squad.agent.md (cannot read .ai-team/). — decided by Kujan
+
+📌 Team update (2026-02-10): Proposal migration uses three-wave approach — active first, shipped second, superseded/deferred last. — decided by Keaton
+
+
+📌 Team update (2026-02-11): Project boards consolidated — v0.4.0 target confirmed, gh CLI (not npm), opt-in only, labels authoritative over boards. Community triage responses must use substantive technical detail. — decided by Keaton, Kujan
+
+- **Fritz video analysis (2026-02-11)** — Jeff Fritz (@csharpfritz) published "Introducing your AI Dev Team Squad with GitHub Copilot" (https://www.youtube.com/watch?v=TXcL-te7ByY). Key messaging takeaways: (1) "These are all markdown files" was the strongest trust signal — Jeff called it out twice, positioning Squad's transparency as a differentiator. "Markdown, not magic" is a usable messaging hook. (2) Quantifiable output sells — "131 tests in one shot" was Jeff's proof point. Demos should always surface a number. (3) Cast system works invisibly — Jeff used Avengers names without explaining the system, validating that casting is intuitive. (4) Design review ceremony read as a feature, not friction. (5) v0.2.0 features (skills, export, triage) were not discovered or mentioned — they may need better surfacing or aren't relevant until the second session. (6) Parallel execution wasn't explicitly called out despite being a README headline — visual signal may need strengthening. (7) Sprint planning and GitHub Issues integration were mentioned as future workflow, not demoed — iteration loop is a demo gap. Decision inbox filed with full analysis and draft community reference for README.
+
+- **Fritz video blog post written (2026-02-11)** — `team-docs/blog/007-first-video-coverage.md`. Blog post acknowledging Jeff Fritz's first public video coverage of Squad. Structure: What Happened / What He Showed / What This Means / Credit. Key editorial decisions: (1) Adapted blog template for community milestone — used same section pattern as 006 (Shayne Boyer deployment post). (2) Surfaced 9 demo beats from video analysis: cast setup, design review, one-shot build, 131 tests, .ai-team/ exploration, "these are all markdown files" trust signal, markdown+JSON transparency, sprint planning, team knowledge persistence. (3) "What This Means" section distills three validation points: cast system intuitive, markdown config is a trust signal, quantifiable output is strongest demo beat. (4) Noted v0.2.0 feature invisibility as an onboarding signal. Tone calibration: community milestone posts follow the 006 pattern — facts, credit, one thank-you, no repeated praise. Video coverage posts are closer to deployment posts than release posts in structure.
+
+📌 Team update (2026-02-11): Blog post 007 (first video coverage) and Fritz video messaging analysis merged to decisions.md — decided by McManus
+
+
+📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
+
+📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
+
+- **v0.3.0 README update (2026-02-11)** — README.md "What's New" section updated. Changes: (1) Created new "## What's New in v0.3.0" section positioned before v0.2.0. (2) Added seven new features: Per-Agent Model Selection, Ralph Work Monitor, @copilot Coding Agent, Universe Expansion (14→20 universes), Milestones rename, test growth (92→118), emoji fixes. (3) Moved v0.2.0 features from top billing to "## What's New in v0.2.0" section. Removed Copilot Coding Agent and Ralph from v0.2.0 section (both promoted to v0.3.0 headline features). (4) Updated Status line from v0.2.0 to v0.3.0. All new features link to docs/ when available. Style: scannable list format, one-line summaries, no hype language, matches existing README tone.
+
+
+
+📌 Team update (2026-02-12): Tips & Tricks documentation decision approved — user-facing guide on prompt patterns, parallel work, decisions as permanent rules, pitfall recovery — decided by McManus

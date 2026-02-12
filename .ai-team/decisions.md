@@ -1,6 +1,30 @@
 # Team Decisions
 
 Shared brain. All agents read this before working.
+---
+
+## Deduplication Notes (2026-02-12)
+
+**Overlapping decisions identified and consolidated:**
+
+1. **Branching Strategy:** Multiple decisions on branching (2026-02-09, 2026-02-11, 2026-02-12) represent evolution of thinking:
+   - 2026-02-09: Initial decision (dev/main separation)
+   - 2026-02-10: Keaton's proposal (three-branch model with feature branches)
+   - 2026-02-11: Fenster's analysis (validating three-branch model)
+   - 2026-02-12: Kobayashi's hardening (branch protection rules)
+   Together they represent the progression from initial model through detailed proposal to hardening implementation.
+
+2. **Release Process:** Decisions span 2026-02-09 through 2026-02-12, building on each other:
+   - 2026-02-09: Pipeline audit
+   - 2026-02-11: Release process directive (no manual pushes)
+   - 2026-02-12: Detailed hardening with branch protection rules
+   Consolidated as single logical progression of release safety.
+
+3. **Version Display:** Kujan's 2026-02-12 decision implements existing infrastructure from 2026-02-10 per-agent model selection. No duplication.
+
+All original decision blocks preserved for historical context. No content removed.
+
+---
 
 ## Initial Setup
 
@@ -3115,4 +3139,873 @@ Both are achievable with awareness layer (Option B). Ceremonies can be documente
 - **Proposal:** `team-docs/proposals/034-mcp-integration.md`
 - **Issue:** GitHub Issue #11 (Feature: Enable MCP use)
 - **Related:** Proposal 032a (Provider Abstraction), 032c (Label Taxonomy)
+
+
+
+### 2026-02-11: Release process directive
+**By:** Brady (via Copilot)
+**What:** Never bypass the release CI/CD pipeline. All code reaches main exclusively through the two-phase release workflow (preview → ship). No direct pushes, no manual merges to main.
+**Why:** User directive — the release.yml pipeline is the only authorized path to main. It validates versions, filters product files, runs tests, and creates GitHub Releases. Bypassing it risks shipping non-product files, unvalidated versions, or missing release artifacts.
+
+
+### 2026-02-12: User directive
+**By:** Brady (via Copilot)
+**What:** All tables presented to the user should include a "squad-time to complete" column showing estimated time for the squad to finish each item.
+**Why:** User request — captured for team memory. Users already know the squad is superhuman; showing estimated completion time reinforces that and helps with planning.
+
+
+# Fenster's Take: Branching Strategy for Squad
+
+**Status:** Perspective for Brady  
+**By:** Fenster (Core Dev)  
+**Date:** 2026-02-11
+
+---
+
+## Summary
+
+`dev` is sufficient as the integration branch. Feature branches (`squad/{issue}-{slug}`) merging into `dev` via PR is the right pattern for Squad's velocity. We don't need an "upcoming" or staging layer — it adds friction without safety. The release pipeline (preview → ship) already gives Brady control. Worktree support isn't essential yet. The current setup is clean.
+
+---
+
+## 1. Is dev sufficient as the integration branch?
+
+**Yes.** Here's why:
+
+- **dev is where the work lives**, and that's correct. All feature branches merge here. All agents read current state from dev. All tests run against dev. This is the "source of truth" for active work.
+- **We don't need staging/upcoming.** Every feature branch is already a "staging area" for isolated work. The release pipeline's preview phase gives Brady a final eyeball before anything touches main. Adding another branch layer would:
+  - Require managing merges between three layers (feature → upcoming → dev → main)
+  - Create confusion about "where do I pull from?" during onboarding
+  - Slow iteration (waiting for an intermediate merge before seeing something in a "staging" branch)
+  - Add more places for merge conflicts
+  
+- **The real safety comes from the release process**, not branch topology. Brady can't accidentally ship garbage to main because the release pipeline (Kobayashi's design) validates versions, filters files, runs tests, and sits at a preview step. That's the gate.
+
+---
+
+## 2. How do feature branches work day-to-day?
+
+**Clean pattern:** `squad/{issue}-{slug}` → dev via PR
+
+This is already the right approach:
+
+- Each feature gets its own branch. Agent spawns know which branch they're on (read from git config).
+- PRs to dev trigger tests automatically (CI on dev is running).
+- Once approved and merged, that work is immediately available to other agents on dev.
+- Multiple agents can work in parallel on different features without blocking each other.
+
+**One friction point I notice:** If an agent is working on a feature and another agent merges a conflicting change to dev mid-flight, the feature branch developer has to rebase. This is unavoidable, but we should document the rebase workflow clearly so agents aren't surprised.
+
+---
+
+## 3. What about when multiple features are in flight?
+
+**Don't add worktree support yet.** Here's my reasoning:
+
+- Worktrees are useful when *one person* needs to context-switch between multiple local branches. But our workflow is different: agents spawn on a *specific branch*, do their work, and exit. They're not context-switching.
+- If we spawn Fenster to work on squad/123-feature-a and Fenster to work on squad/456-feature-b simultaneously (which we could do), they just use different clones or containerized instances. The orchestration handles it.
+- Worktrees would add complexity to index.js (detecting worktrees, routing the agent to the right one, cleanup). Not worth it until we actually need it.
+
+**What matters:** The PR-per-feature model keeps features isolated. If five features are in flight, we have five branches and five PRs. Each one can merge independently. That's plenty of parallelism.
+
+---
+
+## 4. What's the simplest flow that keeps Brady safe?
+
+**Current setup is already safe.** Here's the protection:
+
+1. **main is protected** — no direct pushes. All code goes through the release pipeline.
+2. **release.yml pipeline enforces the two-phase workflow** — preview first (lets Brady eyeball it), then ship (automated). No bypasses.
+3. **dev is the integration point** — all feature PRs merge here. Agents test against dev.
+4. **release pipeline validates before shipping** — versions, file filtering, test runs. If something breaks, the preview phase catches it before main.
+
+**For Brady's peace of mind:** The only thing we need to ensure is that:
+- No one force-pushes to main or dev
+- All merges to dev come through PRs with a brief review (agent-to-agent code review is fine)
+- Release process is never skipped (enforce through GitHub branch protection rules)
+
+This is already the case. We're good.
+
+---
+
+## 5. Does the current setup create friction for rapid iteration?
+
+**No.**
+
+- **Feature branches are fast** — creates a branch, pushes a commit, opens a PR, merges within minutes (assuming tests pass). No ceremony.
+- **Dev is always ready** — agents don't wait for staging or release prep. They can spawn, pull from dev, and start work immediately.
+- **Parallel PRs don't block each other** — if three features are merging to dev, they land independently. No "gate-keeping."
+- **Tests run automatically** — CI on dev is working. We know if something broke before merging.
+
+**One real friction point:** If we're shipping a release and simultaneously landing features in dev, there's a brief moment where dev is ahead of the preview branch. This is fine and expected — it's exactly why we have a two-phase workflow.
+
+---
+
+## Recommendation
+
+**Keep the current model.**
+
+- Stick with feature branches → dev (via PR) → release pipeline → main
+- No "upcoming" branch
+- No worktrees (yet)
+- Add one doc: "Rebasing guide for agents" so they know what to do if dev changes while they're working
+
+The simplicity is a feature. The release pipeline does the actual safety work. Branching topology is just plumbing.
+
+---
+
+## Questions for Brady
+
+1. **Do we want automated squash-merge on feature branch PRs to dev?** (Keeps commit history clean, easier to bisect)
+2. **Should the rebasing guide be in docs/ or team-docs/?** (I'd suggest team-docs — it's internal workflow)
+3. **Any concerns about the current preview → ship release model, or is that already validated?**
+
+
+# Branching Strategy — Proposal
+
+**By:** Keaton (Lead)  
+**Date:** 2026-02-10  
+**Requested by:** Brady (v0.3.0 manual push incident)  
+**Status:** READY FOR DECISION
+
+---
+
+## Problem
+
+Brady had to manually push to `preview` and `main` during v0.3.0. This defeats the entire point of the CI/CD pipeline: **our release process should never require human hands on branch buttons.** We also need clarity on:
+
+1. Should feature work go straight to `dev`, or is there a staging branch in between?
+2. Where do hotfixes go?
+3. Should `preview` and `main` be protected from manual pushes?
+4. How do we prevent another manual-push incident?
+
+## Solution: Three-Branch Strategy + Strict Automation
+
+### Branching Model
+
+```
+feature/name          (temporary, deleted after merge)
+    ↓
+   dev                (always deployable, main development line)
+    ↓
+(Release CI: tests + preview build)
+    ↓
+  preview             (staging, human review gate, CI-pushes-only)
+    ↓
+(Release CI: copy preview → main, tag, release)
+    ↓
+   main               (shipping product, CI-pushes-only, read-only to humans)
+    ↓
+GitHub Release + npx resolution
+```
+
+### Branch Definitions
+
+| Branch | Purpose | Who Writes | How | Protection |
+|--------|---------|-----------|-----|-----------|
+| `dev` | Active development | Humans (via PRs) | `git push origin feature/X` → PR → merge to `dev` | ✅ Require PR review, passing CI |
+| `preview` | Staging (v0.x style) | CI/CD only | Release action Phase 1 — tests, builds, pushes | ✅ Require status checks, no direct pushes |
+| `main` | Shipping product | CI/CD only | Release action Phase 2 — copy preview, tag, release | ✅ Require status checks, no direct pushes |
+
+### Feature Branch Workflow
+
+1. Create feature branch: `git checkout -b feature/my-feature dev`
+2. Develop normally
+3. Open PR against `dev`
+4. CI runs tests (gates merge)
+5. Brady (or team) reviews + approves
+6. Merge to `dev` (delete feature branch)
+
+### Release Workflow (No Manual Touches)
+
+**Phase 1 — Preview:**
+1. Update `package.json` version on `dev`
+2. Commit + push to `dev`
+3. Dispatch `release` workflow → `action: preview` → `version: 0.3.0`
+4. CI: checks out `dev`, runs tests
+5. CI: builds filtered product files, **pushes to `preview` with `--force`**
+6. Brady inspects `preview` locally or via GitHub (see diff, run locally)
+7. Approves or rejects (if reject, commit fixes to `dev`, re-run Phase 1)
+
+**Phase 2 — Ship:**
+1. Once satisfied with `preview`, dispatch `release` workflow → `action: ship` → `version: 0.3.0`
+2. CI: checks out `preview`
+3. CI: validates content (product-files-only check)
+4. CI: **pushes to `main`** (forces overwrite of main to match preview exactly)
+5. CI: tags release, creates GitHub Release
+6. CI: verifies `npx github:bradygaster/squad` resolves
+7. Done — humans stay off `main` and `preview`
+
+### Hotfix Workflow
+
+Hotfixes start on `dev` (not a separate hotfix branch):
+
+1. Create `feature/hotfix-bug-X` from `dev`
+2. Fix + test
+3. PR → merge to `dev`
+4. Run release workflow (Phase 1 + Phase 2) normally
+5. Version bump: `0.3.0` → `0.3.1`
+
+**Why:** This is a solo-dev-plus-AI project. A separate `hotfix/` → `main` → `dev` sync pattern adds branching debt. Keep it simple: all work feeds `dev`, all releases come from `dev`.
+
+### Protection Rules (GitHub)
+
+**On `main`:**
+```
+✅ Require status checks before merge
+✅ Require PR reviews before merge
+✅ Dismiss stale reviews
+✅ Restrict push access to GitHub Actions only
+❌ NO direct merges from humans (not even admins)
+```
+
+**On `preview`:**
+```
+✅ Require status checks before merge
+✅ Restrict push access to GitHub Actions only
+❌ NO direct merges from humans
+```
+
+**On `dev`:**
+```
+✅ Require PR reviews
+✅ Require status checks
+✅ Allow human merges (Brady + AI team)
+```
+
+---
+
+## Trade-offs
+
+**Simplicity vs. Flexibility:**
+- ✅ **Simple:** Three branches, one release pattern, zero manual branch touching
+- ❌ **Less flexible:** No separate staging environment (preview serves that)
+- ✅ **Acceptable:** v0.x release pace doesn't need release branches
+
+**Force Push on preview/main:**
+- ✅ **Good:** Ensures preview/main are *exact* copies of what CI built (bit-for-bit)
+- ❌ **Scary:** Force push history rewriting is risky
+- ✅ **Mitigated:** Force push is scripted in CI (humans can't do it), plus validation step checks preview content before pushing main
+
+**One Release Path:**
+- ✅ **Good:** No branching confusion, no "should hotfixes go to main or dev?"
+- ❌ **Less familiar:** Developers used to `hotfix/` → `main` model won't see it
+- ✅ **Acceptable:** Documentation + team chat clarifies the pattern
+
+---
+
+## Alternatives Considered
+
+### A. Current State (dev → preview → main, but allow manual pushes)
+- ❌ Enables the v0.3.0 incident again
+- ❌ "CI/CD optional" is a footgun on a solo project
+
+### B. GitHub flow (main only, feature branches PR directly to main)
+- ❌ Loses staging gate — `preview` serves a real purpose (Brady review before ship)
+- ❌ Eliminates ability to inspect release before it ships
+
+### C. Git flow (develop, release/X, hotfix/X, main)
+- ❌ Too much branching for a 2-person team (Brady + AI team)
+- ❌ Adds ceremony without benefit at this scale
+- ✅ Good for enterprise; wrong for us
+
+### D. Trunk-based (single main branch, tags for releases)
+- ❌ Loses staging gate (no preview before ship)
+- ❌ Can't diff main from "what's about to ship"
+
+---
+
+## Success Criteria
+
+1. **No Manual Branch Touches** — Release is 100% CI/CD. Brady never runs `git push origin preview` again.
+2. **Clear Role for Each Branch** — Dev is work, preview is review, main is shipped.
+3. **Reviewable Releases** — Brady can inspect preview before ship (diff, local test, docs review).
+4. **Protection Rules Enforced** — GitHub prevents direct pushes to preview/main, even by admins.
+5. **Simple Hotfix Story** — Fix is on dev, release is normal; no special hotfix branching.
+6. **Documentation** — Team knows the flow; no guessing about where to push.
+
+---
+
+## Implementation Checklist
+
+- [ ] Set up branch protection rules on GitHub:
+  - [ ] `main` — restrict push to Actions only, require status checks
+  - [ ] `preview` — restrict push to Actions only
+- [ ] Update release.yml (if needed) to document forced push strategy
+- [ ] Update team-docs/release-process.md with this branching model
+- [ ] Delete any old `hotfix/` branches if they exist
+- [ ] Create team chat summary: "Branching Strategy Update — Here's How We Release"
+- [ ] Verify v0.3.1+ releases use this pattern (no manual pushes)
+
+---
+
+## Decision
+
+**Adopting Three-Branch Model with Strict CI/CD-Only Pushes to preview and main.**
+
+This prevents the v0.3.0 incident from recurring. It's simple, clear, and matches the release pipeline we already built. No hand-waving about "who can push when" — GitHub enforces it.
+
+Brady: You approve releases by dispatching the workflow, not by touching branches. The pipeline takes it from there.
+
+
+### 2026-02-12: Release Pipeline Hardening — Branch Protection & CI/CD Enforcement
+
+**By:** Kobayashi (Git & Release Engineer)
+
+**Context:** During v0.3.0 release, the coordinator manually pushed release.yml to main (bootstrap) and pushed to preview/main. Brady wants ZERO manual pushes to preview or main — only CI/CD should write to these branches. This memo analyzes the current pipeline and proposes hardening measures.
+
+---
+
+## Problem Statement
+
+Current state:
+- **Preview and main branches are unprotected.** Anyone with write access can push directly, bypassing the release workflow.
+- **Bootstrap problem:** release.yml must exist on main before GitHub Actions can see it. First-time setup for new repos requires manual seed.
+- **No validation that dev is ahead of main.** The preview phase doesn't check whether there are actual changes to release.
+- **Manual intervention risk.** The workflow exists and is designed well, but nothing prevents humans from circumventing it.
+
+Brady's directive: **Preview and main are CI/CD-only. No manual pushes. Ever.**
+
+---
+
+## Recommended Hardening: Five Components
+
+### 1. Branch Protection Rules for `preview`
+
+**What to configure in GitHub:**
+
+```
+Branch: preview
+├── Require pull request reviews
+│   └── Dismiss stale pull request approvals: ❌ (not needed for CI-only writes)
+├── Require status checks to pass
+│   └── Required checks: NONE (no pre-merge validation needed)
+├── Require branches to be up to date
+│   └── ❌ (disable — not applicable)
+├── Include administrators: ✓ (YES — admins cannot bypass)
+├── Allow force pushes: ✓ For GitHub Actions bot ONLY (see below)
+│   └── Restrict who can force push
+│       └── Allow: github-actions[bot]
+│       └── Restrict: Everyone else (❌ no force push)
+├── Allow deletions: ❌ (NO one deletes preview)
+└── Require signed commits: ❌ (not needed for Actions-generated commits)
+```
+
+**Why this design:**
+- Prevents accidental pushes from human developers
+- Allows `github-actions[bot]` to force-push (needed for phase 1 of release workflow)
+- Protects against deletion (preview is a critical staging point)
+
+**GitHub UI path:** Settings → Branches → Add rule → Branch name pattern: `preview`
+
+---
+
+### 2. Branch Protection Rules for `main`
+
+**What to configure in GitHub:**
+
+```
+Branch: main
+├── Require pull request reviews
+│   └── Dismiss stale pull request approvals: ❌ (not needed)
+├── Require status checks to pass
+│   ├── ci.yml (required on push)
+│   └── ✓ Check: npm test
+├── Require branches to be up to date: ✓ YES
+├── Include administrators: ✓ (YES — admins cannot bypass)
+├── Allow force pushes: ❌ NO (never)
+│   └── Exception: github-actions[bot] MAY push (not force-push)
+│       └── Restrict who can force push: NO ONE (blank/disabled)
+├── Allow deletions: ❌ NO (never)
+├── Require signed commits: ❌ (optional, not critical)
+├── Require code owners review: ✗ (only if code owners file exists)
+└── Require conversation resolution: ❌ (not used)
+```
+
+**Key differences from preview:**
+- **NO force pushes** — main is append-only. Mistakes are reverted via new releases, not force-push rewrites.
+- **CI checks required** — ci.yml must pass before any merge (even from Actions).
+- **Up-to-date check enabled** — prevents stale merges.
+
+**Why this design:**
+- Prevents human pushes entirely (Actions can push, but only via workflow)
+- Enforces tests pass before production code lands
+- Audit trail is immutable (no rewriting history)
+
+**GitHub UI path:** Settings → Branches → Add rule → Branch name pattern: `main`
+
+---
+
+### 3. Preventing Manual Pushes: Enforcement Model
+
+**The enforcement chain:**
+
+```
+Local developer types: git push origin main
+    ↓
+GitHub receives push
+    ↓
+Branch protection rule checks:
+  - "main: require status checks to pass"
+  - "main: no force pushes"
+  - "main: requires write from github-actions[bot] only"
+    ↓
+Push is REJECTED
+    ↓
+Developer gets error: "Updates were rejected because the tip of your current 
+  branch is behind its remote counterpart."
+```
+
+**Supplementary control:** Set branch protection to **restrict push access to `main` to github-actions[bot] only.**
+
+**In GitHub UI:**
+- Settings → Branches → `main` rule
+- Under "Restrict who can push to matching branches"
+  - Leave blank (defaults to all with write access)
+  - **OR** explicitly list only `github-actions[bot]`
+
+**Note:** GitHub's UI for "only X can push" is sparse. A more ironclad approach:
+
+1. **Remove write permissions from human contributors** on the repository.
+   - Make them Maintain role (can manage issues, run workflows) but not push.
+   - OR use a tighter org-level role (can run Actions but not push).
+   
+2. **Only grant write permission to the bot that runs the workflow.**
+   - GitHub Actions in this repo already uses `permissions: contents: write`.
+   - This is tightly scoped to the Actions runner context.
+
+**Best practice:** Combine branch protection + CODEOWNERS file:
+
+```
+# .github/CODEOWNERS
+main      @bradygaster  # Brady is owner; branch protection enforces rules
+preview   @bradygaster
+dev       @bradygaster  # dev can have looser rules (features merge here)
+```
+
+This makes it clear to the team: **main and preview are locked down; Brady owns the keys.**
+
+---
+
+### 4. The Bootstrap Problem: release.yml Must Exist on Main
+
+**The problem:**
+- GitHub Actions workflows must exist on a branch before Actions can reference them.
+- When setting up a new repo, release.yml is on `dev` but not on `main`.
+- The release workflow file itself is in `.github/workflows/release.yml`.
+- If it's not on main, Actions cannot trigger workflows from main branch events.
+- v0.3.0 required a manual push to bootstrap release.yml onto main.
+
+**Solution: Seed release.yml on main at repo creation.**
+
+**Option A: Mandatory bootstrap step (for new repos using Squad)**
+
+When initializing a new Squad repository (or importing an existing one):
+1. Add `.github/workflows/release.yml` to the product file allowlist (`KEEP_FILES` in release.yml).
+2. Bootstrap it onto `main` as a **one-time** manual step before taking over CI/CD.
+3. Commit message: `bootstrap: initial release.yml`
+4. After this, the release workflow owns all main updates.
+
+**Add to `release.yml` KEEP_FILES:**
+```bash
+KEEP_FILES: "... .github/workflows/release.yml"
+```
+
+**Rationale:** 
+- release.yml is a product file (all users inherit it for their Squad installations).
+- Once it's on main, the workflow can manage itself.
+- This is a one-time setup cost, not an ongoing manual burden.
+
+**Option B: Dynamic workflow provisioning (future enhancement)**
+
+The Coordinator agent (`squad.agent.md`) could check for release.yml on main at install time and create it if missing. This requires:
+- Read-only GitHub API access (no auth needed for public repos).
+- Light validation that the workflow is well-formed.
+- Fallback if creation fails (print instructions to user).
+
+Deferred for now; **Option A is the implementation path for v0.3.0 and Squad 1.x.**
+
+**Documentation update required:**
+- Add to `docs/release-checklist.md`: "Bootstrap: Ensure release.yml is on main before first release."
+- Add to `team-docs/release-process.md`: "Setup: Manual bootstrap of release.yml to main is a one-time cost."
+
+---
+
+### 5. Should `preview` Validate That `dev` Is Ahead of `main`?
+
+**Short answer: YES — add this as an early validation step in phase 1.**
+
+**Why:**
+- Currently, the preview phase doesn't check if there are actual changes since the last release.
+- This could allow "releases" that contain no product changes (wasted tag, GitHub Release noise).
+- Early failure is better than discovering this after force-pushing preview.
+
+**Proposed step (add to preview job, right after checkout):**
+
+```bash
+- name: Validate dev is ahead of main
+  run: |
+    # Count commits between main and dev
+    AHEAD=$(git rev-list --count main..HEAD)
+    
+    if [ "$AHEAD" -eq 0 ]; then
+      echo "::error::dev is not ahead of main. No changes to release."
+      exit 1
+    fi
+    
+    echo "✓ dev is $AHEAD commit(s) ahead of main"
+```
+
+**Better version (commit-diff based):**
+
+```bash
+- name: Validate dev contains new product changes
+  run: |
+    # Get list of changed product files between main and dev
+    read -ra KEEP_FILES_ARR <<< "$KEEP_FILES"
+    read -ra KEEP_DIRS_ARR <<< "$KEEP_DIRS"
+    
+    CHANGED_PRODUCT_FILES=0
+    
+    # Check if any KEEP_FILES have changed
+    for f in "${KEEP_FILES_ARR[@]}"; do
+      if git diff --name-only main HEAD | grep -q "^$f$"; then
+        ((CHANGED_PRODUCT_FILES++))
+      fi
+    done
+    
+    # Check if any KEEP_DIRS have changed
+    for d in "${KEEP_DIRS_ARR[@]}"; do
+      if git diff --name-only main HEAD | grep -q "^$d/"; then
+        ((CHANGED_PRODUCT_FILES++))
+      fi
+    done
+    
+    if [ "$CHANGED_PRODUCT_FILES" -eq 0 ]; then
+      echo "::error::No product file changes between main and dev. Nothing to release."
+      exit 1
+    fi
+    
+    echo "✓ $CHANGED_PRODUCT_FILES product file(s) changed since main"
+```
+
+**Impact on workflow:**
+- Prevents empty releases.
+- Catches accidental re-runs of the same version.
+- Provides early feedback (before building and force-pushing preview).
+
+**When to run:** Right after "Validate version" step in preview job.
+
+---
+
+## Summary of Changes
+
+| Component | Change | Why |
+|-----------|--------|-----|
+| **preview branch protection** | Require rule; allow github-actions force-push only | Prevent manual writes, allow CI override |
+| **main branch protection** | Require rule; NO force-push; require status checks | Enforce immutability, test validation |
+| **Write access** | Restrict to github-actions[bot] via branch rules | Zero human manual pushes |
+| **release.yml seeding** | Include in KEEP_FILES; bootstrap to main once | Unblock Actions from self-managing |
+| **dev-ahead validation** | Add check in preview phase 1 | Prevent empty releases |
+
+---
+
+## Implementation Timeline
+
+**v0.3.0 (immediate):**
+1. Add branch protection rules to preview and main (GitHub Settings).
+2. Add dev-ahead validation to release.yml preview phase.
+3. Confirm release.yml is included in KEEP_FILES.
+4. Bootstrap release.yml to main manually (one-time).
+
+**v0.3.1 or later (if needed):**
+- Refine bootstrap documentation.
+- Consider dynamic workflow provisioning (Option B).
+
+---
+
+## Testing & Verification
+
+After hardening:
+1. **Negative test:** Attempt manual push to preview/main from local branch → should be rejected.
+2. **Positive test:** Run full release workflow (preview → ship) with branch protection active → should succeed.
+3. **Empty release test:** Run preview with no changes to product files → should fail at dev-ahead check.
+4. **CI check test:** Commit broken test to dev, run preview → should fail at test gate.
+
+---
+
+## Questions & Edge Cases
+
+**Q: What if we need to hotfix main directly?**
+A: Use the release workflow with an expedited version. Never bypass protection rules. Create an emergency fix on `dev`, merge to `release`, run preview+ship.
+
+**Q: Can we add a `HOTFIX` action to release.yml?**
+A: Future enhancement. For v0.3.0, use the standard two-phase workflow.
+
+**Q: What about force-pushing to dev?**
+A: `dev` is development-facing; looser rules are fine. No branch protection needed (humans actively work here).
+
+**Q: Does .github/workflows/ belong on main?**
+A: Yes — workflows are product files. Users inherit them. Include in KEEP_FILES.
+
+**Q: What if release.yml itself has a bug?**
+A: Fix it on `dev`, re-run preview+ship with the corrected version. The protection rules do not prevent fixing workflow bugs.
+
+---
+
+## Acceptance Criteria
+
+✓ preview and main are protected from manual writes  
+✓ github-actions[bot] can push to both (via workflow)  
+✓ Humans cannot force-push to either  
+✓ release.yml exists on main (seeded or self-managed)  
+✓ Preview phase validates dev is ahead before building  
+✓ All CI checks pass  
+✓ Brady can run a full release without manual intervention (except the ship trigger)  
+
+---
+
+**Next:** Implement branch protection rules in GitHub Settings, update release.yml with dev-ahead check, confirm release.yml bootstrap, and document in release-process.md.
+
+
+# Cross-Client Sub-Agent/Delegation API Research
+
+**Author:** Kujan (Copilot SDK Expert)  
+**Date:** 2026-02-11  
+**Requested by:** Brady  
+**Triggered by:** Issue #9 (miketsui3a) — reports `runSubagent` instead of `task`  
+**Related:** Issue #10 (Copilot client parity gap, P1)
+
+---
+
+## Executive Summary
+
+**There is NO unified sub-agent/delegation tool name across Copilot clients.** Each client implements its own tool with its own name, parameters, and execution model. The `task` tool is specific to Copilot CLI. The `runSubagent` tool is specific to VS Code. Visual Studio doesn't have a native sub-agent tool yet. The coding agent (@copilot) uses an entirely different execution model.
+
+**Recommendation: Do not change.** Squad targets Copilot CLI. The `task` tool works, is documented, and is the correct primitive for this platform. Switching would buy us nothing and break everything.
+
+---
+
+## Findings by Client
+
+### 1. Copilot CLI — `task` tool ✅ (our platform)
+
+- **Tool name:** `task`
+- **Parameters:** `agent_type` (explore, task, general-purpose, code-review, custom), `mode` (sync, background), `model`, `prompt`, `description`
+- **Execution:** Spawns isolated LLM sessions with their own context windows, tool access, and execution environments
+- **Status:** Stable, production. Squad v0.3.0 shipped on this.
+- **Documentation:** Built into the CLI system prompt; `/tasks` command manages background tasks
+- **Source:** Copilot CLI help output, our own verified usage
+
+### 2. VS Code (Copilot Chat) — `runSubagent` tool
+
+- **Tool name:** `runSubagent` (also `runSubagent2` behind experimental flag `chat.experimental.runSubagent2`)
+- **Invocation:** Agent-initiated tool call or user hint via `#runSubagent`; also available as `agent` in prompt file `tools` frontmatter
+- **Execution:** Spawns context-isolated child agents in the same VS Code session. Synchronous (blocks parent). Multiple subagents can run in parallel.
+- **Key differences from `task`:**
+  - No `agent_type` parameter — uses custom agent `.agent.md` files instead
+  - No `mode: "background"` — subagents are synchronous by design
+  - No `read_agent` — results return inline
+  - Has `subagentType` parameter to specify which custom agent to use
+  - Experimental: `user-invokable`, `disable-model-invocation` frontmatter controls
+- **Status:** Stable but still evolving. Experimental `runSubagent2` is the active development branch.
+- **Documentation:** https://code.visualstudio.com/docs/copilot/agents/subagents
+- **Issues tracker:** https://github.com/microsoft/vscode/issues?q=label:chat-subagents
+- **Key issues:**
+  - https://github.com/microsoft/vscode/issues/274950 (Test subagents)
+  - https://github.com/microsoft/vscode/issues/274630 (Parallel subagents)
+  - https://github.com/microsoft/vscode/issues/275855 (Model selection for subagents)
+  - https://github.com/microsoft/vscode/issues/278199 (Issue running subagent tool)
+
+### 3. Visual Studio (2022/2026) — No native sub-agent tool
+
+- **Tool name:** None built-in for sub-agent delegation
+- **Agent Mode:** Has Copilot Agent Mode (GA with MCP support) but it's single-agent — one agent executes a task with tool access, not multi-agent orchestration
+- **Workaround:** Third-party VS Code extension `copilot-task-delegate` (marketplace: `dvcrn.copilot-task-delegate`) implements delegation via MCP tools (`copilot-task-delegate_start`, `copilot-task-delegate_status`, `copilot-task-delegate_complete`). This is NOT a GitHub-built feature.
+- **Status:** Sub-agent delegation listed as "Coming, partial" in Visual Studio. Agent Mode is GA.
+- **Documentation:** https://learn.microsoft.com/en-us/visualstudio/ide/copilot-agent-mode
+- **Source:** https://devblogs.microsoft.com/visualstudio/agent-mode-is-now-generally-available-with-mcp-support/
+
+### 4. Copilot Coding Agent (@copilot cloud) — Different execution model entirely
+
+- **Tool name:** N/A — this is not a tool-based delegation system
+- **Execution model:** Issue-driven. Assign an issue to `@copilot`, it spins up an ephemeral GitHub Actions VM, clones the repo, does work, opens a draft PR.
+- **Sub-agent spawning:** Internal orchestration within the VM. The agent may decompose tasks internally, but this is opaque — there's no user-facing sub-agent API.
+- **Key difference:** The coding agent IS the agent. It doesn't spawn sub-agents in the way CLI/VS Code do. It's a single autonomous session.
+- **Documentation:** https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent
+- **Source:** https://github.blog/news-insights/product-news/github-copilot-meet-the-new-coding-agent/
+
+---
+
+## Tool Comparison Matrix
+
+| Capability | CLI (`task`) | VS Code (`runSubagent`) | Visual Studio | Coding Agent |
+|---|---|---|---|---|
+| Tool name | `task` | `runSubagent` / `runSubagent2` | None (MCP extension workaround) | N/A (different model) |
+| Agent types | explore, task, general-purpose, code-review, custom | Custom `.agent.md` files | N/A | N/A |
+| Background/async | ✅ `mode: "background"` | ❌ Synchronous only | N/A | Always async (cloud) |
+| Parallel execution | ✅ Multiple background agents | ✅ Multiple parallel subagents | N/A | Single session |
+| Model selection | ✅ `model` parameter | ⚠️ Experimental (via custom agent) | N/A | Platform-selected |
+| Result retrieval | `read_agent` tool | Inline (blocks until done) | N/A | PR + session logs |
+| Context isolation | ✅ Separate context windows | ✅ Separate context windows | N/A | Full VM isolation |
+| Custom agent support | ✅ Custom agent type | ✅ `.agent.md` files | ✅ `.agent.md` files | ✅ `.github/agents/` |
+
+---
+
+## Is Convergence Coming?
+
+### Evidence FOR convergence:
+- **Copilot SDK** (`@github/copilot-sdk`) released in early 2026 provides a unified runtime across Node.js, Python, Go, .NET — the same engine that powers the CLI. This could eventually standardize the spawning API.
+- **Agent Skills** use an open standard (agentskills.io) that works across all clients — skills are portable even if the spawning mechanism isn't.
+- **Custom agents** (`.github/agents/` and `.agent.md` files) are converging across clients — same config format, same frontmatter.
+- **Agents Panel** launched across VS Code and Visual Studio as a unified session management UI.
+
+### Evidence AGAINST near-term convergence:
+- VS Code's `runSubagent` is still experimental (`runSubagent2` behind a feature flag) — the API is not settled.
+- Visual Studio doesn't have native sub-agent spawning at all yet.
+- The CLI's `task` tool has a fundamentally different parameter model than `runSubagent` (typed agent_type enum vs. custom agent references).
+- No GitHub blog post, changelog, or documentation mentions plans to unify these tool names.
+- The coding agent has a completely different execution model — there's nothing to unify with.
+
+---
+
+## Impact on Squad
+
+### Current state:
+- `squad.agent.md` references `task` tool **47+ times** across critical rules, spawn templates, response modes, and the anti-hallucination guardrails
+- The `task` tool is the **single most important API call** in Squad's architecture
+- Proposals 003, 007, 015, 017 all deeply analyze `task` tool behavior
+
+### If we changed to `runSubagent`:
+- Would break on CLI (our shipping platform)
+- Would gain VS Code compatibility (which doesn't exist anyway — Squad runs in CLI)
+- Would lose `mode: "background"` (critical for parallel fan-out)
+- Would lose `agent_type` selection (critical for model/capability routing)
+- Would require rewriting every spawn template, every proposal, every test
+
+### Multi-client strategy (future):
+When/if Squad supports VS Code (tracked in Issue #10), the correct approach is:
+1. **Abstraction layer** — Squad's coordinator prompt uses a platform-neutral concept ("spawn agent") that maps to the correct tool per client
+2. **Platform detection** — Coordinator detects which client it's running in and uses the right tool
+3. **Not renaming** — We don't rename `task` to `runSubagent` or vice versa; we abstract over both
+
+This is consistent with Proposal 032a (Provider Abstraction Architecture) — prompt-level command templates, not JS interfaces.
+
+---
+
+## Recommendation
+
+**Do not change.** Rationale:
+
+1. **`task` works.** We just shipped v0.3.0 on it. The bar for changing is high.
+2. **There is no unified tool.** Switching to `runSubagent` would break CLI compatibility for zero cross-client gain.
+3. **The VS Code API is not stable.** `runSubagent2` is behind an experimental flag. Building on it now would be building on sand.
+4. **The abstraction is the play.** When cross-client matters (Issue #10), we abstract — we don't pick one client's API and hope the others adopt it.
+5. **Response to Issue #9:** miketsui3a is correct that VS Code uses `runSubagent`. The answer is: Squad targets Copilot CLI, which uses `task`. This is documented in our README. If a user is running Squad in VS Code, they need CLI, not the VS Code chat extension.
+
+### Recommended Issue #9 response:
+> Squad runs on GitHub Copilot CLI, which uses the `task` tool for agent spawning. VS Code Copilot Chat uses a different tool (`runSubagent`). These are separate Copilot clients with different tool APIs. Squad requires the CLI — see our [Getting Started guide](docs/guide.md) for setup instructions.
+
+---
+
+## Sources
+
+| Source | URL |
+|---|---|
+| VS Code Subagents Documentation | https://code.visualstudio.com/docs/copilot/agents/subagents |
+| VS Code Custom Agents | https://code.visualstudio.com/docs/copilot/customization/custom-agents |
+| Copilot CLI Documentation | https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started |
+| Copilot CLI Custom Agents Changelog | https://github.blog/changelog/2025-10-28-github-copilot-cli-use-custom-agents-and-delegate-to-copilot-coding-agent/ |
+| VS Code Subagent Issues | https://github.com/microsoft/vscode/issues?q=label:chat-subagents |
+| Parallel Subagents Issue | https://github.com/microsoft/vscode/issues/274630 |
+| Model Selection for Subagents Issue | https://github.com/microsoft/vscode/issues/275855 |
+| Subagent Running Issues | https://github.com/microsoft/vscode/issues/278199 |
+| Visual Studio Agent Mode | https://learn.microsoft.com/en-us/visualstudio/ide/copilot-agent-mode |
+| VS Agent Mode GA + MCP | https://devblogs.microsoft.com/visualstudio/agent-mode-is-now-generally-available-with-mcp-support/ |
+| Copilot Coding Agent Docs | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent |
+| Copilot Coding Agent Blog | https://github.blog/news-insights/product-news/github-copilot-meet-the-new-coding-agent/ |
+| Copilot SDK Repository | https://github.com/github/copilot-sdk |
+| Copilot SDK Guide (MS Tech Community) | https://techcommunity.microsoft.com/blog/azuredevcommunityblog/building-agents-with-github-copilot-sdk-a-practical-guide-to-automated-tech-upda/4488948 |
+| Agent Skills in VS Code | https://code.visualstudio.com/docs/copilot/customization/agent-skills |
+| Custom Agents Configuration | https://docs.github.com/en/copilot/reference/custom-agents-configuration |
+| Copilot Task Delegate Extension | https://marketplace.visualstudio.com/items?itemName=dvcrn.copilot-task-delegate |
+
+
+### Version Display via Coordinator Self-Announcement
+
+**By:** Kujan
+**Date:** 2025-07-14
+**Context:** Issue #18 — Show squad version number in agent label across Copilot hosts
+
+**What:** Added a `Version` instruction to the Coordinator Identity section in `squad.agent.md`. The coordinator reads the `version` field from its own YAML frontmatter and includes `Squad v{version}` in its first response of each session.
+
+**Why:** The version stamping pipeline (`stampVersion()` in `index.js`) already embeds the real version into the installed agent file's frontmatter during init and upgrade. The version was present but never surfaced to users. This approach requires zero code changes — it's a prompt instruction that leverages existing infrastructure.
+
+**Alternatives rejected:**
+- `description` frontmatter field: noisy in agent picker, may truncate
+- `task` tool `description` parameter: per-spawn, not persistent
+- Runtime `package.json` read: coordinator can't access the npm package at runtime
+
+**Scope:** Single line addition to `squad.agent.md` Coordinator Identity section. No `index.js` changes. All 118 tests pass.
+
+
+# Decision: Tips and Tricks User Documentation
+
+**Date:** 2026-02-11
+**Author:** McManus (DevRel)
+**Status:** Approved
+
+## What
+
+Created `docs/tips-and-tricks.md` — practical end-user guide for managing Squad effectively. Addresses Issue #16.
+
+## Why
+
+Users new to Squad need more than feature documentation. They need patterns: when to use "Team" vs direct commands, how to get the most out of parallel work, how to manage decisions and memory, and how to recover from common mistakes.
+
+Sample-prompts.md shows what Squad can build; tips-and-tricks.md shows how to work with Squad as a team.
+
+## Key Decisions in the Doc
+
+1. **Prompt Patterns**: Emphasis on scope clarity, roster specification, and decision stacking in the prompt itself. "Be specific about scope" prevents agents from asking clarifying questions later.
+
+2. **Team vs Direct Commands**: Clear routing guidance — "Team" for parallel/cross-functional work, direct commands for sequential/specialized work. Includes table with use cases.
+
+3. **Parallel Work Discipline**: Don't interrupt agents mid-chain. Check work logs instead of raw output. Let Ralph handle backlogs while you focus on urgent work.
+
+4. **Ralph as Backlog Processor**: Practical Ralph patterns — activation, scoping, status checks, heartbeat setup. Ralph is most valuable when you have open issues.
+
+5. **Decisions as Permanent Rules**: Set conventions early (session 1-2), capture them in decisions.md, agents read them automatically. "You only have to say them once."
+
+6. **Pitfall Recovery**: 8 common mistakes with solutions. Emphasis on commitment (commit `.ai-team/`), clarity (specific prompts), and discipline (don't interrupt parallel work).
+
+7. **Copyable Prompts**: Templates for getting started, asking for status, spike-then-build, closing phases. Real prompts users can copy directly.
+
+## Style Notes
+
+- Facts-based, not instructional. "Here's what works" not "You should do this."
+- Before/after examples for patterns (❌ bad, ✅ good).
+- Tables for routing guidance and reference.
+- No fluff. Every section has working examples.
+- Tone matches existing docs: direct, opinionated, technical.
+
+## What Gets Created in Squad
+
+This enables a help feature where users can ask:
+- "Tips for prompt writing" → excerpt from Effective Prompt Patterns
+- "How do I work with Ralph?" → Ralph section
+- "I keep interrupting parallel work" → Pitfalls section
+- "Show me a template prompt" → Copyable Prompts section
+
+Document is self-contained and can be cross-referenced in README or featured in future chat help.
+
+## Not in This Doc
+
+- Feature explanations (that's in feature docs)
+- Architecture (that's in guide.md)
+- Installation (that's in guide.md)
+- Getting started (that's in tour-first-session.md)
+
+This doc assumes the user has installed Squad and formed a team. It's about effectiveness, not mechanics.
+
 

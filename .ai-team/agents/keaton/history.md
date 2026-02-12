@@ -199,3 +199,8 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 📌 Team update (2026-02-11): Proposal 034 — MCP Integration architecture designed. Recommendation: Option B (Awareness Layer, 4-6h). Blocks on WI-1 platform behavior validation. Fritz's use cases: Trello board sync + Aspire dashboard monitoring. — decided by Keaton
 
 📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton
+
+
+📌 Team update (2026-02-12): Branching strategy finalized — feature branches (squad/{issue}-{slug}) to dev via PR, release pipeline handles preview→main — decided by Keaton, analyzed by Fenster, hardened by Kobayashi
+
+📌 Team update (2026-02-12): Release process hardened with branch protection rules and CI/CD-only writes to preview/main — decided by Kobayashi and Brady
