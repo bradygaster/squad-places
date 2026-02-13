@@ -117,3 +117,5 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
   - **Result collection:** No `read_agent` equivalent needed — sync subagents return results automatically. Simpler on VS Code.
   - **Graceful degradation:** Accept session model when no custom agents. Skip launch table and read_agent on VS Code. Inline work when no spawn tool available.
   - **Output:** `team-docs/proposals/034a-model-background-parity.md`, commented on Issue #34.
+📌 Team update (2026-02-14): VS Code Model & Background Parity — Phase 1 (v0.4.0): accept session model, use runSubagent. Phase 2 (v0.5.0): generate model-tier agent files. runSubagent lacks model param; use prompt-level detection in squad.agent.md. — decided by Kujan
+

@@ -177,3 +177,6 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
   - **The skill scales with the ecosystem.** Every new MCP server that ships becomes automatically usable by Squad agents — no Squad release required. The discovery skill teaches the general pattern; domain-specific skills can be added later for Trello workflows, Aspire monitoring, etc.
 
   **Files created:** `.ai-team/skills/mcp-tool-discovery/SKILL.md` (discovery skill), `.ai-team/decisions/inbox/verbal-mcp-integration.md` (architectural decision). Design posted to Issue #11.
+📌 Team update (2026-02-13): Agent Progress Updates — Milestone Signals + Coordinator Polling mechanism. 30s polling loop extracts [MILESTONE] markers from agent output. No agent code changes. Backward compatible. Unlocks notifications + Squad DM integration. — decided by Keaton
+📌 Team update (2026-02-14): VS Code Model & Background Parity — Phase 1 (v0.4.0): accept session model, use runSubagent. Phase 2 (v0.5.0): generate model-tier agent files. runSubagent lacks model param; use prompt-level detection in squad.agent.md. — decided by Kujan
+
