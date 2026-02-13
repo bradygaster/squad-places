@@ -270,6 +270,15 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
   - **Status:** Proposed, awaiting Brady approval. Estimated v0.4.0 delivery: 3-4 hours (Fenster for coordinator, Verbal for skill design).
 
 📌 Team update (2026-02-13): Agent Progress Updates (Proposal 022a) designed and proposed — Milestone signals + coordinator polling (30s intervals). Recommended for v0.4.0 after Project Boards. Addresses user uncertainty during long-running work. Zero additional API cost. Preserves agent personality. — designed by Keaton
+
+## Learnings
+
+- **2026-02-13: Context window optimization for squad.agent.md (Issue #37)**
+  - **What changed:** Applied two surgical optimizations to squad.agent.md to reduce context window usage: (1) Spawn template deduplication — removed two redundant templates (Background spawn and Sync spawn), replaced with single generic template plus brief notes on mode parameter selection. Kept VS Code notes. Saved ~3,600 tokens. (2) Init Mode compression — compressed file tree example to one-liner reference, condensed post-setup input sources from repeated pattern to bulleted list, tightened casting state init. Reduced Init Mode from ~1,471 tokens to ~800 tokens (saved ~670 tokens).
+  - **Why:** squad.agent.md is loaded on every coordinator message. Init Mode (lines 28-112) is only used once per repo lifetime but occupies context space on all messages. The spawn templates (lines 592-809) were 95% identical — three templates with same sections, differing only in mode parameter and example agent names. Total savings: ~4,270 tokens per coordinator message.
+  - **Key architectural insight:** Template deduplication is safe because the single generic template contains ALL required sections (charter inline, history/decisions read, OUTPUT HYGIENE, RESPONSE ORDER, skill extraction, after-work updates). The mode parameter is the only variance. Init Mode compression preserved all 8 steps and all behavior — only reduced prose redundancy (file tree example, repeated instructions).
+  - **Verification performed:** Checked that remaining generic template has charter placeholder, history.md read, decisions.md read, input artifacts, OUTPUT HYGIENE, after-work updates (history + decision inbox + skill extraction), RESPONSE ORDER. Verified Init Mode still has all 8 steps. Confirmed no broken markdown formatting.
+  - **Trade-off:** Slightly less hand-holding in spawn templates (developers must understand mode parameter vs reading three full examples), but templates were never meant to be copy-paste material — they're reference patterns. The single template with explicit mode notes is clearer architecture.
 📌 Team update (2026-02-15): Client Parity Compatibility Matrix — Created docs/scenarios/client-compatibility.md as single source of truth. CLI primary (full support), VS Code works with adaptations (session model, sync subagents, workspace-scoped files), JetBrains/GitHub untested. Phase 2 (v0.5.0): generate custom agent files. — decided by McManus
 
 

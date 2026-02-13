@@ -53,6 +53,12 @@ The Scribe agent (a silent team member) periodically:
 3. Deduplicates overlapping decisions
 4. Propagates updates to affected agents
 
+### Decision archiving
+
+As your project grows, `decisions.md` accumulates hundreds of blocks. Stale sprint artifacts, completed analysis docs, and one-time planning fragments consume context window space without adding value. When this happens, old decisions are archived to `.ai-team/decisions-archive.md` — preserved for reference but no longer loaded into agent context.
+
+Active decisions (ongoing policies, user preferences, current architecture) stay in `decisions.md`. Agents always read the lean, current shared brain.
+
 ---
 
 ## Skills

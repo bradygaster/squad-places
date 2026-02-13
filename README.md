@@ -163,18 +163,22 @@ Both Claude Sonnet 4 and Claude Opus 4 have a **200K token** standard context wi
 
 | What | Tokens | % of 200K context | When |
 |------|--------|--------------------|------|
-| **Coordinator** (squad.agent.md) | ~28,800 | 14.4% | Every message |
+| **Coordinator** (squad.agent.md) | ~26,300 | 13.2% | Every message |
 | **Agent spawn overhead** (charter ~750 + inlined in prompt) | ~750 | 0.4% | When spawned |
-| **decisions.md** (shared brain — read by every agent) | ~80,200 | 40.1% | When spawned |
+| **decisions.md** (shared brain — read by every agent) | ~32,600 | 16.3% | When spawned |
 | **Agent history** (varies: 1K fresh → 12K veteran) | ~1,000–12,000 | 0.5–6.0% | When spawned |
-| **Total agent load** (charter + decisions + history) | ~82,000–93,000 | 41–46% | When spawned |
-| **Remaining for actual work** | **~107,000–118,000** | **54–59%** | Always |
+| **Total agent load** (charter + decisions + history) | ~34,000–45,000 | 17–23% | When spawned |
+| **Remaining for actual work** | **~155,000–166,000** | **78–83%** | Always |
 
-**What changed since v0.3.0:** The coordinator prompt grew from ~13K to ~29K tokens as we added client compatibility, VS Code support, Ralph, ceremonies, and the full casting system. More significantly, `decisions.md` grew to ~80K tokens after 100+ sessions of accumulated team decisions. This is the honest cost of persistent memory at scale.
+**v0.4.0 context optimization (Feb 2026):** We ran a context budget audit and found `decisions.md` had ballooned to ~80K tokens (40% of context) after 250+ accumulated decision blocks. Combined with spawn template duplication in the coordinator, agents were working with barely half a context window. Three targeted optimizations shipped:
 
-**What this means:** The coordinator uses 14.4% of context — up from 6.6%. But the real pressure is `decisions.md`. Each spawned agent reads the full shared brain, which now consumes ~40% of its context window. History summarization (Scribe compresses entries older than 2 weeks) helps with per-agent history, but decisions.md needs the same treatment. This is a known scaling concern for v0.5.0.
+1. **decisions.md pruning** — 251 blocks → 78 active decisions. Stale sprint artifacts, completed analysis docs, and one-time planning fragments archived to `decisions-archive.md`. Nothing deleted — full history preserved.
+2. **Spawn template deduplication** — Three near-identical templates (background, sync, generic) collapsed to one. Saved ~3,600 tokens in the coordinator prompt.
+3. **Init Mode compression** — 84 lines of first-run-only instructions compressed to 48 lines. Same behavior, less prose.
 
-**The architecture still wins.** Each agent runs in **its own** 200K window. The coordinator's window is separate from every agent's window. Fan out to 5 agents and you're working with **~1M tokens** of total reasoning capacity. The per-agent overhead is real but bounded — and most of it is shared context (decisions) that agents genuinely need to make consistent choices.
+**Result:** Per-agent spawn cost dropped from 41–46% to 17–23% of context. Agents now have ~78–83% of their context window for actual work, up from ~54–59%. As your squad runs more sessions and accumulates more decisions, Scribe's history summarization keeps per-agent history bounded. For decisions.md, a Scribe-driven automated pruning system is planned for v0.5.0 (see issue #37) — until then, the archive pattern keeps the shared brain lean.
+
+**The architecture still wins.** Each agent runs in **its own** 200K window. The coordinator's window is separate from every agent's window. Fan out to 5 agents and you're working with **~1M tokens** of total reasoning capacity. The per-agent overhead is real but bounded — and the pruning system ensures it stays that way as your project grows.
 
 ### Memory Architecture
 
@@ -253,7 +257,8 @@ The Coordinator enforces this. No self-review of rejected work.
 - [**Label Taxonomy**](docs/features/labels.md) — 7-namespace label system (status:, type:, priority:, squad:, go:, release:, era:). Labels are the state machine; boards are projections.
 - **Universe Expansion** — 20 → 33 casting universes (MCU, DC, Stranger Things, The Expanse, Arcane, Ted Lasso, Dune, Cowboy Bebop, Fullmetal Alchemist, Seinfeld, The Office, Adventure Time, Futurama, + 2 more)
 - **Docs Growth** — 49 docs across features, scenarios, and guides
-- **Core Growth** — squad.agent.md: 1,100 → 1,529 lines; index.js: 654 lines; 188 total commits
+- **Context Optimization** — decisions.md pruned from ~80K to ~33K tokens (251 → 78 blocks). Spawn templates deduplicated. Per-agent context usage dropped from 41–46% to 17–23%. Agents now have 78–83% of their context window for actual work.
+- **Core Growth** — squad.agent.md: 1,100 → 1,771 lines; index.js: 654 lines; 188+ total commits
 
 ---
 
