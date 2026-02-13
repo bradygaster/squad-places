@@ -50,7 +50,7 @@ gh auth refresh -s project
 copilot
 ```
 
-Select **Squad** from the `/agents` list, then:
+Select **Squad (vX.Y.Z)** from the `/agents` list, then:
 
 ```
 I'm starting a new project. Set up the team.
