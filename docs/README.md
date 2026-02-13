@@ -62,6 +62,7 @@ Public-facing documentation for Squad. GitHub Pages ready.
 - [Open Source Projects](scenarios/open-source.md) — Triage, contributors, community
 
 ### Operations
+- [Client Compatibility Matrix](scenarios/client-compatibility.md) — What works on CLI, VS Code, JetBrains, GitHub.com
 - [Issue-Driven Development](scenarios/issue-driven-dev.md) — End-to-end issue workflow
 - [CI/CD Integration](scenarios/ci-cd-integration.md) — Squad + GitHub Actions
 - [Moving a Team](scenarios/team-portability.md) — Export and import between repos

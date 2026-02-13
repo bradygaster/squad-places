@@ -36,6 +36,19 @@
 🟡 Needs review: Medium features with clear specs, refactoring with tests, API additions
 🔴 Not suitable: Architecture decisions, multi-system design, ambiguous requirements, security-critical changes
 
+## Project Board
+
+| Field | Value |
+|-------|-------|
+| **Title** | Squad Backlog |
+| **Number** | 13 |
+| **Project ID** | PVT_kwHOAn_JWs4BPGl_ |
+| **URL** | https://github.com/users/bradygaster/projects/13 |
+| **Status Field ID** | PVTSSF_lAHOAn_JWs4BPGl_zg9nFm0 |
+| **Todo Option** | f75ad846 |
+| **In Progress Option** | 47fc9ee4 |
+| **Done Option** | 98236657 |
+
 ## Project Context
 
 - **Owner:** bradygaster (bradygaster@users.noreply.github.com)

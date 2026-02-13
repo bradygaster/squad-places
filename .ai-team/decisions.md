@@ -4608,3 +4608,34 @@ Created `docs/scenarios/client-compatibility.md` as the single source of truth f
 - Phase 2 (v0.5.0) — Generate custom `.agent.md` files during `squad init` for model-tier selection on VS Code
 - Empirical testing — Verify VS Code has the silent success bug (P0 from Proposal 015) or can omit Response Order workaround
 
+
+## Decision: Projects V2 Phase 1 Gate — PASSED
+
+**Date:** 2026-02-15  
+**Author:** Fenster  
+**Context:** Issue #6, Proposal 033 WI-1 + WI-2
+
+### Decision
+
+GitHub Projects V2 board operations are fully implementable using gh project * CLI commands with zero npm dependencies. Phase 1 validation is complete. Phase 2 (coordinator prompts + label-to-board sync workflow) is unblocked.
+
+### Key Facts
+
+1. All 10 gh project * commands validated live against bradygaster/squad.
+2. project token scope already present — no gh auth refresh needed for this repo.
+3. The 4-step field discovery pipeline (list → field-list → extract Status → cache IDs) is reliable and repeatable.
+4. item-edit requires 4 opaque IDs — this is the main complexity. IDs are stable after creation.
+5. item-add is idempotent — safe to re-add existing issues.
+6. No raw GraphQL needed. gh project subcommands cover 100% of required operations.
+
+### Artifacts Created
+
+- **SKILL.md:** .ai-team/skills/github-projects-v2-commands/SKILL.md — complete command reference
+- **Proposal:** 	eam-docs/proposals/006a-project-board-implementation.md — provider abstraction + capabilities interface
+- **Issue comment:** Posted findings to issue #6
+
+### What This Unblocks
+
+- WI-3: Board initialization flow (Verbal)
+- WI-4: Label-to-board sync workflow (Fenster)
+- WI-5: Board query & display (Verbal)

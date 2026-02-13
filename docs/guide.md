@@ -10,14 +10,14 @@ It is not a chatbot wearing hats. Each team member is spawned as a real sub-agen
 
 ## Supported Platforms
 
-Squad is designed for **GitHub Copilot CLI** and ships with full support for that environment.
+Squad is designed for **GitHub Copilot CLI** and ships with full support. **VS Code is now fully supported with zero code changes** — agents work identically on both platforms.
 
 **Current state:**
-- ✅ **GitHub Copilot CLI** — fully supported. This is the primary platform. Uses the stable `task` tool for sub-agent spawning.
-- 🚧 **VS Code Copilot** — partial support tracked in [#10](https://github.com/bradygaster/squad/issues/10). VS Code uses a different tool (`runSubagent`) that doesn't yet support Squad's parallel execution model (`mode: "background"`) or typed agent selection.
-- ❌ **Other platforms** — Visual Studio, JetBrains IDEs, and other runtimes are not supported.
+- ✅ **GitHub Copilot CLI** — fully supported. This is the primary platform. Uses the stable `task` tool for sub-agent spawning, per-spawn model selection, and background mode.
+- ✅ **VS Code Copilot** — fully supported (v0.4.0+). VS Code uses `runSubagent` for parallel execution and supports full `.ai-team/` read/write. See [Client Compatibility Matrix](scenarios/client-compatibility.md) for details.
+- ❌ **Other platforms** — JetBrains IDEs and other runtimes are untested. GitHub.com web-based Copilot is untested.
 
-If you're using VS Code, Squad will run but with limitations. Follow [#10](https://github.com/bradygaster/squad/issues/10) for cross-client support progress.
+For a detailed feature comparison across platforms (model selection, background execution, file access, etc.), see [Client Compatibility Matrix](scenarios/client-compatibility.md).
 
 ---
 
