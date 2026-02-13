@@ -125,6 +125,12 @@ jobs:
               return labels.includes('go:yes') && !labels.some(l => l.startsWith('release:'));
             });
 
+            // 4b. Find issues missing type: label
+            const missingType = squadIssues.filter(issue => {
+              const labels = issue.labels.map(l => l.name);
+              return !labels.some(l => l.startsWith('type:'));
+            });
+
             // 5. Find open PRs that need attention
             const { data: openPRs } = await github.rest.pulls.list({
               owner: context.repo.owner,
@@ -150,6 +156,9 @@ jobs:
             }
             if (goYesIssues.length > 0) {
               summary.push(`⚪ **${goYesIssues.length} approved issue(s)** missing release target (no \`release:\` label)`);
+            }
+            if (missingType.length > 0) {
+              summary.push(`⚪ **${missingType.length} issue(s)** missing \`type:\` label`);
             }
             if (squadPRs.length > 0) {
               const drafts = squadPRs.filter(pr => pr.draft).length;

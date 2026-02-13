@@ -21,9 +21,12 @@ jobs:
             const issue = context.payload.issue;
             const appliedLabel = context.payload.label.name;
 
-            // Skip if not a go: or release: label
-            if (!appliedLabel.startsWith('go:') && !appliedLabel.startsWith('release:')) {
-              core.info(`Label ${appliedLabel} is not a go: or release: label — skipping`);
+            // Namespaces with mutual exclusivity rules
+            const EXCLUSIVE_PREFIXES = ['go:', 'release:', 'type:', 'priority:'];
+
+            // Skip if not a managed namespace label
+            if (!EXCLUSIVE_PREFIXES.some(p => appliedLabel.startsWith(p))) {
+              core.info(`Label ${appliedLabel} is not in a managed namespace — skipping`);
               return;
             }
 
@@ -119,6 +122,58 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issue.number,
                   body: `🏷️ Release target updated → \`${appliedLabel}\``
+                });
+              }
+            }
+
+            // Handle type: namespace (mutual exclusivity)
+            if (appliedLabel.startsWith('type:')) {
+              const otherTypeLabels = allLabels.filter(l => 
+                l.startsWith('type:') && l !== appliedLabel
+              );
+
+              if (otherTypeLabels.length > 0) {
+                for (const label of otherTypeLabels) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    name: label
+                  });
+                  core.info(`Removed conflicting label: ${label}`);
+                }
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🏷️ Issue type updated → \`${appliedLabel}\``
+                });
+              }
+            }
+
+            // Handle priority: namespace (mutual exclusivity)
+            if (appliedLabel.startsWith('priority:')) {
+              const otherPriorityLabels = allLabels.filter(l => 
+                l.startsWith('priority:') && l !== appliedLabel
+              );
+
+              if (otherPriorityLabels.length > 0) {
+                for (const label of otherPriorityLabels) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    name: label
+                  });
+                  core.info(`Removed conflicting label: ${label}`);
+                }
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🏷️ Priority updated → \`${appliedLabel}\``
                 });
               }
             }
