@@ -318,6 +318,8 @@ The coordinator checks for open `squad:{member}` issues at session start and wil
 npx github:bradygaster/squad
 ```
 
+> **Appears to hang?** npm resolves `github:` packages via `git+ssh://`. If no SSH agent is running, git prompts for your key passphrase — but npm's progress spinner hides the prompt. Fix: start your SSH agent first (`ssh-add`), or run with `npx --progress=false github:bradygaster/squad` to reveal the prompt. See [Troubleshooting](docs/scenarios/troubleshooting.md) for more.
+
 See [Quick Start](#quick-start) for the full walkthrough.
 
 ### Upgrade
@@ -339,6 +341,7 @@ This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow file
 - **GitHub Copilot CLI** — Squad runs on GitHub Copilot; no other runtimes are supported
 - **`gh` CLI required** — GitHub Issues, PRs, Ralph, and Project Boards all need `gh auth login`. Project Boards additionally require `gh auth refresh -s project`
 - **Knowledge grows with use** — the first session is the least capable; agents improve as they accumulate history
+- **SSH agent required for install** — `npx github:bradygaster/squad` resolves via `git+ssh://`. If no SSH agent is running, npm's progress spinner hides git's passphrase prompt, making install appear frozen. Fix: start your SSH agent first (`ssh-add`), or use `npx --progress=false github:bradygaster/squad`. See [#30](https://github.com/bradygaster/squad/issues/30)
 
 ---
 
