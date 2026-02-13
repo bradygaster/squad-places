@@ -32,6 +32,7 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 ## Recent Updates
 
 📌 Team update (2026-02-13): VS Code runSubagent spawning — platform parity and adaptation strategy (consolidated). runSubagent viable with platform detection and custom .agent.md files. Spawn patterns all map 1:1; model selection is the gap; recommendation: prompt-level platform detection, no abstraction layer. Unblocks #32-35. — decided by Keaton, Strausz, Kujan
+📌 Team update (2026-02-13): MCP integration — coordinator awareness and CLI config generation. Added MCP Integration section to squad.agent.md, MCP context block to spawn template, and `.copilot/mcp-config.json` sample generation to `squad init` and `squad upgrade`. Issue #11 resolved. — decided by Fenster
 📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.
 📌 Team update (2026-02-08): CI pipeline created — GitHub Actions runs tests on push/PR to main/dev. PRs now have automated quality gate. — decided by Hockney
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan
@@ -116,3 +117,5 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 
 📌 Team update (2026-02-13): Projects V2 Phase 1 validation complete — all gh project * commands validated live, no npm dependencies needed. Unblocks WI-3 (board init), WI-4 (label-to-board sync), WI-5 (board query). — decided by Fenster
+
+- **MCP integration shipped (#11).** Added MCP Integration section to squad.agent.md (after Client Compatibility, before Eager Execution): detection via tool prefix scanning, routing rules (coordinator direct vs spawn with context), graceful degradation (CLI fallback → inform user → continue without), config file locations, Trello sample config. References the existing MCP skill at `.ai-team/skills/mcp-tool-discovery/SKILL.md` instead of duplicating it. Updated spawn template with optional MCP TOOLS AVAILABLE block. Added MCP config generation to `squad init` (creates `.copilot/mcp-config.json` sample with `EXAMPLE-trello` prefix pattern). Added 0.4.0 upgrade migration so existing installs get the sample config on `squad upgrade`. Both init and migration are idempotent (skip if file exists).
