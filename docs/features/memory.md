@@ -102,3 +102,35 @@ Skills differ from decisions — decisions are project policies ("use PostgreSQL
 - If an agent keeps making the same mistake, check `decisions.md` — the relevant convention might be missing.
 - You can edit `decisions.md` and `history.md` files directly. They're plain Markdown.
 - The first session is always the least capable. Give the team a few sessions to build up context.
+
+## Sample Prompts
+
+```
+what does Kane remember about the authentication system?
+```
+
+Queries a specific agent's personal history for relevant context.
+
+```
+show me the team decisions about API design
+```
+
+Searches the shared decisions.md file for a particular topic.
+
+```
+what happened in the last session?
+```
+
+Reviews session history and recent agent learnings.
+
+```
+always use single quotes in TypeScript
+```
+
+Adds a directive to the shared decisions that all agents will follow.
+
+```
+search past decisions for database choices
+```
+
+Finds historical decisions related to a specific topic or keyword.
