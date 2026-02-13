@@ -157,3 +157,22 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton
 
 📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0 implementation. Verbal assigned Phase 2 (WI-3: board init prompts) and Phase 3 (WI-5: board query/display). Fenster leads Phase 1 validation. — decided by Keaton
+📌 Team update (2026-02-13): MCP integration architecture merged from inbox — Awareness layer (discovery skill) + coordinator context injection. Sub-agent MCP inheritance is a platform constraint (workaround: coordinator handles directly). Graceful degradation mandatory. Scales to all MCP servers. — decided by Verbal
+
+- **2026-02-13: MCP Integration Design — Discovery Skill + Architecture (Issue #11)** — Full research and design for Fritz's MCP integration request. Key findings:
+
+  - **Sub-agent MCP inheritance is the critical constraint.** Sub-agents spawned via the `task` tool may NOT inherit MCP tools from the parent session. This is a platform-level limitation tracked upstream. Squad must design around this — coordinator handles MCP calls directly or pre-fetches data before spawning. This constraint will likely be resolved by platform updates, at which point the skill patterns work unchanged.
+
+  - **Squad doesn't own MCP — it teaches awareness.** Same pattern as human-notification: Squad teaches agents when and how to use MCP tools, users bring the MCP servers. Zero dependencies, zero runtime changes. The skill system is the perfect vehicle for this.
+
+  - **Three-layer architecture is the right abstraction.** Layer 1 (discovery skill) teaches patterns. Layer 2 (coordinator context injection) tells agents what's available at spawn time. Layer 3 (documentation) helps users set up their MCP servers. Each layer is independent and shippable.
+
+  - **MCP config lives in three places.** `.copilot/mcp-config.json` (CLI, team-shared), `.vscode/mcp.json` (VS Code workspace), `~/.copilot/mcp-config.json` (user personal). The platform merges these — Squad never parses them directly.
+
+  - **Auth is a real blocker for some MCP servers.** Fritz flagged it: Copilot CLI auth ≠ GitHub MCP auth. Users need separate tokens for GitHub MCP, Azure MCP, Trello MCP, etc. This is a documentation problem, not a code problem.
+
+  - **Graceful degradation is non-negotiable.** If an MCP tool isn't available, agents fall back to CLI equivalents (`gh`, `az`), inform the user what's needed, or continue without the integration. MCP is always an enhancement, never a dependency.
+
+  - **The skill scales with the ecosystem.** Every new MCP server that ships becomes automatically usable by Squad agents — no Squad release required. The discovery skill teaches the general pattern; domain-specific skills can be added later for Trello workflows, Aspire monitoring, etc.
+
+  **Files created:** `.ai-team/skills/mcp-tool-discovery/SKILL.md` (discovery skill), `.ai-team/decisions/inbox/verbal-mcp-integration.md` (architectural decision). Design posted to Issue #11.

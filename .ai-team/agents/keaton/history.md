@@ -227,3 +227,20 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
 
 
 📌 Team update (2026-02-12): Squad Notification Architecture (Proposal 034) merged into decisions.md — MCP integration pattern, Teams primary, iMessage secondary, skill-based trigger system (BLOCKED/ERROR/DECISION/COMPLETE). — decided by Keaton
+
+- **2026-02-12: Issue #10 Decomposition — VS Code Priority for Copilot Client Parity (Keaton decision)**
+  - **Brady's directive:** "VS Code is the priority. If we need to split #10, deal with VS Code first. JetBrains, GitHub.com, and other surfaces are secondary."
+  - **Decomposed Issue #10 into 5 sub-issues on GitHub:**
+    - **#32 (P0, v0.4.0):** VS Code `runSubagent` compatibility. Test spawn mechanism, parameter support (model, mode, description), background execution, compatibility layer.
+    - **#33 (P0, v0.4.0):** VS Code file discovery & .ai-team/ access. Test squad.agent.md discovery, .ai-team/ read/write capability, filesystem API equivalence.
+    - **#34 (P1, v0.4.0):** VS Code model selection & background mode parity. Validate `runSubagent` model parameter, async equivalent, fallback behavior.
+    - **#35 (P1, v0.4.0):** Compatibility matrix document. Feature × Surface table (CLI ✅, VS Code ?, JetBrains ?, GitHub.com ?), fallback strategies, docs placement.
+    - **#36 (P2, deferred v0.5.0):** JetBrains + GitHub.com research. Deferred until VS Code is solid. Same pattern: spawn, file discovery, model selection.
+  - **Posted comment on #10** documenting decomposition, timeline (Wave 1 v0.4.0 = VS Code, Wave 2 v0.5.0 = broader surfaces), success metric (graceful degradation across all surfaces).
+  - **Created decision artifact:** `.ai-team/decisions/inbox/keaton-vscode-priority.md` — rationale (market position, feature validation, Brady's directive), decomposition strategy, success criteria, risk mitigation.
+  - **Key learning: Platform abstraction is a multi-surface problem.** Issue #9 identified the tool-naming gap (CLI `task` vs VS Code `runSubagent`). This decomposition validates the architectural insight — core (squad.agent.md, orchestration, memory) is portable; tooling assumptions (task, /delegate, model override) are not. Each Copilot surface needs a compatibility layer.
+  - **Strategic timing:** VS Code parity enables full Squad adoption on the dominant editor. Deferring JetBrains + GitHub.com to v0.5.0 keeps v0.4.0 scope tight (Project Boards + client parity = 2 major features). Brady's priority directive is operationalized via issue labels (release:v0.4.0 vs v0.5.0) and decomposition.
+  - **Key file paths:** Issues #32–#36 (created on GitHub), `.ai-team/decisions/inbox/keaton-vscode-priority.md` (decision), this history entry.
+
+📌 Team update (2026-02-12): Copilot client parity issue (#10) decomposed into 5 sub-issues. VS Code is P0 (v0.4.0), JetBrains + GitHub.com deferred to v0.5.0. Decision: keaton-vscode-priority.md. Issues: #32–#36. — decided by Keaton per Brady
+📌 Team update (2026-02-13): VS Code priority decision merged from inbox — Market position (VS Code dominance), feature validation (most complete Copilot integration), Brady's directive. Decomposition strategy for Issues #32–#36. Graceful degradation across all surfaces. — decided by Keaton

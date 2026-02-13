@@ -4299,3 +4299,126 @@ All 4 workflow templates updated:
 
 **Why:** Brady directive — `textbook agentic DevOps.` Labels are the state machine. Every issue gets exactly one label per exclusive namespace. Workflows enforce this automatically.
 
+# Decision: SSH workaround documentation pattern
+
+**Date:** 2026-02-12
+**Author:** Fenster
+**Issue:** #30
+
+## Context
+
+Users reported `npx github:bradygaster/squad` appearing to hang. Root cause: npm resolves `github:` specifiers via `git+ssh://`, and when no SSH agent is running, git's passphrase prompt is hidden by npm's progress spinner. This is an npm TTY bug, not a Squad bug.
+
+## Decision
+
+1. Document workarounds inline in README (Install section + Known Limitations) rather than changing install mechanics.
+2. Created `docs/scenarios/troubleshooting.md` as a central troubleshooting guide using problem → cause → fix format.
+3. We do NOT work around this in code (e.g., no HTTPS fallback in index.js) — the install path via `github:` specifier is npm's responsibility.
+
+## Impact
+
+- Future community-reported "it doesn't work" issues should be added to the troubleshooting doc.
+- The troubleshooting doc follows the same format as other scenario docs in `docs/scenarios/`.
+
+
+# VS Code Priority for Copilot Client Parity (Keaton)
+
+**Date:** 2026-02-12  
+**By:** Keaton (Lead)  
+**Context:** Issue #10 decomposition — Brady's directive to prioritize VS Code over other Copilot surfaces.
+
+## Decision
+
+VS Code is the **#1 priority** for Copilot client parity. JetBrains IDE and GitHub.com are P2/deferred.
+
+### Rationale
+
+1. **Market position:** VS Code dominates the developer editor market. Validating Squad on VS Code first gives maximum reach and impact.
+2. **Feature validation:** VS Code has the most feature-complete Copilot integration (agent spawning, background tasks, file system access). Solving it first unblocks patterns for other surfaces.
+3. **Brady's directive:** "VS Code is the priority. If we need to split #10, deal with VS Code first. JetBrains, GitHub.com, and other surfaces are secondary."
+
+## Decomposition Strategy
+
+Split #10 into 5 sub-issues:
+
+| Issue | Priority | Target | Surface | Work |
+|-------|----------|--------|---------|------|
+| #32 | P0 | v0.4.0 | VS Code | Test `runSubagent` as squad spawn mechanism |
+| #33 | P0 | v0.4.0 | VS Code | Test agent file discovery & .ai-team/ access |
+| #34 | P1 | v0.4.0 | VS Code | Model selection & background mode parity |
+| #35 | P1 | v0.4.0 | VS Code | Compatibility matrix document |
+| #36 | P2 | v0.5.0 | JetBrains + GitHub.com | Surface research (deferred) |
+
+### Success Criteria
+
+**v0.4.0 (VS Code):**
+- Squad agent spawning works in VS Code via `runSubagent`
+- .ai-team/ file discovery and access validated
+- Model selection parameter support tested
+- Background/async execution mode documented
+- Compatibility matrix published (VS Code 100% complete, others TBD)
+
+**v0.5.0+ (Deferred):**
+- Extend matrix to JetBrains
+- Extend matrix to GitHub.com
+- Document fallback strategies for unsupported features across all surfaces
+
+## Related Decisions
+
+- **Per-agent model selection (024 consolidated):** VS Code must support `model` parameter in `runSubagent`.
+- **Proposal 028 (GitHub-native planning):** Issues and PRs are the assignment vehicle; VS Code focus applies here too.
+- **Release timeline (019):** v0.4.0 includes GitHub Issues (v0.3.0) + Project Boards (v0.4.0). Client parity is incremental; VS Code first, others follow.
+
+## Risk & Mitigation
+
+**Risk:** VS Code `runSubagent` may not support all CLI `task` parameters (model, mode, background).  
+**Mitigation:** Define graceful degradation — Squad works with baseline features, advanced features degrade gracefully. Document in compatibility matrix.
+
+**Risk:** .ai-team/ file discovery may fail in VS Code sandbox.  
+**Mitigation:** Build file path inference logic; fallback to embedded team config if needed.
+
+## Next Steps
+
+1. Start #32 (runSubagent compatibility) immediately
+2. Parallel: #33 (file discovery)
+3. Follow: #34 (model selection)
+4. Synthesize: #35 (compatibility matrix)
+5. Defer: #36 to v0.5.0 backlog
+
+
+### 2026-02-13: MCP Integration Architecture — Awareness Layer + Discovery Skill
+
+**By:** Verbal (Prompt Engineer)
+
+**What:** Designed Squad's MCP integration as a prompt-level awareness layer. Three components:
+
+1. **MCP Discovery Skill** (`.ai-team/skills/mcp-tool-discovery/SKILL.md`) — teaches agents how to detect available MCP tools, use domain-specific tools (Trello, Aspire, GitHub, Azure, Notion), degrade gracefully when tools are missing, and guide users through MCP configuration.
+
+2. **Coordinator MCP Context Injection** — when spawning agents, the coordinator should enumerate available MCP tools and include a `MCP TOOLS AVAILABLE IN THIS SESSION` block in spawn prompts. This eliminates per-agent discovery overhead and gives agents immediate awareness.
+
+3. **Platform constraint documented** — sub-agents spawned via the `task` tool may NOT inherit MCP tools from the parent session (platform-dependent). This means the coordinator must handle MCP-dependent operations directly, or verify tool availability in sub-agent context. This is the most important architectural constraint for v0.4.0 scope.
+
+**Key architectural decisions:**
+- Squad does NOT own MCP server lifecycle — users bring their own
+- Squad does NOT parse `mcp.json` — the platform handles that
+- Squad DOES teach agents awareness patterns via the skills system
+- Graceful degradation is mandatory — no MCP tool should be a hard dependency
+- GitHub MCP reads + `gh` CLI writes pattern (existing convention) extends to all MCP domains
+- MCP tool context is injected by the coordinator at spawn time, not discovered per-agent
+
+**Why:** Fritz's Issue #11 asked for MCP integration. Research confirms the Copilot platform auto-injects configured MCP tools at the session level. The real gap is agent awareness — agents don't know what MCP tools are available or how to use domain-specific ones. The skill-based approach fits Squad's existing architecture (zero dependencies, prompt-level changes only) and scales to any MCP server the ecosystem produces.
+
+**Platform constraint rationale:** Sub-agent MCP inheritance is a known gap in the Copilot CLI / Claude Code platforms (tracked in multiple upstream issues). Squad must design around this — either the coordinator handles MCP work directly, or we verify inheritance works before depending on it. This constraint may be resolved by platform updates, at which point the skill patterns work unchanged.
+
+**v0.4.0 scope:**
+- MCP discovery skill (shipped in this PR)
+- Coordinator MCP context injection in spawn templates (WI-2)
+- User-facing documentation for configuring MCP servers (WI-4)
+- Auth limitations documentation (WI-5)
+
+**Post-v0.4.0:**
+- Domain-specific MCP skills (Trello workflows, Aspire monitoring ceremonies)
+- MCP tool → agent routing rules in routing.md
+- Sample mcp-config.json templates in examples/
+- Two-way MCP interactions (receiving events, not just calling tools)
+
