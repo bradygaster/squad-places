@@ -63,6 +63,14 @@
       "legacy_named": false,
       "status": "active",
       "model": "claude-opus-4.5"
+    },
+    "strausz": {
+      "persistent_name": "Strausz",
+      "universe": "The Usual Suspects",
+      "created_at": "2026-02-13T08:28:00.000Z",
+      "legacy_named": false,
+      "status": "active",
+      "model": "claude-sonnet-4.5"
     }
   }
 }
