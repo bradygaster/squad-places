@@ -346,6 +346,16 @@ This is useful for teams where certain decisions (design sign-off, security revi
 
 ---
 
+## Notifications
+
+Your squad can notify you when they need input — send instant pings to Teams, Discord, iMessage, or any webhook. Agents trigger notifications when they're blocked, need a decision, hit an error, or complete important work.
+
+**Setup is quick:** Configure an MCP notification server (takes 5 minutes), and agents automatically know when to ping you.
+
+See [Notifications Guide](features/notifications.md) for platform-specific setup and examples. For MCP configuration details, see [MCP Setup Guide](features/mcp.md).
+
+---
+
 ## Ceremonies
 
 Ceremonies are structured team meetings. Squad ships with two default ceremonies:

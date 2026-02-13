@@ -354,10 +354,97 @@ For advanced use cases, you can also:
 
 ---
 
+## Sample MCP Configs
+
+Below are complete, copy-pasteable `.copilot/mcp-config.json` examples for each notification platform. Pick the one that matches your setup and copy the entire `mcpServers` block into your config file.
+
+### Teams Webhook (Simplest)
+
+```json
+{
+  "mcpServers": {
+    "notifications": {
+      "command": "node",
+      "args": ["path/to/teams-webhook-mcp.js"],
+      "env": {
+        "TEAMS_WEBHOOK_URL": "https://outlook.webhook.office.com/webhookb2/YOUR_WEBHOOK_URL_HERE"
+      }
+    }
+  }
+}
+```
+
+**Setup:** Get your webhook URL from Teams channel settings (right-click channel → Manage → Connectors → Incoming Webhook).
+
+---
+
+### iMessage (Mac Only)
+
+```json
+{
+  "mcpServers": {
+    "notifications": {
+      "command": "node",
+      "args": ["path/to/imessage-mcp.js"],
+      "env": {
+        "IMESSAGE_TARGET": "+1234567890"
+      }
+    }
+  }
+}
+```
+
+Replace `+1234567890` with your phone number or email address registered in iCloud.
+
+---
+
+### Discord Webhook
+
+```json
+{
+  "mcpServers": {
+    "notifications": {
+      "command": "node",
+      "args": ["path/to/discord-webhook-mcp.js"],
+      "env": {
+        "DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Setup:** In Discord, right-click channel → Edit Channel → Integrations → Webhooks → New Webhook → copy the URL.
+
+---
+
+### Generic Webhook (Zapier, Custom Endpoint, etc.)
+
+```json
+{
+  "mcpServers": {
+    "notifications": {
+      "command": "node",
+      "args": ["path/to/webhook-mcp.js"],
+      "env": {
+        "WEBHOOK_URL": "https://your-service.com/notify",
+        "WEBHOOK_AUTH_HEADER": "Authorization: Bearer YOUR_API_KEY",
+        "WEBHOOK_CONTENT_TYPE": "application/json"
+      }
+    }
+  }
+}
+```
+
+Your endpoint receives POST requests with agent name, message, and context.
+
+---
+
 ## See Also
 
+- [MCP Setup Guide](./mcp.md) — detailed MCP configuration walkthrough
 - [Skills System](./skills.md) — learn how skills encode reusable knowledge
-- [Copilot Environment Setup](../guide.md) — how to configure `.vscode/mcp.json`
+- [Copilot Environment Setup](../guide.md) — how to configure MCP
 - [Model Selection](./model-selection.md) — customize agent behavior per role
 
 ## Sample Prompts
