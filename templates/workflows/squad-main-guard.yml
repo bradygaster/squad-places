@@ -36,7 +36,9 @@ jobs:
             }
 
             // Check each file against forbidden path rules
+            // Allow removals — deleting forbidden files from protected branches is fine
             const forbidden = files
+              .filter(f => f.status !== 'removed')
               .map(f => f.filename)
               .filter(f => {
                 // .ai-team/** — ALL team state files, zero exceptions
