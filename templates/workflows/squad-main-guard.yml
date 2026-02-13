@@ -81,8 +81,9 @@ jobs:
               'git push',
               '```',
               '',
-              '> ⚠️ `.ai-team/` is in `.gitignore` but files previously force-added with `git add -f`',
-              '> remain tracked. `git rm --cached` untracks them without deleting your local copies.',
+              '> ⚠️ `.ai-team/` is committed on `dev` and feature branches by design.',
+              '> The guard workflow is the enforcement mechanism that keeps these files off `main` and `preview`.',
+              '> `git rm --cached` untracks them from this PR without deleting your local copies.',
             ];
 
             core.setFailed(lines.join('\n'));

@@ -10,11 +10,10 @@ Thumbs.db
 # Node (if we add tooling later)
 node_modules/
 
-# Squad team state (created at runtime, never committed)
-# ⚠️ NEVER force-add these files (git add -f .ai-team/).
-# Previously force-added files remain tracked even with this rule.
-# If tracked files leak in, remove them: git rm --cached -r .ai-team/
-.ai-team/
+# Squad team state — committed on dev and feature branches,
+# blocked from main/preview by squad-main-guard.yml workflow.
+# ⚠️ NEVER merge .ai-team/ into main or preview.
+# The guard workflow will fail the PR if you try.
 
 # Squad Squad templates (internal, not distributed)
 .ai-team-templates/
