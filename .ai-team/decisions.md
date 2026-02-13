@@ -4271,3 +4271,31 @@ Consider adding `notifications` to the "What's New" section in README.md if this
 **What:** Four-workflow system to automate `go:` (triage verdict) and `release:` (version target) label namespaces. Created `squad-label-enforce.yml` for mutual exclusivity enforcement; updated `sync-squad-labels.yml` to sync 8 static labels (3 go:, 5 release:); updated `squad-triage.yml` to apply `go:needs-research` as default verdict; updated `squad-heartbeat.yml` to detect issues missing go: labels and go:yes issues missing release: labels.
 
 **Why:** Labels-as-automation is the foundation of Squad's GitHub-native workflow. The `go:` namespace (go:yes, go:no, go:needs-research) captures triage decisions; the `release:` namespace (release:v0.4.0, v0.5.0, v0.6.0, v1.0.0, release:backlog) captures delivery targets. Mutual exclusivity is business logic (exactly 1 go: label per triaged issue, at most 1 release: label per issue). Workflows enforce this at runtime, eliminating human error. The enforcement workflow handles label transitions: when a new go: or release: label is applied, it removes conflicting labels in the same namespace and posts a comment (only on actual changes). Special cases: `go:yes` auto-applies `release:backlog` if no release target exists (every approved issue must have a target); `go:no` strips release labels (rejected issues shouldn't be in release planning). Default verdict (`go:needs-research`) is applied by triage workflow to ensure every triaged issue enters the system with a go: label. Ralph (heartbeat) now scans for label hygiene: issues missing go: labels are surfaced as incomplete triage, go:yes issues missing release: labels are surfaced as incomplete planning. This is textbook "agentic DevOps" — labels are the state machine, automation is the enforcement layer.
+
+
+### 2026-02-13: User directive
+**By:** Brady (via Copilot)
+**What:** Execution is the strategy. Take action, don't wait for permission. If the squad has questions on issues, leave a comment. If not, close research issues and create milestone-ready implementation issues. Optimize for taking action.
+**Why:** User request — captured for team memory. Brady wants momentum, not planning paralysis.
+
+
+
+### 2026-02-13: Full label taxonomy — namespaced label strategy
+**By:** Keaton (via Coordinator)
+**What:** Implemented complete namespaced label system across 5 namespaces:
+- `go:` (yes/no/needs-research) — triage verdicts, mutually exclusive
+- `release:` (v0.4.0/v0.5.0/v0.6.0/v1.0.0/backlog) — release targeting, mutually exclusive
+- `type:` (feature/bug/spike/docs/chore/epic) — work classification, mutually exclusive
+- `priority:` (p0/p1/p2) — urgency, mutually exclusive
+- `squad:{member}` — agent routing, NOT exclusive (can have multiple)
+
+Deleted GitHub defaults (bug, enhancement, documentation, duplicate, invalid, wontfix, question) — replaced by namespaced equivalents.
+
+All 4 workflow templates updated:
+- squad-label-enforce.yml: enforces mutual exclusivity for go:/release:/type:/priority:
+- sync-squad-labels.yml: syncs all label namespaces from team.md
+- squad-heartbeat.yml: Ralph detects missing type: labels
+- squad-triage.yml: unchanged (type: assigned during review, not auto-guessed)
+
+**Why:** Brady directive — `textbook agentic DevOps.` Labels are the state machine. Every issue gets exactly one label per exclusive namespace. Workflows enforce this automatically.
+
