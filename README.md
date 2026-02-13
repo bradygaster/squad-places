@@ -5,6 +5,8 @@
 [![Status](https://img.shields.io/badge/status-experimental-blueviolet)](#status)
 [![Platform](https://img.shields.io/badge/platform-GitHub%20Copilot-blue)](#how-it-works)
 
+📣 **[Join the Squad Community](docs/community.md)** — meet contributors, see deployments, share your work.
+
 ---
 
 ## What is Squad?
@@ -30,13 +32,25 @@ git init
 npx github:bradygaster/squad
 ```
 
-### 3. Open Copilot and go
+### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
+
+```bash
+gh auth login
+```
+
+If you plan to use [Project Boards](docs/features/project-boards.md), add the `project` scope:
+
+```bash
+gh auth refresh -s project
+```
+
+### 4. Open Copilot and go
 
 ```
 copilot
 ```
 
-Select **Squad** from the `/agents` list, then:
+Select **Squad (vX.Y.Z)** from the `/agents` list, then:
 
 ```
 I'm starting a new project. Set up the team.
@@ -304,6 +318,8 @@ The coordinator checks for open `squad:{member}` issues at session start and wil
 npx github:bradygaster/squad
 ```
 
+> **Appears to hang?** npm resolves `github:` packages via `git+ssh://`. If no SSH agent is running, git prompts for your key passphrase — but npm's progress spinner hides the prompt. Fix: start your SSH agent first (`ssh-add`), or run with `npx --progress=false github:bradygaster/squad` to reveal the prompt. See [Troubleshooting](docs/scenarios/troubleshooting.md) for more.
+
 See [Quick Start](#quick-start) for the full walkthrough.
 
 ### Upgrade
@@ -323,7 +339,9 @@ This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow file
 - **Experimental** — API and file formats may change between versions
 - **Node 22+** — requires Node.js 22.0.0 or later (`engines` field enforced)
 - **GitHub Copilot CLI** — Squad runs on GitHub Copilot; no other runtimes are supported
+- **`gh` CLI required** — GitHub Issues, PRs, Ralph, and Project Boards all need `gh auth login`. Project Boards additionally require `gh auth refresh -s project`
 - **Knowledge grows with use** — the first session is the least capable; agents improve as they accumulate history
+- **SSH agent required for install** — `npx github:bradygaster/squad` resolves via `git+ssh://`. If no SSH agent is running, npm's progress spinner hides git's passphrase prompt, making install appear frozen. Fix: start your SSH agent first (`ssh-add`), or use `npx --progress=false github:bradygaster/squad`. See [#30](https://github.com/bradygaster/squad/issues/30)
 
 ---
 

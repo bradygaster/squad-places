@@ -57,21 +57,35 @@ Example: upgrading to v0.2.0 creates `.ai-team/skills/` if it doesn't already ex
 
 ## Version Stamping
 
-`squad.agent.md` is version-stamped on install and upgrade. You can check your installed version:
+`squad.agent.md` is version-stamped on install and upgrade. The version appears in two places:
+
+### 1. Agent Name (Visible in UI)
+
+The version is displayed in the agent picker across all Copilot hosts (VS Code, CLI, Visual Studio):
+
+```yaml
+name: Squad (vX.Y.Z)
+```
+
+When you select agents in Copilot, you'll see **"Squad (vX.Y.Z)"** in the dropdown — making it immediately clear which version you're running.
+
+### 2. Version Field (For Reference)
+
+The frontmatter also includes a standalone version field:
+
+```yaml
+version: "X.Y.Z"
+```
+
+### 3. CLI Check
+
+You can also check your installed version from the command line:
 
 ```bash
 npx github:bradygaster/squad --version
 ```
 
-```
-0.2.0
-```
-
-Or look at the frontmatter in `.github/agents/squad.agent.md`:
-
-```yaml
-version: "0.2.0"
-```
+The output will show your installed version (e.g., `X.Y.Z`).
 
 ---
 

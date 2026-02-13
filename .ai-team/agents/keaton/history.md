@@ -58,7 +58,10 @@ _Summarized from initial architecture review and proposal-first design (2026-02-
 
 ## Learnings
 
-_Summarized 2026-02-10 learnings (full entries available in session logs):_
+_Summarized 2026-02-10+ learnings (full entries available in session logs):_
+
+- **2026-02-10+: Issue #6 (Project Boards) — Go/No-Go Assessment**
+  - **Verdict: GO (Conditional v0.4.0).** Projects V2 integration is architecturally sound and technically feasible with zero npm dependencies using `gh project *` CLI commands. Kujan's 033a assessment confirmed: 12 operations map cleanly to CLI, MCP server has zero Projects tools, provider abstraction works for GitHub/ADO/GitLab. Single prerequisite: Brady must grant `project` token scope (`gh auth refresh -s project`). Three-phase sprint plan: Phase 1 (6-9h foundation validation), Phase 2 (7-11h integration, parallelizable), Phase 3 (4-6h polish). Total 17-26h across Fenster (core), Verbal (prompts), McManus (docs). v0.4.0 timing is intentional — labels + issues (v0.3.0) are the foundation; boards are the dashboard (v0.4.0). Posted as comment on Issue #6 at https://github.com/bradygaster/squad/issues/6#issuecomment-3888277477.
 
 - **2026-02-10: Model Selection (024 consolidated)** — Merged 024+024a+024b into single spec. 4-layer selection priority, 16-model catalog condensed to 4 columns, nuclear fallback for resilience. Status: Approved ✅ for v0.3.0 Wave 1.
 - **2026-02-10: v0.3.0 Sprint Plan (027)** — 4 bets: model selection, backlog capture, demo infra, GitHub Issue sync. 2 waves, 31-43h. v0.2.0 gave hands; v0.3.0 gives a brain. Cut aggressively: no Squad DM, no agent negotiation, no speculative execution.
@@ -199,3 +202,28 @@ _Summarized 2026-02-10 learnings (full entries available in session logs):_
 📌 Team update (2026-02-11): Proposal 034 — MCP Integration architecture designed. Recommendation: Option B (Awareness Layer, 4-6h). Blocks on WI-1 platform behavior validation. Fritz's use cases: Trello board sync + Aspire dashboard monitoring. — decided by Keaton
 
 📌 Team update (2026-02-11): MCP Integration Direction for Squad approved — Option B (Awareness Layer) chosen. Phase 1 spike (WI-1) validates platform MCP support. See decisions.md for rationale and timeline. — decided by Keaton
+
+
+📌 Team update (2026-02-12): Branching strategy finalized — feature branches (squad/{issue}-{slug}) to dev via PR, release pipeline handles preview→main — decided by Keaton, analyzed by Fenster, hardened by Kobayashi
+
+📌 Team update (2026-02-12): Release process hardened with branch protection rules and CI/CD-only writes to preview/main — decided by Kobayashi and Brady
+
+📌 Team update (2026-02-12): Issue #6 (Project Boards) approved for v0.4.0. GO (Conditional) — pending Brady's project token scope grant. 3-phase implementation plan (17-26 squad-hours), agent assignments finalized. — decided by Keaton
+📌 Team update (2026-02-13): go:/release: label automation shipped — Four-workflow system enforces label namespace integrity (go:* triage verdicts, release:* version targets). Mutual exclusivity at runtime, special cases (go:yes auto-adds release:backlog), heartbeat detects label hygiene gaps. Labels-as-state-machine is now foundational to GitHub-native workflow. — decided by Fenster
+
+- **2026-02-11: Proposal 034 — Squad Pings You (Notification Architecture)**
+  - **Brady's vision:** "It needs to feel like I'm not in the team room, they are, and they need me so they pinged me." He wants notifications on his phone (Teams or iMessage) when squad agents hit a wall requiring human input.
+  - **Architectural decision: Squad ships ZERO notification infrastructure.** This is an MCP integration pattern — the consumer brings their own notification MCP server (Teams, iMessage, Discord, webhook). Squad teaches agents WHEN and HOW to notify via a skill.
+  - **Three-layer architecture:** (1) Notification skill at .ai-team/skills/human-notification/SKILL.md teaches agents when to ping, (2) MCP tool abstraction (no hardcoded tool names), (3) Consumer's MCP server (user-configured in .vscode/mcp.json).
+  - **Notification trigger taxonomy:** BLOCKED (work cannot proceed), ERROR (unrecoverable failure), DECISION (strategic choice needed), COMPLETE (opt-in only, for completion notifications).
+  - **Platform-agnostic message format:** Agent name + emoji + type badge + context + action + link. Platform-specific renderers: Teams (Adaptive Cards), iMessage (plain text), webhook (JSON payload).
+  - **Primary path: Microsoft Teams.** Brady said "ideal, especially per-repo channels." Teams channels-per-repo is native, Incoming Webhooks are simple (POST JSON to URL), mobile UX is enterprise-standard. Official MCP server exists: @microsoft/teams.mcp.
+  - **Secondary path: iMessage (Mac-only).** Zero account setup, instant delivery. Limitations: requires macOS with Messages.app running, cannot run headless. MCP server exists: imessage-mcp or imsg CLI.
+  - **Graceful degradation:** If no MCP server is configured, agents log the notification attempt and continue. Notifications are an enhancement, not a requirement.
+  - **Integration with existing features:** Human Team Members get BLOCKED notifications when work routes to them. Ralph can escalate stale work via notifications (opt-in). Coordinator triggers notifications when agents return blocked.
+  - **Zero maintenance burden for Squad:** The consumer owns the MCP server, credentials, and delivery mechanism. When Teams changes their API, the MCP server maintainer updates the server — not Squad.
+  - **Sprint estimate:** 1.8 squad-days (core) + 0.3 squad-days (Ralph integration, optional). Target version: 0.3.0 (alongside GitHub-native proposals).
+  - **Key file paths:** 	eam-docs/proposals/034-notification-architecture.md (full spec), .ai-team/skills/human-notification/SKILL.md (agent-facing skill), future docs/notifications.md (consumer setup guide).
+
+
+📌 Team update (2026-02-12): Squad Notification Architecture (Proposal 034) merged into decisions.md — MCP integration pattern, Teams primary, iMessage secondary, skill-based trigger system (BLOCKED/ERROR/DECISION/COMPLETE). — decided by Keaton

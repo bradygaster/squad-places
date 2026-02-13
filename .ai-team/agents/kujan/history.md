@@ -95,3 +95,8 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 
 📌 Team update (2026-02-11): Discord is the v0.3.0 MVP messaging connector. Gateway must be platform-agnostic with zero GitHub-specific imports. — decided by Keaton
 
+- **Issue #18: Version Display in Agent Output** — Investigated how to show Squad version across Copilot hosts. Key finding: the version stamping pipeline (`stampVersion()` in `index.js`) already embeds the version into `squad.agent.md` frontmatter during install/upgrade — the version was present but unused at runtime. Solution: added a `Version` instruction to the Coordinator Identity section telling the coordinator to read its own frontmatter version and include `Squad v{version}` in its first response. Zero `index.js` changes needed. Works across CLI, VS Code, and GitHub.com because it's coordinator behavior, not host-specific. The `description` frontmatter field and `task` tool `description` parameter were rejected as too noisy/per-spawn respectively.
+
+
+
+📌 Team update (2026-02-12): Version display implemented via Coordinator self-announcement in squad.agent.md — leverages existing version stamping infrastructure — decided by Kujan
