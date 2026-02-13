@@ -38,6 +38,8 @@ _Summarized from initial architecture review and proposal-first design (2026-02-
 ## Recent Updates
 
 📌 Team update (2026-02-13): VS Code runSubagent spawning — platform parity and adaptation strategy (consolidated). runSubagent viable with platform detection and custom .agent.md files. Spawn patterns all map 1:1; model selection is the gap; recommendation: prompt-level platform detection, no abstraction layer. Unblocks #32-35. — decided by Keaton, Strausz, Kujan
+📌 Team update (2026-02-13): Context window optimization — spawn template dedup and Init Mode compression. Applied surgical optimizations to squad.agent.md (Issue #37): removed two redundant spawn templates, compressed Init Mode from 84 to 48 lines. Saved ~4,270 tokens per coordinator message. — decided by Keaton
+📌 Team update (2026-02-13): Plugin Marketplace Integration. When adding new team members, coordinator checks configured plugin marketplaces for relevant templates and skills. State in `.ai-team/plugins/marketplaces.json`. CLI: `squad plugin marketplace add|remove|list|browse`. Issue #29 resolved. — decided by Keaton
 📌 Team update (2026-02-08): Proposal 023 — coordinator extracts all actionable items from messages, new backlog.md as third memory channel (intent), SQL rejected as primary store, proactive backlog surfacing as Phase 3 — decided by Verbal
 📌 Team update (2026-02-08): .ai-team/ must NEVER be tracked in git on main. Three-layer protection: .gitignore, package.json files allowlist, .npmignore. — decided by Verbal
 📌 Team update (2026-02-08): Incoming queue architecture finalized — SQL hot layer + filesystem durable store, team backlog as third memory channel, agent cloning ready. — decided by Verbal

@@ -1651,3 +1651,57 @@ Created `docs/scenarios/client-compatibility.md` as the single source of truth f
 **What:** Agent role emoji should be prepended to the `description` field in CLI `task` tool spawns. E.g., `"🔧 Fenster: refactoring auth module"` instead of `"Fenster: refactoring auth module"`. The roster already maps emoji to roles (🏗️ Lead, 🔧 Core Dev, ⚛️ Frontend, 🧪 Tester, 📝 DevRel, ✏️ Prompt Engineer, 📋 Scribe, 🔄 Ralph). Carry them into spawn descriptions.
 **Why:** User request — captured for team memory. Extends the VS Code emoji directive to CLI. Both platforms should show agent identity with role emoji.
 
+
+
+### 2026-02-15: MCP integration — coordinator awareness and CLI config generation
+**By:** Fenster
+**What:** Added MCP Integration section to squad.agent.md, MCP context block to spawn template, and `.copilot/mcp-config.json` sample generation to `squad init` and `squad upgrade`.
+**Why:** Issue #11 — enable Squad to use MCP services (Trello, Aspire, etc.). Squad doesn't own MCP server lifecycle; it teaches agents awareness and provides a sample config with the `EXAMPLE-` prefix pattern so users know where to configure. The upgrade migration ensures existing installs get the sample config.
+
+
+### 2026-02-13: Context window optimization — spawn template dedup and Init Mode compression
+
+**By:** Keaton
+
+**What:** Applied two surgical optimizations to squad.agent.md (Issue #37): (1) Removed two redundant spawn templates (Background and Sync), replaced with single generic template plus mode selection notes. Saved ~3,600 tokens. (2) Compressed Init Mode from 84 lines to ~48 lines by replacing file tree example with one-liner reference, condensing post-setup input sources to bulleted list, tightening casting state init. Saved ~670 tokens. Total savings: ~4,270 tokens per coordinator message.
+
+**Why:** squad.agent.md is loaded on every coordinator spawn (every user message). Init Mode occupies context space on all messages but is only used once per repo lifetime (when .ai-team/team.md doesn't exist). The three spawn templates were 95% identical — same sections (charter, history, decisions, OUTPUT HYGIENE, RESPONSE ORDER, skill extraction), differing only in mode parameter and example agent names (Ripley, Dallas, {Name}). This redundancy consumed context window space without adding value — developers only need one reference template with mode selection guidance, not three full examples. Init Mode's file tree example (lines 55-75) duplicated .ai-team-templates/ content. Post-setup input sources (lines 97-111) repeated the same "If yes, follow..." pattern 4 times. Both optimizations preserve all behavior and all required sections while eliminating prose redundancy.
+
+
+### 2026-02-15: Plugin Marketplace Integration
+
+**Date:** 2026-02-15
+**Decided by:** Keaton (Lead)
+**Issue:** #29 — New team members should leverage configured plugin marketplace
+**Status:** Implemented
+
+## What
+
+When adding new team members, the coordinator now checks configured plugin marketplaces for relevant templates and skills. This enables community-driven agent customization — e.g., prompting for "Azure cloud development" can discover and install an `azure-cloud-development` plugin automatically.
+
+## Architecture
+
+- **State:** `.ai-team/plugins/marketplaces.json` — JSON file listing registered marketplace sources (GitHub repos)
+- **CLI:** `squad plugin marketplace add|remove|list|browse` — four subcommands for marketplace management
+- **Coordinator flow:** Adding Team Members section updated with marketplace check step between name allocation and charter generation
+- **Discovery:** `browse` command reads a marketplace repo's directory listing via `gh api` to find available plugins
+- **Installation:** Plugin content copied into `.ai-team/skills/{plugin-name}/SKILL.md` or merged into agent charter
+
+## Graceful Degradation
+
+- No marketplaces configured → skip silently
+- Marketplace unreachable → warn and continue
+- No matching plugins → inform and proceed
+
+## Trade-offs
+
+- **Simple discovery model:** Directory listing, not a manifest. Low barrier for marketplace authors but less metadata. Good enough for v0.4.0; can add `manifest.json` later.
+- **gh CLI dependency for browse:** Requires GitHub CLI installed and authenticated. Acceptable since Squad already depends on `gh` for other features.
+- **No auto-install:** Always asks the user before installing. Respects user agency.
+
+## Files Changed
+
+- `.github/agents/squad.agent.md` — Added Plugin Marketplace section, updated Adding Team Members flow, added to Source of Truth table
+- `index.js` — Added `plugin marketplace` subcommands, `plugins/` directory creation, v0.4.0 migration
+
+
