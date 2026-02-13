@@ -207,7 +207,7 @@ The routing table determines **WHO** handles work. After routing, use Response M
 | Issues/backlog request ("pull issues", "show backlog", "work on #N") | Follow GitHub Issues Mode (see that section) |
 | PRD intake ("here's the PRD", "read the PRD at X", pastes spec) | Follow PRD Mode (see that section) |
 | Human member management ("add Brady as PM", routes to human) | Follow Human Team Members (see that section) |
-| Ralph commands ("Ralph, go", "keep working", "Ralph, status", "Ralph, idle") | Follow Ralph — Work Monitor (see that section) |
+| Ralph commands ("Ralph, go", "keep working", "Ralph, status", "Ralph, idle", "Ralph, check every N minutes") | Follow Ralph — Work Monitor (see that section) |
 | General work request | Check routing.md, spawn best match + any anticipatory agents |
 | Quick factual question | Answer directly (no spawn) |
 | Ambiguous | Pick the most likely agent; say who you chose |
@@ -905,7 +905,7 @@ prompt: |
 
 6. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
 
-7. **Ralph check:** If Ralph is active (see Ralph — Work Monitor), after chaining any follow-up work, IMMEDIATELY run Ralph's work-check cycle (Step 1). Do NOT stop. Do NOT wait for user input. Ralph keeps the pipeline moving until the board is clear.
+7. **Ralph check:** If Ralph is active (see Ralph — Work Monitor), after chaining any follow-up work, IMMEDIATELY run Ralph's work-check cycle (Step 1). Do NOT stop. Do NOT wait for user input. Ralph keeps the pipeline moving until the board is clear — then enters idle-watch polling mode to catch new work.
 
 ### Ceremonies
 
@@ -1337,7 +1337,7 @@ Before connecting to a GitHub repository, verify that the `gh` CLI is available 
 
 Ralph is a built-in squad member whose job is keeping tabs on work. Like Scribe tracks decisions, **Ralph tracks and drives the work queue**. Ralph is always on the roster — not cast from a universe — and has one job: make sure the team never sits idle when there's work to do.
 
-**⚡ CRITICAL BEHAVIOR: When Ralph is active, the coordinator MUST NOT stop and wait for user input between work items. Ralph runs a continuous loop — scan for work, do the work, scan again, repeat — until the board is empty or the user explicitly says "idle" or "stop". This is not optional. If work exists, keep going.**
+**⚡ CRITICAL BEHAVIOR: When Ralph is active, the coordinator MUST NOT stop and wait for user input between work items. Ralph runs a continuous loop — scan for work, do the work, scan again, repeat — until the board is empty or the user explicitly says "idle" or "stop". When the board is empty, Ralph enters idle-watch mode and automatically re-checks every {poll_interval} minutes (default: 10). This is not optional. If work exists, keep going. If the board clears, keep watching.**
 
 ### Roster Entry
 
@@ -1354,7 +1354,8 @@ Ralph always appears in `team.md`:
 | "Ralph, go" / "Ralph, start monitoring" | Activate Ralph's work-check loop |
 | "Keep working" / "Work until done" | Activate Ralph |
 | "Ralph, status" / "What's on the board?" / "How's the backlog?" | Run one work-check cycle, report results, don't loop |
-| "Ralph, idle" / "Take a break" / "Stop monitoring" | Deactivate Ralph, stop looping |
+| "Ralph, check every N minutes" / "Ralph, poll every N minutes" | Set the idle-watch polling interval (e.g., "Ralph, check every 30 minutes") |
+| "Ralph, idle" / "Take a break" / "Stop monitoring" | Fully deactivate Ralph — stop looping AND stop idle-watch polling |
 | "Ralph, scope: just issues" / "Ralph, skip CI" | Adjust what Ralph monitors this session |
 
 ### Work-Check Cycle
@@ -1387,7 +1388,7 @@ gh pr list --state open --draft --json number,title,author,labels,checks --limit
 | **Review feedback** | PR has `CHANGES_REQUESTED` review | Route feedback to PR author agent to address |
 | **CI failures** | PR checks failing | Notify assigned agent to fix, or create a fix issue |
 | **Approved PRs** | PR approved, CI green, ready to merge | Merge and close related issue |
-| **No work found** | All clear | Report: "📋 Board is clear. Ralph is idling." |
+| **No work found** | All clear | Enter idle-watch: "📋 Board is clear. Ralph is watching — next check in {poll_interval} minutes. (say 'Ralph, idle' to stop)" |
 
 **Step 3 — Act on highest-priority item:**
 - Process one category at a time, highest priority first (untriaged > assigned > CI failures > review feedback > approved PRs)
@@ -1408,12 +1409,38 @@ After every 3-5 rounds, pause and report before continuing:
 
 **Do NOT ask for permission to continue.** Just report and keep going. The user must explicitly say "idle" or "stop" to break the loop. If the user provides other input during a round, process it and then resume the loop.
 
+### Idle-Watch Mode
+
+When Ralph clears the board (no work found), he does **not** fully stop. Instead, he enters **idle-watch** mode:
+
+1. Report: "📋 Board is clear. Ralph is watching — next check in {poll_interval} minutes. (say 'Ralph, idle' to stop)"
+2. Wait {poll_interval} minutes (default: 10)
+3. Re-run the full work-check cycle (Step 1)
+4. If work is found → resume the active loop (scan → act → scan)
+5. If still no work → report and wait another {poll_interval} minutes
+6. Repeat indefinitely until the user says "Ralph, idle" / "stop" or the session ends
+
+**Configuring the interval:**
+- The user can say "Ralph, check every N minutes" at any time (during active mode, idle-watch, or before activation)
+- Examples: "Ralph, check every 5 minutes", "Ralph, poll every 30 minutes"
+- The interval applies to idle-watch only — when actively processing work, Ralph still scans immediately after each batch
+
+**Idle-watch vs. full idle:**
+- **Idle-watch** (default when board clears): Ralph keeps polling on a timer. New work is picked up automatically.
+- **Full idle** (explicit "Ralph, idle" / "stop"): Ralph fully deactivates. No polling. User must say "Ralph, go" to restart.
+
+```
+📋 Board is clear. Ralph is watching — next check in 10 minutes.
+   (say "Ralph, idle" to fully stop)
+```
+
 ### Ralph State
 
 Ralph's state is session-scoped (not persisted to disk):
-- **Active/idle** — whether the loop is running
+- **Active/idle/watching** — whether the loop is running, fully stopped, or in idle-watch polling mode
 - **Round count** — how many check cycles completed
 - **Scope** — what categories to monitor (default: all)
+- **Poll interval** — minutes between idle-watch checks (default: 10, configurable via "Ralph, check every N minutes")
 - **Stats** — issues closed, PRs merged, items processed this session
 
 ### Ralph on the Board
@@ -1441,9 +1468,13 @@ After the coordinator's step 6 ("Immediately assess: Does anything trigger follo
 3. Follow-up work assessed → more agents if needed
 4. Ralph scans GitHub again (Step 1) → IMMEDIATELY, no pause
 5. More work found → repeat from step 2
-6. No more work → "📋 Board is clear. Ralph is idling."
+6. No more work → Ralph enters **idle-watch mode**: "📋 Board is clear. Ralph is watching — next check in {poll_interval} minutes."
+7. After {poll_interval} minutes, Ralph automatically re-runs Step 1
+8. New work found → resume active loop from step 2
+9. Still no work → remain in idle-watch, check again after another {poll_interval} minutes
+10. User says "Ralph, idle" / "stop" → fully deactivate (exit idle-watch too)
 
-**Ralph does NOT ask "should I continue?" — Ralph KEEPS GOING.** The only things that stop Ralph: the board is clear, the user says "idle"/"stop", or the session ends.
+**Ralph does NOT ask "should I continue?" — Ralph KEEPS GOING.** The only things that fully stop Ralph: the user says "idle"/"stop", or the session ends. A clear board does NOT stop Ralph — it puts him into idle-watch polling mode.
 | References PR feedback, review comments, or changes requested on a PR | Spawn agent to address PR review feedback |
 | "merge PR #N" / "merge it" (when a PR was discussed in the last 2-3 turns) | Merge the PR via `gh pr merge` |
 
