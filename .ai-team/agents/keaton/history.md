@@ -245,3 +245,28 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
 
 📌 Team update (2026-02-12): Copilot client parity issue (#10) decomposed into 5 sub-issues. VS Code is P0 (v0.4.0), JetBrains + GitHub.com deferred to v0.5.0. Decision: keaton-vscode-priority.md. Issues: #32–#36. — decided by Keaton per Brady
 📌 Team update (2026-02-13): VS Code priority decision merged from inbox — Market position (VS Code dominance), feature validation (most complete Copilot integration), Brady's directive. Decomposition strategy for Issues #32–#36. Graceful degradation across all surfaces. — decided by Keaton
+
+- **2026-02-13: Proposal 022a — Agent Progress Updates (Issue #22, Design Spike)**
+  - **Brady's request:** Users feel uncertain during long-running agent work — "Is anything happening?" Terminal goes quiet. Proposal 022a designs a mechanism for periodic status updates that feel native to agent personality, not generic "still working..." messages.
+  - **Problem framing:** Not a technical blocker; it's a design problem. The coordinator can already poll agents via `read_agent` with short timeouts. The real constraint is: what's the right signal? Right cadence? Right voice?
+  - **Platform mechanisms evaluated:**
+    - Option A: Coordinator polling via `read_agent` (30-second intervals, 1 API call per poll, works with any agent output)
+    - Option B: Agents write milestone files to `.ai-team/progress/` (agents control message, but requires discipline, file coordination issues)
+    - Option C: Agents emit `[MILESTONE]` signals in output + coordinator extraction (agents control voice, coordinator relays via read_agent polling)
+    - Option D: Event log drop-box (over-engineered, unnecessary complexity)
+  - **Recommended: Option C hybrid (Milestone Signals + Coordinator Relay).** Combines A's cost efficiency with C's voice control:
+    - Coordinator polls agents every 30s via read_agent (same cost as final result collection, zero additional API calls)
+    - Agents trained to emit `✅ [MILESTONE] Analyzed 150/400 files` at natural breakpoints
+    - Coordinator scans output for `[MILESTONE]` markers every 30s, displays new milestones to user
+    - Result: User sees periodic progress (e.g., "📍 Keaton — ✅ Parsed 150/400 files") without needing to understand coordinator internals
+  - **UX outcome:** 5-minute task shows no progress. 3-minute task with milestones shows "Parsed files → Found dependencies → Generating suggestions → Complete." 8+ minute task with errors shows "Starting → Progress → Error encountered → Retrying → Success → Report ready." User feels team is alive.
+  - **Implementation:** Add progress polling loop to coordinator spawn flow (30 lines). Create `.ai-team/skills/progress-signals/SKILL.md` to teach agents the pattern. Zero agent code changes required; skill is opt-in documentation. Backward compatible.
+  - **Squad.agent.md impact:** New section on progress polling. Example spawn template showing 30-second polling loop. Coordinator reads read_agent output, extracts milestones matching `\[MILESTONE\]` regex, relays to user with agent name and emoji prefix.
+  - **Success criteria:** Coordinator milestone extraction works for 10+ common formats. Agents adopt pattern within 1-2 spawns. No performance degradation (polling overhead < 100ms). Users report less uncertainty in post-launch feedback.
+  - **Brady's cost model fit:** Excellent. No new infrastructure. Reuses read_agent (already called at end). 30-second polling is industry standard (GitHub Actions, CI/CD). Milestone discipline is self-enforcing (agents choose what matters to highlight).
+  - **Compound value:** This unlocks the "remote team member" feeling. When combined with Proposal 034 (notifications), agents can notify users mid-work for BLOCKED decisions. When combined with Squad DM, milestones can sync to Discord. Visible progress is foundational for agent-user intimacy.
+  - **Strategic insight:** Users don't need real-time streams. They need to know work is progressing. 30-second updates feel alive without being noisy. The milestone pattern aligns with how human teams actually work — "we're at this checkpoint now, moving to the next phase."
+  - **Key file paths:** `team-docs/proposals/022a-agent-progress-updates.md` (full spec, 180KB), GitHub Issue #22 (comment with summary).
+  - **Status:** Proposed, awaiting Brady approval. Estimated v0.4.0 delivery: 3-4 hours (Fenster for coordinator, Verbal for skill design).
+
+📌 Team update (2026-02-13): Agent Progress Updates (Proposal 022a) designed and proposed — Milestone signals + coordinator polling (30s intervals). Recommended for v0.4.0 after Project Boards. Addresses user uncertainty during long-running work. Zero additional API cost. Preserves agent personality. — designed by Keaton

@@ -29,3 +29,16 @@
 - Squad will need `.agent.md` files per role (worker, explorer, reviewer, runner) to replace CLI `agent_type` mapping
 - Key VS Code-only capabilities: `agents` property (restrict which sub-agents a coordinator can spawn), `handoffs` (sequential workflow transitions), `user-invokable`/`disable-model-invocation` (visibility control)
 - Open question: structured parameter passing to `runSubagent` is not supported — prompt is the only input channel
+
+### VS Code File Discovery & .ai-team/ Access (2026-02-15, Issue #33)
+
+- VS Code auto-discovers `squad.agent.md` from `.github/agents/` on workspace load — zero config needed
+- Sub-agents inherit ALL parent tools by default (opposite of CLI where sub-agents get fixed toolsets). This means every spawned agent can read/write `.ai-team/` files without special configuration
+- VS Code file tools map cleanly to CLI equivalents: `readFile` ↔ `view`, `editFiles` ↔ `edit`, `createFile` ↔ `create`, `fileSearch` ↔ `glob`, `codebase` ↔ `grep`
+- Path resolution: workspace root aligns with `git rev-parse --show-toplevel` in standard setups. Worktree algorithm in `squad.agent.md` works as-is via `runInTerminal`
+- Workspace Trust required — untrusted workspaces block file writes and terminal access
+- First-session file writes trigger user approval prompts (VS Code security feature) — one-time per workspace
+- `sql` tool is CLI-only — no VS Code equivalent. Squad should avoid SQL-dependent workflows in VS Code codepath
+- Multi-root workspaces have known bugs with path resolution and `grep_search` (vscode#264837, vscode#293428). Single-root is the supported configuration
+- VS Code's silent success bug on `editFiles` (vscode#253561) mirrors Squad's P0 bug — keep Response Order workaround in spawn prompts
+- **Key architectural insight:** Squad's instruction-level abstraction (describing operations, not tool names) is the correct pattern. It naturally works across both CLI and VS Code because the agent maps operation descriptions to available tools

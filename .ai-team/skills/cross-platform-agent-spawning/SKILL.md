@@ -78,3 +78,39 @@ Full parameter parity analysis confirmed all patterns above. Additional validate
 - **VS Code `agents` frontmatter:** Coordinator can restrict which custom agents subagents can invoke — useful for Squad role isolation
 - **Scribe on VS Code:** Becomes synchronous (blocking). Mitigation: batch Scribe as last subagent in parallel group
 - **Nuclear model fallback on VS Code:** Omit custom agent → session model applies (equivalent to CLI's "omit model param")
+
+## Validated Findings (Proposal 033a, 2026-02-15)
+
+File discovery and `.ai-team/` access analysis confirmed cross-platform filesystem parity:
+- **Agent auto-discovery:** VS Code discovers `squad.agent.md` from `.github/agents/` on workspace load — same location as CLI. Zero config.
+- **Tool inheritance for file ops:** VS Code sub-agents inherit ALL parent tools by default (readFile, editFiles, createFile, fileSearch). CLI sub-agents get fixed toolsets per agent_type. VS Code is more permissive.
+- **Operation-level abstraction is key:** Squad instructions describe operations ("read this file", "create this file"), not tool names. This naturally maps to both CLI tools (view/edit/create/glob/grep) and VS Code tools (readFile/editFiles/createFile/fileSearch/codebase).
+- **Path resolution parity:** `git rev-parse --show-toplevel` works on both surfaces. VS Code workspace root aligns with git toplevel in standard (non-multi-root) setups.
+- **Workspace-scoped access:** VS Code limits file access to workspace directory. CLI has no such boundary. Not a problem for Squad since `.ai-team/` lives in workspace root.
+- **`sql` tool is CLI-only:** No VS Code equivalent exists. Avoid SQL-dependent patterns in cross-platform workflows.
+- **Multi-root workspaces:** Known VS Code bugs with path resolution. Document single-root as supported configuration.
+
+## Validated Findings (Proposal 034a, 2026-02-14)
+
+Deep analysis of model selection and background mode parity:
+
+### Model Selection
+- **CLI:** `model` param per spawn (dynamic, per-invocation). 4-layer hierarchy with 3-tier fallback chains.
+- **VS Code:** `model` in `.agent.md` frontmatter only (static, per-agent-file). Supports prioritized fallback list: `model: ['Claude Haiku 4.5 (copilot)', 'GPT-5.1-Codex-Mini (copilot)']`.
+- **Experimental:** Requires `chat.customAgentInSubagent.enabled: true` for custom agent model override.
+- **Two VS Code tools:** `runSubagent` (anonymous, session model) vs `agent` (named custom agent, frontmatter model). Use `agent` when model matters.
+- **Model name format divergence:** CLI uses API names (`claude-haiku-4.5`), VS Code uses display names (`Claude Haiku 4.5 (copilot)`). Coordinator must use correct format per surface.
+- **Phased approach:** Accept session model (Phase 1) → model-tier agent files (Phase 2) → per-role agent files (Phase 3).
+
+### Background/Async Mode
+- **CLI:** `mode: "background"` enables non-blocking spawns, fire-and-forget, incremental `read_agent` polling, two-phase UX.
+- **VS Code:** No `mode` parameter. All subagents synchronous. Multiple subagents in one turn = parallel execution.
+- **VS Code "Background Agents"** are a different concept: CLI-based worktree sessions, user-initiated, not programmatic. NOT equivalent to CLI `mode: "background"`.
+- **No fire-and-forget:** Scribe blocks on VS Code. Mitigation: batch as last subagent in parallel group.
+- **No `read_agent`:** Results arrive automatically. Simpler collection, no polling needed.
+- **No launch table:** Cannot show intermediate progress. Results and response arrive together.
+
+### Graceful Degradation
+- **No model selection available:** Accept session model, log model intent in output.
+- **No background mode:** Spawn all concurrent agents in single turn. Skip launch table. Skip `read_agent`.
+- **Neither tool available:** Work inline without delegation. Do not apologize.

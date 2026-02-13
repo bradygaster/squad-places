@@ -109,3 +109,11 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
   - **Platform detection strategy:** Prompt-level conditional instructions in `squad.agent.md`. Coordinator checks which tool is available (`task` or `runSubagent`) and adapts. No abstraction layer needed.
   - **Decision:** No code-level abstraction layer. Prompt-level adaptation in `squad.agent.md` is sufficient. All 5 spawn patterns map successfully to VS Code.
   - **Output:** `team-docs/proposals/032b-cli-spawn-parity-analysis.md`
+
+- **2026-02-14: Model Selection & Background Mode Parity (Issue #34, Proposal 034a)** — Deep dive on the two specific parity gaps Brady flagged: per-agent model selection and background/async execution. Key findings:
+  - **Model selection:** `runSubagent` does NOT accept `model` param. Override via custom `.agent.md` frontmatter only. Supports prioritized fallback lists. Requires experimental `chat.customAgentInSubagent.enabled`. Three-phase approach: accept session model (v0.4.0) → model-tier agent files (v0.5.0) → per-role agent files (v0.6.0+).
+  - **Background mode:** No equivalent. VS Code "Background Agents" are a different concept (CLI-based worktree sessions, user-initiated). Parallel sync subagents in one turn = equivalent concurrency. No fire-and-forget (Scribe blocks). No incremental collection (all-or-nothing).
+  - **`agent` vs `runSubagent` tools:** `runSubagent` = anonymous subagent (session model). `agent` = named custom agent (frontmatter model). Squad should use `runSubagent` Phase 1, `agent` Phase 2.
+  - **Result collection:** No `read_agent` equivalent needed — sync subagents return results automatically. Simpler on VS Code.
+  - **Graceful degradation:** Accept session model when no custom agents. Skip launch table and read_agent on VS Code. Inline work when no spawn tool available.
+  - **Output:** `team-docs/proposals/034a-model-background-parity.md`, commented on Issue #34.
