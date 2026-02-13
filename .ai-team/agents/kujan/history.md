@@ -100,3 +100,12 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 
 
 📌 Team update (2026-02-12): Version display implemented via Coordinator self-announcement in squad.agent.md — leverages existing version stamping infrastructure — decided by Kujan
+
+- **2026-02-13: CLI `task` vs VS Code `runSubagent` Spawn Parity (Issue #32, Proposal 032b)** — Complete analysis of how Squad's CLI-based spawn mechanism maps to VS Code's `runSubagent`. Key findings:
+  - **Task tool parameter catalog:** 5 params — `prompt` (required), `agent_type` (required, Squad uses `general-purpose` 99%, `explore` 1%), `description` (required, format: `{Name}: {task}`), `mode` (`background` default, `sync` for gates), `model` (4-layer selection hierarchy with 3-tier fallback chains).
+  - **Spawn pattern inventory:** 5 patterns — Standard (full ceremony), Lightweight (no charter/history), Explore (read-only, haiku), Scribe (always background, always haiku), Ceremony Facilitator (sync, spawns sub-agents).
+  - **VS Code `runSubagent` surface:** prompt-only required param, sync-only (but parallel when multiple launched in one turn), model via custom `.agent.md` frontmatter (not per-spawn), no `agent_type` equivalent, no `description` param, no `mode` param.
+  - **Parity gaps:** (1) No background mode — mitigated by parallel sync subagents achieving equivalent concurrency. (2) No per-spawn model selection — mitigated by accepting session model (v0.4.0) or generating custom agent files (v0.4.x). (3) No explore speed optimization — optional custom `explorer.agent.md`.
+  - **Platform detection strategy:** Prompt-level conditional instructions in `squad.agent.md`. Coordinator checks which tool is available (`task` or `runSubagent`) and adapts. No abstraction layer needed.
+  - **Decision:** No code-level abstraction layer. Prompt-level adaptation in `squad.agent.md` is sufficient. All 5 spawn patterns map successfully to VS Code.
+  - **Output:** `team-docs/proposals/032b-cli-spawn-parity-analysis.md`
