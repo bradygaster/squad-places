@@ -160,153 +160,16 @@ function build() {
   console.log('Built ' + files.length + ' pages to ' + OUT_DIR);
 }
 
+// Read template files from docs/assets/
+var TEMPLATE_HTML = fs.readFileSync(path.join(DOCS_DIR, 'assets', 'template.html'), 'utf8');
+
 function getTemplate(title, content, nav, searchIndex) {
-  return '<!DOCTYPE html>\n<html lang="en" data-theme="auto">\n<head>\n' +
-    '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
-    '<title>' + escapeHtml(title) + ' - Squad Docs</title>\n' +
-    '<style>\n' + getCSS() + '\n</style>\n</head>\n<body>\n<div class="layout">\n' +
-    nav + '\n<div class="main">\n' +
-    '<div class="topbar">\n' +
-    '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
-    '<div class="search-box"><input type="text" id="search" placeholder="Search docs..." autocomplete="off">' +
-    '<div class="search-results" id="search-results"></div></div>\n' +
-    '<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn"></button>\n' +
-    '</div>\n<article class="content">\n' + content + '\n</article>\n</div>\n</div>\n' +
-    '<script>\nvar searchIndex = ' + JSON.stringify(searchIndex) + ';\n' + getJS() + '\n</script>\n</body>\n</html>';
-}
-
-function getCSS() {
-  return [
-    '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
-    ':root { --bg:#fff; --bg2:#f6f8fa; --text:#1f2328; --muted:#656d76; --border:#d1d9e0;',
-    '  --accent:#0969da; --accent2:#ddf4ff; --code-bg:#f6f8fa; --code-border:#d1d9e0;',
-    '  --sidebar-bg:#f6f8fa; --sidebar-w:280px; --shadow:0 1px 3px rgba(0,0,0,.08); --radius:8px; }',
-    '@media(prefers-color-scheme:dark){ :root:not([data-theme="light"]){',
-    '  --bg:#0d1117; --bg2:#161b22; --text:#e6edf3; --muted:#8b949e; --border:#30363d;',
-    '  --accent:#58a6ff; --accent2:#1a3a5c; --code-bg:#161b22; --code-border:#30363d;',
-    '  --sidebar-bg:#161b22; --shadow:0 1px 3px rgba(0,0,0,.3); } }',
-    '[data-theme="dark"]{ --bg:#0d1117; --bg2:#161b22; --text:#e6edf3; --muted:#8b949e; --border:#30363d;',
-    '  --accent:#58a6ff; --accent2:#1a3a5c; --code-bg:#161b22; --code-border:#30363d;',
-    '  --sidebar-bg:#161b22; --shadow:0 1px 3px rgba(0,0,0,.3); }',
-    'body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Noto Sans,Helvetica,Arial,sans-serif;',
-    '  font-size:16px; line-height:1.6; color:var(--text); background:var(--bg); }',
-    '.layout { display:flex; min-height:100vh; }',
-    '.sidebar { width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);',
-    '  position:fixed; top:0; left:0; bottom:0; overflow-y:auto; z-index:100; display:flex; flex-direction:column; }',
-    '.sidebar-header { padding:20px 16px 12px; border-bottom:1px solid var(--border);',
-    '  display:flex; align-items:center; justify-content:space-between; }',
-    '.sidebar-header .logo { font-size:20px; font-weight:700; color:var(--text); text-decoration:none; }',
-    '.sidebar-close { display:none; background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer; }',
-    '.sidebar-content { padding:12px 0; flex:1; overflow-y:auto; }',
-    '.sidebar-content>a, .nav-section a { display:block; padding:6px 16px; color:var(--muted);',
-    '  text-decoration:none; font-size:14px; border-left:3px solid transparent; transition:all .15s; }',
-    '.sidebar-content>a:hover, .nav-section a:hover { color:var(--text); background:var(--accent2); }',
-    '.sidebar-content>a.active, .nav-section a.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }',
-    '.nav-section { margin:4px 0; }',
-    '.nav-section summary { padding:6px 16px; font-size:12px; font-weight:600; text-transform:uppercase;',
-    '  letter-spacing:.05em; color:var(--muted); cursor:pointer; list-style:none; user-select:none; }',
-    '.nav-section summary::before { content:"\\25B8 "; }',
-    '.nav-section[open] summary::before { content:"\\25BE "; }',
-    '.nav-section summary::-webkit-details-marker { display:none; }',
-    '.nav-section a { padding-left:28px; }',
-    '.main { margin-left:var(--sidebar-w); flex:1; min-width:0; }',
-    '.topbar { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--border);',
-    '  padding:8px 24px; display:flex; align-items:center; justify-content:space-between; z-index:50; }',
-    '.menu-btn { display:none; background:none; border:1px solid var(--border); border-radius:6px;',
-    '  padding:4px 10px; font-size:18px; cursor:pointer; color:var(--text); }',
-    '.search-box { flex:1; max-width:400px; position:relative; }',
-    '.search-box input { width:100%; padding:6px 12px; border:1px solid var(--border); border-radius:6px;',
-    '  background:var(--bg2); color:var(--text); font-size:14px; outline:none; }',
-    '.search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent2); }',
-    '.search-results { position:absolute; top:100%; left:0; right:0; background:var(--bg);',
-    '  border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);',
-    '  max-height:400px; overflow-y:auto; display:none; z-index:200; }',
-    '.search-results.visible { display:block; }',
-    '.search-results a { display:block; padding:8px 12px; color:var(--text); text-decoration:none;',
-    '  font-size:14px; border-bottom:1px solid var(--border); }',
-    '.search-results a:hover { background:var(--accent2); }',
-    '.search-results a:last-child { border-bottom:none; }',
-    '.search-results .no-results { padding:12px; color:var(--muted); font-size:14px; }',
-    '.theme-toggle { background:none; border:1px solid var(--border); border-radius:6px;',
-    '  padding:4px 10px; font-size:18px; cursor:pointer; margin-left:12px; color:var(--text); }',
-    '.content { max-width:820px; margin:0 auto; padding:32px 40px 80px; }',
-    '.content h1 { font-size:2em; margin:0 0 16px; border-bottom:1px solid var(--border); padding-bottom:8px; }',
-    '.content h2 { font-size:1.5em; margin:32px 0 12px; border-bottom:1px solid var(--border); padding-bottom:6px; }',
-    '.content h3 { font-size:1.25em; margin:24px 0 8px; }',
-    '.content h4 { font-size:1em; margin:20px 0 6px; }',
-    '.content p { margin:0 0 16px; }',
-    '.content ul, .content ol { margin:0 0 16px; padding-left:2em; }',
-    '.content li { margin:4px 0; }',
-    '.content li>p { margin:4px 0; }',
-    '.content a { color:var(--accent); text-decoration:none; }',
-    '.content a:hover { text-decoration:underline; }',
-    '.content blockquote { margin:0 0 16px; padding:8px 16px; border-left:4px solid var(--accent);',
-    '  background:var(--bg2); border-radius:0 var(--radius) var(--radius) 0; color:var(--muted); }',
-    '.content table { width:100%; border-collapse:collapse; margin:0 0 16px; font-size:14px; }',
-    '.content th, .content td { padding:8px 12px; border:1px solid var(--border); text-align:left; }',
-    '.content th { background:var(--bg2); font-weight:600; }',
-    '.content code { font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;',
-    '  font-size:.875em; background:var(--code-bg); border:1px solid var(--code-border); border-radius:4px; padding:2px 6px; }',
-    '.content pre { margin:0 0 16px; padding:16px; background:var(--code-bg); border:1px solid var(--code-border);',
-    '  border-radius:var(--radius); overflow-x:auto; font-size:14px; line-height:1.5; }',
-    '.content pre code { background:none; border:none; padding:0; font-size:inherit; }',
-    '.content img { max-width:100%; border-radius:var(--radius); }',
-    '.content hr { border:none; border-top:1px solid var(--border); margin:32px 0; }',
-    '@media(max-width:768px){',
-    '  .sidebar { transform:translateX(-100%); transition:transform .25s ease; width:280px; }',
-    '  .sidebar.open { transform:translateX(0); box-shadow:4px 0 20px rgba(0,0,0,.2); }',
-    '  .sidebar-close { display:block; }',
-    '  .main { margin-left:0; }',
-    '  .menu-btn { display:block; }',
-    '  .content { padding:24px 16px 60px; } }',
-    '@media print { .sidebar, .topbar { display:none !important; } .main { margin-left:0; } }'
-  ].join('\n');
-}
-
-function getJS() {
-  return [
-    '(function(){',
-    '  var saved=localStorage.getItem("squad-theme");',
-    '  if(saved) document.documentElement.setAttribute("data-theme",saved);',
-    '  updateThemeBtn();',
-    '})();',
-    'function toggleTheme(){',
-    '  var html=document.documentElement;',
-    '  var c=html.getAttribute("data-theme");',
-    '  var n=c==="dark"?"light":c==="light"?"auto":"dark";',
-    '  html.setAttribute("data-theme",n);',
-    '  localStorage.setItem("squad-theme",n);',
-    '  updateThemeBtn();',
-    '}',
-    'function updateThemeBtn(){',
-    '  var t=document.documentElement.getAttribute("data-theme");',
-    '  var b=document.getElementById("theme-btn");',
-    '  if(!b) return;',
-    '  b.textContent=t==="dark"?"\\u2600\\uFE0F":t==="light"?"\\uD83C\\uDF19":"\\uD83D\\uDCBB";',
-    '}',
-    'function toggleSidebar(){',
-    '  document.getElementById("sidebar").classList.toggle("open");',
-    '}',
-    '(function(){',
-    '  var input=document.getElementById("search");',
-    '  var results=document.getElementById("search-results");',
-    '  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }',
-    '  input.addEventListener("input",function(){',
-    '    var q=this.value.toLowerCase().trim();',
-    '    if(q.length<2){ results.classList.remove("visible"); return; }',
-    '    var matches=searchIndex.filter(function(e){',
-    '      return e.title.toLowerCase().indexOf(q)!==-1 || e.preview.toLowerCase().indexOf(q)!==-1;',
-    '    }).slice(0,10);',
-    '    if(!matches.length){ results.innerHTML=\'<div class="no-results">No results</div>\'; }',
-    '    else { results.innerHTML=matches.map(function(m){',
-    '      return \'<a href="\'+m.href+\'"><strong>\'+esc(m.title)+\'</strong><br><small>\'+esc(m.preview.substring(0,100))+\'</small></a>\';',
-    '    }).join(""); }',
-    '    results.classList.add("visible");',
-    '  });',
-    '  input.addEventListener("blur",function(){ setTimeout(function(){ results.classList.remove("visible"); },200); });',
-    '  input.addEventListener("keydown",function(e){ if(e.key==="Escape"){ this.value=""; results.classList.remove("visible"); } });',
-    '})();'
-  ].join('\n');
+  return TEMPLATE_HTML
+    .replace('{{title}}', escapeHtml(title))
+    .replace('{{nav}}', nav)
+    .replace('{{content}}', content)
+    .replace('{{searchIndex}}', JSON.stringify(searchIndex))
+    .replace(/\{\{basePath\}\}/g, BASE_PATH);
 }
 
 build();
