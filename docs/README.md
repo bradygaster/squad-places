@@ -65,6 +65,7 @@ Public-facing documentation for Squad. GitHub Pages ready.
 - [Issue-Driven Development](scenarios/issue-driven-dev.md) — End-to-end issue workflow
 - [CI/CD Integration](scenarios/ci-cd-integration.md) — Squad + GitHub Actions
 - [Moving a Team](scenarios/team-portability.md) — Export and import between repos
+- [Team State Storage](scenarios/team-state-storage.md) — Gitignore, submodules, branches, and more
 - [Model Selection Strategies](scenarios/switching-models.md) — Budget vs quality tradeoffs
 - [Privacy & Security](scenarios/private-repos.md) — What stays private
 - [Disaster Recovery](scenarios/disaster-recovery.md) — When things go wrong
