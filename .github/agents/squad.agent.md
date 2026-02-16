@@ -147,6 +147,40 @@ For each squad member with assigned issues, note them in the session context. Wh
 
 The acknowledgment goes in the same response as the `task` tool calls — text first, then tool calls. Keep it to 1-2 sentences plus the table. Don't narrate the plan; just show who's working on what.
 
+### Role Emoji in Task Descriptions
+
+When spawning agents, include the role emoji in the `description` parameter to make task lists visually scannable. The emoji should match the agent's role from `team.md`.
+
+**Standard role emoji mapping:**
+
+| Role Pattern | Emoji | Examples |
+|--------------|-------|----------|
+| Lead, Architect, Tech Lead | 🏗️ | "Lead", "Senior Architect", "Technical Lead" |
+| Frontend, UI, Design | ⚛️ | "Frontend Dev", "UI Engineer", "Designer" |
+| Backend, API, Server | 🔧 | "Backend Dev", "API Engineer", "Server Dev" |
+| Test, QA, Quality | 🧪 | "Tester", "QA Engineer", "Quality Assurance" |
+| DevOps, Infra, Platform | ⚙️ | "DevOps", "Infrastructure", "Platform Engineer" |
+| Docs, DevRel, Technical Writer | 📝 | "DevRel", "Technical Writer", "Documentation" |
+| Data, Database, Analytics | 📊 | "Data Engineer", "Database Admin", "Analytics" |
+| Security, Auth, Compliance | 🔒 | "Security Engineer", "Auth Specialist" |
+| Scribe | 📋 | "Session Logger" (always Scribe) |
+| Ralph | 🔄 | "Work Monitor" (always Ralph) |
+| @copilot | 🤖 | "Coding Agent" (GitHub Copilot) |
+
+**How to determine emoji:**
+1. Look up the agent in `team.md` (already cached after first message)
+2. Match the role string against the patterns above (case-insensitive, partial match)
+3. Use the first matching emoji
+4. If no match, use 👤 as fallback
+
+**Examples:**
+- `description: "🏗️ Keaton: Reviewing architecture proposal"`
+- `description: "🔧 Fenster: Refactoring auth module"`
+- `description: "🧪 Hockney: Writing test cases"`
+- `description: "📋 Scribe: Log session & merge decisions"`
+
+The emoji makes task spawn notifications visually consistent with the launch table shown to users.
+
 ### Directive Capture
 
 **Before routing any message, check: is this a directive?** A directive is a user statement that sets a preference, rule, or constraint the team should remember. Capture it to the decisions inbox BEFORE routing work.
@@ -254,7 +288,7 @@ After routing determines WHO handles work, select the response MODE based on tas
 agent_type: "general-purpose"
 model: "{resolved_model}"
 mode: "background"
-description: "{Name}: {brief task summary}"
+description: "{emoji} {Name}: {brief task summary}"
 prompt: |
   You are {Name}, the {Role} on this project.
 
@@ -288,7 +322,7 @@ For read-only queries in Lightweight mode, use the explore agent for speed:
 ```
 agent_type: "explore"
 model: "{resolved_model}"
-description: "{Name}: {brief query}"
+description: "{emoji} {Name}: {brief query}"
 prompt: |
   You are {Name}, the {Role}. Answer this question about the codebase:
   {question}
@@ -359,7 +393,7 @@ Pass the resolved model as the `model` parameter on every `task` tool call:
 agent_type: "general-purpose"
 model: "{resolved_model}"
 mode: "background"
-description: "{Name}: {brief task summary}"
+description: "{emoji} {Name}: {brief task summary}"
 prompt: |
   ...
 ```
@@ -643,7 +677,7 @@ Each entry records: agent routed, why chosen, mode (background/sync), files auth
 agent_type: "general-purpose"
 model: "{resolved_model}"
 mode: "background"
-description: "{Name}: {brief task summary}"
+description: "{emoji} {Name}: {brief task summary}"
 prompt: |
   You are {Name}, the {Role} on this project.
   
@@ -775,7 +809,7 @@ After each batch of agent work:
 agent_type: "general-purpose"
 model: "claude-haiku-4.5"
 mode: "background"
-description: "Scribe: Log session & merge decisions"
+description: "📋 Scribe: Log session & merge decisions"
 prompt: |
   You are the Scribe. Read .ai-team/agents/scribe/charter.md.
   
@@ -914,7 +948,7 @@ Ceremonies are structured team meetings where agents align before or after work.
 ```
 agent_type: "general-purpose"
 model: "{resolved_model}"
-description: "{Facilitator}: {ceremony name} — {task summary}"
+description: "{facilitator_emoji} {Facilitator}: {ceremony name} — {task summary}"
 prompt: |
   You are {Facilitator}, the {Role} on this project.
 
@@ -1632,7 +1666,7 @@ Squad can ingest a Product Requirements Document (PRD) and use it as the source 
 ```
 agent_type: "general-purpose"
 model: "{resolved_model}"
-description: "{Lead}: Decompose PRD into work items"
+description: "{lead_emoji} {Lead}: Decompose PRD into work items"
 prompt: |
   You are {Lead}, the Lead on this project.
   
