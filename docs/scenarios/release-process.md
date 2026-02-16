@@ -52,7 +52,7 @@ git pull origin dev
 Create a preview branch (or reset if it exists):
 
 ```bash
-git checkout -b release/preview 2>/dev/null || git checkout release/preview
+git checkout -b preview 2>/dev/null || git checkout preview
 git reset --hard dev
 ```
 
@@ -72,7 +72,7 @@ If nothing was removed, that's fine:
 
 ```bash
 git status
-# On branch release/preview
+# On branch preview
 # nothing to commit, working tree clean
 ```
 
@@ -80,7 +80,7 @@ If there are changes:
 
 ```bash
 git commit -m "chore: remove forbidden paths for preview branch"
-git push -f origin release/preview
+git push -f origin preview
 ```
 
 ### Step 3: Verify Guard Passes
@@ -89,7 +89,7 @@ The guard workflow (`.github/workflows/squad-main-guard.yml`) runs automatically
 
 ```bash
 # View workflow runs for the preview branch
-gh run list --branch release/preview --status completed
+gh run list --branch preview --status completed
 ```
 
 Expected output: ✅ All checks pass (no forbidden files found).
@@ -287,19 +287,19 @@ git push origin dev
 Follow [Preview Build Workflow](#preview-build-workflow) above. Summary:
 
 ```bash
-git checkout release/preview
+git checkout preview
 git reset --hard origin/dev
 git rm --cached -r .ai-team/ 2>/dev/null
 git rm --cached -r team-docs/ 2>/dev/null
 git commit -m "chore: remove forbidden paths for preview" 2>/dev/null
-git push -f origin release/preview
+git push -f origin preview
 # Wait for guard workflow to pass
 ```
 
 Check GitHub Actions:
 
 ```bash
-gh run list --branch release/preview --status completed --limit 1
+gh run list --branch preview --status completed --limit 1
 ```
 
 Expected: ✅ All checks pass.
@@ -314,7 +314,7 @@ Expected: ✅ All checks pass.
 git checkout main
 git pull origin main
 git checkout -b release/v0.4.0
-git merge --no-ff release/preview -m "Release v0.4.0"
+git merge --no-ff preview -m "Release v0.4.0"
 git push -u origin release/v0.4.0
 ```
 
@@ -732,7 +732,7 @@ Use these features as the new entry:
 
 ```
 Kobayashi, build a preview branch:
-1. Create release/preview branch from dev
+1. Create preview branch from dev
 2. Remove .ai-team/ and team-docs/ (except blog)
 3. Commit the removal
 4. Push to origin
