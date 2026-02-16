@@ -5,6 +5,7 @@ const path = require('path');
 
 const GREEN = '\x1b[32m';
 const RED = '\x1b[31m';
+const YELLOW = '\x1b[33m';
 const DIM = '\x1b[2m';
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
@@ -12,6 +13,14 @@ const RESET = '\x1b[0m';
 function fatal(msg) {
   console.error(`${RED}✗${RESET} ${msg}`);
   process.exit(1);
+}
+
+function showDeprecationBanner() {
+  console.log();
+  console.log(`${YELLOW}⚠️  Heads up: In v0.5.0, the .ai-team/ directory will be renamed to .squad/.${RESET}`);
+  console.log(`${YELLOW}    A migration tool (squad upgrade --migrate-directory) will handle the transition.${RESET}`);
+  console.log(`${YELLOW}    Details: https://github.com/bradygaster/squad/issues/69${RESET}`);
+  console.log();
 }
 
 process.on('uncaughtException', (err) => {
@@ -586,6 +595,7 @@ try {
 }
 
 const isUpgrade = cmd === 'upgrade';
+const isSelfUpgrade = isUpgrade && process.argv.includes('--self');
 
 // Stamp version into squad.agent.md after copying
 function stampVersion(filePath) {
@@ -662,6 +672,47 @@ function runMigrations(dest, oldVersion) {
 // Copy agent file (Squad-owned — overwrite on upgrade)
 const agentSrc = path.join(root, '.github', 'agents', 'squad.agent.md');
 const agentDest = path.join(dest, '.github', 'agents', 'squad.agent.md');
+
+// Handle --self flag: refresh .ai-team/ from templates (for squad repo itself)
+if (isSelfUpgrade) {
+  const aiTeamDir = path.join(dest, '.ai-team');
+  if (!fs.existsSync(aiTeamDir)) {
+    fatal('No .ai-team/ directory found. Run init first, or remove --self flag.');
+  }
+
+  console.log(`${DIM}Refreshing .ai-team/ from templates (squad --self mode)...${RESET}`);
+
+  // Refresh team-wide files from templates
+  const filesToRefresh = [
+    { src: 'team.md', dest: 'team.md' },
+    { src: 'routing.md', dest: 'routing.md' },
+    { src: 'ceremonies.md', dest: 'ceremonies.md' }
+  ];
+
+  for (const file of filesToRefresh) {
+    const srcPath = path.join(root, 'templates', file.src);
+    const destPath = path.join(aiTeamDir, file.dest);
+    if (fs.existsSync(srcPath)) {
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`${GREEN}✓${RESET} ${BOLD}refreshed${RESET} .ai-team/${file.dest}`);
+    }
+  }
+
+  // Refresh skills directory (don't touch agent directories — preserve history)
+  const skillsSrc = path.join(root, 'templates', 'skills');
+  const skillsDest = path.join(aiTeamDir, 'skills');
+  if (fs.existsSync(skillsSrc)) {
+    copyRecursive(skillsSrc, skillsDest);
+    console.log(`${GREEN}✓${RESET} ${BOLD}refreshed${RESET} .ai-team/skills/`);
+  }
+
+  console.log();
+  console.log(`${BOLD}Squad repo refreshed.${RESET}`);
+  console.log(`${DIM}Agent histories preserved — only templates and skills updated${RESET}`);
+  console.log();
+  showDeprecationBanner();
+  process.exit(0);
+}
 
 // Capture old version BEFORE any writes (used for delta reporting + migration filtering)
 const oldVersion = isUpgrade ? readInstalledVersion(agentDest) : null;
@@ -898,10 +949,13 @@ if (isUpgrade) {
 console.log();
 console.log(`${BOLD}Squad is ${isUpgrade ? 'upgraded' : 'ready'}.${RESET}${isUpgrade ? ` (v${pkg.version})` : ''}`);
 console.log();
+showDeprecationBanner();
 if (!isUpgrade) {
   console.log(`Next steps:`);
   console.log(`  1. Open Copilot:  ${DIM}copilot${RESET}`);
   console.log(`  2. Select ${BOLD}Squad${RESET} from the /agents list`);
   console.log(`  3. Tell it what you're building`);
+  console.log();
+} else {
   console.log();
 }

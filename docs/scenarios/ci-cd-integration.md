@@ -161,7 +161,7 @@ Steps 2, 4, 5, 6, 7 are **automated**. You only do steps 3 and 8.
 
 When you run `npx github:bradygaster/squad`, these workflow templates are installed:
 
-- `.ai-team-templates/ralph-heartbeat.yml` → Ralph runs every 6 hours
+- `.ai-team-templates/squad-heartbeat.yml` → Ralph runs every 6 hours
 - `.ai-team-templates/copilot-auto-assign.yml` → Triggers Copilot on `go:*` labels
 - `.ai-team-templates/pr-review-reminder.yml` → Reminds you of open PRs needing review
 
@@ -214,4 +214,4 @@ npx github:bradygaster/squad heartbeat --dry-run
 - **`go:*` labels mean "approved to proceed."** Don't add them to every issue — only the ones you've reviewed and want agents to handle autonomously.
 - **Agents still need human review.** PRs created by agents should be reviewed by a human before merging.
 - **Workflows are templates.** Customize `.ai-team-templates/` to match your CI/CD setup, then copy to `.github/workflows/`.
-- **Heartbeat frequency is configurable.** Edit `ralph-heartbeat.yml` to change from every 6 hours to daily, hourly, etc.
+- **Heartbeat frequency is configurable.** Edit `squad-heartbeat.yml` to change from every 6 hours to daily, hourly, etc.

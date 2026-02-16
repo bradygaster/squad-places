@@ -33,8 +33,8 @@ npx github:bradygaster/squad
 Enable the Ralph heartbeat workflow:
 
 ```bash
-cp .ai-team-templates/ralph-heartbeat.yml .github/workflows/
-git add .github/workflows/ralph-heartbeat.yml
+cp .ai-team-templates/squad-heartbeat.yml .github/workflows/
+git add .github/workflows/squad-heartbeat.yml
 git commit -m "Enable Squad auto-triage"
 git push
 ```
