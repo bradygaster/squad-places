@@ -25,6 +25,7 @@ npx github:bradygaster/squad
 
 ```
 ✅ .github/agents/squad.agent.md (v0.2.0)
+✅ .github/workflows/ (10 workflows)
 ✅ .ai-team-templates/
 ✅ .ai-team/skills/ (starter skills)
 ✅ .ai-team/ceremonies.md

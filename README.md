@@ -32,6 +32,8 @@ git init
 npx github:bradygaster/squad
 ```
 
+This installs the Squad agent, 10 GitHub Actions workflows for automation (Ralph heartbeat, CI, triage, etc.), templates, and starter skills.
+
 ### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
 
 ```bash

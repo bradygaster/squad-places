@@ -19,9 +19,9 @@ Ralph (the manager agent) runs periodically via GitHub Actions to handle houseke
 - Check for stale branches
 - Archive old decisions
 
-The workflow is in `.github/workflows/ralph-heartbeat.yml` and runs every 6 hours.
+The workflow is in `.github/workflows/squad-heartbeat.yml` and runs every 6 hours.
 
-**You don't have to do anything** — it's installed automatically when you run `npx github:bradygaster/squad`.
+**You don't have to do anything** — it's installed automatically (along with 9 other workflows) when you run `npx github:bradygaster/squad`.
 
 ```yaml
 name: Ralph Heartbeat
