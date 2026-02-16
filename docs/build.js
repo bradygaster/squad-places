@@ -48,6 +48,13 @@ function extractTitle(filePath) {
   return null;
 }
 
+function extractDate(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const fmMatch = content.match(/^---\s*\n[\s\S]*?date:\s*(\d{4}-\d{2}-\d{2})/);
+  if (fmMatch) return fmMatch[1];
+  return null;
+}
+
 function nameFromFile(rel) {
   const base = path.basename(rel, '.md');
   if (base.toLowerCase() === 'readme') return 'Overview';
@@ -81,7 +88,7 @@ function buildNav(files, currentRel) {
   }
   var sectionLabels = { features: 'Features', scenarios: 'Scenarios', blog: 'Blog' };
   var nav = '<nav class="sidebar" id="sidebar">\n';
-  nav += '  <div class="sidebar-header"><a href="' + BASE_PATH + '/index.html" class="logo">Squad</a>';
+  nav += '  <div class="sidebar-header"><a href="' + BASE_PATH + '/index.html" class="logo"><img src="' + BASE_PATH + '/assets/squad-logo.png" alt="Squad" class="sidebar-logo-img"></a>';
   nav += '<button class="sidebar-close" onclick="toggleSidebar()">X</button></div>\n';
   nav += '  <div class="sidebar-content">\n';
   topLevel.sort(fileSorter);
@@ -108,6 +115,11 @@ function buildNav(files, currentRel) {
       var shref = BASE_PATH + '/' + toHtmlPath(sf.rel);
       var stitle = extractTitle(sf.abs) || nameFromFile(sf.rel);
       var sactive = sf.rel === currentRel ? ' class="active"' : '';
+      // Show date for blog posts
+      if (sec === 'blog') {
+        var sdate = extractDate(sf.abs);
+        if (sdate) stitle += ' (' + sdate + ')';
+      }
       nav += '      <a href="' + shref + '"' + sactive + '>' + escapeHtml(stitle) + '</a>\n';
     }
     nav += '    </details>\n';

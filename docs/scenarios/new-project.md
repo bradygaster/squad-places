@@ -1,6 +1,16 @@
 # Starting a New Project with Squad
 
-Start from zero: new directory, new repo, full team in under a minute.
+**Try this to bootstrap a modern web app:**
+```
+Set up Squad for a new React + Node.js app
+```
+
+**Try this to initialize with deployment target:**
+```
+Initialize a team for a task management app that can run in Azure Web App PaaS
+```
+
+Start from zero: new directory, new repo, full team in under a minute. Squad analyzes your description and assembles the right specialists.
 
 ---
 
@@ -21,6 +31,7 @@ npx github:bradygaster/squad
 
 ```
 ✅ .github/agents/squad.agent.md (v0.2.0)
+✅ .github/workflows/ (10 workflows)
 ✅ .ai-team-templates/
 ✅ .ai-team/skills/ (starter skills)
 ✅ .ai-team/ceremonies.md

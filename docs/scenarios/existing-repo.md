@@ -1,10 +1,27 @@
 # Adding Squad to an Existing Repo
 
-You have a project with code, conventions, and history. Squad discovers what's already there.
+**Try this to initialize Squad on your project:**
+```
+This is a SaaS app with React frontend, Node.js API, and PostgreSQL — set up Squad
+```
+
+**Try this to get an architecture overview:**
+```
+Team, review the codebase and tell me what you find
+```
+
+**Try this to establish coding standards:**
+```
+We always use Zod for API validation and Prisma for database queries
+```
+
+Squad discovers your existing project — stack, patterns, conventions — and proposes a team that fits. Agents explore the codebase first, then start working with full context.
 
 ---
 
 ## 1. Install Squad
+
+You have a project with code, conventions, and history. Squad discovers what's already there.
 
 Navigate to your existing repo and run:
 
@@ -15,6 +32,7 @@ npx github:bradygaster/squad
 
 ```
 ✅ .github/agents/squad.agent.md (v0.2.0)
+✅ .github/workflows/ (10 workflows)
 ✅ .ai-team-templates/
 ✅ .ai-team/skills/ (starter skills)
 ✅ .ai-team/ceremonies.md

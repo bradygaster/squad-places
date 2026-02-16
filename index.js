@@ -5,6 +5,7 @@ const path = require('path');
 
 const GREEN = '\x1b[32m';
 const RED = '\x1b[31m';
+const YELLOW = '\x1b[33m';
 const DIM = '\x1b[2m';
 const BOLD = '\x1b[1m';
 const RESET = '\x1b[0m';
@@ -12,6 +13,14 @@ const RESET = '\x1b[0m';
 function fatal(msg) {
   console.error(`${RED}✗${RESET} ${msg}`);
   process.exit(1);
+}
+
+function showDeprecationBanner() {
+  console.log();
+  console.log(`${YELLOW}⚠️  Heads up: In v0.5.0, the .ai-team/ directory will be renamed to .squad/.${RESET}`);
+  console.log(`${YELLOW}    A migration tool (squad upgrade --migrate-directory) will handle the transition.${RESET}`);
+  console.log(`${YELLOW}    Details: https://github.com/bradygaster/squad/issues/69${RESET}`);
+  console.log();
 }
 
 process.on('uncaughtException', (err) => {
@@ -586,25 +595,29 @@ try {
 }
 
 const isUpgrade = cmd === 'upgrade';
+const isSelfUpgrade = isUpgrade && process.argv.includes('--self');
 
 // Stamp version into squad.agent.md after copying
 function stampVersion(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
-  // Replace version field
-  content = content.replace(/^version:\s*"[^"]*"/m, `version: "${pkg.version}"`);
-  // Replace version in name field to show in agent picker UI
-  // Handles both "Squad" and "Squad (vX.Y.Z)" formats
-  content = content.replace(/^name:\s*Squad(?:\s*\([^)]*\))?$/m, `name: Squad (v${pkg.version})`);
+  // Replace version in HTML comment (must come immediately after frontmatter closing ---)
+  content = content.replace(/<!-- version: [^>]+ -->/m, `<!-- version: ${pkg.version} -->`);
+  // Replace version in the Identity section's Version line
+  content = content.replace(/- \*\*Version:\*\* [0-9.]+(?:-[a-z]+)?/m, `- **Version:** ${pkg.version}`);
   fs.writeFileSync(filePath, content);
 }
 
-// Read version from squad.agent.md frontmatter
+// Read version from squad.agent.md HTML comment
 function readInstalledVersion(filePath) {
   try {
     if (!fs.existsSync(filePath)) return null;
     const content = fs.readFileSync(filePath, 'utf8');
-    const match = content.match(/^version:\s*"([^"]+)"/m);
-    return match ? match[1] : '0.0.0';
+    // Try to read from HTML comment first (new format)
+    const commentMatch = content.match(/<!-- version: ([0-9.]+(?:-[a-z]+)?) -->/);
+    if (commentMatch) return commentMatch[1];
+    // Fallback: try old frontmatter format for backward compatibility during upgrade
+    const frontmatterMatch = content.match(/^version:\s*"([^"]+)"/m);
+    return frontmatterMatch ? frontmatterMatch[1] : '0.0.0';
   } catch {
     return '0.0.0';
   }
@@ -659,6 +672,47 @@ function runMigrations(dest, oldVersion) {
 // Copy agent file (Squad-owned — overwrite on upgrade)
 const agentSrc = path.join(root, '.github', 'agents', 'squad.agent.md');
 const agentDest = path.join(dest, '.github', 'agents', 'squad.agent.md');
+
+// Handle --self flag: refresh .ai-team/ from templates (for squad repo itself)
+if (isSelfUpgrade) {
+  const aiTeamDir = path.join(dest, '.ai-team');
+  if (!fs.existsSync(aiTeamDir)) {
+    fatal('No .ai-team/ directory found. Run init first, or remove --self flag.');
+  }
+
+  console.log(`${DIM}Refreshing .ai-team/ from templates (squad --self mode)...${RESET}`);
+
+  // Refresh team-wide files from templates
+  const filesToRefresh = [
+    { src: 'team.md', dest: 'team.md' },
+    { src: 'routing.md', dest: 'routing.md' },
+    { src: 'ceremonies.md', dest: 'ceremonies.md' }
+  ];
+
+  for (const file of filesToRefresh) {
+    const srcPath = path.join(root, 'templates', file.src);
+    const destPath = path.join(aiTeamDir, file.dest);
+    if (fs.existsSync(srcPath)) {
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`${GREEN}✓${RESET} ${BOLD}refreshed${RESET} .ai-team/${file.dest}`);
+    }
+  }
+
+  // Refresh skills directory (don't touch agent directories — preserve history)
+  const skillsSrc = path.join(root, 'templates', 'skills');
+  const skillsDest = path.join(aiTeamDir, 'skills');
+  if (fs.existsSync(skillsSrc)) {
+    copyRecursive(skillsSrc, skillsDest);
+    console.log(`${GREEN}✓${RESET} ${BOLD}refreshed${RESET} .ai-team/skills/`);
+  }
+
+  console.log();
+  console.log(`${BOLD}Squad repo refreshed.${RESET}`);
+  console.log(`${DIM}Agent histories preserved — only templates and skills updated${RESET}`);
+  console.log();
+  showDeprecationBanner();
+  process.exit(0);
+}
 
 // Capture old version BEFORE any writes (used for delta reporting + migration filtering)
 const oldVersion = isUpgrade ? readInstalledVersion(agentDest) : null;
@@ -888,17 +942,20 @@ if (isUpgrade) {
     && fs.readFileSync(teamMd, 'utf8').includes('🤖 Coding Agent');
   if (!copilotEnabled) {
     console.log(`\n${BOLD}New:${RESET} @copilot coding agent support is now available.`);
-    console.log(`  Run ${BOLD}npx squad copilot${RESET} to add it to your team.`);
+    console.log(`  Run ${BOLD}npx github:bradygaster/squad copilot${RESET} to add it to your team.`);
   }
 }
 
 console.log();
 console.log(`${BOLD}Squad is ${isUpgrade ? 'upgraded' : 'ready'}.${RESET}${isUpgrade ? ` (v${pkg.version})` : ''}`);
 console.log();
+showDeprecationBanner();
 if (!isUpgrade) {
   console.log(`Next steps:`);
   console.log(`  1. Open Copilot:  ${DIM}copilot${RESET}`);
   console.log(`  2. Select ${BOLD}Squad${RESET} from the /agents list`);
   console.log(`  3. Tell it what you're building`);
+  console.log();
+} else {
   console.log();
 }
