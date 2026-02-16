@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1] — 2026-02-16
+
+### Fixed
+
+- **Ralph heartbeat workflow syntax** (#78) — Removed duplicate `issues:` trigger keys in `squad-heartbeat.yml`; combined into single trigger with both `closed` and `labeled` event types
+- **Community page links** (#77) — Fixed broken GitHub Discussions links (Discussions now enabled on repo)
+- **Task spawn UI** (#73) — Added role emoji to task description fields for visual consistency; 11 role patterns mapped to emoji (🏗️ Lead, 🔧 Backend, ⚛️ Frontend, 🧪 Tester, etc.)
+
+### Added
+
+- **Role emoji mapping** — Coordinator now includes role-based emoji in task descriptions for at-a-glance task list scanning
+
 ## [0.4.0] — 2026-02-15
 
 ### Added
