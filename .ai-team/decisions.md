@@ -2492,3 +2492,305 @@ Insider builds use `.squad-insider/` instead of `.squad/`:
 **Why:** Community contributions closed a deferred issue and enhanced docs discoverability. Both are low-risk, already merged and tested - safe to include in v0.5.0 release notes.
 
 
+### 2026-02-16: Blog progress as we make it, not just at ship
+**By:** Brady Gaster (via Squad)
+**What:** Keep blogging throughout v0.5.0 development - don't wait until release day. Share progress, decisions, and milestones as they happen.
+**Why:** User directive - blogging is a communication channel, not just a release ritual. Keeps community engaged during the 4-week timeline, builds anticipation, and documents the journey.
+
+### 2026-02-16: Architectural Analysis — Issues #86 and #87 for v0.5.0
+
+**Author:** Keaton (Lead)  
+**Date:** 2026-02-16  
+**Context:** Brady requested architectural evaluation of #86 and #87 for potential v0.5.0 inclusion  
+**Status:** Complete — recommendations documented below
+
+---
+
+## Issue #86: Squad Undid Uncommitted Changes
+
+**Reporter:** @tlmii (Tim Mulholland)  
+**Date:** 2026-02-16  
+**Current Status:** Already in v0.5.0 as "HIGH SEVERITY - Week 1 investigation required"
+
+### Scenario
+
+Two back-to-back prompts in same CLI session:
+1. Frontend work completed (uncommitted)
+2. More UI changes requested → Agent encountered issues → Executed `git checkout` to undo its own work → **Also discarded previous uncommitted work from step 1**
+
+User notes: Squad eventually recovered (referenced prior work from context, added memories/instructions about committing), but the data loss moment is trust-destroying.
+
+### Root Cause Analysis
+
+**NOT migration-related.** The `.ai-team/` → `.squad/` rename has zero connection to git operations. This is a **prompt engineering failure** in git discipline.
+
+**Primary cause:** Agents lack explicit instructions about uncommitted work preservation. When deciding to "undo work," agents reach for `git checkout` without checking for other uncommitted changes in the working tree.
+
+**Secondary cause:** No handoff protocol for uncommitted state. When Agent B spawns after Agent A, Agent B has no visibility into "Agent A left uncommitted changes" — it only sees git state (HEAD commit). The working tree state is invisible to the next agent.
+
+**Tertiary cause:** Coordinator doesn't detect uncommitted work at spawn boundaries. If the coordinator knew uncommitted changes existed from a previous session, it could warn the next agent or enforce a commit/stash before proceeding.
+
+### Architectural Classification
+
+**This is a prompt engineering issue, not a coordinator architecture flaw.**
+
+The coordinator's job is orchestration — routing work, managing agent lifecycles, collecting results. Git state management is agent-level responsibility. But agents need better instructions:
+
+1. **Pre-checkout safety:** "Before running `git checkout`, run `git status --porcelain`. If output is non-empty, ABORT and ask user to commit or stash first."
+2. **Working tree awareness:** "Check for uncommitted changes before ANY destructive git operation (checkout, reset, clean)."
+3. **Commit discipline:** "After completing work that modifies files, commit the changes before ending your turn."
+
+### Does It Block v0.5.0?
+
+**YES, conditionally.**
+
+This is trust-destroying. If Squad can silently discard hours of work, users won't trust it regardless of what directory it lives in. The issue shows Squad recovered, but that's treating the symptom — not the root cause.
+
+**However:** This bug exists in v0.4.1 right now. The v0.5.0 migration doesn't introduce it or make it worse. The question: Do we hold v0.5.0 to fix a pre-existing bug, or ship v0.5.0 and patch it in v0.5.1?
+
+**My call:** Investigate in Week 1 (already planned). If the fix is **prompt-only** (add git discipline instructions to `squad.agent.md`), bundle it into v0.5.0 — we're already touching that file for #69 and #76. If it requires **new tooling or complex coordinator changes**, ship as v0.5.1 patch.
+
+The blocker is: **Don't ship v0.5.0 if we can't prove the fix works.** Test it across 3-4 real "agent hits error, tries to undo" scenarios before releasing.
+
+### Effort Estimate
+
+**Investigation (Week 1):** 4-6 hours (Fenster + Hockney)
+- Reproduce the exact scenario from #86
+- Identify where `git checkout` instruction originates (spawn template? agent instinct?)
+- Check if coordinator has uncommitted work detection at spawn boundaries
+- Check if agents have `git status` awareness in prompts
+
+**Fix (if prompt-only):** 2-4 hours (Verbal)
+- Add git discipline section to `squad.agent.md` and spawn templates
+- Add pre-checkout safety check: "Run `git status --porcelain` first, abort if non-empty"
+- Add coordinator logic: detect uncommitted work before spawning next agent, warn in context
+- Test across failure scenarios: agent errors mid-work, agent tries to undo, multiple agents in sequence
+
+**Fix (if complex):** 8-12 hours (Fenster + Verbal)
+- New coordinator logic to snapshot uncommitted state before spawns
+- Agent handoff protocol with explicit git state awareness
+- Working tree preservation mechanism (auto-stash? commit to temp branch?)
+- Extensive testing across multi-agent workflows
+
+### Recommendation
+
+**Scope:** v0.5.0 if prompt-only fix, v0.5.1 if complex tooling required  
+**Action:** Week 1 investigation (already in v0.5.0 plan)  
+**Blocker status:** Conditionally YES — don't ship v0.5.0 until fix is validated  
+**Owner:** Fenster (investigation + complex fix if needed), Verbal (prompt fix)  
+**Timeline dependency:** If prompt-only, adds ~6 hours to v0.5.0 (tolerable). If complex, defer to v0.5.1.
+
+---
+
+## Issue #87: Workflows Assume Project Type
+
+**Reporter:** @tlmii (Tim Mulholland)  
+**Date:** 2026-02-16  
+**Current Status:** Deferred to v0.6.0 in Issue #91
+
+### Scenario
+
+Added Squad to existing non-npm codebase (no `package.json` in root) → `squad init` generated workflows (`squad-release.yml`, `squad-ci.yml`, etc.) that assume npm package structure → Workflows don't work for user's project.
+
+User notes: Didn't investigate whether workflows are AI-generated or static templates, but "feels like it could be tweaked."
+
+### Root Cause Analysis
+
+**This is a template generation problem, not core architecture.**
+
+**Where workflows come from:**
+1. `squad init` runs `index.js`
+2. `index.js` copies files from `templates/workflows/` to `.github/workflows/`
+3. Templates assume npm structure: `package.json` version field, `npm test` command, `npm publish` behavior
+
+**Why this happens:**
+Squad was built FOR Squad (npm package, Node.js project). The templates reflect that origin story. When applied to non-npm projects (Python, .NET, Java, Ruby, Go), they make incorrect assumptions.
+
+**The architectural gap:**
+Squad doesn't detect project type before generating workflows. It applies npm templates unconditionally. This is fine for npm projects, broken for everything else.
+
+### Architectural Classification
+
+**NOT architectural, but reveals an architectural gap.**
+
+The core Squad architecture (coordinator, agents, memory, casting) is language-agnostic. The prompt engineering works for any codebase. The templates are where the npm assumption lives.
+
+**Two paths forward:**
+
+**Path A (Template multi-project support):**
+- Detect project type during init (`package.json`? `pyproject.toml`? `pom.xml`? `.csproj`?)
+- Generate appropriate workflow templates per project type
+- Maintain multiple template sets (npm, Python, .NET, Java, Go, generic fallback)
+- Effort: 8-12 hours implementation + 4-6 hours testing
+
+**Path B (Remove problematic templates entirely):**
+- Don't generate release/CI workflows during `squad init`
+- Teach coordinator to generate workflows on-demand when user explicitly requests
+- This avoids the "wrong template" problem entirely
+- Effort: 2-4 hours cleanup + documentation
+
+### Is It Architectural?
+
+**No. This doesn't affect Squad's core assumptions about how agents work.**
+
+Squad's architecture is:
+- Memory lives in `.squad/` (soon)
+- Agents read/write to `.squad/` via filesystem
+- Coordinator orchestrates via `task` tool spawns
+- State is git-tracked, portable, human-readable
+
+None of those depend on npm or any particular project type. The workflows are **optional infrastructure the installer adds** — not foundational to how Squad operates.
+
+### Would Fixing It Benefit v0.5.0 Users?
+
+**YES, but not critically.**
+
+**For existing users running `squad upgrade`:** They already have workflows in place from v0.4.x. The upgrade doesn't touch workflows. No benefit.
+
+**For new users running `squad init` on v0.5.0:** They'll hit the same problem #87 reports — but that's already the case in v0.4.1. This isn't a v0.5.0 regression.
+
+**For v0.5.0 beta testers:** If any beta repos are non-npm projects, they'll encounter this issue and report it. That's **noise during beta when we need signal on migration safety**. Fixing it in v0.5.0 means cleaner beta feedback.
+
+**Benefit of fixing:** Cleaner beta, one less "Squad broke my repo" complaint  
+**Cost of fixing:** Adds 14-20 hours + testing across multiple project types to an already large release
+
+### Does It Conflict with v0.5.0 Work?
+
+**NO, but tangent.**
+
+The v0.5.0 path rewrites are `.ai-team/` → `.squad/` in source files. The workflows issue is npm assumptions in templates. They're orthogonal.
+
+**HOWEVER:** If we're already touching all workflow templates for v0.5.0 (to update paths from `.ai-team/` to `.squad/`), adding project type detection is marginally easier than doing it in a separate release. Touch once, not twice.
+
+**But:** That's a weak argument. The templates don't reference `.ai-team/` or `.squad/` — they reference the product workflows (CI, release). The overlap is minimal.
+
+### Should It Be Pulled Into v0.5.0?
+
+**My recommendation: NO. Keep it deferred to v0.6.0.**
+
+**Rationale:**
+
+**1. Scope protection is paramount.**  
+v0.5.0 is already 242 squad-hours (30 calendar days):
+- #69: 745 occurrences across 123 files (80h)
+- #76: Refactor `squad.agent.md` to stay under 30K GitHub Enterprise limit (24h)
+- #86: Data loss investigation + fix (6-12h depending on fix complexity)
+- #71, #84, #62: Cleanup and hardening (58h total)
+
+Adding project type detection + conditional templates is another **14-20 hours** PLUS testing across 5+ project types (npm, Python, .NET, Java, Go). That's a **6-8% timeline increase** for a polish feature.
+
+**2. Risk profiles don't match.**  
+v0.5.0's existential risk: **state corruption during migration** (catastrophic — users lose casting, history, decisions).  
+#87's risk: **workflows don't work for my project type** (annoying but not data-destroying, user can delete 3 files).
+
+Bundling them asks beta testers to validate TWO unrelated things simultaneously. That splits focus.
+
+**3. User workaround exists.**  
+Users can delete problematic workflows (`rm .github/workflows/squad-*.yml`). It's 3 files, takes 10 seconds. Not ideal UX, but tolerable.  
+No workaround exists for corrupted `.squad/` migration.
+
+**4. Beta signal clarity.**  
+v0.5.0 beta must answer ONE question: **Is migration safe?**  
+If we bundle #87 fixes, we're asking: **Is migration safe AND does project type detection work across npm/Python/.NET/Java/Go?**
+
+That requires recruiting beta testers across multiple ecosystems. An npm-only beta cohort can't validate Python template generation. Assembling a multi-language cohort takes longer.
+
+**5. Post-v0.5.0 is the natural timing.**  
+After the directory rename ships (last breaking change before v1.0), v0.6.0 becomes the polish release. Project type detection + conditional templates is **classic v0.x polish**. It doesn't block v1.0 — it just needs to ship eventually.
+
+Keeping v0.5.0 laser-focused on migration safety gives us the best chance of hitting the March 16 ship date with high confidence.
+
+### Effort Estimate (If Pulled Into v0.5.0)
+
+**Investigation:** 2 hours (Kujan)
+- Catalog all templates with npm assumptions (workflows, configs)
+- Research project type detection (file markers, heuristics)
+- Map project types to appropriate template sets
+
+**Implementation:** 8-12 hours (Fenster)
+- Add project type detection to `index.js` (check for `package.json`, `pyproject.toml`, `*.csproj`, `pom.xml`, `go.mod`, etc.)
+- Create template variants: npm, Python, .NET, Java, Go, generic fallback
+- Update init logic to select templates based on detected type
+- Update upgrade logic to respect existing workflows (don't overwrite custom workflows)
+
+**Testing:** 4-6 hours (Hockney)
+- Test init across 5 project types (npm, Python, .NET, Java, Go)
+- Test upgrade when workflows already exist (should be no-op)
+- Test "no workflows" path (user previously deleted them, upgrade respects that)
+- Validate each template set's assumptions (Python runs pytest? .NET runs dotnet test?)
+
+**Documentation:** 2 hours (McManus)
+- Update init docs to explain project type detection
+- Document what file markers trigger which templates
+- Add troubleshooting for "wrong template detected"
+
+**Total:** 16-22 hours
+
+**Risk:** Testing surface area more than doubles. We'd need beta testers for npm, Python, .NET, Java, and Go repos to validate all template variants. That's **significantly harder to recruit** than just "test migration on any repo."
+
+### Recommendation
+
+**Scope:** Stay deferred to v0.6.0  
+**Action:** None for v0.5.0  
+**Blocker status:** NO — this is polish, not a show-stopper  
+**Owner (for v0.6.0):** Fenster (implementation), Kujan (project type detection strategy)
+
+**If Brady insists on pulling it into v0.5.0:**
+- Add **2 weeks** to timeline (March 16 → March 30)
+- Add "project type detection works across 5 languages" as **8th exit criterion** for beta
+- Recruit beta testers across npm, Python, .NET, Java, Go ecosystems (harder cohort to assemble)
+- Accept that v0.5.0 becomes **"migration + project type polish"** instead of laser-focused on migration safety
+- Acknowledge the **risk of diluted beta feedback** (testers report template issues instead of migration issues)
+
+I don't recommend this path. The timeline pressure, scope creep, and beta complexity aren't worth it for a polish feature that can ship in v0.6.0 without consequence.
+
+---
+
+## Summary Recommendations
+
+| Issue | Include in v0.5.0? | Rationale | Effort | Owner |
+|-------|-------------------|-----------|--------|-------|
+| **#86** | ✅ **YES (conditionally)** | Trust-destroying data loss bug. Already planned for Week 1 investigation. Fix in v0.5.0 if prompt-only (2-4h), defer to v0.5.1 if complex (8-12h). | 6-12h | Fenster + Verbal |
+| **#87** | ❌ **NO** | Polish feature, not a blocker. Scope protection more important. Natural fit for v0.6.0. User workaround exists (delete 3 files). | 16-22h | Defer to v0.6.0 |
+
+### Issue #86: Confirm Existing Plan, Clarify Approach
+
+**Action:** The v0.5.0 plan already includes #86 as "HIGH SEVERITY - Week 1 investigation." This analysis confirms that's correct. Clarifications:
+
+1. **Investigation scope:** Reproduce scenario, identify git checkout origin, check coordinator uncommitted state detection, check agent git status awareness
+2. **Fix strategy:** Prompt-only if possible (add git discipline to templates, pre-checkout safety checks). Complex tooling only if prompt fix insufficient.
+3. **Blocker definition:** Don't ship v0.5.0 until fix is validated across 3-4 "agent errors and tries to undo" test scenarios
+4. **Fallback:** If fix requires >12 hours or introduces new complexity, defer to v0.5.1 patch
+
+**No scope change needed for Issue #91.**
+
+### Issue #87: Stay Deferred, Document Reasoning
+
+**Action:** Keep #87 deferred to v0.6.0. Update Issue #91 with architectural justification:
+
+1. **Not architectural** — template generation issue, doesn't affect core Squad operation
+2. **User workaround exists** — delete 3 workflow files
+3. **Scope protection paramount** — v0.5.0 is 242 hours, adding 16-22h is 6-8% timeline increase
+4. **Risk profiles mismatch** — v0.5.0 risk is state corruption (catastrophic), #87 risk is "wrong template" (annoying)
+5. **Beta complexity** — would require multi-language cohort (npm, Python, .NET, Java, Go)
+6. **Natural v0.6.0 fit** — polish release after last breaking change
+
+**Scope change for Issue #91:** None. Reaffirm deferral with architectural reasoning.
+
+---
+
+## Next Steps
+
+1. ✅ Document this analysis in `.ai-team/decisions/inbox/` (this file)
+2. ⬜ Post summary comment to Issue #91 explaining:
+   - #86: Already in scope, confirm HIGH SEVERITY, clarify prompt-first approach
+   - #87: Stay deferred, architectural analysis shows it's polish not blocker
+3. ⬜ Fenster + Hockney: Begin Week 1 investigation of #86 per existing plan
+4. ⬜ If #86 fix is prompt-only, Verbal implements git discipline instructions in `squad.agent.md`
+
+---
+
+**Signed:** Keaton (Lead)  
+**Date:** 2026-02-16
+
+
