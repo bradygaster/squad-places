@@ -4929,3 +4929,162 @@ If `task` tool is not available in CCA, Squad cannot operate as a multi-agent sy
 - Everything else stays in v0.5.0 (especially #69 rename, #76 GHE refactor, #62 CI/CD hardening)
 **Why:** The Insider Program is testing infrastructure that enables incremental validation of v0.5.0 work. Shipping it as v0.4.2 unblocks early testing feedback without coupling to the breaking changes.
 
+# Decision: Research Hypotheses for Squad Investment Validation
+
+**Date:** February 2026  
+**Requestor:** Brady  
+**Decided by:** Keaton  
+**Status:** Proposed for review
+
+---
+
+## Problem
+The executive summary demonstrates *structural* Squad value (6,400 hours saved, 10–50× token multiplier, 61% adoption). But investment decisions require *causal* proof: Does Squad actually improve developer outcomes? Does it drive retention? Does it scale predictably?
+
+Brady's directive: Design customer research to validate or invalidate the investment thesis.
+
+---
+
+## Solution
+Formulated **6 testable hypotheses** (4 core + 2 exploratory) mapped to distinct research methods:
+
+1. **H1: Task Completion Speed & Quality** — A/B time-motion study (6–8 wks, $15–25K)
+   - Proves: Real productivity gains, not just metrics artifacts
+   
+2. **H2: Accessibility Barrier Reduction** — Longitudinal cohort study (3 wks, $10–18K)
+   - Proves: Squad democratizes Copilot access; lowers learning curve 40–60%
+   
+3. **H3: Retention via Lock-In** — Retrospective cohort + retention simulator (4–5 wks, $8–14K)
+   - Proves: Switching costs are real; customer LTV improves
+   
+4. **H4: Complexity Scaling & ROI** — Portfolio analysis + regression (6–8 wks, $12–20K)
+   - Proves: Squad ROI inflection point; know where to sell
+   
+5. **H5: Token Multiplier Validation** — Telemetry cohort analysis (2–4 wks, $5K)
+   - Proves: Token multiplier (12–35×) is real; Copilot revenue expansion
+   
+6. **H6: Organizational Adoption** — Retrospective org-level network analysis (3–4 wks, $4–7K)
+   - Proves: Network effects exist; expansion is organic
+
+**Portfolio execution:** Phase 1 (H1+H2 parallel, wks 1–8), Phase 2 (H3+H4 parallel, wks 9–16), Phase 3 (H5+H6 parallel, wks 9–12).  
+**Total cost:** ~$54–91K over 16 weeks.
+
+---
+
+## Investment Go/No-Go Criteria
+Investment confidence gates:
+- ✅ **H1 confirmed** → Market demand proven (greenlight: proceed)
+- ✅ **H3 confirmed** → Retention moat real (greenlight: unit economics work)
+- ✅ **H5 in range 12–35×** → Revenue multiplier justified (greenlight: margin scales)
+- ✅ **H4 shows clear inflection** → GTM clarity (greenlight: know target segment)
+
+**Minimum threshold:** 3 of 4 confirmed = proceed with scaling. 2 or fewer = reconsider thesis.
+
+---
+
+## Trade-Offs
+- **Time investment:** Phase 1 begins immediately; full suite takes 16 weeks. Can front-load H1+H2 for faster early signal (8 weeks).
+- **Participant recruitment:** H1 (time-motion) requires 24–32 committed developers; lead time ~2–3 weeks. Must start recruitment now.
+- **Data access:** H5 (token multiplier) requires GitHub Copilot API telemetry partnership. Coordination overhead but low execution cost.
+- **Statistical confidence:** Some hypotheses (H1, H4) require moderate sample sizes (24–32, 61–80); others (H2, H6) are more exploratory. Mix of rigor.
+
+---
+
+## Success Criteria
+- **Research credibility:** Each hypothesis has clear success/failure metrics (not ambiguous)
+- **Decision relevance:** Each answers a gate-level investment question
+- **Grounding:** All hypotheses rooted in exec summary data (token multiplier, adoption rate, time savings)
+- **Parallelizability:** Portfolio designed so teams can run hypotheses in parallel (Phases 1–3)
+
+---
+
+## Alternatives Considered
+1. **Single flagship study (H1 only)** — Faster, cheaper, but doesn't address retention, scaling, or expansion. Too narrow for investment decision.
+2. **Qualitative case studies** — Rich but anecdotal. Can't drive go/no-go decision alone; would require quant follow-up anyway.
+3. **Internal telemetry expansion** — Squad repos have session logs, decision files, commit patterns. Could extract more signal without external participants. But can't measure comparative effectiveness (squad vs. solo Copilot) without control cohort.
+4. **Wait for natural attrition** — Observe who stays/churns over time. But too slow (6–12 months) for investment timeline.
+
+**Recommendation:** Hybrid approach is best—combine the 6 hypotheses, run Phases 1–3 in parallel where possible, and use early Phase 1 results (H1, H2) to inform resource allocation for Phase 2+3.
+
+---
+
+## Owner & Next Steps
+- **Research lead:** TBD (assign someone with research design + statistical chops)
+- **Phase 1 kickoff:** Begin H1 participant recruitment this week (longest lead time)
+- **Brady alignment:** Review this hypothesis suite — any gaps? Any hypotheses to prioritize or defer?
+- **Resource lock:** Approve $54–91K research budget
+
+---
+
+**Reference artifact:**  
+`.ai-team/agents/keaton/research-hypotheses-draft.md` — Full hypothesis documentation with methods, metrics, success criteria.
+
+---
+
+# Research Opportunities Section Added to Executive Summary
+
+**Author:** McManus  
+**Date:** 2026-02-14  
+**Status:** Decided  
+**Context:** Brady requested addition of research framing to executive summary before Caveats section.
+
+---
+
+## Decision
+
+Added "## Research Opportunities" section to `docs/squad-executive-summary.md` (lines 176–241), immediately before the Caveats section. The section presents four core customer research hypotheses (H1–H4) in executive-friendly format.
+
+**Rationale:**
+- Executive summary establishes *observable* 6-month impact (token multiplier, adoption rate, time savings estimates).
+- Go/no-go investment decisions require *causal proof*: Does Squad actually improve developer effectiveness? Is lock-in real? Does ROI scale predictably?
+- Research section bridges this gap by proposing testable studies that generate the evidence needed.
+- Tone and structure match existing document (metrics-driven, scannable, executive-facing).
+
+---
+
+## Section Contents
+
+| Hypothesis | Addresses | Timeline | Cost |
+|---|---|---|---|
+| **H1: Task Completion Speed & Quality** | Does Squad make devs faster + maintain code quality? | 6–8 weeks | $15–25K |
+| **H2: Accessibility Barrier Reduction** | Does Squad lower the entry barrier for new Copilot users? | 3 weeks active | $10–18K |
+| **H3: Retention via Switching Cost** | Is the lock-in moat real? Do users stay longer? | 4–5 weeks | $8–14K |
+| **H4: Complexity Scaling & ROI Threshold** | Does ROI scale predictably? Where does Squad break even? | 6–8 weeks | $12–20K |
+
+---
+
+## Research Prioritization (Recommended)
+
+**Immediate (Weeks 1–8):** H1 + H2 in parallel  
+- Answer core market question: *Does Squad work for end users?*
+- Result: speed proof + accessibility proof = foundation for enterprise case studies
+
+**Phase 2 (Weeks 9–16):** H3 + H4 in parallel  
+- Answer business model question: *Is the moat real? Does it scale?*
+- Result: retention economics + GTM clarity = complete go/no-go framework
+
+**Go/No-Go Threshold:**
+- If H1 + H3 both confirm → Squad is a business
+- Add H4 confirmation → Enterprise GTM clarity
+- If <2 confirm → Reconsider expansion thesis
+
+**Total investment:** ~$45–77K over 16 weeks
+
+---
+
+## Synthesis Notes
+
+This section synthesized Keaton's detailed research methodology (`keaton/research-hypotheses-draft.md`) into executive-digestible format. Key translation moves:
+
+1. **Hypothesis → Key Metrics** — Reduced Keaton's detailed study designs to 1–2 line summaries; elevated key metrics & business insights to headline level.
+2. **Operational Framing** — Reframed as "which studies to run first?" (operational) vs. "here's a research portfolio" (academic).
+3. **Voice Continuity** — Matched existing exec summary tone: confident, direct, metrics-first, no hedging. Avoided jargon.
+4. **Go/No-Go Alignment** — Closed with explicit investment decision criteria ("if this confirms, we proceed") rather than "here are four interesting studies."
+
+---
+
+## No Changes to Other Sections
+
+- Caveats section remains unchanged (now follows Research Opportunities)
+- All existing content above "Research Opportunities" unchanged
+- Document structure: [Hero] → [The Numbers] → [Where Time Comes From] → [Copilot Usage Multiplier] → [Barriers Removed] → [Business Domains] → [Adoption Patterns] → [Retention & Lock-In] → [1% Projection] → [Why Squad Matters] → **[Research Opportunities]** → [Caveats]

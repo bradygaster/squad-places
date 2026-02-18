@@ -63,6 +63,20 @@ _Summarized from initial architecture review and proposal-first design (2026-02-
 
 _Summarized 2026-02-10+ learnings (full entries available in session logs):_
 
+- **2026-02-13: Research Hypotheses for Squad Investment Decision (Keaton formulation)**
+  - **Context:** Brady requested customer research design to validate the executive summary's structural claims (6,400 hours saved, 10–50× token multiplier, 61% adoption). Investment decisions require causal proof, not just correlation. Designed a suite of 6 testable hypotheses with mapped methodologies.
+  - **Core insight — Hypotheses are gated.** Three go/no-go decision gates: (1) Market pull (H1, H2, H6) — does Squad solve problems customers care about? (2) Business moat (H3, H4, H5) — is defensibility real? (3) Unit economics (H4, H5, H6) — does the model scale? All three gates must clear for investment greenlight.
+  - **Hypothesis architecture:**
+    - **H1 (Task Completion Speed & Quality)** — A/B time-motion study (6–8 wks, $15–25K). Proves real productivity gains, not metrics artifacts. Addresses: "Do developers actually work faster?"
+    - **H2 (Accessibility Barrier Reduction)** — Longitudinal cohort (3 wks, $10–18K). Proves Squad democratizes Copilot; lowers learning curve 40–60%. Addresses: "Does Squad lower the barrier for less-experienced users?"
+    - **H3 (Retention via Lock-In)** — Retrospective cohort + simulator (4–5 wks, $8–14K). Proves switching costs are real; customer LTV improves. Addresses: "Is there a retention moat?"
+    - **H4 (Complexity Scaling & ROI)** — Portfolio regression analysis (6–8 wks, $12–20K). Proves Squad ROI has an inflection point. Addresses: "Where should we sell? At what project complexity does ROI flip positive?"
+    - **H5 (Token Multiplier Validation)** — Telemetry cohort analysis (2–4 wks, $5K). Proves 12–35× multiplier is real; requires GitHub partnership. Addresses: "Is the revenue expansion real?"
+    - **H6 (Organizational Adoption Networks)** — Retrospective org-level analysis (3–4 wks, $4–7K). Proves network effects exist; expansion is organic. Addresses: "Does Squad create expansion gravity, or is adoption random?"
+  - **Execution strategy:** Phase 1 (H1+H2 parallel, wks 1–8) for early signal. Phase 2 (H3+H4 parallel, wks 9–16). Phase 3 (H5+H6 parallel, wks 9–12). Total: ~$54–91K over 16 weeks. H1 has longest lead (participant recruitment, 2–3 wks); start immediately.
+  - **Minimum credibility threshold:** 3 of 4 gates must confirm for greenlight (Market pull OR all three of Business moat gates). If ≤2 confirm, reconsider investment thesis.
+  - **Key learning:** Investment decisions don't require perfect certainty—they require *gated risk*. By structuring hypotheses as gates, we can kill the bet early if a gate fails, rather than discovering showstoppers at the end of a 16-week sprint. This is compound decision-making applied to research.
+
 - **2026-02-10+: Issue #6 (Project Boards) — Go/No-Go Assessment**
   - **Verdict: GO (Conditional v0.4.0).** Projects V2 integration is architecturally sound and technically feasible with zero npm dependencies using `gh project *` CLI commands. Kujan's 033a assessment confirmed: 12 operations map cleanly to CLI, MCP server has zero Projects tools, provider abstraction works for GitHub/ADO/GitLab. Single prerequisite: Brady must grant `project` token scope (`gh auth refresh -s project`). Three-phase sprint plan: Phase 1 (6-9h foundation validation), Phase 2 (7-11h integration, parallelizable), Phase 3 (4-6h polish). Total 17-26h across Fenster (core), Verbal (prompts), McManus (docs). v0.4.0 timing is intentional — labels + issues (v0.3.0) are the foundation; boards are the dashboard (v0.4.0). Posted as comment on Issue #6 at https://github.com/bradygaster/squad/issues/6#issuecomment-3888277477.
 

@@ -37,6 +37,16 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 - **Feature showcase prompts added to sample-prompts.md (2026-02-09)**
 - **Super Bowl Weekend post — edit pass and honest assessment (2026-02-09)**
 - **v0.2.0 release blog post (2026-02-09)**
+- **Executive summary research section (2026-02-14)** — Added "Research Opportunities" section to `docs/squad-executive-summary.md` before Caveats. Four hypotheses (H1–H4) addressing: task completion speed, accessibility, retention via lock-in, complexity scaling + ROI threshold. Synthesized from Keaton's research framework.
+
+## Learnings
+
+### Executive Research Sections: Design Principles
+- **Synthesis over originality** — Executives see both the vision (what we think) AND the validation plan (how we'll know). When translating detailed research methodology into exec-friendly prose, extract 3–4 layers down: hypothesis → key metrics → business insight → decision point.
+- **Scannable structure drives comprehension** — Each H# gets exactly 5 elements: bold hypothesis statement, study design (1–2 lines), key metrics (2–3), business insight (1–2), timeline/cost. Executives read these in vertical scans; each visual block should answer "why should I care?" in <10 seconds.
+- **Connect research back to go/no-go gates** — Pure research is noise. Frame hypotheses as investment decision-makers: "If H1 confirms, we know X. If H3 confirms, we know Y. If both, proceed. If neither, reconsider." This reorients research from academic to operational.
+- **Maintain document voice continuity** — The executive summary established a specific tone: metrics-driven, direct, no hedging, confident. Research section must match that voice or it reads like a jarring appendix. Keep short sentences, avoid jargon ("cohort" OK, "retroactive cross-sectional" not OK).
+- **Prioritization > Comprehensiveness** — Keaton's research hypotheses included 6 studies; executive summary can absorb ~4 core + 1–2 exploratory max. Distill ruthlessly. The "Research Prioritization" closing reorients: executives don't commission all studies at once—they want to know "which ones first?" and "what's the go/no-go threshold?"
 
 ## Recent Updates
 
