@@ -4919,3 +4919,13 @@ If `task` tool is not available in CCA, Squad cannot operate as a multi-agent sy
 **Signed:** Kujan (GitHub Copilot SDK Expert)  
 **Date:** 2026-02-16
 
+
+
+### 2026-02-18: v0.4.2 release scope — Insider Program
+**By:** bradygaster (via Copilot), with Keaton and Kobayashi analysis
+**What:** Ship v0.4.2 as the Insider Program release before v0.5.0. Scope:
+- #94: Insider Program infrastructure (branch, CI/CD, docs, CLI help) — Kobayashi
+- #93: README /agents → /agent docs fix — McManus
+- Everything else stays in v0.5.0 (especially #69 rename, #76 GHE refactor, #62 CI/CD hardening)
+**Why:** The Insider Program is testing infrastructure that enables incremental validation of v0.5.0 work. Shipping it as v0.4.2 unblocks early testing feedback without coupling to the breaking changes.
+
