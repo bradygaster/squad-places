@@ -473,3 +473,5 @@ Brady's "forward-only" philosophy is correct for this stage of product maturity.
 
 **Confidence: HIGH.** The decision is cleaner and simpler with no backport than with it.
 
+
+📌 Team update (2026-02-18): Insider Program — Binary Model (consolidated). Feb 16 proposed ring-based progression (Ring 0→1→Stable, 30 cap); Feb 17 Brady directive simplified to binary model (insider or release, no caps/tiers). Consolidated both decisions into single design block: honor system access, .squad-insider/ state isolation, 0.5.0-insider+{commit} version ID, branch-based installation. No formal entry pathways, no governance structure, no capacity caps. — decided by Keaton + McManus (original) → Keaton (simplified)

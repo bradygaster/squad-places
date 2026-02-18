@@ -2080,15 +2080,31 @@ Changed `.sidebar-logo-img` from `max-width:100%; height:auto` to `height:40px; 
 **What:** The team state directory will be renamed from `.ai-team/` to `.squad/` starting in v0.5.0, with a backward-compatible migration path. Full legacy removal in v1.0.0.
 **Why:** `.squad/` is branded, shorter, follows conventions like `.github/` and `.vscode/`, and eliminates ambiguity about which tool owns the directory.
 
-### 2026-02-16: Insider Program structure
-**By:** Keaton
-**What:** Established Squad Insider Program — a permanent testing cohort for pre-release validation, community feedback, and contributor pipeline (5-10 early adopters → 15-25 active members → 30 capacity cap). Three entry pathways (invitation, application, auto-qualify). Recognition via CONTRIBUTORS.md credits, Discord #insiders channel, release notes, blog posts. Responsibilities: validate exit criteria (1-2 criteria/release, 2-4h commitment), test within 48-72h, file detailed bugs. Governance by Lead (Keaton) + DevRel (McManus). Graceful exits (alumni tier), natural graduation (insider → contributor → maintainer). v0.5.0 beta cohort becomes inaugural insiders.
-**Why:** v0.5.0's ad-hoc beta (5-10 power users, 7 exit criteria, manual recruitment) is a prototype for permanent infrastructure. Squad needs continuous pre-release validation with predictable release cadence. Program creates compound value: early testers → engaged contributors → maintainers → ambassadors.
+### 2026-02-17: Insider Program — Binary Model (consolidated)
+**By:** Keaton (Feb 17), Keaton + McManus (Feb 16 original design, superseded)
 
-### 2026-02-16: Insider Program community engagement
-**By:** McManus
-**What:** Community engagement and recruitment strategy for Squad's permanent Insider Program — seed cohort recruitment (spboyer, londospark, miketsui3a, csharpfritz first targets), public application flow via GitHub Discussions, recognition system (community docs, release notes, Discord badge, blog posts), exclusive access (#squad-insiders Discord channel, preview branch, monthly AMA, quarterly retrospective), communication channels (Discord for real-time, GitHub Discussions for formal threads), onboarding welcome package (playbook, core team intros, first mission), ongoing engagement (pre-release cadence, monthly check-ins, quarterly retros), anti-churn measures (alumni tier, low friction, clear asks).
-**Why:** v0.5.0's mandatory beta program needs transition from ad-hoc manual outreach to permanent infrastructure. Developer psychology: recognition is currency, access is valuable (shape product before it ships), community is sticky (relationships keep people engaged).
+**Evolution:** Feb 16 proposed ring-based progression (Ring 0→1→Stable, 30 cap); Feb 17 Brady directive simplified to binary model (insider or release, no caps/tiers).
+
+**What:** Insider Program launches in v0.5.0 with binary access model (insider or release) instead of ring-based progression. No capacity caps, no tiers, no progression mechanics. Recognition via CONTRIBUTORS.md badges, Discord #squad-insiders channel, release notes, blog posts. Access control: honor system + public insider list. Community engagement: seed recruitment (spboyer, londospark, miketsui3a, csharpfritz targets), GitHub Discussions application flow, exclusive access (preview branch, monthly AMA, quarterly retrospectives), onboarding welcome package, ongoing engagement (pre-release cadence, monthly check-ins, quarterly retros), anti-churn via alumni tier.
+
+**Why:** Ring system solved a capacity problem (30 member limit) Squad doesn't have yet. At current scale (5-10 early contributors), binary "you're on nightly or you're on release" is simpler and removes coordination overhead for solo maintainer. Brady's directive prioritized simplicity over future-proofing.
+
+**Implementation:**
+- Installation: `npx github:bradygaster/squad#insider` (branch-based)
+- State isolation: `.squad-insider/` directory prevents contamination
+- Access control: Honor system + public list in CONTRIBUTORS.md
+- Upgrade path: `squad upgrade` supports switching regular → insider
+- Version ID: `v0.5.0-insider+{commit}` for bug reporting
+- Recognition: [INSIDER] badge in CONTRIBUTORS.md, Discord channel, blog posts, release notes thank-yous
+- Responsibilities: test within 48-72h, file detailed bugs, optional exit criteria validation (1-2 criteria/release, 2-4h commitment)
+
+**What changed from Feb 16 design:**
+- ❌ Ring 0 (5-10) → Ring 1 (15-25) → Stable progression
+- ❌ Capacity cap (30 total)
+- ❌ Formal entry pathways (invitation, application, auto-qualify) → Manual invitation based on contribution
+- ❌ Governance structure (Lead + DevRel oversight)
+- ❌ Alumni tier (still available conceptually via honor system)
+- ✅ Keep: Branch-based install, state isolation, honor system, recognition (badge/Discord/blog), testing responsibilities
 
 ### 2026-02-16: Release cadence & testing automation
 **By:** Kobayashi
@@ -2793,4 +2809,2113 @@ I don't recommend this path. The timeline pressure, scope creep, and beta comple
 **Signed:** Keaton (Lead)  
 **Date:** 2026-02-16
 
+
+
+### 2026-02-18: Nightly/Insider Program ships FIRST in v0.5.0
+**By:** bradygaster (via Copilot)
+**What:** Insider Program (nightly builds) must be the FIRST deliverable in v0.5.0, not bundled into Week 3-4. Team needs ability to test incrementally as other features land.
+**Why:** Enables continuous validation throughout the sprint. Contributors can test #69, #76, #86 fixes as they merge to dev, rather than waiting until Week 3 for a beta build.
+
+**Impact on v0.5.0 timeline:**
+- **NEW Week 1 priority:** Insider Program setup (was bundled into "blogging" before)
+  - Set up `insider` branch (auto-publishes to npm with `insider` dist-tag)
+  - Document install: `npx github:bradygaster/squad#insider`
+  - CI/CD automation for nightly publishes
+  - Recognition artifacts (CONTRIBUTORS.md badge, Discord channel access)
+- **#86 investigation stays in Week 1** (HIGH SEVERITY, don't defer)
+- **#69, #76 shift to Week 2+** (implementation follows Insider Program launch)
+
+**Rationale:** Testing infrastructure before features means every PR after Week 1 gets real-world validation from insiders.
+
+### 2026-02-18: Single .squad/ folder — no separate templates directory
+**By:** bradygaster (via Copilot)
+**What:** Everything Squad-related goes inside `.squad/` directory. No separate `.squad-templates/` or similar split. Current `.ai-team-templates/` should become `.squad/templates/` (nested inside .squad/).
+**Why:** Simplicity — one folder to find, one folder to .gitignore, one folder to understand. Reduces user confusion about where Squad state lives.
+
+**Impact on Issue #69:**
+- Scope increases: Both `.ai-team/` → `.squad/` AND `.ai-team-templates/` → `.squad/templates/`
+- Reference count increases from 1,572 to ~1,672 (adds ~100 template references)
+- Migration logic must handle nested directory structure
+- Fenster's 3-PR plan still valid, adds ~2h to PR #2 (documentation updates)
+
+# Issue #69 Audit: `.ai-team/` → `.squad/` Migration (Week 1)
+
+**Agent:** Fenster (Backend Dev)  
+**Date:** 2026-02-18  
+**Phase:** Audit + Architecture (Week 1 of 2-week cycle)  
+**Context:** Breaking rename shipping in v0.5.0 with backward compat until v1.0.0
+
+---
+
+## Executive Summary
+
+**Actual Reference Count:** **1,572 occurrences** (not 745)
+
+- Verified via PowerShell full-repo scan (excluding node_modules)
+- Original estimate was likely based on partial scan or specific file types only
+
+**Implementation Approach:** **3 atomic PRs** (5-8 hours each)
+
+**Risk Level:** **Medium** — One-command migration mitigates user impact, but internal coordination cost is high
+
+---
+
+## 1. Reference Count Verification
+
+### Total Occurrences by File Type
+
+| File Type | Count | Notes |
+|-----------|-------|-------|
+| **Markdown** | ~850+ | Includes: squad.agent.md (247 refs), docs/, .ai-team/**, CHANGELOG.md, README.md, CONTRIBUTING.md |
+| **JavaScript** | 52 | All in index.js (CLI implementation) + test files |
+| **YAML Workflows** | 54 | .github/workflows/** + templates/workflows/** |
+| **JSON** | 0 | No direct references in .json files |
+| **HTML** | 0 | No direct references in _site/** |
+| **Templates** | ~50+ | templates/**, .ai-team-templates/** (mostly .md format guides) |
+| **Git Config** | 6 | .gitattributes (4), .gitignore (1), .npmignore (1) |
+
+**Total:** 1,572 occurrences across ~180 files
+
+### Additional Findings
+
+**`.ai-team-templates/` references:** 100+ occurrences
+
+- This is a SEPARATE directory that also needs renaming → `.squad-templates/`
+- Currently: `templates/` (source) → `.ai-team-templates/` (user's project copy)
+- After migration: `templates/` → `.squad-templates/`
+
+**Hidden complexity not in original scope:**
+
+- `.ai-team-templates/` adds ~100 more references
+- Git merge drivers in .gitattributes reference `.ai-team/**` paths (4 entries)
+- Workflows have hardcoded `.ai-team/team.md` path checks (10+ occurrences)
+
+---
+
+## 2. Migration Complexity Categories
+
+### **Category A: Simple String Replace (Safe)**
+
+**Files:** ~120 files  
+**Occurrences:** ~900 references  
+**Risk:** Low
+
+**File types:**
+
+- Documentation: `docs/**/*.md`, `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`
+- Agent histories: `.ai-team/agents/*/history.md`, `.ai-team/agents/*/history-archive.md`
+- Team decisions: `.ai-team/decisions.md`, `.ai-team/decisions-archive.md`
+- Session logs: `.ai-team/log/**/*.md`
+- Templates: `templates/**/*.md`, `.ai-team-templates/**/*.md`
+
+**Implementation:**
+
+```bash
+# Safe find/replace in markdown
+find . -name "*.md" -type f -exec sed -i 's/\.ai-team\//\.squad\//g' {} +
+find . -name "*.md" -type f -exec sed -i 's/\.ai-team-templates\//\.squad-templates\//g' {} +
+```
+
+### **Category B: Variable/Config (Path-Agnostic)**
+
+**Files:** `squad.agent.md` (5% of references)  
+**Occurrences:** ~50 references  
+**Risk:** Low
+
+**Pattern:** References like `TEAM_ROOT`, `{team_root}/.ai-team/`, documented patterns
+
+**Implementation:** Simple string replace, but requires human verification afterward to ensure spawn prompts use correct variable interpolation
+
+### **Category C: Runtime Code (Needs Dual-Path Logic)**
+
+**Files:** `index.js`, test files  
+**Occurrences:** 52 references  
+**Risk:** Medium-High
+
+**Dual-path detection needed:**
+
+```javascript
+// Current (single-path):
+const teamMd = path.join(dest, '.ai-team', 'team.md');
+
+// After migration (dual-path):
+function resolveTeamRoot(dest) {
+  const newPath = path.join(dest, '.squad');
+  const legacyPath = path.join(dest, '.ai-team');
+  
+  if (fs.existsSync(newPath)) return newPath;
+  if (fs.existsSync(legacyPath)) return legacyPath;
+  return newPath; // default for new installs
+}
+```
+
+**Affected operations:**
+
+- `squad init` — create `.squad/` (not `.ai-team/`)
+- `squad upgrade` — detect both, prefer `.squad/`
+- `squad copilot` — resolve team root before reading
+- `squad plugin marketplace` — resolve team root
+- `squad export/import` — resolve team root
+- All workflow scripts (Ralph, issue-assign, triage, label-sync)
+
+### **Category D: Git Configuration (Atomic Updates)**
+
+**Files:** `.gitattributes`, `.gitignore`, `.npmignore`  
+**Occurrences:** 6 references  
+**Risk:** Low (but must be atomic)
+
+**Changes:**
+
+**.gitattributes** (4 lines):
+```diff
+-.ai-team/decisions.md merge=union
+-.ai-team/agents/*/history.md merge=union
+-.ai-team/log/** merge=union
+-.ai-team/orchestration-log/** merge=union
++.squad/decisions.md merge=union
++.squad/agents/*/history.md merge=union
++.squad/log/** merge=union
++.squad/orchestration-log/** merge=union
+```
+
+**.npmignore** (2 lines):
+```diff
+-.ai-team/
+-.ai-team-templates/
++.squad/
++.squad-templates/
+```
+
+**.gitignore** (0 changes — `.ai-team/` is NOT in .gitignore on dev branch)
+
+### **Category E: GitHub Workflows (Hardcoded Paths)**
+
+**Files:** 10 workflow files (source + templates)  
+**Occurrences:** 54 references  
+**Risk:** Medium
+
+**Affected workflows:**
+
+- `squad-heartbeat.yml` (Ralph) — checks `.ai-team/team.md` existence (5 refs)
+- `squad-issue-assign.yml` — reads `.ai-team/team.md` for assignment (3 refs)
+- `squad-triage.yml` — reads `.ai-team/team.md` + `.ai-team/routing.md` (4 refs)
+- `sync-squad-labels.yml` — triggers on `.ai-team/team.md` changes (3 refs)
+- `squad-main-guard.yml` — blocks `.ai-team/**` from main/preview (8 refs)
+- `squad-preview.yml` — checks no `.ai-team/` files tracked (4 refs)
+
+**Dual-path detection strategy:**
+
+```yaml
+# Example: squad-heartbeat.yml
+- name: Check team exists
+  run: |
+    if [ -f ".squad/team.md" ]; then
+      TEAM_ROOT=".squad"
+    elif [ -f ".ai-team/team.md" ]; then
+      TEAM_ROOT=".ai-team"
+      echo "⚠️ Using legacy .ai-team/ — run 'squad upgrade --migrate-directory'"
+    else
+      echo "No squad found"
+      exit 0
+    fi
+    echo "TEAM_ROOT=$TEAM_ROOT" >> $GITHUB_ENV
+```
+
+---
+
+## 3. Atomic Migration Logic Design
+
+### `squad upgrade --migrate-directory`
+
+**Purpose:** One-command migration for existing repos (v0.5.0 → v1.0.0 transition period)
+
+**Preconditions:**
+
+1. `.ai-team/` exists
+2. `.squad/` does NOT exist (or `--force` flag provided)
+3. Git working tree is clean (no uncommitted changes) — OR user acknowledges dirty state
+
+**Migration Steps (Atomic):**
+
+```
+Step 0: Pre-flight validation
+  - Confirm .ai-team/ exists
+  - Confirm .squad/ does NOT exist (unless --force)
+  - Check git status (warn if dirty, require --force or --allow-dirty)
+  - Backup: git stash push -m "pre-squad-migration-backup" (optional, user choice)
+
+Step 1: Rename directory
+  - git mv .ai-team/ .squad/
+  - git mv .ai-team-templates/ .squad-templates/ (if exists)
+
+Step 2: Update .gitattributes
+  - Replace all .ai-team/ → .squad/ paths in merge driver rules
+  - Commit: "chore: update .gitattributes for .squad/ migration"
+
+Step 3: Update .npmignore (if present in user repo)
+  - Replace .ai-team/ → .squad/
+  - Replace .ai-team-templates/ → .squad-templates/
+  - Commit: "chore: update .npmignore for .squad/ migration"
+
+Step 4: Update squad.agent.md (if customized by user)
+  - Replace all .ai-team/ → .squad/ references
+  - Commit: "chore: update squad.agent.md for .squad/ migration"
+
+Step 5: Verify structure
+  - Check .squad/team.md exists
+  - Check .squad/casting/ exists
+  - Check .squad/agents/ exists
+  - List migrated files (show count)
+
+Step 6: Final commit
+  - Commit all remaining changes
+  - Message: "chore: migrate .ai-team/ → .squad/ (v0.5.0)"
+
+Step 7: Post-migration notice
+  - "✓ Migration complete: .ai-team/ → .squad/"
+  - "✓ X files migrated successfully"
+  - "⚠️ Next: Run 'squad upgrade' to update templates and coordinator"
+  - "⚠️ If using workflows, update workflow files manually (see docs)"
+```
+
+### Edge Cases
+
+| Scenario | Detection | Handling |
+|----------|-----------|----------|
+| **Both directories exist** | `fs.existsSync('.squad/')` | ABORT unless `--force` — prompt user to resolve manually |
+| **Dirty working tree** | `git diff-index --quiet HEAD` | WARN + require `--allow-dirty` flag OR offer to stash |
+| **Mid-session Scribe state** | `.ai-team/decisions/inbox/*.md` exists | WARN — recommend committing pending decisions first |
+| **No git repo** | `git rev-parse --git-dir` fails | PROCEED with fs rename (no git mv), skip commits |
+| **Detached HEAD** | `git symbolic-ref -q HEAD` fails | WARN but PROCEED (commits will be in detached state) |
+| **Merge conflict in progress** | `.git/MERGE_HEAD` exists | ABORT — require clean merge state first |
+| **Stashed changes** | `git stash list` not empty | INFO — note that migration will add to stash list if backup chosen |
+
+**Idempotency:** YES
+
+- Safe to run multiple times
+- If `.squad/` already exists and matches `.ai-team/` structure → NO-OP
+- If `.squad/` exists but differs → ABORT (or `--force` to overwrite)
+
+---
+
+## 4. Dual-Path Detection Strategy
+
+### CLI (`index.js`)
+
+**Current:** Hardcoded `.ai-team/` paths (52 occurrences)
+
+**After migration:** Resolve team root dynamically
+
+```javascript
+// Add at top of index.js
+function resolveTeamRoot(baseDir) {
+  const newPath = path.join(baseDir, '.squad');
+  const legacyPath = path.join(baseDir, '.ai-team');
+  
+  // Prefer new path if both exist
+  if (fs.existsSync(newPath)) {
+    return { root: newPath, isLegacy: false };
+  }
+  if (fs.existsSync(legacyPath)) {
+    console.log(`${YELLOW}⚠️  Using legacy .ai-team/ — run 'squad upgrade --migrate-directory' to migrate${RESET}`);
+    return { root: legacyPath, isLegacy: true };
+  }
+  
+  // Default for new installs
+  return { root: newPath, isLegacy: false };
+}
+
+// Usage in commands:
+const { root: teamRoot, isLegacy } = resolveTeamRoot(dest);
+const teamMd = path.join(teamRoot, 'team.md');
+```
+
+### Coordinator (`squad.agent.md`)
+
+**Current:** Documented pattern uses `TEAM_ROOT` variable in spawn prompts
+
+**After migration:** NO CODE CHANGE needed (already path-agnostic via variable)
+
+**Worktree Awareness section** (lines 620-660) already states:
+
+> All `.ai-team/` paths must be resolved relative to a known **team root**
+
+**Implementation:** Update documentation to show `.squad/` as default, `.ai-team/` as legacy fallback
+
+### Workflows
+
+**Current:** Hardcoded `.ai-team/team.md` checks (54 occurrences)
+
+**After migration:** Add dual-path detection to each workflow
+
+**Example pattern:**
+
+```yaml
+- name: Resolve team root
+  id: team
+  run: |
+    if [ -f ".squad/team.md" ]; then
+      echo "root=.squad" >> $GITHUB_OUTPUT
+      echo "legacy=false" >> $GITHUB_OUTPUT
+    elif [ -f ".ai-team/team.md" ]; then
+      echo "root=.ai-team" >> $GITHUB_OUTPUT
+      echo "legacy=true" >> $GITHUB_OUTPUT
+    else
+      echo "found=false" >> $GITHUB_OUTPUT
+    fi
+
+- name: Warn about legacy path
+  if: steps.team.outputs.legacy == 'true'
+  run: |
+    echo "⚠️ Using legacy .ai-team/ — consider migrating to .squad/"
+
+- name: Read team roster
+  if: steps.team.outputs.found != 'false'
+  run: |
+    TEAM_ROOT="${{ steps.team.outputs.root }}"
+    cat "$TEAM_ROOT/team.md"
+```
+
+**Affected steps count:** ~15 workflow steps need this pattern
+
+---
+
+## 5. Implementation Work Estimate
+
+### PR Breakdown (3 atomic PRs, 5-8h each)
+
+#### **PR #1: Core Infrastructure (Foundation)** — 5-8 hours
+
+**Goal:** Enable dual-path detection in CLI + add migration command
+
+**Files changed:** ~10 files
+
+- `index.js` — Add `resolveTeamRoot()`, refactor all `.ai-team/` references (52 changes)
+- `test/init-flow.test.js` — Update assertions for dual-path
+- `test/plugin-marketplace.test.js` — Update assertions for dual-path
+- `.gitattributes` — Add `.squad/**` merge drivers (keep legacy for compat)
+- `.npmignore` — Add `.squad/` and `.squad-templates/` entries
+- `package.json` — Bump version to 0.5.0-alpha.1
+
+**New functionality:**
+
+- `resolveTeamRoot(dest)` helper function
+- `squad upgrade --migrate-directory` command (150-200 lines)
+- `squad upgrade --migrate-directory --force` override
+- `squad upgrade --migrate-directory --allow-dirty` override
+- Migration edge case handling (all scenarios from section 3)
+
+**Testing:**
+
+- Unit tests for `resolveTeamRoot()` (6 scenarios)
+- E2E test: migrate existing .ai-team/ → .squad/
+- E2E test: migration idempotency (run twice, second is no-op)
+- E2E test: migration with dirty tree (should abort)
+- E2E test: migration with --force (both dirs exist)
+
+**Risk:** Medium — This PR touches CLI entry point, must not break existing users on v0.4.x
+
+**Merge strategy:** Feature flag? NO — Ship as new command only, existing commands unchanged
+
+---
+
+#### **PR #2: Documentation + Templates** — 3-5 hours
+
+**Goal:** Update all markdown docs and template files to use `.squad/`
+
+**Files changed:** ~120 files
+
+- `.github/agents/squad.agent.md` — 247 references → `.squad/`
+- `README.md` — All examples → `.squad/`
+- `CHANGELOG.md` — Add v0.5.0 migration entry
+- `CONTRIBUTING.md` — Update guard workflow docs → `.squad/`
+- `docs/**/*.md` — All 30+ guide/feature/scenario docs
+- `templates/**/*.md` — Charter, history, ceremonies templates
+- `.ai-team/**/*.md` — Squad's own team state (dogfooding migration)
+
+**Implementation:**
+
+```bash
+# Automated via script (create migration-docs.sh)
+find . -name "*.md" -type f \
+  -not -path "*/node_modules/*" \
+  -not -path "*/_site/*" \
+  -exec sed -i 's/\.ai-team\//\.squad\//g' {} + \
+  -exec sed -i 's/\.ai-team-templates\//\.squad-templates\//g' {} +
+```
+
+**Manual review needed:** 10-15 files
+
+- `CHANGELOG.md` — Write migration announcement
+- `README.md` — Verify examples still make sense
+- `docs/guide.md` — Update "What gets installed" section
+- `squad.agent.md` — Verify spawn prompt templates correct
+
+**Testing:** Visual inspection, search for remaining `.ai-team/` refs (should be 0 in docs)
+
+**Risk:** Low — Pure documentation, no runtime impact
+
+---
+
+#### **PR #3: Workflows (User-Facing Automation)** — 5-6 hours
+
+**Goal:** Update all GitHub Actions workflows for dual-path detection
+
+**Files changed:** 10 workflow files × 2 (source + templates) = 20 files
+
+- `.github/workflows/squad-heartbeat.yml`
+- `.github/workflows/squad-issue-assign.yml`
+- `.github/workflows/squad-triage.yml`
+- `.github/workflows/sync-squad-labels.yml`
+- `.github/workflows/squad-main-guard.yml`
+- `.github/workflows/squad-preview.yml`
+- Mirror changes in `templates/workflows/**` (user repo copies)
+
+**Implementation per workflow:**
+
+1. Add "Resolve team root" step (pattern from section 4)
+2. Replace all hardcoded `.ai-team/` → `$TEAM_ROOT` variable
+3. Add deprecation warning if legacy path detected
+4. Update error messages to mention both paths
+
+**Specific workflow changes:**
+
+- **squad-main-guard.yml** — Block BOTH `.ai-team/**` and `.squad/**` (8 lines)
+- **squad-preview.yml** — Check BOTH paths for tracked files (4 lines)
+- **squad-heartbeat.yml (Ralph)** — Resolve team root before reading roster (5 refs)
+- **squad-issue-assign.yml** — Dynamic team roster path (3 refs)
+- **squad-triage.yml** — Dynamic routing file path (4 refs)
+- **sync-squad-labels.yml** — Trigger on BOTH `.ai-team/team.md` and `.squad/team.md` changes
+
+**Testing:**
+
+- Workflow validation: `yamllint .github/workflows/*.yml`
+- Dry-run on test repo with `.ai-team/` (legacy path detection)
+- Dry-run on test repo with `.squad/` (new path detection)
+- Dry-run with BOTH dirs present (should prefer `.squad/`)
+
+**Risk:** Medium-High — These workflows run on main repo, failure impacts all contributors
+
+**Rollback plan:** Revert workflows to v0.4.1 versions, keep CLI changes
+
+---
+
+### Total Implementation Time
+
+**Conservative estimate:** 15-20 hours (3 PRs × 5-7 hours each)
+
+**Optimistic estimate:** 13-15 hours (if no major edge cases found)
+
+**Breakdown:**
+
+- PR #1 (CLI): 5-8 hours (most complex — migration logic + tests)
+- PR #2 (Docs): 3-5 hours (mostly automated, manual review light)
+- PR #3 (Workflows): 5-6 hours (tedious but straightforward)
+
+**Staging plan:**
+
+- Week 1 (current): Audit + architecture (this document) — 4 hours ✅
+- Week 1 (Day 3-5): PR #1 implementation — 6 hours
+- Week 2 (Day 1-2): PR #2 implementation — 4 hours
+- Week 2 (Day 3-4): PR #3 implementation — 5 hours
+- Week 2 (Day 5): Testing + docs — 2 hours
+
+**Total:** 21 hours across 2 weeks (matches 80h estimate scope for full v0.5.0 cycle, but this is Week 1 foundation work)
+
+---
+
+## 6. Risk Assessment
+
+### User-Facing Risks
+
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| **Migration fails mid-way** | High — corrupted state | Low | Atomic git operations, pre-flight backup via stash |
+| **Dual-path detection breaks** | High — CLI unusable | Medium | Comprehensive tests (6 scenarios), fallback to legacy |
+| **Workflows fail silently** | Medium — automation stops | Low | Explicit error messages, team root resolution logged |
+| **Consumer repos don't migrate** | Low — backward compat | High | Keep `.ai-team/` support until v1.0.0 (6+ months) |
+| **Docs out of sync** | Low — confusion | Medium | Automated sed script, manual review of examples |
+
+### Developer Risks
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| **PR #1 blocks all other work** | High — CLI is entry point | Feature branch, thorough testing before merge |
+| **Merge conflicts in squad.agent.md** | Medium — 247 refs | Coordinate with other active PRs (check #69 label) |
+| **Test suite breaks** | Medium — CI red | Update test assertions in same PR as code changes |
+| **Guard workflow false positives** | High — blocks legitimate PRs | Test guard logic with both `.ai-team/` and `.squad/` in feature branch |
+
+### Production Risks (v0.5.0 Release)
+
+| Scenario | Detection | Recovery |
+|----------|-----------|----------|
+| **v0.4.x users upgrade, migration fails** | GitHub issue spike | Hotfix v0.5.1 with improved error handling + rollback instructions |
+| **Workflows break on existing repos** | CI failures on user repos | Emergency comms: "Pin to v0.4.1 until migration complete" |
+| **Documentation still shows `.ai-team/`** | Community reports confusion | Hotfix docs-only PR, redeploy squad.bradygaster.com |
+
+**Rollback complexity:** Medium
+
+- CLI changes: Revert `index.js` to v0.4.1
+- Docs: Re-run sed script with inverse replacements
+- Workflows: Revert to v0.4.1 versions in templates/
+
+**Migration is opt-in:** YES (until v1.0.0)
+
+- v0.5.0 ships with dual-path support
+- Users choose when to run `squad upgrade --migrate-directory`
+- No breaking changes until v1.0.0 removes `.ai-team/` support
+
+---
+
+## 7. Test Plan Outline
+
+### Scenarios That MUST Pass Before Merge
+
+#### **PR #1 (CLI) Tests**
+
+1. ✅ **New install creates `.squad/`** — Run `squad init` on empty repo, verify `.squad/team.md` exists
+2. ✅ **Legacy repo keeps `.ai-team/`** — Run CLI commands on v0.4.x repo, verify no migration forced
+3. ✅ **Migration command works** — Run `squad upgrade --migrate-directory` on v0.4.x repo, verify:
+   - `.ai-team/` → `.squad/` renamed via git mv
+   - `.gitattributes` updated
+   - `.npmignore` updated (if present)
+   - Commit created with correct message
+   - No data loss (all files present in `.squad/`)
+4. ✅ **Migration is idempotent** — Run command twice, second run is no-op
+5. ✅ **Migration aborts on dirty tree** — Stage uncommitted changes, run migration, verify abort
+6. ✅ **Migration with --allow-dirty proceeds** — Dirty tree + flag, verify migration succeeds
+7. ✅ **Dual-path detection prefers `.squad/`** — Create both dirs, verify `.squad/` used
+8. ✅ **Legacy warning shown** — Access `.ai-team/` repo, verify deprecation message displayed
+
+#### **PR #2 (Docs) Tests**
+
+1. ✅ **No `.ai-team/` refs in docs/** — grep returns 0 matches
+2. ✅ **README examples use `.squad/`** — Visual inspection of install flow
+3. ✅ **CHANGELOG has v0.5.0 entry** — Section exists with migration instructions
+4. ✅ **squad.agent.md spawn prompts correct** — Search for `TEAM_ROOT` variable usage
+
+#### **PR #3 (Workflows) Tests**
+
+1. ✅ **Guard blocks `.squad/` on main** — Create PR with `.squad/` files to main, verify blocked
+2. ✅ **Guard blocks `.ai-team/` on main** — (regression test) Still blocked after migration
+3. ✅ **Ralph resolves `.squad/` team root** — Run heartbeat workflow, verify team detection
+4. ✅ **Ralph falls back to `.ai-team/`** — Remove `.squad/`, verify legacy detection
+5. ✅ **Issue assign reads dynamic path** — Trigger workflow, verify no hardcoded path errors
+6. ✅ **Triage uses dynamic routing** — Trigger workflow, verify routing file resolved
+
+### Integration Tests (Cross-PR)
+
+1. ✅ **Full migration flow** — v0.4.x repo → run `squad init` (noop) → run `squad upgrade` → run `squad upgrade --migrate-directory` → run workflows → verify all green
+2. ✅ **Consumer repo simulation** — Create test repo with Squad v0.4.x → upgrade to v0.5.0 → trigger 5 real issues → verify automation works
+3. ✅ **Rollback test** — Migrate → manual revert to `.ai-team/` → verify CLI still works (backward compat)
+
+### Performance Tests
+
+- **Migration speed:** <5 seconds for repos with <1000 files in `.ai-team/`
+- **Cold start time:** `squad init` on empty repo <2 seconds (unchanged from v0.4.x)
+- **Dual-path resolution:** <10ms overhead per command (negligible)
+
+---
+
+## 8. Open Questions / Decisions Needed
+
+### Q1: Should `.ai-team-templates/` also migrate?
+
+**Current:** Separate directory with ~100 references
+
+**Options:**
+
+- **A) Migrate simultaneously** — `.ai-team-templates/` → `.squad-templates/` in same PR
+- **B) Defer to v0.6.0** — Focus only on `.ai-team/` for v0.5.0, templates later
+- **C) Never migrate templates** — Keep legacy name for backward compat
+
+**Recommendation:** Option A (migrate simultaneously)
+
+**Rationale:** Templates are conceptually part of the same namespace, splitting creates confusion ("why is only one renamed?"). Adds ~50 more string replacements but no new logic.
+
+### Q2: What's the v1.0.0 cutoff date for `.ai-team/` removal?
+
+**Current plan:** Backward compat "until v1.0.0"
+
+**Options:**
+
+- **A) 6 months (Aug 2026)** — Aggressive, clear deadline
+- **B) 1 year (Feb 2027)** — Conservative, low user friction
+- **C) "When adoption reaches 80%"** — Data-driven but indefinite
+
+**Recommendation:** Option B (1 year / Feb 2027)
+
+**Rationale:** Squad is pre-1.0, breaking changes should be rare and well-telegraphed. 1 year gives ample time for users to migrate without urgency.
+
+### Q3: Should migration be automatic on `squad upgrade`?
+
+**Current design:** Explicit `squad upgrade --migrate-directory` command
+
+**Options:**
+
+- **A) Keep explicit** — User must opt-in to migration
+- **B) Auto-prompt** — `squad upgrade` detects `.ai-team/` and asks "Migrate now? [y/N]"
+- **C) Fully automatic** — `squad upgrade` always migrates if `.ai-team/` detected
+
+**Recommendation:** Option B (auto-prompt)
+
+**Rationale:** Reduces friction (user doesn't need to remember second command), but keeps control (can decline with 'N'). Safety: defaults to NO if user just hits Enter.
+
+### Q4: Do consumer repos need a migration guide?
+
+**Context:** External repos using Squad will have `.ai-team/` state
+
+**Assets needed:**
+
+- **Migration checklist** — Step-by-step for repo owners
+- **Troubleshooting guide** — Common failures + fixes
+- **Rollback instructions** — If migration fails, how to revert
+- **Video walkthrough** — 2-min demo showing the command + verification
+
+**Recommendation:** YES — Create `docs/scenarios/migrate-to-squad-directory.md`
+
+**Rationale:** ~50% of users will encounter migration in real repos (not fresh installs). Reducing support burden requires proactive docs.
+
+---
+
+## 9. Final Recommendations
+
+### Immediate Actions (Week 1 Completion)
+
+1. ✅ **Audit complete** — This document
+2. ⏭️ **Get stakeholder review** — Brady + Keaton review this doc, approve approach
+3. ⏭️ **Create PR #1 branch** — `feature/squad/69-cli-migration` from dev
+4. ⏭️ **Implement `resolveTeamRoot()`** — Foundation for dual-path logic
+5. ⏭️ **Implement `squad upgrade --migrate-directory`** — Core migration command
+6. ⏭️ **Write PR #1 tests** — 8 scenarios from section 7
+
+### Week 2 Deliverables
+
+- PR #1 merged (CLI + migration)
+- PR #2 merged (Docs)
+- PR #3 merged (Workflows)
+- `docs/scenarios/migrate-to-squad-directory.md` published
+- v0.5.0-alpha.1 tagged for beta testing
+
+### Success Metrics (Post-Merge)
+
+- 0 reported migration failures in first week
+- <5 GitHub issues with "migration" label
+- 0 rollbacks required
+- 80% of active Squad repos migrate within 1 month (tracked via telemetry opt-in)
+
+---
+
+## Appendix A: File Manifest (High-Impact Files)
+
+Files requiring manual review after automated changes:
+
+1. `.github/agents/squad.agent.md` — 247 refs, spawn prompts must stay correct
+2. `index.js` — 52 refs, CLI entry point
+3. `.gitattributes` — 4 refs, git merge drivers
+4. `.npmignore` — 2 refs, package exclusions
+5. `.github/workflows/squad-main-guard.yml` — 8 refs, blocks forbidden paths
+6. `.github/workflows/squad-heartbeat.yml` — 5 refs, Ralph team detection
+7. `README.md` — 15+ refs, user-facing examples
+8. `CHANGELOG.md` — 10+ refs, version history
+9. `CONTRIBUTING.md` — 12+ refs, contributor guide
+
+---
+
+## Appendix B: Dual-Path Resolution Reference Implementation
+
+```javascript
+// index.js — Add near top after imports
+
+const SQUAD_DIR = '.squad';
+const LEGACY_DIR = '.ai-team';
+const SQUAD_TEMPLATES_DIR = '.squad-templates';
+const LEGACY_TEMPLATES_DIR = '.ai-team-templates';
+
+/**
+ * Resolve team root directory, preferring new .squad/ over legacy .ai-team/
+ * @param {string} baseDir - Base directory to search from (usually cwd)
+ * @returns {{ root: string, templatesRoot: string, isLegacy: boolean }}
+ */
+function resolveTeamRoot(baseDir) {
+  const newPath = path.join(baseDir, SQUAD_DIR);
+  const legacyPath = path.join(baseDir, LEGACY_DIR);
+  const newTemplatesPath = path.join(baseDir, SQUAD_TEMPLATES_DIR);
+  const legacyTemplatesPath = path.join(baseDir, LEGACY_TEMPLATES_DIR);
+
+  // Prefer new path if both exist
+  if (fs.existsSync(newPath)) {
+    return {
+      root: newPath,
+      templatesRoot: fs.existsSync(newTemplatesPath) ? newTemplatesPath : legacyTemplatesPath,
+      isLegacy: false
+    };
+  }
+
+  if (fs.existsSync(legacyPath)) {
+    showLegacyWarning();
+    return {
+      root: legacyPath,
+      templatesRoot: legacyTemplatesPath,
+      isLegacy: true
+    };
+  }
+
+  // Default for new installs
+  return {
+    root: newPath,
+    templatesRoot: newTemplatesPath,
+    isLegacy: false
+  };
+}
+
+function showLegacyWarning() {
+  console.log();
+  console.log(`${YELLOW}⚠️  Using legacy .ai-team/ directory${RESET}`);
+  console.log(`${YELLOW}    Run 'squad upgrade --migrate-directory' to migrate to .squad/${RESET}`);
+  console.log(`${YELLOW}    Legacy support ends in v1.0.0 (Feb 2027)${RESET}`);
+  console.log();
+}
+
+// Usage in commands:
+const { root: teamRoot, templatesRoot, isLegacy } = resolveTeamRoot(dest);
+const teamMd = path.join(teamRoot, 'team.md');
+```
+
+---
+
+**END OF AUDIT REPORT**
+
+---
+
+**Estimated Implementation Time:** 15-20 hours (3 PRs)
+
+**Recommended Start Date:** 2026-02-19 (Week 1 Day 3)
+
+**Target Completion:** 2026-02-28 (Week 2 Day 5)
+
+**v0.5.0 Alpha Release:** 2026-03-03 (beta testing begins)
+
+### 2026-02-18: Issue #86 Investigation — Squad Undid Uncommitted Changes
+**By:** Fenster (Backend Dev)  
+**Investigation Duration:** 4 hours (Week 1 Day 2)  
+**Requested by:** bradygaster (via Ralph - v0.5.0 epic)
+
+---
+
+## Executive Summary
+
+✅ **Successfully reproduced** the data loss scenario in isolated test environment.  
+🎯 **Root cause identified:** Prompt engineering gap — no git safety discipline in agent spawn templates.  
+📋 **Recommendation:** **Prompt-only fix** (2-4 hours). Add git safety instructions to `squad.agent.md`.  
+⚠️ **Severity confirmed:** HIGH — trust-destroying. Must fix before v0.5.0 ships.
+
+---
+
+## Reproduction Results
+
+### Test Scenario
+
+Created isolated test repo, simulated exact scenario from @tlmii's report:
+
+1. **Initial commit** — baseline state (`README.md` with "Initial state")
+2. **Session 1 work** — Frontend changes added (uncommitted)
+3. **Session 2 work** — More UI changes added on top (uncommitted) 
+4. **Agent error** — Simulated agent running `git checkout .` to undo Session 2 work
+
+### Observed Behavior
+
+```
+BEFORE checkout:
+# Test Project
+Initial state
+
+## Frontend Work (Session 1 - UNCOMMITTED)
+- Added login form component
+- Implemented auth flow
+
+## UI Improvements (Session 2 - UNCOMMITTED)
+- Refined button styles
+- Added dark mode toggle
+
+Running: git checkout .
+
+AFTER checkout (DATA LOSS):
+# Test Project
+Initial state
+```
+
+**Result:** `git checkout .` discarded BOTH Session 1 AND Session 2 work. Reverted to last commit. **Exact data loss as reported in Issue #86.**
+
+---
+
+## Root Cause Analysis
+
+### 1. Primary Cause: No Pre-Checkout Safety in Spawn Prompts
+
+**Location:** `.github/agents/squad.agent.md` (lines 683-755, "Template for any agent")
+
+**What's missing:**
+- No instruction to run `git status --porcelain` before destructive git operations
+- No abort-if-uncommitted-work pattern
+- No explicit git discipline guidance
+
+**Where agents learn git commands:**
+- GitHub Issues Mode (line 1582-1603) includes `git checkout -b` for branch creation
+- Scribe charter includes `git commit` workflow (with Windows compatibility notes)
+- General agent instructions include "do the work" but no git safety rules
+
+**Agents are left to infer git usage from context** — no explicit safety protocol.
+
+### 2. Secondary Cause: No Uncommitted Work Detection at Spawn Boundaries
+
+**Location:** Coordinator logic in `squad.agent.md`
+
+**What's missing:**
+- Coordinator doesn't check for uncommitted work before spawning Agent B after Agent A
+- No warning in spawn prompt: "⚠️ Uncommitted changes detected from previous session"
+- No visibility into prior agent's working tree state
+
+**The handoff is git-state-blind:** Agent B only sees HEAD commit via charter/history/decisions reads. Working tree state is invisible.
+
+### 3. Tertiary Cause: No Commit Discipline Guidance
+
+**Current instructions (line 726-755):**
+- Agents update `history.md` ✅
+- Agents write to decisions inbox ✅  
+- Agents extract skills ✅
+- **No mention of committing their own work** ❌
+
+Result: Agents leave uncommitted changes for the next agent to handle.
+
+---
+
+## Git Instructions Audit: What Exists Today
+
+### ✅ What Squad Already Has
+
+1. **Scribe commit protocol** (lines 850-881) — robust Windows-compatible commit workflow:
+   - `cd` into team root before git operations
+   - Use temp file + `git commit -F` (PowerShell-safe)
+   - Verify commit landed with `git log --oneline -1`
+
+2. **GitHub Issues Mode branching** (lines 1582-1603):
+   - `git checkout -b squad/{issue-number}-{slug}`
+   - Branch creation for PR workflow
+   - Commit with message: `feat: {summary} (#{number})`
+
+3. **Worktree awareness** (lines 620-656):
+   - Resolve team root via `git rev-parse --show-toplevel`
+   - Handle worktree-local vs. main-checkout strategies
+   - Pass `TEAM_ROOT` to all agent spawns
+
+### ❌ What's Missing
+
+1. **Pre-checkout safety check** — CRITICAL GAP
+2. **Working tree awareness before destructive operations**
+3. **Commit discipline for agents doing domain work**
+4. **Uncommitted work detection at coordinator spawn boundaries**
+
+---
+
+## Investigation Questions (from briefing)
+
+### Q: Does squad.agent.md have git safety instructions?
+
+**A: NO** for agents. YES for Scribe (commit protocol only).
+
+**Grep results for "git checkout", "git status", "uncommitted":**
+- `git checkout` mentioned 3 times (all in GitHub Issues Mode — branch creation context)
+- `git status` mentioned ZERO times in agent guidance
+- "uncommitted" mentioned ZERO times in agent spawn templates
+
+### Q: What does the spawn template say about git operations?
+
+**A: NOTHING** about safety. The standard spawn template (lines 683-755) includes:
+- Read charter, history, decisions ✅
+- Do the work ✅
+- Update history.md ✅
+- Write to decisions inbox ✅
+- **Response order block** ✅
+- **NO git discipline** ❌
+
+### Q: Is there a pre-checkout safety check pattern?
+
+**A: NO.** Git operations are agent-inferred, not coordinator-enforced.
+
+### Q: Can agents see uncommitted work when they spawn?
+
+**A: NO.** Agent spawn prompt includes:
+- Charter (inlined)
+- History (file read)
+- Decisions (file read)
+- Team root path
+- Input artifacts (authorized file paths)
+
+**Working tree status is NOT passed.** Agent B has no visibility into Agent A's uncommitted work.
+
+---
+
+## Fix Approach Recommendation
+
+### ✅ RECOMMENDED: Prompt-Only Fix (2-4 hours)
+
+**Why this is the right path:**
+- Root cause is guidance gap, not architectural flaw
+- Coordinator already has the right separation of concerns (orchestration vs. domain work)
+- Git operations are agent-level responsibility — prompt engineering is the correct layer
+- Existing Scribe precedent shows robust git workflows can be expressed in prompts
+
+**What to add:**
+
+#### 1. Git Safety Block in Standard Spawn Template
+
+Add after "Do the work" section (around line 712):
+
+```markdown
+GIT DISCIPLINE:
+- Before running `git checkout`, `git reset`, `git clean`, or any command that discards changes:
+  1. Run `git status --porcelain`
+  2. If output is non-empty (uncommitted work exists), ABORT
+  3. Report to user: "⚠️ Uncommitted changes detected. Commit or stash before proceeding?"
+- After completing work that modifies files, commit your changes:
+  1. Stage: `git add {files you changed}`
+  2. Commit: `git commit -m "brief description (by {Name})"`
+- If uncertain whether to commit, err on the side of committing. Uncommitted work is invisible to the next agent.
+```
+
+#### 2. Uncommitted Work Detection at Spawn Boundaries
+
+Add to coordinator "After Agent Work" section (around line 774):
+
+```markdown
+Before spawning the next agent batch, check for uncommitted work:
+1. Run `git status --porcelain`
+2. If output is non-empty, inject into next spawn prompt:
+   ⚠️ UNCOMMITTED CHANGES EXIST:
+   {paste git status output}
+   
+   These are from a previous session. Before running any `git checkout` or destructive
+   git operation, verify you're not discarding work the user wants to keep.
+```
+
+#### 3. Lightweight Mode Git Safety
+
+Add to Lightweight Spawn Template (around line 301):
+
+```markdown
+⚠️ GIT SAFETY: If your task involves `git checkout`, `git reset`, or `git clean`,
+run `git status --porcelain` first. Abort and ask user if uncommitted work exists.
+```
+
+**Estimated effort:**
+- **Prompt updates:** 1-2 hours (add blocks to 3 templates)
+- **Coordinator detection logic:** 1 hour (`git status --porcelain` check + injection)
+- **Testing:** 1 hour (run 4 test scenarios — see below)
+- **Total: 3-4 hours**
+
+### ❌ NOT RECOMMENDED: Complex Tooling (8-12 hours)
+
+**Why avoid this path:**
+- Architecturally unnecessary — coordinator/agent boundary is correct
+- Adds coordinator complexity for agent-level concern
+- Maintenance burden — new tool surface to test/document
+- Doesn't prevent the underlying problem (agents not checking before destructive ops)
+
+**What this would entail:**
+- New coordinator tool: `snapshot_uncommitted_state()`
+- Auto-stash before every spawn
+- Agent handoff protocol with explicit git state awareness
+- Working tree preservation mechanism
+- Extensive testing across multi-agent workflows
+
+**Verdict:** Overengineered. Prompt-only fix addresses root cause more directly.
+
+---
+
+## Test Scenarios (Must Pass Before v0.5.0 Ships)
+
+### Scenario 1: Agent Hits Error Mid-Work, Tries to Undo
+
+**Setup:**
+1. Agent A completes work (uncommitted)
+2. Agent B spawned for follow-up task
+3. Agent B encounters error, decides to "undo work"
+
+**Expected behavior:**
+- Agent B runs `git status --porcelain` before `git checkout`
+- Detects uncommitted changes
+- Aborts and asks user: "⚠️ Uncommitted changes detected. Commit or stash first?"
+
+**Pass criteria:**
+- Agent B does NOT discard Agent A's work
+- User is prompted for guidance
+
+### Scenario 2: Multi-Agent Parallel Work, One Fails
+
+**Setup:**
+1. Coordinator spawns Agent A (backend) + Agent B (frontend) in parallel (background mode)
+2. Both modify files
+3. Agent A completes successfully (uncommitted)
+4. Agent B fails mid-work, attempts to undo via `git checkout`
+
+**Expected behavior:**
+- Agent B's `git status` check detects Agent A's uncommitted work
+- Agent B aborts and reports conflict
+
+**Pass criteria:**
+- Agent A's completed work is NOT discarded by Agent B's failure recovery
+
+### Scenario 3: GitHub Issues Mode Branch Creation (Existing Workflow)
+
+**Setup:**
+1. User says "work on issue #42"
+2. Agent creates branch via `git checkout -b squad/42-fix-auth`
+3. Agent does work (uncommitted)
+4. Agent encounters error, tries to undo
+
+**Expected behavior:**
+- Same as Scenario 1 — `git status` check before destructive ops
+- Branch creation (`git checkout -b`) is safe (doesn't discard work)
+
+**Pass criteria:**
+- Existing GitHub Issues workflow continues to work
+- Safety check prevents data loss on error recovery
+
+### Scenario 4: Coordinator Detects Uncommitted Work at Spawn Boundary
+
+**Setup:**
+1. Agent A completes work, leaves files uncommitted
+2. User requests follow-up task
+3. Coordinator spawns Agent B
+
+**Expected behavior:**
+- Coordinator runs `git status --porcelain` before spawning Agent B
+- Detects uncommitted work from Agent A
+- Injects warning into Agent B's spawn prompt: "⚠️ Uncommitted changes exist: {file list}"
+
+**Pass criteria:**
+- Agent B is aware of uncommitted work from the start
+- Agent B does NOT blindly run destructive git operations
+
+---
+
+## Effort vs. Impact
+
+| Approach | Effort | Impact | Risk | Recommendation |
+|----------|--------|--------|------|----------------|
+| **Prompt-only fix** | 3-4h | Eliminates data loss | Low — prompt changes, easy to revert | ✅ **DO THIS** |
+| **Complex tooling** | 8-12h | Same (prevents data loss) | Medium — new coordinator surface | ❌ Skip |
+| **Ship without fix** | 0h | Trust destruction continues | HIGH — user stops using Squad | ❌ **DO NOT SHIP** |
+
+---
+
+## v0.5.0 Blocker Status
+
+**YES, this blocks v0.5.0 shipment** — but only conditionally:
+
+1. **If fixed this week (prompt-only, 3-4h):** Bundle into v0.5.0. Already touching `squad.agent.md` for #69 (directory rename) and #76 (casting system). Add git safety as part of the same release.
+
+2. **If complex tooling required (8-12h):** Defer to v0.5.1 patch. Don't block v0.5.0 for a pre-existing bug that requires architectural work.
+
+**My recommendation:** Fix it this week (prompt-only). It's a 3-4 hour investment to eliminate a trust-destroying bug. Shipping v0.5.0 with known data loss exposure is unacceptable.
+
+---
+
+## Next Steps
+
+1. **Verbal** (Prompt Engineer) — implement prompt-only fix:
+   - Add Git Safety block to standard spawn template
+   - Add Lightweight Mode git safety
+   - Add uncommitted work detection to coordinator "After Agent Work" section
+
+2. **Fenster** (Backend Dev, me) — implement coordinator detection logic:
+   - Add `git status --porcelain` check before spawning next agent
+   - Inject warning into spawn prompt when uncommitted work detected
+
+3. **Hockney** (Tester) — create test scenarios:
+   - Write 4 test cases (scenarios described above)
+   - Validate across single-agent, multi-agent, and GitHub Issues Mode workflows
+   - Confirm no regressions in existing git operations (branch creation, commits)
+
+4. **McManus** (Lead) — validate fix before v0.5.0 ships:
+   - Review test results from Hockney
+   - Confirm all 4 scenarios pass
+   - Sign off on v0.5.0 readiness
+
+**Timeline:** Complete by end of Week 1 (2 days remaining). Estimated 6-8 hours total team effort.
+
+---
+
+## Conclusion
+
+Issue #86 is a **high-severity trust bug** caused by a **prompt engineering gap**, not an architectural flaw. The fix is straightforward: add explicit git safety instructions to agent spawn templates and coordinator spawn boundary checks.
+
+**Can reproduce:** ✅  
+**Root cause identified:** ✅  
+**Fix approach:** Prompt-only (3-4 hours)  
+**Test scenarios defined:** ✅  
+**Blocker status:** YES — but fixable this week  
+
+**Recommendation:** Fix it now (prompt-only), bundle into v0.5.0, validate across 4 test scenarios before shipping.
+
+---
+
+**Investigation complete. Ready for fix implementation.**
+
+# Decision: Create `.github/copilot-instructions.md` for Squad Source Repo
+
+**Date:** 2026-02-18  
+**Owner:** Keaton (Lead)  
+**Context:** Design review — Brady noticed inconsistent routing behavior when using Squad in VS Code
+
+---
+
+## Decision
+
+**Create `.github/copilot-instructions.md` for the Squad source repository.**
+
+---
+
+## Rationale
+
+1. **File does not exist** — Squad ships a template at `templates/copilot-instructions.md` for consumer repos, but the Squad repo itself has no instructions file
+2. **Different purposes** — Template is for coding agent issue workflow in consumer repos; this file is for contributors working on Squad's source
+3. **Closes context gap** — When contributors use Copilot in Squad repo without selecting the Squad agent, they get zero Squad-specific context
+4. **Platform standard** — `copilot-instructions.md` is GitHub Copilot's standard mechanism for repo-level instructions
+
+---
+
+## Content Strategy
+
+- **Short and surgical** — ~250-300 tokens (~50 lines)
+- **Project identity** — "This is the Squad source repo"
+- **Agent routing hint** — Suggest using `@squad` agent for team operations
+- **Architecture pointers** — Key file paths (`.github/agents/squad.agent.md`, `.ai-team/`, `templates/`, `index.js`)
+- **Codebase conventions** — Branch naming, test command, template vs. source distinction
+- **Reference by path** — Don't duplicate team roster or routing rules, point to `.ai-team/team.md` and `.ai-team/routing.md`
+
+---
+
+## What This Solves
+
+- Copilot has context about Squad's architecture when used without agent selection
+- Reduces hallucinated answers about Squad structure
+- Nudges users toward `@squad` agent for team operations
+- Provides conventions for code edits to this repo
+
+---
+
+## What This Does NOT Solve
+
+- Cannot force routing through Squad agent (platform limitation — requires explicit user agent selection)
+- Brady's routing inconsistency may be a separate issue (stale agent cache, missing `@squad`, or VS Code extension version issue)
+- **Action:** File separate issue to investigate root cause
+
+---
+
+## Critical Risk — Upgrade Logic Collision
+
+**Issue:** `index.js` lines 854-865 copy `templates/copilot-instructions.md` to `.github/copilot-instructions.md` during `squad upgrade`. If someone runs `squad upgrade` in the Squad repo itself, it would overwrite our custom file with the consumer template.
+
+**Mitigation:**
+- Add safeguard to `squad upgrade` logic
+- Check if running in Squad source repo (package.json name === "squad")
+- Skip `.github/copilot-instructions.md` upgrade step if so
+- Log warning: "Skipping copilot-instructions.md (running in Squad source repo)"
+- **Owner:** Fenster
+- **Timeline:** Before v0.5.0 (HIGH priority — data loss risk)
+
+---
+
+## Content Ownership
+
+**Owner:** Keaton (Lead)  
+**Rationale:** This is a `.github/` infrastructure file defining repo-level conventions and architecture. Falls under Lead's domain.
+
+**Review process:**
+- Content changes require design review if they alter routing guidance or architectural descriptions
+- Typo/path corrections do not require review
+- Version or staleness markers should be added to detect drift from `squad.agent.md`
+
+---
+
+## Implementation
+
+Content:
+
+```markdown
+# Copilot Instructions — Squad Source Repository
+
+<!-- This file is for the Squad source repo itself, not the template shipped to users.
+     See templates/copilot-instructions.md for the user-facing version. -->
+
+This is the **source repository** for Squad, an AI team framework for GitHub Copilot.
+
+## Using the Squad Agent
+
+This repo has an active Squad agent at `.github/agents/squad.agent.md`. For team operations, roster management, or multi-agent work, select **Squad** from the agent picker in VS Code rather than asking Copilot directly.
+
+- Team roster: `.ai-team/team.md`
+- Routing rules: `.ai-team/routing.md`
+
+## Repository Structure
+
+- `index.js` — CLI entry point (`npx create-squad`)
+- `.github/agents/squad.agent.md` — The Squad coordinator agent (~1,800 lines)
+- `templates/` — Files copied to consumer repos during `create-squad` init
+- `.ai-team/` — This repo's own Squad team state (live, not a template)
+- `docs/` — Documentation site source
+- `test/` — Test suite (`node --test test/*.test.js`)
+
+## Conventions
+
+- **Branch naming:** `squad/{issue-number}-{kebab-case-slug}`
+- **Decisions:** Write to `.ai-team/decisions/inbox/`
+- **Testing:** Run `npm test` before opening PRs
+- **Template vs. source:** Files in `templates/` are copied verbatim by `index.js` to consumer repos. The `.ai-team/` directory here is Squad's own team — don't confuse them.
+
+## Quick Answers
+
+Quick factual questions about file locations, build commands, or public API may be answered directly. Domain questions (architecture, prompt design, VS Code integration) should route through the Squad agent to reach the relevant specialist.
+```
+
+---
+
+**Timeline:** Before v0.5.0  
+**Dependencies:** Fenster implements upgrade safeguard before v0.5.0
+
+---
+
+**Signed:** Keaton (Lead)
+
+
+**Recognition mechanism (preserved):**
+- `[INSIDER]` badge in CONTRIBUTORS.md
+- Discord #squad-insiders channel
+- Blog post credits
+- Release notes thank-yous
+
+**Responsibilities (preserved):**
+- Test within 48-72h of new insider build
+- File detailed bugs with commit SHA
+- Validate exit criteria before releases (optional but valued)
+
+**Rationale:**
+Ring progression adds coordination overhead (tracking tiers, graduation criteria, communication) that doesn't scale with solo maintainer bandwidth. Value is in testing feedback, not tier labels. If cohort grows beyond 30 members, rings can be added later as scaling mechanism. Adding rings later is easy; removing rings after launch is awkward.
+
+**v0.5.0 timing:** Insider Program ships as NEW feature in v0.5.0 alongside .ai-team/ → .squad/ migration. Not tied to beta cohort — beta validates migration, insiders are ongoing continuous testing.
+
+### 2026-02-18: Issue #76 — squad.agent.md Refactor for GHE 30KB Limit (Architecture Design)
+
+**By:** Verbal (Prompt Engineer)
+**Requested by:** bradygaster (via Ralph - v0.5.0 Week 1 Day 2)
+**Status:** Architecture Complete — Ready for Implementation
+
+---
+
+## Executive Summary
+
+**Current State:** squad.agent.md is **108.68 KB** (~111,293 bytes) — **3.6× over GHE's 30KB limit**
+
+**Recommended Solution:** lib/ split with inline references, targeting **~25KB core file** with **headroom for growth**
+
+**Implementation Estimate:** 12-16 squad-hours across 3 agents (Verbal, Fenster, Hockney)
+
+**Risk Level:** LOW — mechanical file surgery with validation gates
+
+---
+
+## 1. Current State Analysis
+
+### File Size Breakdown
+
+**Total Size:** 108.68 KB (111,293 bytes)
+- **Target:** <30KB (GHE limit)
+- **Recommended ceiling:** ~25KB (20% headroom)
+- **Required reduction:** ~83KB (76% of current content)
+
+### Section Analysis (Estimated Sizes)
+
+Based on line count and content density, approximate section sizes:
+
+| Section | Est. Size | Usage Frequency | Move to lib/? |
+|---------|-----------|-----------------|---------------|
+| **Casting & Persistent Naming** | ~15KB | Per-init, per-add-member | ✅ YES |
+| **Ceremonies** | ~8KB | Per-ceremony trigger | ✅ YES |
+| **GitHub Issues Mode** | ~10KB | Per-issue-session | ✅ YES |
+| **Ralph — Work Monitor** | ~12KB | Per-Ralph-session | ✅ YES |
+| **PRD Mode** | ~8KB | Per-PRD-session | ✅ YES |
+| **Human Team Members** | ~5KB | Per-add-human, low freq | ✅ YES |
+| **Copilot Coding Agent** | ~7KB | Per-CCA-add, low freq | ✅ YES |
+| **Multi-Agent Artifact Format** | ~3KB | Per-multi-agent-work | ✅ YES |
+| **Coordinator Identity** | ~2KB | Every session | ❌ KEEP |
+| **Init Mode** | ~8KB | Per-init only | ❌ KEEP |
+| **Team Mode (core)** | ~15KB | Every session | ❌ KEEP |
+| **Routing** | ~3KB | Every spawned agent | ❌ KEEP |
+| **Response Mode Selection** | ~4KB | Every spawn | ❌ KEEP |
+| **Per-Agent Model Selection** | ~5KB | Every spawn | ❌ KEEP |
+| **Source of Truth Hierarchy** | ~2KB | Reference doc | ⚠️ MAYBE |
+| **Worktree Awareness** | ~3KB | Per-session if worktrees | ⚠️ MAYBE |
+
+**Total lib/ candidates:** ~68KB
+**Core retention:** ~40KB (after compression)
+
+---
+
+## 2. Recommended lib/ Split Architecture
+
+### Core Principle: **Inline References with Lazy Loading**
+
+The coordinator stays under 30KB by **referencing** lib/ files instead of **embedding** them. Each reference is a one-liner that tells the coordinator when to read the full file.
+
+### lib/ File Structure
+
+```
+.squad/lib/                          (or .ai-team/lib/ until #69 completes)
+├── casting.md                       (~15KB) — Casting & Persistent Naming
+├── ceremonies.md                    (~8KB)  — Ceremony system
+├── github-issues.md                 (~10KB) — GitHub Issues Mode
+├── ralph.md                         (~12KB) — Ralph work monitor
+├── prd-mode.md                      (~8KB)  — PRD intake and decomposition
+├── human-members.md                 (~5KB)  — Human team member management
+├── copilot-agent.md                 (~7KB)  — @copilot as squad member
+└── artifact-format.md               (~3KB)  — Multi-agent artifact assembly
+```
+
+**Total lib/ content:** ~68KB (moved out of squad.agent.md)
+
+### Core squad.agent.md Structure (Target: ~25KB)
+
+```markdown
+---
+name: Squad
+description: "Your AI team..."
+---
+
+## Coordinator Identity
+[KEEP INLINE — 2KB]
+
+## Init Mode
+[KEEP INLINE — compressed to ~6KB]
+Reference: "For casting, read .squad/lib/casting.md"
+
+## Team Mode
+[KEEP INLINE — core orchestration ~12KB]
+
+### Routing
+[KEEP INLINE — 3KB]
+
+#### Ceremony Triggers
+When {condition}, read .squad/lib/ceremonies.md and run the ceremony.
+
+### Response Mode Selection
+[KEEP INLINE — 4KB]
+
+### Per-Agent Model Selection
+[KEEP INLINE — 5KB]
+
+### Client Compatibility
+[KEEP INLINE — 3KB]
+
+### GitHub Issues Mode (stub)
+When user says "pull issues" or "work on #N", read .squad/lib/github-issues.md.
+
+### Ralph Activation (stub)
+When user says "Ralph, go" or "keep working", read .squad/lib/ralph.md.
+
+### PRD Mode (stub)
+When user provides a PRD, read .squad/lib/prd-mode.md.
+
+### Human Team Members (stub)
+When adding a human to the roster, read .squad/lib/human-members.md.
+
+### Copilot Coding Agent (stub)
+When adding @copilot, read .squad/lib/copilot-agent.md.
+
+## Source of Truth Hierarchy
+[KEEP INLINE — 2KB reference table]
+
+## Constraints
+[KEEP INLINE — 1KB]
+```
+
+**Estimated total:** ~25KB with headroom
+
+---
+
+## 3. Reference Mechanism Design
+
+### Option A: Inline References (RECOMMENDED)
+
+**How it works:**
+- Each specialized mode has a 2-3 line stub in squad.agent.md
+- Stub specifies the trigger condition and the file to read
+- Coordinator reads the file on-demand when the condition matches
+
+**Example stub:**
+
+```markdown
+### GitHub Issues Mode
+
+When the user says "pull issues from {repo}", "work on issue #N", or "show the backlog":
+
+1. Read `.squad/lib/github-issues.md` for full instructions
+2. Follow the procedures defined there
+
+This mode is NOT active until explicitly triggered.
+```
+
+**Pros:**
+- Smallest core file size (~25KB with good headroom)
+- Explicit load-on-demand semantics
+- Easy to maintain (one file = one feature)
+- New features can add lib/ files without bloating core
+
+**Cons:**
+- Adds ~1-2 tool calls per specialized mode activation (negligible latency)
+- Coordinator must remember to read the file (but the stub is explicit)
+
+### Option B: Preamble Load-All
+
+**How it works:**
+- First message of each session, coordinator reads ALL lib/ files
+- Files stay in context window for the full session
+
+**Pros:**
+- Zero latency once loaded
+- Coordinator has full instructions immediately
+
+**Cons:**
+- **Context window cost:** +68KB per session for features that may never be used
+- **Token burn:** Reading 8 files at session start even if only using 1-2
+- **Doesn't solve the problem:** GHE only cares about squad.agent.md file size, not context window. This just moves the problem from file → context.
+
+### Option C: Auto-Detection via Session Scanning (REJECTED)
+
+**How it works:**
+- Coordinator scans the session for signals (mentions of "Ralph", "issue #", "PRD")
+- Auto-loads lib/ files based on detected intent
+
+**Why rejected:**
+- Too clever — introduces failure modes if detection misses signals
+- Still requires reading files (same latency as Option A)
+- Harder to debug (implicit behavior)
+- Option A is simpler and equivalent
+
+---
+
+## 4. Backward Compatibility Analysis
+
+### For GHE Users (Primary Beneficiary)
+
+**Before refactor:**
+- ❌ Cannot use Squad (agent config exceeds 30KB limit)
+- Error: "Invalid config: Prompt exceeds max length 30000"
+
+**After refactor:**
+- ✅ squad.agent.md ~25KB (well under limit)
+- ✅ lib/ files in `.squad/lib/` or `.ai-team/lib/` (not subject to GHE limit)
+- ✅ All features work identically
+
+**Impact:** Zero breaking changes. Lib/ files are part of repo state, loaded on-demand.
+
+### For Copilot Teams Users (No Impact)
+
+**Before refactor:**
+- ✅ Works fine (no 30KB limit)
+
+**After refactor:**
+- ✅ Still works fine
+- ⚠️ Slight latency increase when activating specialized modes (~1-2s for file read)
+- ✅ BUT: Only affects modes that are triggered (GitHub Issues, Ralph, PRD, etc.)
+- ✅ Core coordination (spawning, routing, response modes) has ZERO latency change
+
+**Impact:** Negligible. The file reads only happen when entering specialized modes, and the overhead is <2s per mode activation.
+
+### Coordinator Behavior Validation
+
+**Critical invariant:** The coordinator must behave identically before and after the split.
+
+**Validation approach:**
+1. **Functional equivalence:** Every instruction in lib/ files existed in squad.agent.md before the split. No new logic, just relocation.
+2. **Test scenarios:** Run the same prompts on both versions, compare outputs:
+   - "Pull issues from owner/repo"
+   - "Ralph, keep working"
+   - "Here's the PRD for my app"
+   - "Add Sarah as Designer"
+   - "Include @copilot on the team"
+3. **Assert identical spawns:** Agent spawn prompts should be byte-identical before/after
+4. **Assert identical routing:** Same user message routes to same agent
+
+---
+
+## 5. Implementation Plan
+
+### Phase 1: File Extraction (Mechanical)
+
+**Owner:** Verbal
+**Effort:** 4-6 hours
+**Deliverables:**
+- Extract 8 sections to `.ai-team/lib/*.md` files
+- Replace each section in squad.agent.md with inline reference stub
+- Compress Init Mode and Team Mode core by removing redundant examples
+
+**Steps:**
+1. Create `.ai-team/lib/` directory
+2. Extract `casting.md` (Casting & Persistent Naming section)
+3. Extract `ceremonies.md` (Ceremonies section)
+4. Extract `github-issues.md` (GitHub Issues Mode section)
+5. Extract `ralph.md` (Ralph — Work Monitor section)
+6. Extract `prd-mode.md` (PRD Mode section)
+7. Extract `human-members.md` (Human Team Members section)
+8. Extract `copilot-agent.md` (Copilot Coding Agent Member section)
+9. Extract `artifact-format.md` (Multi-Agent Artifact Format section)
+10. Replace each extracted section with 2-3 line stub in squad.agent.md
+11. Verify file size: `Get-Item .github/agents/squad.agent.md | Select-Object Length`
+12. Target achieved: <26KB
+
+### Phase 2: Validation Testing
+
+**Owner:** Hockney (Tester)
+**Effort:** 4-6 hours
+**Deliverables:**
+- Test suite covering all lib/-dependent features
+- Regression validation (before/after behavior identical)
+
+**Test Scenarios:**
+1. **GitHub Issues Mode:**
+   - "Pull issues from bradygaster/squad"
+   - Verify coordinator reads lib/github-issues.md
+   - Verify issue listing works identically
+2. **Ralph:**
+   - "Ralph, go"
+   - Verify coordinator reads lib/ralph.md
+   - Verify work queue scanning works
+3. **PRD Mode:**
+   - "Here's the PRD: {paste}"
+   - Verify coordinator reads lib/prd-mode.md
+   - Verify decomposition works
+4. **Human Members:**
+   - "Add Brady as PM"
+   - Verify coordinator reads lib/human-members.md
+   - Verify roster update works
+5. **Copilot Agent:**
+   - "Include @copilot on the team"
+   - Verify coordinator reads lib/copilot-agent.md
+   - Verify capability profile setup works
+6. **Casting (Init Mode):**
+   - Run init on fresh repo
+   - Verify coordinator reads lib/casting.md during roster proposal
+   - Verify universe selection works
+7. **Ceremonies:**
+   - Trigger a ceremony (e.g., design review)
+   - Verify coordinator reads lib/ceremonies.md
+   - Verify facilitator spawn works
+
+**Pass criteria:** All 7 scenarios produce identical behavior to pre-refactor version.
+
+### Phase 3: Migration & Documentation
+
+**Owner:** Fenster (Core Dev)
+**Effort:** 4-6 hours
+**Deliverables:**
+- Migration added to `index.js` for `squad init` and `squad upgrade`
+- Documentation updated for lib/ structure
+- Issue #69 coordination (`.ai-team/lib/` → `.squad/lib/`)
+
+**Steps:**
+1. Add lib/ directory creation to `squad init`:
+   ```javascript
+   fs.mkdirSync(path.join(squadRoot, '.ai-team', 'lib'), { recursive: true });
+   ```
+2. Add migration to `squad upgrade`:
+   - If `.ai-team/lib/` doesn't exist, create it
+   - If squad.agent.md is >30KB (old version), show warning: "Your squad.agent.md is oversized. Upgrade to v0.5.0+ to fix GHE compatibility."
+3. Update `README.md` to mention lib/ directory structure
+4. Add `docs/architecture.md` documenting the lib/ pattern
+5. ⚠️ **Issue #69 coordination:** When `.ai-team/` → `.squad/` rename happens, lib/ files move too. Add note to #69 migration plan.
+
+---
+
+## 6. Issue #69 Coordination
+
+**Context:** Issue #69 renames `.ai-team/` → `.squad/`. This impacts lib/ paths.
+
+**Strategy:**
+
+### Phase 1 (v0.5.0): Ship Using `.ai-team/lib/`
+- All references in squad.agent.md use `.ai-team/lib/`
+- Works for both GHE and Copilot Teams users today
+- No dependency on #69 landing
+
+### Phase 2 (When #69 Ships): Simultaneous Path Update
+- When `.ai-team/` → `.squad/` migration runs, it moves lib/ too
+- Update all inline references from `.ai-team/lib/` → `.squad/lib/`
+- One find/replace in squad.agent.md
+
+**No blocking dependency.** Issue #76 can ship immediately using `.ai-team/lib/`. The path change is trivial when #69 lands.
+
+---
+
+## 7. Test Plan
+
+### Pre-Flight Checks
+
+Before refactor:
+1. Capture baseline metrics:
+   - Current squad.agent.md size (111,293 bytes)
+   - Session start latency for 5 scenarios
+   - Agent spawn time for specialized modes
+2. Run 10 representative prompts, capture outputs
+
+### Post-Refactor Validation
+
+After refactor:
+1. **Size validation:**
+   - `Get-Item .github/agents/squad.agent.md | Select-Object Length`
+   - Assert: <26,000 bytes
+2. **Functional regression:**
+   - Re-run the same 10 prompts
+   - Assert: Outputs are identical (or functionally equivalent)
+3. **Latency check:**
+   - Measure session start time (should be unchanged)
+   - Measure GitHub Issues Mode activation (may add ~1-2s for file read)
+   - Measure Ralph activation (may add ~1-2s for file read)
+4. **New install test:**
+   - Run `npx github:bradygaster/squad` on fresh repo
+   - Verify `.ai-team/lib/` directory is created
+   - Verify init completes successfully
+5. **Upgrade test:**
+   - Clone a v0.4.0 squad (pre-refactor)
+   - Run `npx github:bradygaster/squad upgrade`
+   - Verify lib/ directory is created
+   - Verify squad.agent.md is updated with stubs
+
+### GHE Smoke Test (Critical)
+
+**Cannot test directly (no GHE instance available)**, but validation:
+1. Check file size: <30KB
+2. Check that all references are relative paths (not absolute)
+3. Check that lib/ files are in repo (not external dependencies)
+4. Document in release notes: "GHE users should test in their environment and report issues"
+
+---
+
+## 8. Risks & Mitigations
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|-----------|
+| Coordinator forgets to read lib/ file when needed | High | Low | Explicit stubs with clear triggers; validation tests catch this |
+| File read fails (path issue, missing file) | High | Low | Add file existence checks; clear error messages |
+| Latency increase annoys users | Medium | Low | Only affects specialized modes; <2s overhead; document in release notes |
+| #69 path change breaks references | Medium | Low | Find/replace in squad.agent.md when #69 ships; coordinated release |
+| Users manually edit squad.agent.md and break stubs | Low | Medium | Document that stubs are required; add comments in file |
+| GHE has other undocumented limits | Medium | Low | Request community testing; document workarounds if found |
+
+**Overall Risk:** LOW. The refactor is mechanical file surgery. Validation gates catch regressions.
+
+---
+
+## 9. Effort Breakdown
+
+### Squad Time Estimates
+
+| Phase | Agent | Work | Hours |
+|-------|-------|------|-------|
+| **Phase 1: Extraction** | Verbal | Extract 8 sections to lib/, add stubs | 4-6h |
+| **Phase 2: Testing** | Hockney | Run 7 validation scenarios | 4-6h |
+| **Phase 3: Migration** | Fenster | Update init/upgrade, docs | 4-6h |
+| **Total** | — | — | **12-16h** |
+
+### Parallel Work Opportunities
+
+- Verbal's extraction work (Phase 1) is **sequential** (one file at a time to avoid merge conflicts)
+- Hockney can write test scenarios **in parallel** with Phase 1 (draft tests before refactor lands)
+- Fenster's migration work (Phase 3) is **blocked** on Phase 1 completing (needs new lib/ structure)
+
+**Critical path:** Verbal → Fenster (10-12h sequential minimum)
+
+**With parallelism:** Hockney overlaps with Verbal, reducing wall-clock time to ~8-10 days if working incrementally
+
+---
+
+## 10. Success Criteria
+
+### Must-Have (P0)
+
+- ✅ squad.agent.md file size <30KB (ideally ~25KB)
+- ✅ All 7 specialized modes work identically to pre-refactor
+- ✅ `squad init` creates `.ai-team/lib/` and populates it
+- ✅ `squad upgrade` migrates existing installs to lib/ structure
+- ✅ Validation tests pass (100% functional equivalence)
+
+### Should-Have (P1)
+
+- ✅ Documentation updated (README, architecture.md)
+- ✅ Latency overhead <2s for specialized mode activation
+- ✅ Issue #69 coordination plan documented
+
+### Nice-to-Have (P2)
+
+- ✅ GHE community feedback collected post-release
+- ⚠️ Performance benchmarks published (before/after latency)
+- ⚠️ Compression of Init Mode and Team Mode core (not required for <30KB, but helps headroom)
+
+---
+
+## 11. Recommendation
+
+**PROCEED WITH IMPLEMENTATION.**
+
+- **Architecture is sound:** Inline references with lazy loading is the simplest, most maintainable approach
+- **Size target is achievable:** ~68KB moves to lib/, core stays at ~25KB
+- **Risk is low:** Mechanical file surgery with validation gates
+- **Effort is reasonable:** 12-16 squad-hours across 3 agents
+- **No blocking dependencies:** Can ship using `.ai-team/lib/` immediately; #69 path change is trivial later
+
+**Recommended sequencing:**
+1. **Week 1 Day 3-4:** Verbal extracts files (Phase 1)
+2. **Week 1 Day 5:** Hockney validates (Phase 2)
+3. **Week 1 Day 5-6:** Fenster adds migration (Phase 3)
+
+**Target delivery:** End of Week 1 (v0.5.0 Day 6-7)
+
+---
+
+## Appendix: Alternative Approaches Considered
+
+### Alternative 1: Compression Only (No lib/ Split)
+
+**Approach:** Aggressively compress squad.agent.md by removing examples, redundant instructions, and verbose sections.
+
+**Target:** ~30KB via compression alone
+
+**Why rejected:**
+- Compression gains are limited (~15-20KB at most)
+- File would still be at GHE limit with zero headroom
+- Next feature added would exceed 30KB again
+- Harder to maintain (dense, telegraphic instructions)
+- Doesn't solve long-term growth problem
+
+### Alternative 2: External URL References
+
+**Approach:** Host lib/ files externally (GitHub repo, CDN) and reference by URL
+
+**Why rejected:**
+- Introduces external dependency (network calls, auth)
+- Breaks offline/airgapped environments
+- Users can't modify behavior (lib/ files are local and editable in Option A)
+- More complexity for near-zero benefit
+
+### Alternative 3: Dynamic Composition at Install Time
+
+**Approach:** Generate squad.agent.md at install time by concatenating core + lib/ files based on user preferences
+
+**Why rejected:**
+- Still produces >30KB output file (doesn't solve GHE limit)
+- Adds complexity to install/upgrade flow
+- Hard to version control (which components were included?)
+- Breaks "one file is source of truth" model
+
+**Inline references (Option A) is the clear winner.**
+
+---
+
+## Next Steps
+
+1. **Brady approves this architecture** → Proceed to Phase 1
+2. **Verbal begins extraction** (Phase 1, 4-6h)
+3. **Hockney writes test scenarios** (parallel with Phase 1)
+4. **Fenster prepares migration code** (Phase 3, after Phase 1 completes)
+5. **Full validation** (Phase 2, 4-6h)
+6. **Ship in v0.5.0**
+
+---
+
+**Questions for Brady:**
+1. Approve this architecture? Any modifications?
+2. Preferred lib/ location: `.ai-team/lib/` initially (rename with #69) or block on #69 completing first?
+3. Acceptable to add ~1-2s latency when activating specialized modes (GitHub Issues, Ralph, PRD)?
+
+---
+
+**End of Architecture Design**
+
+
+### 2026-02-16: CCA Compatibility Assessment for Squad v0.5.0
+
+**By:** Kujan  
+**What:** Researched whether Squad can run from the Copilot Coding Agent (CCA). GO/NO-GO determination for v0.5.0 scope.  
+**Why:** Issue #25 asks if CCA can boot Squad — load squad.agent.md, spawn sub-agents, and work as a full squad session. This is the async comms breakthrough mentioned in Proposal 030.
+
+---
+
+## Research Findings
+
+### 1. Custom Agent Files — ✅ CONFIRMED
+
+**Status:** YES, CCA reads `.github/agents/*.agent.md` the same way Copilot CLI does.
+
+- CCA discovers custom agents from `.github/agents/` automatically (repo-level) or `<org>/.github/agents` (org-level)
+- After commit to main, the agent appears in Copilot's agent picker for CLI, VS Code, and GitHub.com
+- CCA can be pointed at `squad.agent.md` as its governing agent via `/delegate` commands or issue assignment
+- The custom agent profile includes name, description, prompt instructions, and optional MCP server definitions
+
+**Implication:** Squad's governance model (squad.agent.md) is CCA-compatible. CCA can load Squad instructions.
+
+---
+
+### 2. Tool Availability: `task` Tool — ⚠️ PARTIAL / UNKNOWN
+
+**Status:** UNCLEAR — documentation does not confirm `task` tool availability in CCA environment.
+
+Research findings:
+- VS Code uses `runSubagent` (not `task`) for sub-agent spawning
+- CCA documentation describes `/delegate` and `/task` commands at the **user level** (CLI commands to invoke CCA), NOT as tools available **inside** CCA's execution environment
+- No documentation found confirming that CCA, once running, has access to the `task` tool to spawn further sub-agents
+- CCA is described as operating in an ephemeral cloud-based environment (GitHub Actions)
+
+**Implication:** High risk. Squad's architecture depends entirely on spawning real sub-agents via the `task` tool. If CCA lacks this tool, Squad cannot function as designed.
+
+**Action Required:** Empirical test. Deploy a test custom agent to `.github/agents/` that attempts to call the `task` tool and observe whether it succeeds or fails.
+
+---
+
+### 3. Background Mode — ❌ UNLIKELY
+
+**Status:** NO — CCA operates asynchronously by default, but likely does not support `mode: "background"` for sub-agent spawning.
+
+- CCA's asynchronous model means **CCA itself** runs in the background (no user in the loop during execution)
+- But this is different from **CCA spawning background sub-agents** using `mode: "background"`
+- VS Code uses parallel sync subagents (not background mode) — multiple subagents launched in one turn run concurrently but block until all complete
+- No documentation found describing CCA's ability to spawn fire-and-forget background tasks
+
+**Implication:** Squad's parallel fan-out pattern (spawn 3-5 agents as background tasks, poll with `read_agent`) likely not available. Could fall back to VS Code's pattern (parallel sync subagents in one turn), but this requires `task` or `runSubagent` tool availability first.
+
+---
+
+### 4. MCP Server Access — ✅ CONFIRMED (with caveats)
+
+**Status:** YES, CCA can access configured MCP servers.
+
+- CCA supports MCP (Model Context Protocol) server connections
+- Custom agents can declare MCP server dependencies in their `.agent.md` frontmatter
+- Repo-level or org-level MCP configuration via JSON file or GitHub settings
+- GitHub MCP server (issues, PRs, commits) is a default MCP server
+- Playwright MCP server (web interactions) is also available
+
+**Caveats:**
+- MCP servers must be explicitly configured (not automatic)
+- Remote servers requiring OAuth may not be supported
+- CCA only uses MCP "tools" (not resources or prompts)
+
+**Implication:** Squad's dependency on GitHub MCP server (for issue management) is feasible. MCP access alone does not solve the sub-agent spawning problem.
+
+---
+
+### 5. File System Access — ⚠️ CONSTRAINED
+
+**Status:** YES, but with critical limitations.
+
+- CCA runs in an ephemeral containerized environment (GitHub Actions)
+- CCA can read/write files in the repository
+- **CRITICAL CONSTRAINT:** `.ai-team/` is gitignored on main (per Squad's architectural decision from Proposal 015 and team decisions)
+- CCA cannot read `.ai-team/decisions.md`, `.ai-team/agents/*/history.md`, or other Squad filesystem state
+- All CCA governance must be self-contained within `.github/agents/squad.agent.md`
+
+**Implication:** This fundamentally constrains the CCA-as-squad-member model. CCA cannot load Squad's full memory (decisions, history, skills) from `.ai-team/` because those files don't exist in CCA's environment. CCA can only follow `squad.agent.md` conventions, not the full Squad filesystem state.
+
+**Workaround:** Embed essential Squad governance (casting policy, routing table, ceremony triggers) directly into `squad.agent.md`. This makes `squad.agent.md` larger but self-sufficient.
+
+**File writes:** CCA can write to `.ai-team/` if the directory structure is created during CCA's session. Changes can be committed back via PR. This is the "state commitment" pattern described in Issue #25.
+
+---
+
+### 6. Session Model — ✅ COMPATIBLE (with design constraints)
+
+**Status:** YES, CCA's asynchronous session model works for Squad, but eliminates interactive flows.
+
+- CCA operates asynchronously — no user in the loop during execution
+- Human gates exist at workflow boundaries: task assignment (start) and PR review (end)
+- CCA cannot run Squad ceremonies that require human input (e.g., design meetings with ask_user)
+- CCA cannot run Squad's "ask for clarification" flows
+
+**Implication:** CCA-Squad is a batch execution model. User delegates task → CCA executes → CCA opens PR. Squad's interactive ceremonies (Scribe sync gates, human input prompts) must be skipped or deferred to PR review stage.
+
+**Acceptable degradation:** CCA operates as a "silent sprint" — no mid-flight human input, no ceremony gates, work product delivered as PR for human review.
+
+---
+
+### 7. Scope Limitations — ⚠️ MODERATE
+
+**Status:** CCA can handle well-scoped, actionable tasks. Complex, multi-step work requires decomposition.
+
+- CCA is most reliable with well-defined, atomic tickets
+- Broad, ambiguous requirements should use the Plan agent (VS Code) to decompose before handoff
+- Session duration: persistent but may timeout on inactivity
+- Complexity ceiling: single-issue work is the sweet spot; full multi-agent sprints are risky without sub-agent spawning
+
+**Implication:** CCA-Squad is best suited for single-issue execution, not full sprint orchestration. Without confirmed `task` tool access, multi-agent fan-out is not possible, limiting CCA to single-agent inline work.
+
+---
+
+## Go/No-Go Assessment
+
+### ❌ NO-GO for v0.5.0 — BLOCKED ON SUB-AGENT SPAWNING
+
+**Verdict:** Squad cannot run from CCA in v0.5.0 **unless** empirical testing confirms `task` or equivalent sub-agent spawning tool is available.
+
+**Blocking Issues:**
+
+1. **No confirmed sub-agent spawning mechanism.** Documentation does not confirm that CCA has access to `task`, `runSubagent`, or any equivalent tool for spawning sub-agents. Squad's architecture is built entirely on multi-agent orchestration — without spawning, Squad is reduced to a single inline agent (not Squad).
+
+2. **`.ai-team/` gitignore constraint.** CCA cannot read Squad's memory (decisions, history, skills) because those files are gitignored. This breaks Squad's knowledge continuity across sessions. Workaround is to embed governance in `squad.agent.md`, but this is a major architectural shift.
+
+3. **No background mode.** CCA likely does not support `mode: "background"` for sub-agents, eliminating Squad's parallel fan-out pattern. Could fall back to VS Code's parallel sync pattern, but requires sub-agent spawning first.
+
+**What's Missing:**
+
+| Capability | Required for Squad? | CCA Status | Impact |
+|------------|---------------------|------------|--------|
+| Custom agent files | YES | ✅ Confirmed | Unblocked |
+| Sub-agent spawning (`task` tool) | YES | ⚠️ Unknown | **BLOCKER** |
+| Background mode (`mode: "background"`) | Preferred | ❌ Unlikely | Degraded but acceptable |
+| MCP server access | YES | ✅ Confirmed | Unblocked |
+| File system access (read `.ai-team/`) | YES | ❌ Gitignored | **MAJOR CONSTRAINT** |
+| File system access (write `.ai-team/`) | YES | ✅ Possible | Unblocked |
+| Async session model | Preferred | ✅ Confirmed | Unblocked |
+
+---
+
+## Recommended Action Plan
+
+### Phase 1: Spike (2-4 hours) — Empirical Test
+
+**Owner:** Kujan or Verbal  
+**Goal:** Confirm or deny `task` tool availability in CCA environment.
+
+**Steps:**
+
+1. Create `.github/agents/spawner-test.agent.md` in a test repo:
+   ```markdown
+   ---
+   name: Spawner Test
+   description: Test whether CCA can spawn sub-agents
+   ---
+   
+   Your job: attempt to spawn a sub-agent using the `task` tool with `agent_type: "explore"` and `prompt: "List files in current directory"`.
+   
+   Report:
+   - If successful: "SUCCESS: task tool available, sub-agent spawned"
+   - If tool not found: "FAILURE: task tool not available"
+   ```
+
+2. Delegate an issue to this agent via CCA: `gh copilot delegate "Test sub-agent spawning" --agent spawner-test`
+
+3. Observe CCA's behavior:
+   - Does it attempt to call `task`?
+   - Does it report tool not found?
+   - Does it fall back to inline work?
+
+4. Document findings in this decision file.
+
+**Outcome determines next steps:**
+
+- **If `task` tool available:** GO for Phase 2 (CCA integration design).
+- **If `task` tool NOT available:** NO-GO. CCA cannot run Squad. Consider alternative architectures (see Fallback Options).
+
+---
+
+### Phase 2: CCA Integration Design (8-12 hours, conditional on Phase 1 SUCCESS)
+
+**Owner:** Kujan + Verbal  
+**Goal:** Architect CCA-Squad integration with confirmed tooling.
+
+**Design Questions:**
+
+1. **Governance embedding:** How much of Squad's governance (routing, casting, ceremonies) must be embedded directly into `squad.agent.md` given `.ai-team/` is unavailable?
+2. **Memory handoff:** How does CCA persist state (decisions, history) back to `.ai-team/` if it writes during execution? Does state commit happen in the PR?
+3. **Ceremony degradation:** Which Squad ceremonies can run in CCA (no human input) and which must be skipped?
+4. **Launch mode:** Does CCA-Squad spawn sub-agents (if `task` available) or work inline as a single agent?
+
+**Deliverables:**
+
+- Updated `squad.agent.md` with CCA-specific instructions (platform detection: CLI vs VS Code vs CCA)
+- CCA compatibility section in `docs/scenarios/client-compatibility.md`
+- Testing plan for CCA-Squad integration
+
+---
+
+### Fallback Options (if Phase 1 FAILS)
+
+If `task` tool is not available in CCA, Squad cannot operate as a multi-agent system. Fallback architectures:
+
+#### Option A: CCA as Squad Member (Not Coordinator)
+
+- CCA does NOT run Squad
+- CCA is a **member** of Squad's roster (like `@copilot` in team.md)
+- User delegates work to Squad via CLI or VS Code
+- Squad coordinator routes suitable tasks to CCA via `/delegate` (if gh CLI is available)
+- CCA executes single-agent work, opens PR, Squad reviews
+
+**Pros:**
+- Leverages CCA's strengths (async execution, single-issue focus)
+- No sub-agent spawning required
+- Fits Squad's existing routing model
+
+**Cons:**
+- CCA is a tool used BY Squad, not Squad itself
+- Does not achieve "CCA boots Squad" vision from Issue #25
+
+#### Option B: Lightweight CCA Mode (Single-Agent Squad)
+
+- CCA loads `squad.agent.md` but operates as a single inline agent (no sub-agent spawning)
+- `squad.agent.md` includes fallback instructions: "If `task` tool not available, work inline without delegation"
+- CCA follows Squad conventions (casting, routing, decision persistence) but executes all work itself
+- CCA writes decisions/history to `.ai-team/` and commits via PR
+
+**Pros:**
+- Achieves "CCA loads Squad governance" goal
+- Squad conventions (memory, decisions) are preserved
+- Works with confirmed CCA capabilities
+
+**Cons:**
+- Not true multi-agent Squad — single agent pretending to be a team
+- Loses Squad's core value prop (specialization, parallel fan-out)
+
+#### Option C: Defer to v0.6.0
+
+- Acknowledge CCA integration is blocked on platform capabilities
+- Document findings in compatibility matrix
+- Monitor GitHub's Copilot roadmap for sub-agent spawning in CCA
+- Revisit in v0.6.0 when platform evolves
+
+**Pros:**
+- Avoids over-engineering workarounds for missing capabilities
+- Focuses v0.5.0 on confirmed CLI/VS Code parity
+- Sets realistic expectations
+
+**Cons:**
+- Delays async comms breakthrough from Proposal 030
+- User's stated priority (#25) is deferred
+
+---
+
+## Summary
+
+**Current State:** CCA can load `squad.agent.md` as a custom agent, but cannot spawn sub-agents or read `.ai-team/` memory. This makes true Squad operation impossible without empirical confirmation of `task` tool availability.
+
+**Recommended Path:**
+
+1. **Immediate:** Run Phase 1 spike (2-4h) to test `task` tool in CCA
+2. **If YES:** Proceed with Phase 2 design (8-12h) for v0.5.0
+3. **If NO:** Select fallback option (A, B, or C) and document in v0.5.0 scope
+
+**Risk Level:** HIGH. Proceeding without Phase 1 confirmation is architectural gambling.
+
+---
+
+**Signed:** Kujan (GitHub Copilot SDK Expert)  
+**Date:** 2026-02-16
 

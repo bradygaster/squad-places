@@ -122,3 +122,16 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 
 📌 Team update (2026-02-15): Directory structure rename planned — .ai-team/ → .squad/ starting v0.5.0 with backward-compatible migration; full removal in v1.0.0 — Brady
 
+- **2026-02-16: CCA Compatibility Assessment (Issue #25)** — Researched whether Squad can run from Copilot Coding Agent. Verdict: **NO-GO for v0.5.0** pending empirical test of sub-agent spawning. Key findings:
+  - **Custom agents (✅):** CCA reads `.github/agents/*.agent.md` like CLI — Squad governance loading is confirmed.
+  - **Sub-agent spawning (⚠️ BLOCKER):** No documentation confirms `task` or equivalent tool availability in CCA environment. Squad's architecture requires spawning real sub-agents — without this, Squad cannot function as designed.
+  - **Background mode (❌):** CCA likely doesn't support `mode: "background"` for fire-and-forget sub-agents. Could fall back to VS Code parallel sync pattern if spawning exists.
+  - **MCP servers (✅):** CCA supports MCP including GitHub MCP server. Issue management feasible.
+  - **File system (⚠️ CONSTRAINT):** `.ai-team/` is gitignored on main — CCA cannot read Squad memory (decisions, history, skills). All governance must be self-contained in `squad.agent.md`. CCA can write to `.ai-team/` and commit via PR.
+  - **Session model (✅):** CCA's async batch execution (no user in loop) is compatible but eliminates interactive ceremonies requiring human gates.
+  - **Complexity limits (⚠️):** CCA best for single-issue work; multi-agent sprints risky without confirmed sub-agent spawning.
+  - **Recommended action:** Run empirical spike (2-4h) — test custom agent that attempts `task` tool call. If tool exists, proceed with CCA integration design. If not, select fallback: (A) CCA as Squad member, (B) lightweight single-agent mode, or (C) defer to v0.6.0.
+  - Output: `.ai-team/decisions/inbox/kujan-cca-research.md`, comment on Issue #25
+
+
+📌 Team update (2026-02-18): CCA Compatibility Assessment (Issue #25). Researched whether Squad can run from Copilot Coding Agent. Findings: custom agent files supported, MCP servers accessible, file system access constrained (.ai-team/ gitignored in CCA environment). CRITICAL BLOCKER: No confirmed sub-agent spawning mechanism (	ask tool availability unknown in CCA). NO-GO for v0.5.0 unless Phase 1 spike (2-4h) confirms 	ask tool. Recommended fallback: CCA as Squad member (not coordinator), or defer to v0.6.0. High architectural risk; empirical testing required. — decided by Kujan
