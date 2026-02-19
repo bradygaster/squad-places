@@ -5088,3 +5088,55 @@ This section synthesized Keaton's detailed research methodology (`keaton/researc
 - Caveats section remains unchanged (now follows Research Opportunities)
 - All existing content above "Research Opportunities" unchanged
 - Document structure: [Hero] → [The Numbers] → [Where Time Comes From] → [Copilot Usage Multiplier] → [Barriers Removed] → [Business Domains] → [Adoption Patterns] → [Retention & Lock-In] → [1% Projection] → [Why Squad Matters] → **[Research Opportunities]** → [Caveats]
+
+
+### 2026-02-19: Milestone Moment Blog Template — GitHub Trending Post
+
+# Milestone Moment Blog Template — GitHub Trending Post
+
+**Timestamp:** 2026-02-19  
+**Author:** McManus  
+**Decision:** Milestone moment blog posts (launches, trending, major media coverage) use a specific template structure for authenticity and impact.
+
+## Context
+
+Squad hit #9 on GitHub Trending Developers on February 19, 2026 — 12 days after launch (February 7). This is a genuine milestone and a moment the community needs to hear about directly.
+
+The challenge: How do we celebrate without sounding either corporate or fake-humble? The answer lies in structure, not adjectives.
+
+## Template Structure for Milestone Posts
+
+**Opening**: Lead with the number. State what happened, when it happened, and verify it's real.
+
+**Context**: Place the moment in a larger story. What else is trending? Is there a wave? How does Squad fit? This reframes the post from vanity to significance.
+
+**Timeline**: Show the velocity. 12 days from launch to trending validates something fundamental about the product or market fit. Let the facts do the talking.
+
+**What's Happening**: Surface the signal beneath the trending number — people are starring, which means they're trying, building, talking. Make it concrete.
+
+**Why Now**: Three theses or fewer. What converged? What was true yesterday that's more obviously true today? (Product moment, feature fit, market wave.)
+
+**What This Unlocks**: What changes now that this is public? Discovery, credibility, momentum — tangible consequences.
+
+**What's Next**: Reset expectations. Trending is a sprint. The test is whether people who starred still use Squad in March. Keep the audience grounded.
+
+**Energy comes from facts and honesty, not adjectives or emotion.**
+
+## Voice Principles
+
+- No editorial framing. No "thrilled," "excited," or "proud." Facts only.
+- Quote other projects on the trending list (agentsys, agent-of-empires, inbox-zero). This feels inclusive, not competitive.
+- Acknowledge transience explicitly. Shows confidence — we're not expecting trending to last forever, just celebrating that it happened.
+- Let numbers be the proof: 12 days, #9, 131 tests (from earlier post), 42 agents (agentsys), #1 on the list.
+- Close with "what's the real test?" — reframe to what matters long-term.
+
+## Implementation
+
+Published as `docs/blog/012-trending-on-github.md` with standard frontmatter (title, date, author, tags, status: published).
+
+This template reusable for future milestones: major press coverage, API launches, significant contributor milestones.
+
+## Precedent
+
+This follows Brady's "straight facts" directive (2026-02-10) and the tone shift from opinionated storytelling to factual technical communication. Structure by impact, not narrative. Energy from specificity.
+
