@@ -225,3 +225,21 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 
 
 📌 Team update (2026-02-18): Insider Program — Binary Model (consolidated). Feb 16 originally proposed community engagement and recruitment strategy (seed cohort, public application, Discord access, onboarding); Feb 17 Brady directive simplified to binary model eliminating rings, caps, and formal entry pathways. Consolidated into single design block: honor system, .squad-insider/ isolation, version ID, branch-based install. Community engagement strategy (public insider list, CONTRIBUTORS.md badges, Discord channel, recognition) retained. — decided by McManus (original) + Keaton (simplified)
+
+### Current session work (in progress)
+
+- **Fixed issue #93: /agents vs /agent command clarity** — README.md line 55 now clearly states /agent for CLI and /agents for VS Code, with platform-specific guidance for which to use where. Matches the post-install output that already had this right. Ensures new users don't get confused by platform differences.
+- **Implemented issue #94 Phase 2: Insider Program documentation** — Created three new documentation artifacts:
+  1. **CONTRIBUTORS.md** — New top-level file with [INSIDER] badge section explaining insider program, how to join (honor system, 
+px github:bradygaster/squad#insider), expectations (continuous updates, rough edges), and issue reporting guidelines.
+  2. **docs/insider-program.md** — Full 4.3K guide covering what insiders get, what to expect, version format (0.4.2-insider+{commit}), how to report bugs, and FAQ. Positioned as the deep dive for users who want details.
+  3. **README.md Insider Program section** — Added brief section under Upgrade, one sentence + install command + link to full docs. Prominent but lean.
+  4. **CONTRIBUTING.md mention** — Added link to CONTRIBUTORS.md insider section before "Need Help?" so contributors know about early access option.
+  
+  Strategy: Tiered depth (README one-liner → CONTRIBUTORS.md summary → docs/insider-program.md deep dive) keeps casual browsers informed without overwhelming, while serious contributors get full context. Honor system + low friction (#insider branch) aligns with open source norms. Version format with commit hash gives transparency into what build users have.
+
+### Recent learnings added this session
+
+- **Command clarity across platforms matters hugely** — Issue #93 revealed that users don't expect /agent vs /agents variation. Single docs mention of /agents becomes the canonical reference users internalize, then they get confused when CLI says something different. Solution: always show both, mark which is which. The post-init message got it right; docs needed to match.
+- **Insider programs for open source need minimal ceremony** — Binary model (insider branch, honor system, no caps/rings/onboarding) is the right calibration for a small OSS project. Formal programs create friction; simple branch-based access lowers barrier to "try the latest." CONTRIBUTORS.md badges and issue templates provide recognition without overhead.
+- **Tiered documentation depth serves different audiences** — One-liner in README catches people shopping, CONTRIBUTORS.md section serves active community members, full docs/insider-program.md guide is for committed insiders. Each audience gets exactly what they need to make a decision or take action without info overload.

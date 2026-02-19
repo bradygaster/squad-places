@@ -129,3 +129,9 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 📌 Team update (2026-02-15): Directory structure rename planned — .ai-team/ → .squad/ starting v0.5.0 with backward-compatible migration; full removal in v1.0.0 — Brady
 
+- **Post-install output: /agent vs /agents (#93).** The post-install "Next steps" output told users to select Squad from "/agents list" but the Copilot CLI uses `/agent` (singular). Updated line 957 in index.js to show both: `/agent` (CLI) and `/agents` (VS Code). Only one place in index.js referenced this — the post-install "Next steps" block.
+
+- **Insider install path in help text (#94 Phase 3).** Added `Insider channel: npx github:bradygaster/squad#insider` to the `--help` output in index.js, after the Flags section. One line, minimal footprint.
+
+📌 Team update (2026-02-19): CLI output updated for #93 and #94 Phase 3. Post-install "Next steps" now shows both `/agent` (CLI) and `/agents` (VS Code). Help text now includes insider install path (`npx github:bradygaster/squad#insider`). Changes are index.js only — McManus owns README/docs updates. — decided by Fenster
+

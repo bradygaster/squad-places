@@ -5140,3 +5140,129 @@ This template reusable for future milestones: major press coverage, API launches
 
 This follows Brady's "straight facts" directive (2026-02-10) and the tone shift from opinionated storytelling to factual technical communication. Structure by impact, not narrative. Energy from specificity.
 
+
+### 2026-02-17: Insider Program CI/CD Infrastructure (Issue #94 Phase 0+1)
+
+**Author:** Kobayashi (Git & Release Engineer)  
+**Date:** 2026-02-17  
+**Status:** Implemented & Ready for Manual Insider Branch Creation  
+**Triggered by:** Issue #94 — Enable insider/early-adopter program for Squad  
+
+## What
+
+Built the complete CI/CD infrastructure for the insider branch, enabling early adopters to install from 
+px github:bradygaster/squad#insider.
+
+### Phase 0: Branch Protection
+
+**Updated:** squad-main-guard.yml (both .github/workflows/ and 	emplates/workflows/)
+
+- Added insider to pull_request.branches and push.branches triggers
+- Guard now blocks .ai-team/**, .ai-team-templates/**, and 	eam-docs/** from insider (same protection as main/preview)
+- Maintains state integrity — insider is a protected branch, not a dev branch
+
+### Phase 1: CI/CD Workflows
+
+**1. Updated squad-ci.yml** (both source and template)
+- PR triggers: [dev, preview, main, insider] — now includes insider
+- Push triggers: [dev, insider] — tests run on every insider push
+- Effect: Full CI coverage on insider branch
+
+**2. Created squad-insider-release.yml** (both source and template)
+- **Trigger:** Push to insider branch
+- **Behavior:**
+  1. Runs tests (blocks release if tests fail)
+  2. Reads base version from package.json (e.g.,  .4.0)
+  3. Appends -insider+{short_sha} to version (e.g.,  .4.0-insider+a3f7e2)
+  4. Creates annotated git tag: 0.4.0-insider+a3f7e2
+  5. Publishes GitHub Release marked as prerelease: true
+  6. Release notes explain this is a dev build with clear installation instructions
+  7. Verifies release was created successfully
+- **Idempotency:** Git handles retags. Multiple pushes generate new releases as short_sha changes.
+- **Permissions:** contents: write (minimum needed for tagging and release creation)
+
+### Technical Decisions
+
+1. **Version suffix format:** SemVer 2.0 compliant prerelease syntax (-insider+{short_sha}). The + is metadata, preventing accidental version precedence issues.
+
+2. **Test gate before release:** Tests run before any release. Failure blocks the entire workflow. This is the minimum safety mechanism.
+
+3. **No package.json modification:** Insider versions are computed at workflow-time, not persisted. Base version stays clean. Prevents merge conflicts on dev.
+
+4. **Sync invariant maintained:** All changes applied symmetrically to both .github/workflows/ (production) and 	emplates/workflows/ (shipped to users). This prevents user repos from having stale workflows.
+
+5. **Patterns from existing workflows:** Used Node 22, ctions/checkout@v4, ctions/setup-node@v4, GITHUB_TOKEN, and gh CLI — consistent with squad-release.yml and squad-preview.yml.
+
+## Consequences
+
+- Insider releases are independent of stable releases. They don't affect main/preview.
+- Early adopters explicitly opt-in via #v0.4.0-insider+{sha} tag — not default branch.
+- Guard blocks all forbidden paths from insider. State integrity is protected.
+- Release process for stable (squad-release.yml) is unaffected.
+
+## Next Steps (Brady)
+
+1. **Create the insider branch manually:**
+   `bash
+   git checkout -b insider
+   git push origin insider
+   `
+
+2. **Verify workflows run on first push:**
+   - GitHub Actions → Workflows → squad-ci.yml (tests) and squad-insider-release.yml (auto-release)
+   - Releases tab should show new 0.4.0-insider+{sha} release (marked prerelease)
+
+3. **Test installation:**
+   `bash
+   npx github:bradygaster/squad#v0.4.0-insider+{sha}
+   `
+
+## Distribution & Safety
+
+- **Three-layer protection still holds:** .gitignore, package.json files array, .npmignore
+- **Insider releases don't affect npm:** They're GitHub-only (npx from GitHub tag)
+- **State integrity protected:** Guard blocks .ai-team/** from insider like main/preview
+- **Release pipeline unaffected:** squad-release.yml (stable) and squad-preview.yml continue unchanged
+
+
+### 2026-02-19: Platform-Specific Command Clarity & Insider Documentation (Issue #93, #94 Phase 2)
+
+**By:** McManus (DevRel)
+
+**What:** Two related fixes to improve developer clarity and insider onboarding:
+
+1. **Command Clarification (#93):** README.md updated (line 55) to explicitly distinguish Copilot CLI (/agent singular) from VS Code (/agents plural). Previous version only mentioned /agents, causing confusion for CLI users.
+
+2. **Insider Program Documentation (#94 Phase 2):** Three-tier documentation structure:
+   - **README.md:** One-sentence mention with install command in new "Insider Program" section after "Upgrade"
+   - **CONTRIBUTORS.md (new):** Insider program summary, how to join, what to expect, hall of fame placeholder
+   - **docs/insider-program.md (new):** Comprehensive 4.3K guide covering installation, version format, bug reporting, FAQ, rollback
+
+**Why:** 
+- **Command clarity:** One line of ambiguous documentation creates friction for CLI users. Platform-specific phrasing removes doubt.
+- **Three-tier documentation depth:** Different audiences need different detail levels. README browsers need awareness (one-liner). Community members need entry point + expectations (CONTRIBUTORS.md). Committed insiders need comprehensive reference (docs/).
+- **Honor system design:** Minimal ceremony (no forms, invitations, caps). Aligns with open-source norms. Branch-based distribution transparent via version string (v0.4.2-insider+abc1234f).
+
+**Rationale for Tier Structure:**
+- README (awareness): Casual browsers. "There's an insider option. Here's how." No cognitive load.
+- CONTRIBUTORS.md (summary): Community members deciding to join. "What is this? How do I join? What should I expect?"
+- docs/insider-program.md (deep dive): Committed insiders. "Everything I need to know about continuous builds."
+
+Each tier answers different questions for different audiences without information overload.
+
+**Rationale for Branch-Based Distribution:**
+- **Transparent:** Users know exactly what code they're running (version string shows insider status)
+- **Easy to maintain:** No special registry, no dual-publish complexity, no separate package management
+- **Self-selected community:** Insiders chose to be on bleeding edge. Lower frustration when rough edges exist.
+
+**Files Changed:**
+- README.md (line 55: added platform clarification; new "Insider Program" section after "Upgrade")
+- CONTRIBUTING.md (added "Insider Program" section with link to CONTRIBUTORS.md)
+- CONTRIBUTORS.md (new: insider program entry point + contributor hall of fame)
+- docs/insider-program.md (new: comprehensive insider guide)
+
+**Not Changed:**
+- index.js (post-init output already correct from Fenster's work)
+- No changes to CLI behavior or branching strategy
+
+**Status:** ✅ COMPLETE — Both issues resolved. Documentation deployed.
