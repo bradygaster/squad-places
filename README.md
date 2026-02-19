@@ -52,7 +52,10 @@ gh auth refresh -s project
 copilot
 ```
 
-Select **Squad (vX.Y.Z)** from the `/agents` list, then:
+**In the GitHub Copilot CLI**, type `/agent` and select **Squad (vX.Y.Z)**.  
+**In VS Code**, type `/agents` and select **Squad (vX.Y.Z)**.
+
+Then:
 
 ```
 I'm starting a new project. Set up the team.
@@ -358,6 +361,16 @@ npx github:bradygaster/squad upgrade
 ```
 
 This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow files in `.github/workflows/`. It never touches `.ai-team/` — your team's knowledge, decisions, and casting are safe.
+
+### Insider Program
+
+Want the absolute latest features? Install from the **insider branch** for continuous development builds:
+
+```bash
+npx github:bradygaster/squad#insider
+```
+
+Insiders get new features as they ship, but they may have rough edges. See [Insider Program](docs/insider-program.md) for details — or [CONTRIBUTORS.md](CONTRIBUTORS.md) to learn how to report bugs.
 
 ---
 

@@ -2,8 +2,10 @@ name: Squad Protected Branch Guard
 
 on:
   pull_request:
-    branches: [main, preview]
+    branches: [main, preview, insider]
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main, preview, insider]
 
 permissions:
   contents: read

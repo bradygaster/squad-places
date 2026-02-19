@@ -57,7 +57,8 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   console.log(`  ${BOLD}help${RESET}       Show this help message`);
   console.log(`\nFlags:`);
   console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
-  console.log(`  ${BOLD}--help, -h${RESET}     Show help\n`);
+  console.log(`  ${BOLD}--help, -h${RESET}     Show help`);
+  console.log(`\nInsider channel: npx github:bradygaster/squad#insider\n`);
   process.exit(0);
 }
 
@@ -953,7 +954,7 @@ showDeprecationBanner();
 if (!isUpgrade) {
   console.log(`Next steps:`);
   console.log(`  1. Open Copilot:  ${DIM}copilot${RESET}`);
-  console.log(`  2. Select ${BOLD}Squad${RESET} from the /agents list`);
+  console.log(`  2. Type ${BOLD}/agent${RESET} (CLI) or ${BOLD}/agents${RESET} (VS Code) and select ${BOLD}Squad${RESET}`);
   console.log(`  3. Tell it what you're building`);
   console.log();
 } else {

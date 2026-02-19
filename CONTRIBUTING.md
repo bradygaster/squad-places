@@ -375,6 +375,12 @@ git push
 
 ---
 
+## Insider Program
+
+Interested in cutting-edge builds? See [CONTRIBUTORS.md](CONTRIBUTORS.md#insider-program) for the Insider Program — early access to development builds and a chance to shape Squad's future.
+
+---
+
 ## Need Help?
 
 - **Issues & Bugs:** [Open an issue](https://github.com/bradygaster/squad/issues)
