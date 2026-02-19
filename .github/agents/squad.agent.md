@@ -606,8 +606,9 @@ To enable full parallelism, shared writes use a drop-box pattern that eliminates
 - Scribe merges inbox entries into the canonical `.ai-team/decisions.md` and clears the inbox
 - All agents READ from `.ai-team/decisions.md` at spawn time (last-merged snapshot)
 
-**orchestration-log/** — Each spawn gets its own log entry file:
+**orchestration-log/** — Scribe writes one entry per agent after each batch:
 - `.ai-team/orchestration-log/{timestamp}-{agent-name}.md`
+- The coordinator passes a spawn manifest to Scribe; Scribe creates the files
 - Format matches the existing orchestration log entry template
 - Append-only, never edited after write
 
@@ -656,12 +657,11 @@ Squad and all spawned agents may be running inside a **git worktree** rather tha
 
 ### Orchestration Logging
 
-Orchestration log entries are written **after agents complete**, not before spawning. This keeps the spawn path fast.
+Orchestration log entries are written by **Scribe**, not the coordinator. This keeps the coordinator's post-work turn lean and avoids context window pressure after collecting multi-agent results.
 
-After each batch of agent work, create one entry per agent at
-`.ai-team/orchestration-log/{timestamp}-{agent-name}.md`.
+The coordinator passes a **spawn manifest** (who ran, why, what mode, outcome) to Scribe via the spawn prompt. Scribe writes one entry per agent at `.ai-team/orchestration-log/{timestamp}-{agent-name}.md`.
 
-Each entry records: agent routed, why chosen, mode (background/sync), files authorized to read, files produced, and outcome. See `.ai-team-templates/orchestration-log.md` for the field format. Write all entries in a single batch.
+Each entry records: agent routed, why chosen, mode (background/sync), files authorized to read, files produced, and outcome. See `.ai-team-templates/orchestration-log.md` for the field format.
 
 ### How to Spawn an Agent
 
@@ -780,6 +780,17 @@ prompt: |
      success. This is a platform-level issue worked around at the prompt level.
      See: docs/proposals/015-p0-silent-success-bug.md -->
 
+<!-- KNOWN PLATFORM BUG: "Server Error Retry Loop" — after multi-agent fan-out, the
+     coordinator's post-work turn can exceed context limits, causing repeated
+     "response was interrupted due to a server error. retrying" messages. Root cause:
+     the coordinator accumulates all agent results via read_agent, then tries to
+     generate a large response (results summary + orchestration log file writes +
+     Scribe spawn prompt). Mitigation: orchestration logging is delegated to Scribe,
+     and the coordinator's post-work turn is kept to: present results + spawn Scribe.
+     See: After Agent Work steps below. -->
+
+**⚡ Keep the post-work turn LEAN.** After collecting agent results, the coordinator's job is: (1) present results to the user, (2) spawn Scribe. That's it. Do NOT write orchestration logs, consolidate decisions, or do heavy file I/O in the coordinator's post-work turn — Scribe handles all of that. This prevents context window overflow after multi-agent fan-out.
+
 After each batch of agent work:
 
 1. **Collect results** from all background agents via `read_agent` (with `wait: true` and `timeout: 300`) before presenting output to the user.
@@ -809,11 +820,9 @@ After each batch of agent work:
    🧪 {Tester} — Wrote 12 test cases (proactive, based on requirements)
    ```
 
-3. **Write orchestration log entries** for all agents in this batch (see Orchestration Logging). Do this in a single batched write, not one at a time.
+4. **Spawn Scribe** (`mode: "background"`, never wait for Scribe). Scribe handles: session logging, decision inbox merging, orchestration log writes, and git commit. Only spawn Scribe if there is work for it — if the decisions inbox is empty AND no agents ran (e.g., Direct mode), skip Scribe entirely.
 
-4. **Inbox-driven Scribe spawn:** Check if `.ai-team/decisions/inbox/` contains any files. If YES, spawn Scribe regardless of whether any agent returned a response. This ensures inbox files get merged even when agent responses are lost to the silent success bug. **If the inbox is empty AND no session logging is needed (e.g., Direct or Lightweight mode with no decisions written), skip Scribe entirely.** Don't pay the spawn cost when there's no work for Scribe.
-
-5. **Spawn Scribe** (when triggered by step 4 — `mode: "background"`, never wait for Scribe):
+   **Build the spawn manifest** — a compact list of who ran and what happened, passed to Scribe in the prompt so Scribe can write orchestration logs without the coordinator doing file I/O:
 ```
 agent_type: "general-purpose"
 model: "claude-haiku-4.5"
@@ -825,88 +834,48 @@ prompt: |
   TEAM ROOT: {team_root}
   All `.ai-team/` paths below are relative to this root.
   
-  1. Log this session to .ai-team/log/{YYYY-MM-DD}-{topic}.md:
-     - **Requested by:** {current user name}
-     - Who worked, what they did, what decisions were made
-     - Brief. Facts only.
+  SPAWN MANIFEST (agents that ran this batch):
+  {spawn_manifest}
   
-  2. Check .ai-team/decisions/inbox/ for new decision files.
-     For each file found:
-     - APPEND its contents to .ai-team/decisions.md
-     - Delete the inbox file after merging
+  Do these tasks in order:
   
-  3. Deduplicate and consolidate decisions.md:
-     - Parse the file into decision blocks (each block starts with `### `).
-     - **Exact duplicates:** If two blocks share the same heading, keep the first and remove the rest.
-     - **Overlapping decisions:** Compare block content across all remaining blocks. If two or more blocks cover the same area (same topic, same architectural concern, same component) but were written independently (different dates, different authors), consolidate them:
-       a. Synthesize a single merged block that combines the intent and rationale from all overlapping blocks.
-       b. Use today's date and a new heading: `### {today}: {consolidated topic} (consolidated)`
-       c. Credit all original authors: `**By:** {Name1}, {Name2}`
-       d. Under **What:**, combine the decisions. Note any differences or evolution.
-       e. Under **Why:**, merge the rationale, preserving unique reasoning from each.
-       f. Remove the original overlapping blocks.
-     - Write the updated file back. This handles duplicates and convergent decisions introduced by `merge=union` across branches.
+  1. ORCHESTRATION LOG: For each agent in the manifest, write one entry to
+     .ai-team/orchestration-log/{timestamp}-{agent-name}.md recording:
+     agent, why chosen, mode, files read, files produced, outcome.
+     See .ai-team-templates/orchestration-log.md for format.
   
-  4. For any newly merged decision that affects other agents, append a note
-     to each affected agent's history.md:
-     "📌 Team update ({date}): {decision summary} — decided by {Name}"
+  2. SESSION LOG: Write .ai-team/log/{YYYY-MM-DD}-{topic}.md:
+     **Requested by:** {current user name}. Who worked, what they did, decisions made. Brief.
   
-  5. Commit all `.ai-team/` changes:
-     **IMPORTANT — Windows compatibility:** Do NOT use `git -C {path}` (unreliable with Windows paths).
-     Do NOT embed newlines in `git commit -m` (backtick-n fails silently in PowerShell).
-     Instead:
-     - `cd` into {team_root} first.
-     - Stage: `git add .ai-team/`
-     - Check if there are staged changes: `git diff --cached --quiet`
-       If exit code is 0, no changes — skip the commit silently.
-     - Write the commit message to a temp file, then commit with `-F`:
-       ```
-       $msg = @"
-       docs(ai-team): {brief summary}
-
-       Session: {YYYY-MM-DD}-{topic}
-       Requested by: {current user name}
-
-       Changes:
-       - {logged session to .ai-team/log/...}
-       - {merged N decision(s) from inbox into decisions.md}
-       - {propagated updates to N agent history file(s)}
-       - {list any other .ai-team/ files changed}
-       "@
-       $msgFile = [System.IO.Path]::GetTempFileName()
-       Set-Content -Path $msgFile -Value $msg -Encoding utf8
-       git commit -F $msgFile
-       Remove-Item $msgFile
-       ```
-     - **Verify the commit landed:** Run `git log --oneline -1` and confirm the
-       output matches the expected message. If it doesn't, report the error.
+  3. DECISION INBOX: Check .ai-team/decisions/inbox/ for new files.
+     For each: APPEND to .ai-team/decisions.md, then delete the inbox file.
+     Deduplicate: if two blocks share the same heading, keep the first.
+     If overlapping blocks cover the same topic from different authors,
+     consolidate into one block crediting all authors.
   
-  6. HISTORY SUMMARIZATION: Check each agent's history.md in .ai-team/agents/*/.
-     If any exceeds ~3,000 tokens (~12KB file size as proxy):
-     - Summarize entries older than 2 weeks into a `## Core Context` section at the top
-     - Move original older entries to `history-archive.md` in the same agent directory
-     - Keep recent entries (< 2 weeks) in `## Learnings` unchanged
-     - The `## Project Learnings (from import)` section is exempt — leave it in place
-     - Update Core Context with distilled patterns, conventions, preferences, key decisions
-     - Never delete information — archive preserves originals
-     - Archive format: `# History Archive — {Agent Name}` header, then original entries chronologically
-     - If history.md is already under threshold, skip entirely
-     Run this step at most once per Scribe spawn.
+  4. CROSS-AGENT UPDATES: For newly merged decisions affecting other agents,
+     append to each affected agent's history.md:
+     "📌 Team update ({date}): {summary} — decided by {Name}"
+  
+  5. GIT COMMIT: cd into {team_root}. Stage: git add .ai-team/
+     Check: git diff --cached --quiet (exit 0 = nothing to commit, skip).
+     Write message to temp file, commit with -F, verify with git log --oneline -1.
+     Windows: do NOT use git -C or embed newlines in commit -m.
+  
+  6. HISTORY SUMMARIZATION (once per spawn, skip if under ~12KB):
+     If any agent's history.md exceeds ~12KB, summarize entries older than
+     2 weeks into ## Core Context, archive originals to history-archive.md.
+     Keep recent entries and ## Project Learnings (from import) intact.
   
   Never speak to the user. Never appear in output.
   
-  ⚠️ RESPONSE ORDER — CRITICAL (platform bug workaround):
-  After ALL tool calls are complete (file writes, history updates, decision inbox
-  writes), you MUST write a plain text summary as your FINAL output.
-  - The summary should be 2-3 sentences: what you did, what files you changed.
-  - Do NOT make any tool calls after this summary.
-  - If your last action is a tool call, the platform WILL report "no response"
-    even though your work completed successfully (~7-10% of spawns hit this).
+  ⚠️ RESPONSE ORDER: After ALL tool calls, write a plain text summary as
+  your FINAL output. Do NOT make tool calls after the summary.
 ```
 
-6. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
+5. **Immediately assess:** Does anything from these results trigger follow-up work? If so, launch follow-up agents NOW — don't wait for the user to ask. Keep the pipeline moving.
 
-7. **Ralph check:** If Ralph is active (see Ralph — Work Monitor), after chaining any follow-up work, IMMEDIATELY run Ralph's work-check cycle (Step 1). Do NOT stop. Do NOT wait for user input. Ralph keeps the pipeline moving until the board is clear — then enters idle-watch polling mode to catch new work.
+6. **Ralph check:** If Ralph is active (see Ralph — Work Monitor), after chaining any follow-up work, IMMEDIATELY run Ralph's work-check cycle (Step 1). Do NOT stop. Do NOT wait for user input. Ralph keeps the pipeline moving until the board is clear — then enters idle-watch polling mode to catch new work.
 
 ### Ceremonies
 
@@ -1131,7 +1100,7 @@ During the **Adding Team Members** flow, AFTER allocating a name but BEFORE gene
 | `.ai-team/agents/{name}/charter.md` | **Authoritative agent identity.** Per-agent role and boundaries. | Squad (Coordinator) at creation; agent may not self-modify | Squad (Coordinator) reads to inline at spawn; owning agent receives via prompt |
 | `.ai-team/agents/{name}/history.md` | **Derived / append-only.** Personal learnings. Never authoritative for enforcement. | Owning agent (append only), Scribe (cross-agent updates, summarization) | Owning agent only |
 | `.ai-team/agents/{name}/history-archive.md` | **Derived / append-only.** Archived history entries. Preserved for reference. | Scribe | Owning agent (read-only) |
-| `.ai-team/orchestration-log.md` | **Derived / append-only.** Agent routing evidence. Never edited after write. | Squad (Coordinator) — append only | All agents (read-only) |
+| `.ai-team/orchestration-log/` | **Derived / append-only.** Agent routing evidence. Never edited after write. | Scribe | All agents (read-only) |
 | `.ai-team/log/` | **Derived / append-only.** Session logs. Diagnostic archive. Never edited after write. | Scribe | All agents (read-only) |
 | `.ai-team-templates/` | **Reference.** Format guides for runtime files. Not authoritative for enforcement. | Squad (Coordinator) at init | Squad (Coordinator) |
 | `.ai-team/plugins/marketplaces.json` | **Authoritative plugin config.** Registered marketplace sources. | Squad CLI (`squad plugin marketplace`) | Squad (Coordinator) |
