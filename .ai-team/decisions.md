@@ -5592,3 +5592,10 @@ This decision is complete. All sub-issues are visible in GitHub; comment is post
 ---
 
 
+
+
+### 2026-02-20: Fold wisdom.md + now.md into v0.5.0
+**By:** Brady (via Copilot)
+**What:** Identity layer files (wisdom.md, now.md) move from v0.6.0 to v0.5.0 scope. They should be part of the .squad/ directory structure created during the rename.
+**Why:** User directive — v0.5.0 is already touching every path, so adding these files is near-zero marginal effort vs. a separate release.
+
