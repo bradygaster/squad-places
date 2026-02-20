@@ -5906,3 +5906,372 @@ For customer repos that were squadified before v0.4.2, their email addresses are
 - **Method:** Static analysis, template review, platform compliance research, threat modeling
 - **Next review:** After v0.5.0 ships (migration tool, directory rename, identity layer)
 
+
+
+---
+
+# v0.5.0 Readiness Assessment
+
+**Date:** 2026-02-20  
+**By:** Keaton (Lead)  
+**Requested by:** bradygaster
+
+## What Just Landed (Last 5 Commits on dev)
+
+### 1. Governance Prompt Size Reduced 35% (eee3425)
+**Significance:** Solved Issue #76 (GHE 30KB limit) early. squad.agent.md went from ~1455 lines/105KB → ~810 lines/68KB by extracting 7 sections into `.ai-team-templates/` satellite files loaded on-demand:
+- casting-reference.md
+- ceremony-reference.md
+- copilot-agent.md
+- human-members.md
+- issue-lifecycle.md
+- prd-intake.md
+- ralph-reference.md
+
+This is the #76 fix — shipped ahead of schedule. The coordinator now loads these files only when needed (progressive disclosure). This unlocks GHE deployment without prompt length errors.
+
+**Impact:** One of the 6 MUST-SHIP items for v0.5.0 is complete. #76 estimate was 24h; actual delivery was faster because it was prompt-only work with no runtime changes.
+
+### 2. Baer Hired as Security Specialist (f99ffa8, 5571fa3, 0414f3d)
+**Significance:** Team expanded to 9 members (8 veterans + Scribe). Baer completed security audit of Squad's entire surface area — privacy, PII, secrets, injection risks, auth boundaries. Created `.ai-team/skills/squad-security-review/SKILL.md` capturing reusable security review patterns.
+
+**Impact:** Security posture documented before v0.5.0 launch. Audit findings directly led to privacy fixes (next item).
+
+### 3. Privacy Fixes — Email Collection Removed, PII Scrubbed (c7855cc)
+**Significance:** squad.agent.md Init Mode was reading `git config user.email` and storing it in `team.md` and agent `history.md` files. These files get committed → emails exposed to search engines. Fix: removed email collection entirely, only store user.name (not PII). Issue #108 tracks migration path to scrub existing emails from `.ai-team/` → `.squad/` migration.
+
+**Impact:** Trust signal — Squad protects user privacy by default. #108 is open but the root cause is fixed in dev. Migration will clean up existing state.
+
+### 4. Identity Layer Scope Change Deferred to v0.5.0 (ac0574a)
+**Context:** wisdom.md + now.md identity layer was explored earlier. Team decided to defer full implementation to v0.5.0 and bundle it with `.squad/` migration. This was a conscious scope cut to protect v0.4.2 timeline.
+
+**Impact:** Issue #107 is the tracking ticket. Not blocking — this is a quality-of-life enhancement for agent memory, not a functional requirement.
+
+## v0.5.0 Scope Analysis
+
+**Open issues: 18 with `release:v0.5.0` label**  
+**Closed issues: 0**  
+**Current version: 0.4.2**
+
+### MUST SHIP (From #91 Epic)
+
+| Issue | Title | Status | Owner | Est |
+|-------|-------|--------|-------|-----|
+| #69 | Consolidate to .squad/ (directory + templates) | OPEN | Fenster | 85h |
+| #76 | Refactor squad.agent.md for GHE 30KB limit | ✅ COMPLETE | Verbal | 24h |
+| #86 | Squad undid uncommitted changes (HIGH SEVERITY) | DEFERRED #91 | Fenster + Hockney | 6-12h |
+| #71 | Cleanup label workflows | OPEN | Fenster | 18h |
+| #84 | Add timestamps to session logs | OPEN | Fenster | 12h |
+| #62 | CI/CD integration patterns | OPEN | Kobayashi | 28h |
+
+**Analysis:**
+- **#76 is DONE** (shipped early via eee3425 governance reduction)
+- **#86 was explicitly deferred** per Epic #91 comment thread — moved out of v0.5.0 scope by Brady's decision (see #91 comment #3911872475)
+- **4 issues remain** (#69, #71, #84, #62) — total ~143h
+
+### Critical Path: Issue #69 (.squad/ Migration)
+
+#69 is the ENTIRE v0.5.0 story. Every other issue either:
+- Supports #69 (#101-#108 are sub-issues created by Fenster's audit)
+- Cleans up after #69 (#71 label workflows)
+- Adds metadata (#84 timestamps)
+- Hardens deployment (#62 CI/CD)
+
+**#69 breakdown (from Epic #91):**
+- 1,672 path references across 130+ files
+- 3 atomic PRs over 2 weeks:
+  1. CLI foundation + migration command (8h)
+  2. Documentation mass update (~120 files, 5h)
+  3. Workflows dual-path detection (6h)
+- 745 references in squad.agent.md alone → #102
+- Templates merge (.ai-team-templates/ → .squad/templates/) → #104
+
+**Sub-issues created from #69 audit:**
+- #101: CLI dual-path support
+- #102: squad.agent.md path migration (745 refs)
+- #103: Workflow dual-path support
+- #104: Merge templates into .squad/templates/
+- #105: Docs + tests update
+- #106: Guard workflow enforcement
+- #107: Identity layer (wisdom.md + now.md) — nice-to-have
+- #108: Privacy (email scrubbing) — partially done, migration cleans up
+
+### Nice-to-Have Items
+
+| Issue | Title | Status | Defer? |
+|-------|-------|--------|--------|
+| #85 | Decision lifecycle management | OPEN | DEFER v0.6.0 |
+| #82 | Verify skills preserved during export/import | OPEN | KEEP (validation) |
+| #63 | Memory System Improvements | OPEN | DEFER v0.6.0 |
+| #36 | JetBrains + GitHub.com research (spike) | OPEN | DEFER v0.6.0 |
+| #25 | Research: Run Squad from CCA | OPEN | DEFER v0.6.0 |
+| #99 | Docs: Guide for custom casting universes | OPEN | DEFER v0.6.0 |
+
+**Recommendation:** Cut #85, #63, #36, #25, #99 to v0.6.0. Keep #82 (validation task, low effort).
+
+## Readiness Assessment
+
+### What's Done
+1. ✅ **#76 complete** — GHE 30KB prompt limit solved (35% reduction shipped)
+2. ✅ **Privacy fix landed** — no more email collection (#108 tracks cleanup)
+3. ✅ **Security audit complete** — Baer's findings documented
+4. ✅ **Insider program architecture designed** — Week 1 priority in #91
+
+### What's Critical Path
+1. **#69 (.squad/ migration)** — THE v0.5.0 feature. 85h estimate, 3 PRs, touches 130+ files.
+   - Sub-issues #101-#106 are all execution steps within #69
+   - #107 (identity layer) and #108 (email scrub) are bundled enhancements
+2. **#71 (label workflows)** — 18h, depends on #69 path changes
+3. **#84 (timestamps)** — 12h, independent, can run parallel to #69
+4. **#62 (CI/CD hardening)** — 28h, Kobayashi specialty, runs parallel
+
+### What's At Risk
+- **#69 is 85 hours** — largest single feature in Squad's history
+- **Insider program not started** — Week 1 Day 2 status in #91 shows "NOT STARTED YET"
+- **No PRs open for #69** — audit is done (Fenster's 1,672-reference count), but implementation hasn't started
+- **Beta program depends on #69 completion** — can't test migration until it exists
+
+### Timeline Reality Check
+
+**From Epic #91:**
+- Week 1 (Feb 17-23): Insider program + critical investigation ✅ (investigation done, program NOT started)
+- Week 2 (Feb 24-Mar 2): Implementation Wave 1 (starts in 4 days)
+- Week 3 (Mar 3-9): Implementation Wave 2 + Beta testing
+- Week 4 (Mar 10-16): Final validation + release (March 16)
+
+**Current date: Feb 20 (Week 1 Day 3)**
+
+We're 3 days into a 28-day sprint with:
+- 0 PRs merged for #69
+- Insider program infrastructure not started
+- 143h of critical-path work remaining (#69 + #71 + #84 + #62)
+
+## Recommendation: YELLOW — Achievable but Aggressive
+
+### The Good
+- **#76 shipped early** — one fewer blocker
+- **Privacy fix landed** — trust signal is real
+- **#86 explicitly deferred** — scope relief (was HIGH SEVERITY, now v0.6.0)
+- **Team is experienced** — we've shipped 4 releases, know the patterns
+
+### The Pressure
+- **#69 is 60% of remaining work** (85h of 143h)
+- **Insider program is Week 1 priority but not started** — this is the incremental testing infrastructure that de-risks #69
+- **4 weeks is tight for 143h of work** — assumes ~36h/week squad velocity (high but not impossible)
+
+### What Would Make This GREEN
+1. **Insider program ships this week (Feb 20-23)** — route to Kobayashi immediately
+2. **#69 PR #1 merges by Feb 28** — CLI foundation validates the approach
+3. **Cut #107 and #108 from v0.5.0** — identity layer is nice-to-have, email scrub can happen in v0.6.0 once `.squad/` is stable
+4. **Defer #85, #63, #99 to v0.6.0** — already recommended above
+
+### Risks
+- **#69 underestimated** — 1,672 path references is A LOT. If Fenster hits unexpected coupling (e.g., hardcoded paths in MCP servers, third-party integrations), 85h becomes 120h.
+- **Beta exit criteria are strict** — 7 criteria in #91, all must pass. If migration fails on real repos, we iterate and slip.
+- **Squad team bandwidth** — we're a 9-agent team working on Squad itself. Brady is the product owner. If Brady gets pulled into other work, review velocity drops.
+
+## Verdict
+
+**We're close, but not shipping next week.** March 16 is achievable IF:
+1. Insider program ships this week
+2. #69 starts immediately (Fenster)
+3. Nice-to-have items cut aggressively
+4. Beta program runs in Week 3 as planned
+
+**If #69 slips past Feb 28 for PR #1, push release to March 23** (Week 5). Better to ship .squad/ migration correctly than to ship it broken and erode trust.
+
+This is the last breaking change before v1.0. Get it right.
+
+
+
+---
+
+# Decision: Expanded Insiders Program Section in README
+
+**Author:** McManus (DevRel)  
+**Requested by:** Brady  
+**Date:** 2025
+
+## What Changed
+
+Expanded the "Insider Program" section in README.md (lines 365–386) from a brief mention to a full, actionable guide for new and existing Squad users.
+
+## Why
+
+The original README had only 8 lines on insiders with a reference to a non-existent external doc (`docs/insider-program.md`). Users needed clear, in-README guidance on:
+1. How to install the insider build (`npx github:bradygaster/squad#insider`)
+2. How to upgrade existing squadified repos (`npx github:bradygaster/squad#insider upgrade`)
+3. What gets preserved during upgrade (`.ai-team/` state)
+4. What to expect (pre-release, may be unstable)
+5. Release tagging and how to pin versions
+
+## What's Included
+
+- **Install command** — `npx github:bradygaster/squad#insider`
+- **Upgrade command** — `npx github:bradygaster/squad#insider upgrade`
+- **Preservation guarantee** — `.ai-team/` (team.md, agents, decisions, casting) is never touched
+- **Stability caveat** — "may be unstable, intended for early adopters and testing"
+- **Release tags** — explains pre-release format (e.g., `v0.4.2-insider+abc1234`)
+- **Pinning versions** — how to target specific tagged releases
+- **Links** — insider branch on GitHub + bug reporting in CONTRIBUTORS.md
+
+## Tone & Placement
+
+Kept Squad's confident, developer-friendly voice. Placed right after the regular `upgrade` section since they're related workflows (install → upgrade, regular → insider upgrade). No nested docs — all essential info is in-README.
+
+## Validation
+
+- Section reads naturally after "### Upgrade"
+- Commands are copy-paste ready
+- Preserves consistency with existing README prose style
+- Addresses all key facts Brady requested
+
+
+
+---
+
+### 2026-02-18: Context Optimization Review — Extraction Quality & Enterprise Impact
+
+**By:** Verbal (via Copilot)
+**Context:** Brady requested review of the context optimization work that reduced squad.agent.md from ~1455 lines/105KB to ~810 lines/68KB (-35%) by extracting 7 sections into .ai-team-templates/ satellite files.
+
+---
+
+## Extraction Quality Assessment
+
+**What was extracted (7 files, ~35KB total):**
+1. `casting-reference.md` (3.6KB) — Universe table, selection algorithm, casting state schemas
+2. `ceremony-reference.md` (4.6KB) — Config format, facilitator patterns, execution rules
+3. `ralph-reference.md` (3.6KB) — Work-check cycle, idle-watch mode, board format
+4. `issue-lifecycle.md` (2.6KB) — GitHub Issues connection format, issue→PR→merge lifecycle
+5. `prd-intake.md` (2.1KB) — PRD intake flow, Lead decomposition template, work item format
+6. `human-members.md` (1.9KB) — Human roster management, routing protocol, differences from AI agents
+7. `copilot-agent.md` (2.5KB) — @copilot roster format, capability profile, auto-assign behavior
+
+**Split correctness:** EXCELLENT. The always-loaded/on-demand split is architecturally sound:
+- **Always loaded (68KB):** Init mode, team mode, routing, mode selection, model selection, spawn templates, response order, eager execution, worktree awareness, client compatibility, MCP basics, core orchestration logic
+- **On-demand (35KB):** Cold-path feature details loaded only when triggered (ceremonies, casting during init, Ralph activation, GitHub Issues mode, PRD mode, human member mgmt, @copilot mgmt)
+
+**Nothing important was lost.** The core coordinator logic remains intact. All extracted sections have proper "On-demand reference" markers with explicit read instructions. The coordinator knows when to load each satellite.
+
+**Reference pattern is clean:**
+```
+**On-demand reference:** Read `.ai-team-templates/ceremony-reference.md` for config format, facilitator spawn template, and execution rules.
+
+**Core logic (always loaded):**
+[Essential rules remain inline]
+```
+
+This pattern appears 7 times in squad.agent.md, always with specific load triggers and always preserving the critical path logic inline.
+
+---
+
+## Impact on Issue #76 (Enterprise Copilot 30K char limit)
+
+**Current state:**
+- squad.agent.md: **68,417 characters** (down from ~105KB)
+- Enterprise limit: **30,000 characters**
+- **Gap: 38,417 characters over (128% of limit)**
+
+**Does this reduction help?** YES. We cut 35KB, but it's not enough.
+
+**Is it enough?** NO. Even with 35% reduction, we're still 2.3x the Enterprise limit.
+
+**Why the gap remains:**
+- The "always loaded" content is legitimately complex orchestration logic. It's not bloat.
+- Model selection (1.3KB), client compatibility (1KB), spawn templates (2KB), worktree awareness (1.5KB), MCP integration (1.2KB), casting rules (1KB), parallel fan-out (1.5KB), response modes (1.2KB) — all essential to coordinator behavior.
+- The coordinator does MANY things: init mode, team mode, routing, model selection, parallel orchestration, platform detection, MCP awareness, ceremonies, Ralph, GitHub Issues, PRD mode, human members, @copilot integration, worktree strategy, drop-box pattern, eager execution, reviewer gates, skill-aware routing, directive capture, orchestration logging.
+
+**What MORE could be extracted?**
+
+OPTION A — Split into multiple agents (architectural change):
+- `squad-init.agent.md` — Init Mode only (casting, team creation, Phase 1/2)
+- `squad-coordinator.agent.md` — Team Mode orchestration (routing, spawning, result collection)
+- `squad-features.agent.md` — Feature modes (Ralph, GitHub Issues, PRD, ceremonies)
+
+This would require Squad to spawn itself conditionally (init vs. team mode detection), which is feasible but changes the user model. Worth considering for v0.5.0.
+
+OPTION B — Externalize more reference content (~10-15KB potential savings):
+- Model selection details (keep 4-layer hierarchy, extract catalog + fallback chains)
+- Spawn templates (keep the concept, extract full template text with examples)
+- Worktree strategies (keep awareness rules, extract implementation details)
+- Universe allowlist rules (extract universe selection algorithm details)
+- Response mode selection (keep the table, extract exemplars)
+
+This could get us to ~50-55KB, still over limit but closer. Not enough on its own.
+
+OPTION C — Compress always-loaded content (~5-10KB potential savings):
+- Remove examples from spawn templates (keep structure only)
+- Collapse multi-paragraph explanations into terse bullet points
+- Remove "why" rationale, keep "what" instructions only
+
+This would reduce readability and potentially hurt coordinator judgment. Trade-off.
+
+**RECOMMENDATION:** Option A (multi-agent split) is the only path to hitting 30K. Options B+C together might get us to ~45KB (~50% over), which is progress but doesn't solve the problem.
+
+For v0.5.0, architect the coordinator as three specialized agents with conditional routing. Init mode is a natural boundary (happens once, doesn't need team mode logic). Feature modes (Ralph/Issues/PRD/ceremonies) could be a separate specialist that the core coordinator delegates to.
+
+---
+
+## Risks from the Extraction
+
+**1. Cold-path sections being missed** — LOW RISK
+- All 7 satellite files have explicit load triggers in squad.agent.md
+- The coordinator knows WHEN to load each file (e.g., "Read casting-reference.md during Init Mode or when adding team members")
+- The "On-demand reference" pattern is consistent and discoverable
+
+**2. Agents not getting context they need** — VERY LOW RISK
+- Satellite files are read BY THE COORDINATOR, not by spawned agents
+- Agents receive context via spawn prompts (charter, MCP tools available, issue context, etc.)
+- The extraction doesn't change what agents receive — only how the coordinator loads its own knowledge
+
+**3. Coordinator forgetting to load on-demand content** — MODERATE RISK
+- LLMs can miss conditional triggers under cognitive load
+- Mitigation: the load triggers are explicit and placed at decision points (e.g., "Before spawning a work batch, check `.ai-team/ceremonies.md`...")
+- The coordinator would notice missing context when trying to execute (e.g., can't format a ceremony without reading the reference)
+
+**4. Maintenance drift** — LOW RISK
+- Satellite files are versioned with squad.agent.md in the same repo
+- Changes to orchestration patterns require coordinated updates to both always-loaded and on-demand sections
+- Risk exists but manageable with standard code review
+
+**5. VS Code/CLI parity** — VERY LOW RISK
+- Client compatibility section (always loaded) handles platform detection
+- On-demand files are plain markdown reads, work on all platforms
+- No tool or API differences affect the extraction pattern
+
+---
+
+## Additional Observations
+
+**Strengths of the extraction work:**
+- Clean separation of concerns (hot path vs. cold path)
+- Consistent "On-demand reference" pattern makes load triggers discoverable
+- Satellite files are well-structured with clear headers and self-contained content
+- The reduction is meaningful (35%) and preserves all functionality
+
+**What works well:**
+- Model selection stayed in always-loaded (correct — affects every spawn)
+- Client compatibility stayed in always-loaded (correct — affects platform detection at start)
+- Eager execution stayed in always-loaded (correct — core philosophy)
+- Parallel fan-out stayed in always-loaded (correct — hot path)
+
+**What could be improved (future work):**
+- Consider extracting model catalog + fallback chains (would save ~2KB)
+- Consider extracting spawn template examples (would save ~1.5KB)
+- Consider extracting universe selection algorithm details (would save ~1KB)
+
+These are marginal gains (~4-5KB total). The real solution for #76 is architectural (multi-agent split).
+
+---
+
+## Verdict
+
+**The extraction is high-quality and architecturally sound.** Nothing was lost. The always-loaded/on-demand split is correct. The coordinator knows when to load each satellite. Risk is low.
+
+**The 35% reduction is significant progress but insufficient for Enterprise Copilot.** 68KB → 30KB requires a 56% reduction, not 35%. We're halfway there.
+
+**For v0.5.0, recommend Option A (multi-agent split).** This is the only path that can hit 30K for the main coordinator agent while preserving full functionality. Init mode and feature modes are natural boundaries. The user experience can remain unchanged (single `@squad` entry point that conditionally routes to init vs. team vs. features).
+
+**No urgent action needed.** The extraction work is solid. Squad works fine on CLI and VS Code Copilot (no char limits there). Enterprise customers hit the limit, but that's a v0.5.0 problem with a clear architectural path forward.
+
