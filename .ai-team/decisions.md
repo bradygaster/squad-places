@@ -2057,3 +2057,218 @@ When the crossover happens, the team gets to pick their own universe(s) for cast
 - Content: bundling strategy, npm + GitHub dual distribution, upgrade mechanics
 - Marked v1-content: true per McManus strategy
 - Updated blog cadence: M4 (Week 22): How Squad Ships (M4-14)
+
+
+### 2026-02-20T23:20Z: User directive — Testing emphasis
+**By:** Brady (via Copilot)
+**What:** "I want to make sure we're testing the HECK out of everything along the way." Every milestone must have thorough testing, not just the test work items already planned. Testing is a first-class concern throughout.
+**Why:** User request — captured for team memory. Quality gate for the entire replatform.
+
+### 2026-02-20T23:20Z: User directive — Usage telemetry
+**By:** Brady (via Copilot)
+**What:** Squadified repos should be able to log tokens used in a conversation, premium requests consumed, session IDs, and other correlative usage data. This enables customers to *know* how much AI their squad is using. If the Copilot SDK provides this data natively, capitalize on it. Factor usage telemetry into the replatform as a first-class feature.
+**Why:** User request — captured for team memory. Critical for enterprise adoption and cost visibility.
+
+
+# Decision: Usage Telemetry as Cross-Cutting Concern
+
+**Decided By:** Keaton (Lead)  
+**Requested By:** Brady  
+**Date:** 2026-02-21  
+**Status:** Pending team review  
+**Context:** Brady directive — "Test the HECK out of everything along the way" + "Customers need to know how much AI their squad is using"
+
+---
+
+## Problem Statement
+
+Brady gave two directives in the context of the SDK replatform:
+
+1. **Testing emphasis:** Every milestone must test thoroughly. Minimum coverage thresholds per milestone, integration tests required (not just unit), testing checkpoints must be exit criteria.
+2. **Usage telemetry:** Squadified repos need to log token usage, premium requests, session IDs, and other AI consumption data so customers can see and understand the cost of their Squad.
+
+Existing PRD 6 (Streaming Observability) covers **internal visibility** — the coordinator needs to know what agents are doing. But PRD 6 is Phase 2. **Brady needs customer-facing telemetry in Phase 1 (v0.6.0 MVP).**
+
+---
+
+## Decision: Telemetry is M0/M1 Work, Not Phase 2
+
+### What This Means
+
+1. **M0-6 (Error hierarchy & telemetry)** expands to include **usage telemetry MVP**:
+   - Subscribe to SDK's `assistant.usage` event (native token/cost data)
+   - Log per-session metrics to `.squad/telemetry/` as JSONL
+   - Output: session ID, agent name, model, tokens in/out, cache metrics, cost, duration
+
+2. **M1 Integration Tests** must validate:
+   - Telemetry JSONL is written correctly
+   - Metrics match SDK `assistant.usage` event payloads
+   - No telemetry overhead when disabled
+
+3. **Phase 2 Stretch (M4-7):** `squad usage` CLI command reads telemetry and shows dashboard (total tokens, per-agent breakdown, cost estimate).
+
+### Why This Mapping Makes Sense
+
+- **SDK provides native cost data:** `assistant.usage.cost` is computed by the SDK. We don't need external pricing tables. PRD 6 identified this but didn't prioritize customer-facing output.
+- **Telemetry is foundational:** Can't measure test coverage or reliability without understanding token usage patterns. Telemetry answers "how expensive was this test run?" — enables cost-aware decision-making.
+- **JSONL is simple, fast:** Append-only, no database, greppable, compatible with `jq`. Fits Phase 1's "get it working" mandate.
+- **Customer value is immediate:** Day 1 of Phase 1, customers see `.squad/telemetry/` growing. By Phase 2, they have dashboards. This is Brady's #1 ask.
+
+---
+
+## How Telemetry Integrates with Existing Architecture
+
+### M0-6: Event Subscription & Persistence
+
+```typescript
+// In Event Aggregator (M0-5)
+session.on((event) => {
+  if (event.type === 'assistant.usage') {
+    // Record token metrics
+    metrics.inputTokens += event.inputTokens;
+    metrics.outputTokens += event.outputTokens;
+    metrics.cacheReadTokens += event.cacheReadTokens;
+    metrics.cacheWriteTokens += event.cacheWriteTokens;
+    metrics.estimatedCost += event.cost;  // SDK-provided
+    metrics.apiCalls += 1;
+  }
+});
+
+// At session.idle (session.shutdown event):
+const telemetryRecord = {
+  session_id: session.sessionId,
+  agent: agentName,
+  model: session.model,
+  input_tokens: metrics.inputTokens,
+  output_tokens: metrics.outputTokens,
+  cache_read_tokens: metrics.cacheReadTokens,
+  cache_write_tokens: metrics.cacheWriteTokens,
+  premium_requests: metrics.apiCalls,
+  estimated_cost: metrics.estimatedCost,
+  duration_ms: Date.now() - sessionStartTime,
+  timestamp: new Date().toISOString()
+};
+
+// Append to .squad/telemetry/{batch-id}-{agent}.jsonl
+appendJsonlLine('.squad/telemetry/', telemetryRecord);
+```
+
+### PRD 6 (Phase 2) Builds On This
+
+PRD 6's "Live Progress Display" and "Token Tracker" read the same `assistant.usage` events in real-time, displaying to users as agents work. The **JSONL logs we create in Phase 1 are the audit trail** for Phase 2's dashboard.
+
+### Testing Strategy Maps Telemetry
+
+**M1 Integration Tests** validate that:
+- Telemetry JSONL matches SDK event stream
+- Cost estimates are accurate within 1% (cross-check against `session.shutdown.modelMetrics`)
+- Session metrics aggregate correctly when multiple agents run in parallel
+
+This feeds **Brady's testing directive:** We can't claim "test coverage" without knowing the cost/token footprint of those tests.
+
+---
+
+## SDK Capabilities We Capitalize On
+
+| SDK Event | Payload | Use |
+|-----------|---------|-----|
+| `assistant.usage` | `model`, `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheWriteTokens`, `cost`, `duration` | Per-call token tracking; cost is SDK-computed |
+| `session.shutdown` | `totalPremiumRequests`, `totalApiDurationMs`, `modelMetrics`, `codeChanges` | Session-level summary; validates accumulated metrics |
+| `session.usage_info` | `tokenLimit`, `currentTokens` | Context pressure gauge (future: quota warnings) |
+
+**Key Insight:** SDK's `assistant.usage.cost` is already computed per API call. We don't need to build pricing tables or estimators. We just log what the SDK gives us.
+
+---
+
+## Testing Strategy as Cross-Cutting Concern
+
+Brady's directive applies **across all milestones**:
+
+### Minimum Thresholds (per milestone)
+
+- **M0 Foundation:** 80% coverage (adapter, session pool, event bus critical)
+- **M1 Core Runtime:** 75% coverage (tools, hooks, lifecycle)
+- **M2 Config & Init:** 70% coverage
+- **M3+ :** 70% coverage
+
+### Integration Test Requirement
+
+Each milestone ships at least **one** integration test that covers the full workflow:
+
+- **M0:** Spawn 3 concurrent sessions, verify event aggregation
+- **M1:** Spawn agent with custom tools, verify hooks block/permit correctly
+- **M2:** Migrate config, verify no loss of routing logic
+- **M3:** Run full squad batch, verify telemetry logs are valid JSONL
+
+### Exit Criteria Addition
+
+Every milestone now exits with:
+
+```
+[ ] Coverage report generated (npm run coverage), meets threshold
+[ ] At least one integration test passes
+[ ] No skipped/xfail tests; all tests run in CI
+```
+
+---
+
+## Open Questions
+
+1. **Cost data availability for BYOK providers:** The SDK's `assistant.usage.cost` may not populate for custom model providers. **Mitigation:** Fall back to token-based estimation with configurable rates in `.squad/config.json`. Document this in M0-10.
+
+2. **Quota tracking:** SDK provides `quotaSnapshots` (remaining percentage, reset date) in `assistant.usage`. Should we expose this? **Deferred to Phase 2.**
+
+3. **Telemetry retention policy:** How long to keep `.squad/telemetry/` JSONL files? Auto-cleanup? Compression? **Deferred; document in M0-6.**
+
+4. **Privacy/redaction:** Should telemetry scrub PII (email addresses, file paths)? **Yes, integrate with M1-5 (PII rules hook).**
+
+---
+
+## Risks & Mitigations
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| `assistant.usage` unavailable for some providers | High | Detect missing events after first API call, fall back to estimation |
+| Event volume overwhelms JSONL writer (10+ agents) | Medium | Buffer writes, flush every 100ms or 100 events |
+| Live display flickers if telemetry logging blocks | Low | Async logging; telemetry writes don't block SDK event handler |
+| Telemetry breaks on future SDK upgrades | Medium | Adapter pattern; SDK changes update aggregator only |
+
+---
+
+## Success Metrics
+
+By end of M0/M1:
+
+1. ✅ Every session writes a valid JSONL record to `.squad/telemetry/`
+2. ✅ Metrics match `assistant.usage` event data (within 1%)
+3. ✅ Coverage thresholds met per milestone (80%, 75%, 70%)
+4. ✅ At least one integration test per milestone passes
+5. ✅ Zero overhead when telemetry disabled (feature flag)
+
+By end of Phase 2 (M4-7):
+
+6. ✅ `squad usage` CLI command displays dashboard
+7. ✅ Customers can see total cost, per-agent breakdown, premium requests
+
+---
+
+## Summary
+
+**Telemetry is not a Phase 2 nice-to-have. It's Phase 1 foundational.**
+
+- M0-6 expands to include usage telemetry MVP (JSONL logging from `assistant.usage`)
+- M1+ all include telemetry validation in integration tests
+- Testing strategy thresholds (80% M0, 75% M1, 70% M2+) are cross-cutting exit criteria
+- Phase 2 builds the dashboard on top of Phase 1's JSONL audit trail
+
+This maps to Brady's two directives: customers get visibility into their AI spend, and every milestone is tested thoroughly (coverage gates + integration tests).
+
+---
+
+**Next Steps:**
+1. Team reviews this decision (Fenster, Baer, Verbal, Kujan, McManus)
+2. Keaton updates M0-6 and M1-12 work item descriptions with telemetry expansion
+3. Brady approves before M0 begins (Phase 1 gate)
+4. M0-6 work includes: event subscription, JSONL persistence, cost fallback logic
+5. M1-12 work includes: telemetry validation tests
+
