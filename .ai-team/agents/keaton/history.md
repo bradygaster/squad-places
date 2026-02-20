@@ -276,3 +276,5 @@ Brady's "forward-only" philosophy is correct for this stage of product maturity.
   - **PRD 14 (Clean-Slate Architecture):** Brady's ground-zero directive. New .squad/ with .state/+.cache/ dirs. TypeScript config. esbuild bundling. Tiered init.
   - **Key learning: PRDs are compound.** Each references 2-4 others. The dependency graph IS the architecture.
   - **Artifacts:** `.ai-team/docs/prds/00-index.md`, `.ai-team/docs/prds/05-coordinator-replatform.md`, `.ai-team/docs/prds/14-clean-slate-architecture.md`
+
+📌 Team update (2026-02-21): Planning deliverables delivered — Keaton created milestones.md with 6 shippable milestones across 3 phases (~32 weeks). M0 viability gate documented. M3 validation checkpoint. All 27 resolved decisions (Q19–Q27) embedded in milestone work items. Feature risk punch list (14 GRAVE + 12 AT RISK) explicitly addressed. Milestone structure ready for execution pending Brady approval. — Scribe
