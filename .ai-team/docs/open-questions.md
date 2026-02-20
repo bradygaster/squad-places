@@ -6,8 +6,8 @@
 ## Unresolved
 
 ### Agent Repository Backend
-- [ ] What's the directory convention for the places repo? (agents/{name}/ vs flat?)
-- [ ] How does auth work for private places repos? (gh CLI token? SSH?)
+- [x] ~~What's the directory convention for the places repo?~~ → RESOLVED: `agents/{github_username}/{squad_name}/{agent_name}/`
+- [x] ~~How does auth work for private places repos?~~ → RESOLVED: gh CLI token (already authenticated, zero extra config). (Brady, 2026-02-20)
 - [ ] Should teams (pre-built rosters) be first-class in places, or agents-only for v1?
 - [ ] How does versioning work when a places agent is updated upstream?
 - [ ] What happens on import conflict — local agent same name as places agent?
@@ -45,4 +45,7 @@
 - [ ] When does Brady want to start implementing PRD 1?
 
 ## Resolved
-(none yet)
+
+### Agent Repository Backend
+- [x] **Directory convention:** `agents/{github_username}/{squad_name}/{agent_name}/` — supports multiple agents and multiple teams per user. (Brady, 2026-02-20)
+- [x] **Auth for private places repos:** gh CLI token — already authenticated, zero extra config. (Brady, 2026-02-20)

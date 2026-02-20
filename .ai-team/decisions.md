@@ -1104,3 +1104,147 @@ PRD 14 → defines agentSources[] in config (depends on PRD 1, 15)
 **Risk:**
 - Over-engineering for Phase 1 (only one source type). Mitigated by keeping LocalAgentSource simple — it's literally what we do today, wrapped in an interface.
 
+
+---
+
+### 2026-02-20T10-07: User directive — open questions gate
+
+**By:** Brady (via Copilot)
+
+**What:** When iterating through open questions, do not continue to the next question until Brady types the word "cat" in his answer.
+
+**Why:** User request — captured for team memory
+
+---
+
+### 2026-02-20T10-07: User directive — places directory convention
+
+**By:** Brady (via Copilot)
+
+**What:** Places repo directory convention is agents/{github_username}/{squad_name}/{agent_name}/ — supports multiple agents and multiple teams per user.
+
+**Why:** User request — resolves open question #1 (Agent Repository Backend)
+
+---
+
+### 2026-02-20T10-08: User directive — places auth model
+
+**By:** Brady (via Copilot)
+
+**What:** Private places repos authenticate via gh CLI token. No extra config — users are already authenticated.
+
+**Why:** User request — resolves open question #2 (Agent Repository Backend)
+
+---
+
+## Decision: Squad Places Repository Scaffold
+
+**By:** Fenster (Core Dev)  
+**Date:** 2026-02-20  
+**Requested by:** Brady
+
+### What
+
+Scaffolded radygaster/squad-places-pr as a Git-backed agent registry — a "package registry for Squad agents." Pushed initial commit with full directory structure, schemas, a seed agent, and CI validation.
+
+### Repository Structure
+
+```
+squad-places-pr/
+├── README.md                                  # Usage docs, CLI examples, contribution guide
+├── places.json                                # Registry index (version, agents[], teams[])
+├── schemas/
+│   └── agent-manifest.schema.json             # JSON Schema for agent manifests
+├── agents/
+│   └── typescript-engineer/                   # Seed agent (generic, not project-specific)
+│       ├── manifest.json                      # Name, role, version, tags, compatibility
+│       ├── charter.md                         # Portable agent charter
+│       ├── skills/                            # Optional bundled skills
+│       └── README.md                          # Human-readable description
+├── teams/                                     # Pre-built team templates (future)
+└── .github/workflows/
+    └── validate.yml                           # CI: validates JSON + charter presence
+```
+
+### Manifest Schema
+
+Agent manifests (\manifest.json\) require four fields:
+
+| Field         | Type   | Description                              |
+|---------------|--------|------------------------------------------|
+| \
+ame\        | string | Agent display name                       |
+| \ole\        | string | Agent role                               |
+| \ersion\     | string | Semver (pattern: \^\d+\.\d+\.\d+\)      |
+| \description\ | string | What this agent does                     |
+
+Optional: \	ags\ (string[]), \model\ (default "auto"), \skills\ (string[]), \compatibility\ (minimum squad version).
+
+### Agent Discovery and Import
+
+**Discovery flow (future CLI — \squad places list\):**
+1. Read \places.json\ from the configured source (default: \radygaster/squad-places-pr\)
+2. Parse \gents[]\ array for available agents
+3. Optionally filter by tags, role, or compatibility version
+4. Display name, description, version, and tags
+
+**Import flow (future CLI — \squad places import {name}\):**
+1. Fetch \gents/{name}/manifest.json\ from the places repo (via GitHub raw content or \gh api\)
+2. Validate manifest against \schemas/agent-manifest.schema.json\
+3. Copy \charter.md\ → \.ai-team/agents/{name}/charter.md\ (or \.squad/agents/\)
+4. Merge manifest metadata into local casting registry (\.ai-team/casting/registry.json\)
+5. Copy skills (if any) → \.ai-team/skills/{skill-name}/SKILL.md\
+6. Update team roster (\.ai-team/team.md\)
+
+**Export flow (future CLI — \squad places export {name}\):**
+1. Read agent's charter, history, and skills from local \.ai-team/agents/{name}/\
+2. Generate manifest.json from casting registry metadata
+3. Strip project-specific context from charter (portable version)
+4. Package into \gents/{name}/\ directory structure
+5. Output to local directory or open PR against places repo
+
+### Integration with squad-sdk AgentSource Interface
+
+The places repo maps directly to the \AgentSource\ interface planned in the SDK replatform:
+
+\\\	ypescript
+interface AgentSource {
+  // Discovery
+  list(filter?: AgentFilter): Promise<AgentManifest[]>;
+  get(name: string): Promise<AgentManifest>;
+
+  // Import/Export
+  import(name: string, targetDir: string): Promise<void>;
+  export(name: string, sourceDir: string): Promise<void>;
+
+  // Source configuration
+  readonly url: string;
+  readonly type: 'github' | 'local' | 'custom';
+}
+\\\
+
+**GitHubAgentSource** would implement this by:
+- \list()\ → fetch and parse \places.json\ from the configured repo
+- \get()\ → fetch \gents/{name}/manifest.json\
+- \import()\ → clone agent directory into local \.squad/agents/\
+- \xport()\ → package local agent and create PR or push to fork
+
+**Multiple sources** are supported via source priority chain: local overrides → private org registry → default public registry (\radygaster/squad-places-pr\).
+
+### Private Registry Support
+
+Users configure a custom places source in their squad config:
+
+\\\json
+{
+  "places": {
+    "source": "https://github.com/your-org/your-places-repo"
+  }
+}
+\\\
+
+The registry format is identical — any repo with a \places.json\ and \gents/\ directory works.
+
+### Status
+
+✅ Repository scaffolded and pushed to \radygaster/squad-places-pr\ (commit \91ebd0e\).
