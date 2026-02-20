@@ -57,4 +57,4 @@
 - **Owner:** {user name}
 - **Stack:** {languages, frameworks, tools}
 - **Description:** {what the project does, in one sentence}
-- **Created:** {date}
+- **Created:** {timestamp}

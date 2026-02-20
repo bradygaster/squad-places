@@ -22,7 +22,7 @@
 
 After every substantial work session:
 
-1. **Log the session** to `.squad/log/{YYYY-MM-DD}-{topic}.md`:
+1. **Log the session** to `.squad/log/{timestamp}-{topic}.md`:
    - Who worked
    - What was done
    - Decisions made
@@ -49,7 +49,7 @@ After every substantial work session:
 4. **Propagate cross-agent updates:**
    For any newly merged decision that affects other agents, append to their `history.md`:
    ```
-   📌 Team update ({date}): {summary} — decided by {Name}
+   📌 Team update ({timestamp}): {summary} — decided by {Name}
    ```
 
 5. **Commit `.squad/` changes:**
@@ -65,7 +65,7 @@ After every substantial work session:
      $msg = @"
      docs(ai-team): {brief summary}
 
-     Session: {YYYY-MM-DD}-{topic}
+     Session: {timestamp}-{topic}
      Requested by: {user name}
 
      Changes:

@@ -3,7 +3,7 @@
 - **Owner:** {user name}
 - **Project:** {project description}
 - **Stack:** {languages, frameworks, tools}
-- **Created:** {date}
+- **Created:** {timestamp}
 
 ## Learnings
 
