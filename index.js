@@ -367,7 +367,8 @@ if (cmd === 'plugin') {
     fatal('Usage: squad plugin marketplace add|remove|list|browse');
   }
 
-  const pluginsDir = path.join(dest, '.ai-team', 'plugins');
+  const squadDirInfo = detectSquadDir(dest);
+  const pluginsDir = path.join(squadDirInfo.path, 'plugins');
   const marketplacesFile = path.join(pluginsDir, 'marketplaces.json');
 
   function readMarketplaces() {
