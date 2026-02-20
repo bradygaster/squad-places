@@ -32,7 +32,7 @@
 
 ### SDK
 - [x] ~~SDK is Technical Preview (v0.1.x) — what's our pinning and upgrade strategy when breaking changes land?~~ → RESOLVED: Pin exact version in package.json. Manual upgrade via `squad upgrade --sdk`. Relax to ~ or ^ when SDK hits stable (v1.0). (Brady, 2026-02-20)
-- [ ] Does `resumeSession()` actually work for Ralph's persistent monitoring use case?
+- [x] ~~Does `resumeSession()` actually work for Ralph's persistent monitoring use case?~~ → RESOLVED: Assume it works, build on it. Study SDK samples for persistent loop patterns (they exist). Exercise the API early — if it breaks, we find out fast and file bugs. Good partnering. (Brady, 2026-02-20)
 - [ ] Can multiple concurrent sessions share a single CopilotClient connection?
 
 ### Feature Parity
@@ -73,3 +73,4 @@
 
 ### SDK
 - [x] **SDK pinning:** Pin exact version during Technical Preview. Manual upgrade via `squad upgrade --sdk`. Relax to ~ or ^ at v1.0 stable. (Brady, 2026-02-20)
+- [x] **resumeSession for Ralph:** Assume it works, build on it. Study SDK samples for persistent loop patterns. Exercise the API early — file bugs if it breaks. Good partnering signal. (Brady, 2026-02-20)
