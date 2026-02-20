@@ -28,9 +28,9 @@ jobs:
             const memberName = label.replace('squad:', '').toLowerCase();
 
             // Read team roster to find the member
-            const teamFile = '.ai-team/team.md';
+            const teamFile = '.squad/team.md';
             if (!fs.existsSync(teamFile)) {
-              core.warning('No .ai-team/team.md found — cannot assign work');
+              core.warning('No .squad/team.md found — cannot assign work');
               return;
             }
 
@@ -69,7 +69,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `⚠️ No squad member found matching label \`${label}\`. Check \`.ai-team/team.md\` for valid member names.`
+                body: `⚠️ No squad member found matching label \`${label}\`. Check \`.squad/team.md\` for valid member names.`
               });
               return;
             }

@@ -20,13 +20,13 @@ jobs:
       - name: Run tests
         run: node --test test/*.test.js
 
-      - name: Check no .ai-team/ files are tracked
+      - name: Check no .squad/ files are tracked
         run: |
-          if git ls-files --error-unmatch .ai-team/ 2>/dev/null; then
-            echo "::error::❌ .ai-team/ files are tracked on preview — this must not ship."
+          if git ls-files --error-unmatch .squad/ 2>/dev/null; then
+            echo "::error::❌ .squad/ files are tracked on preview — this must not ship."
             exit 1
           fi
-          echo "✅ No .ai-team/ files tracked — clean for release."
+          echo "✅ No .squad/ files tracked — clean for release."
 
       - name: Validate package.json version
         run: |
