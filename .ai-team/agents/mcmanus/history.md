@@ -1,6 +1,6 @@
 # Project Context
 
-- **Owner:** bradygaster (bradygaster@users.noreply.github.com)
+- **Owner:** bradygaster
 - **Project:** Squad — AI agent teams that grow with your code. Democratizing multi-agent development on GitHub Copilot. Mission: beat the industry to what customers need next.
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
 - **Created:** 2026-02-07
@@ -16,6 +16,7 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 - **Casting is a competitive moat** — thematic persistent names make agents memorable and referenceable, unlike generic labels. Elevated from Easter egg to headline feature.
 - **Demo script uses beat format** (ON SCREEN / VOICEOVER / WHAT TO DO) — README order is non-negotiable for demos. Payoff at end, not beginning.
 - **README rewrite (Proposal 006)**: Hero → Quick Start → Why Squad? → Parallel Work → How It Works → Cast System → What Gets Created → Growing the Team → Reviewer Protocol → Install → Troubleshooting → Status.
+- **CLI vs VS Code command parity (2026-02-19)** — Copilot CLI uses `/agent` (singular), VS Code uses `/agents` (plural). Documentation must reference both forms explicitly, not assume one platform. (#93)
 
 ### Session Summaries
 
@@ -38,6 +39,7 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 - **Super Bowl Weekend post — edit pass and honest assessment (2026-02-09)**
 - **v0.2.0 release blog post (2026-02-09)**
 - **Executive summary research section (2026-02-14)** — Added "Research Opportunities" section to `docs/squad-executive-summary.md` before Caveats. Four hypotheses (H1–H4) addressing: task completion speed, accessibility, retention via lock-in, complexity scaling + ROI threshold. Synthesized from Keaton's research framework.
+- **CLI vs VS Code command documentation fix (2026-02-19)** — Fixed #93: Updated 6 doc files to reference both `/agent` (CLI) and `/agents` (VS Code). Users on either platform now get the correct command without confusion. PR #100.
 
 ## Learnings
 
@@ -76,6 +78,8 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 - **v0.3.0 preview blog post (2026-02-10)** — `team-docs/blog/005-v030-give-it-a-brain.md`. Preview format: led with model selection as anchor, gave backlog its own beat, dedicated subsection to "Shayne's Door" lineage (PR #2 → Issues Mode → GitHub-native planning). "What We're Watching" replaces "By the Numbers" for preview posts. Compound strategy narrative in every post.
 - **Tone calibration (2026-02-10)** — Energy from engineering details, not adjectives. Preview template: "What's Coming" / "What We're Watching" / "What's After." Direct quotes OK; editorial framing not OK.
 - **Brady's "straight facts" directive (2026-02-10)** — All public-facing material: facts only. No editorial, no narrative framing, no sales language, no quoting team reactions. Every sentence states what a feature is, how it works, what it depends on, or what it replaces.
+
+- **Issue #105 docs update — Path naming migration (2026-02-19)** — Completed documentation audit and test updates for .squad/ rename. Updated 6 files (README.md, CONTRIBUTING.md, 2 test files) with 20+ path references. Created comprehensive migration guide (docs/migration/v0.5.0-squad-rename.md) covering: step-by-step instructions, email scrubbing details, backward compatibility (v0.5.0-v0.6.0), troubleshooting, and deprecation timeline. **Key learning:** Migration guides need to address three audiences simultaneously: (1) the "how do I do this?" person (step-by-step), (2) the "what is this really for?" person (backward compat context), (3) the "what breaks if I don't do this?" person (timeline). Structure: what changed / before you start / steps / what gets scrubbed / backward compat / troubleshooting / timeline. All tests pass (53/53). PR #113 created targeting dev.
 - **Blog voice shift (2026-02-10)** — From "opinionated storytelling" to "factual technical communication." Structure by function, not narrative arc. Energy from specificity and completeness.
 
 - **Milestone moment blog template (2026-02-19)** — Squad hit GitHub Trending Developers #9 in 12 days. Blog post `012-trending-on-github.md` written to celebrate the moment authentically. Key design: (1) Lead with the number (what happened, when, why it matters). (2) Surface the context (what else is trending — the AI agent wave is real). (3) Show the timeline (12 days from launch to #9 validates the product). (4) Honest about transience (trending is a sprint, not strategy). (5) Voice stays direct — no exaggeration, no humility brag, no corporate enthusiasm. Energy from the fact, not the feeling. Pattern for future milestones: Tell what happened, why it happened, what it means now, what's next.
@@ -225,3 +229,21 @@ _Summarized from initial assessment, messaging overhaul, demo script, and README
 
 
 📌 Team update (2026-02-18): Insider Program — Binary Model (consolidated). Feb 16 originally proposed community engagement and recruitment strategy (seed cohort, public application, Discord access, onboarding); Feb 17 Brady directive simplified to binary model eliminating rings, caps, and formal entry pathways. Consolidated into single design block: honor system, .squad-insider/ isolation, version ID, branch-based install. Community engagement strategy (public insider list, CONTRIBUTORS.md badges, Discord channel, recognition) retained. — decided by McManus (original) + Keaton (simplified)
+
+### Current session work (in progress)
+
+- **Fixed issue #93: /agents vs /agent command clarity** — README.md line 55 now clearly states /agent for CLI and /agents for VS Code, with platform-specific guidance for which to use where. Matches the post-install output that already had this right. Ensures new users don't get confused by platform differences.
+- **Implemented issue #94 Phase 2: Insider Program documentation** — Created three new documentation artifacts:
+  1. **CONTRIBUTORS.md** — New top-level file with [INSIDER] badge section explaining insider program, how to join (honor system, 
+px github:bradygaster/squad#insider), expectations (continuous updates, rough edges), and issue reporting guidelines.
+  2. **docs/insider-program.md** — Full 4.3K guide covering what insiders get, what to expect, version format (0.4.2-insider+{commit}), how to report bugs, and FAQ. Positioned as the deep dive for users who want details.
+  3. **README.md Insider Program section** — Added brief section under Upgrade, one sentence + install command + link to full docs. Prominent but lean.
+  4. **CONTRIBUTING.md mention** — Added link to CONTRIBUTORS.md insider section before "Need Help?" so contributors know about early access option.
+  
+  Strategy: Tiered depth (README one-liner → CONTRIBUTORS.md summary → docs/insider-program.md deep dive) keeps casual browsers informed without overwhelming, while serious contributors get full context. Honor system + low friction (#insider branch) aligns with open source norms. Version format with commit hash gives transparency into what build users have.
+
+### Recent learnings added this session
+
+- **Command clarity across platforms matters hugely** — Issue #93 revealed that users don't expect /agent vs /agents variation. Single docs mention of /agents becomes the canonical reference users internalize, then they get confused when CLI says something different. Solution: always show both, mark which is which. The post-init message got it right; docs needed to match.
+- **Insider programs for open source need minimal ceremony** — Binary model (insider branch, honor system, no caps/rings/onboarding) is the right calibration for a small OSS project. Formal programs create friction; simple branch-based access lowers barrier to "try the latest." CONTRIBUTORS.md badges and issue templates provide recognition without overhead.
+- **Tiered documentation depth serves different audiences** — One-liner in README catches people shopping, CONTRIBUTORS.md section serves active community members, full docs/insider-program.md guide is for committed insiders. Each audience gets exactly what they need to make a decision or take action without info overload.
