@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2] — 2026-02-20
+
+### Fixed
+
+- **`upgrade --migrate-directory` exits early** (#125) — The directory rename step no longer calls `process.exit(0)`, so the full upgrade (squad.agent.md, workflows, .ai-team-templates) now runs after migration in one command
+- **`.slnx`, `.fsproj`, `.vbproj` not detected as .NET** (#124) — `detectProjectType()` now recognizes modern Visual Studio solution files and F#/VB.NET project files; repos using these get proper dotnet stub CI workflows instead of generic stubs
+- **Migrations hardcoded to `.ai-team/`** (#126 partial) — Migration steps (skills/, plugins/ creation, email scrub) and `.gitattributes` union rules now use the detected squad directory (`.squad/` or `.ai-team/`) so they work correctly after `--migrate-directory` runs
+
 ## [0.5.1] — 2026-02-20
 
 ### Added
