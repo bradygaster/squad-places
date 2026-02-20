@@ -245,6 +245,22 @@ Kobayashi identified three risk vectors:
 2. **State corruption during migration** — UNCHANGED (atomic migration + rollback still required)
 3. **Workflow failures** — UNCHANGED (745 occurrences + 6 workflows still need exhaustive audit)
 
+- **2026-02-22: Research Gap Analysis — Beyond the 5 Spikes (Brady request via gap analysis directive)**
+  - **What created:** `.ai-team/decisions/inbox/keaton-research-gaps.md` — prioritized list of 8 additional research gaps not covered by the 5 existing pre-implementation spikes.
+  - **Why:** Brady asked what preliminary research we need to move up front to avoid wasted time. The 5 existing spikes validate session concurrency, adapter, MCP, auth, and resumeSession. They don't cover telemetry ephemerality, rate limiting, per-agent model selection, config expressiveness, compaction behavior, or platform surface differences.
+  - **Key findings from SDK source reading:**
+    - `assistant.usage` event is `ephemeral: true` — not persisted in session history. Brady's telemetry mandate requires real-time capture + our own persistence layer.
+    - SDK has **zero rate limiting, throttling, or 429 retry logic**. 5+ concurrent agent sessions could hit Copilot API rate limits with no protection. The `ErrorOccurredHookOutput` has retry semantics but unclear if SDK implements them or if hooks are advisory-only.
+    - `CustomAgentConfig` has **no `model` field**. Per-agent model selection requires one session per agent (not multiple custom agents in one session). Changes session topology and interacts with Spike 1.
+    - Config expressiveness flagged as HIGH risk but no spike covers it. JSON/YAML needs to express routing, casting, model fallback chains.
+    - Compaction behavior untested — what `summaryContent` survives, whether agent-specific context is preserved.
+    - SDK is CLI-focused. VS Code uses extension host, not SDK. Custom agents via `SessionConfig.customAgents` may be CLI-only.
+  - **3 MUST gaps** (block M0): telemetry capture (1h), rate limiting (2h), per-agent model topology (1h, extend Spike 1).
+  - **3 SHOULD gaps** (block M1-M2): config expressiveness (2h), compaction behavior (2h), platform differences (1.5h).
+  - **2 NICE gaps** (M3+): ephemeral event strategy (1h), error hook semantics (1h, extend Spike 2).
+  - **Total additional validation:** ~11.5 hours (~1.5 days). Combined with existing 5 spikes: ~22 hours (~3 days).
+  - **Scariest finding:** Rate limiting gap. No backpressure + 5 concurrent agents = support ticket storm. Must validate before session pool (M0-4) ships.
+
 Net effect: Risk surface REDUCED in one dimension (confusion) without growth in others (technical failure modes). The remaining risks must still be mitigated (atomic migration, pre-flight checks, workflow audit), but the coordination complexity is gone.
 
 **Alternative considered: Three-phase approach (McManus pattern)**

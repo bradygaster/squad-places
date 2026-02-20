@@ -2272,3 +2272,450 @@ This maps to Brady's two directives: customers get visibility into their AI spen
 4. M0-6 work includes: event subscription, JSONL persistence, cost fallback logic
 5. M1-12 work includes: telemetry validation tests
 
+# SDK Gotchas — Deep Source Code Analysis
+
+**By:** Kujan (Copilot SDK Expert)  
+**Date:** 2026-02-21  
+**Context:** Pre-replatform research to identify undocumented SDK behaviors that could waste replatform time
+
+Brady asked: "Is there any preliminary research we need to move up front to save ourselves a helluva lot of wasted time?"
+
+We have 5 planned spikes (concurrent sessions, adapter pattern, MCP passthrough, gh auth, resumeSession). This analysis identifies what ELSE could blindside us.
+
+---
+
+## Critical Findings
+
+### 1. `assistant.usage` Event — Incomplete for Cost Governance ⚠️ BLOCKER
+
+**File:** `C:\src\copilot-sdk\nodejs\src\generated\session-events.ts:433-458`
+
+**What it is:**
+```typescript
+type: "assistant.usage";
+data: {
+  model: string;                    // ✅ Present
+  inputTokens?: number;             // ✅ Present
+  outputTokens?: number;            // ✅ Present
+  cacheReadTokens?: number;         // ✅ Present
+  cacheWriteTokens?: number;        // ✅ Present
+  cost?: number;                    // ✅ Present (in dollars!)
+  duration?: number;                // ✅ Present (milliseconds)
+  initiator?: string;               // ✅ Present
+  apiCallId?: string;               // ✅ Present
+  providerCallId?: string;          // ✅ Present
+  parentToolCallId?: string;        // ✅ Present
+  quotaSnapshots?: {                // ✅ Present (detailed quota tracking)
+    [k: string]: {
+      isUnlimitedEntitlement: boolean;
+      entitlementRequests: number;
+      usedRequests: number;
+      usageAllowedWithExhaustedQuota: boolean;
+      overage: number;
+      overageAllowedWithExhaustedQuota: boolean;
+      remainingPercentage: number;
+      resetDate?: string;
+    };
+  };
+};
+```
+
+**Impact on Squad:**
+- **GOOD NEWS:** Event is comprehensive — includes token counts, cost in dollars, quota tracking, and request duration
+- **BLOCKER:** Event is `ephemeral: true` — NOT included in `session.getMessages()` history
+- **CRITICAL:** Must capture these events in real-time via `session.on("assistant.usage", ...)` and persist to JSONL ourselves
+- **RISK:** If we miss a single event (error, crash, disconnect), that cost data is permanently lost
+
+**Mitigation:**
+1. **Spike: Event Persistence** — Validate that `assistant.usage` events are NOT in message history. Test reconnect scenarios (does event replay happen?).
+2. **Architecture:** Event-driven JSONL writer with buffering + fsync. NO reliance on message history for telemetry.
+3. **PRD 14 addition:** Event persistence must be SYNC (not fire-and-forget) to guarantee cost data integrity.
+
+---
+
+### 2. Rate Limiting — NONE ⚠️ HIGH RISK
+
+**Files:** `C:\src\copilot-sdk\nodejs\src\client.ts`, `C:\src\copilot-sdk\nodejs\src\session.ts`
+
+**What I found:**
+- Searched for: `rate`, `limit`, `throttle`, `queue`
+- **ZERO rate limit handling in SDK**
+- `client.createSession()` and `session.send()` are **immediate** — no queuing, no backoff, no retry
+- Only caching is `listModels()` (client.ts:723)
+
+**What happens when Squad spawns 5-10 concurrent agents:**
+1. Each agent creates a session → 5-10 `session.create` RPC calls
+2. Each agent sends prompts → 5-10 parallel API requests
+3. **SDK does NOT queue or throttle** — all requests hit the CLI server immediately
+4. CLI server MAY have internal rate limiting (unknown — not visible in SDK source)
+5. If GitHub API rate limits kick in → **SDK propagates errors to caller, no retry**
+
+**Impact on Squad:**
+- Current Squad orchestrator has NO rate limiting either — we inherit this risk already
+- **If we hit rate limits today:** Agent fails, user sees error, manual retry
+- **Post-replatform:** Same behavior unless we build rate limiting above SDK
+- **Concurrent sessions spike MUST test rate limit behavior** — what errors do we get? Do sessions fail fast or hang?
+
+**Mitigation:**
+1. **Spike: Concurrent Sessions** — Test 10 parallel `createSession()` + `send()`. Measure: success rate, error types, latency distribution.
+2. **Architecture decision:** Accept fail-fast behavior (agents report errors to coordinator) OR build request queue above SDK.
+3. **PRD 14 addition:** Rate limit handling strategy (fail-fast with retry vs. SDK-level queue).
+
+---
+
+### 3. Infinite Sessions Compaction — Context Loss Risk ⚠️ HIGH IMPACT
+
+**Files:** 
+- `C:\src\copilot-sdk\nodejs\src\types.ts:582-606` (config)
+- `C:\src\copilot-sdk\nodejs\src\generated\session-events.ts:256-283` (events)
+
+**What it is:**
+```typescript
+infiniteSessions?: {
+  enabled?: boolean;                       // default: true
+  backgroundCompactionThreshold?: number;  // default: 0.80
+  bufferExhaustionThreshold?: number;      // default: 0.95
+}
+```
+
+**What happens at 80% context:**
+1. SDK triggers **background compaction** (session.compaction_start event)
+2. CLI server summarizes old messages into checkpoints
+3. Session **continues processing** while compaction runs
+4. At 95% context: session **blocks** until compaction completes
+
+**Compaction output:**
+```typescript
+type: "session.compaction_complete";
+data: {
+  success: boolean;
+  error?: string;
+  preCompactionTokens?: number;
+  postCompactionTokens?: number;
+  preCompactionMessagesLength?: number;
+  messagesRemoved?: number;            // ⚠️ Messages DELETED
+  tokensRemoved?: number;
+  summaryContent?: string;             // What was compressed
+  checkpointNumber?: number;
+  checkpointPath?: string;             // Filesystem location
+  compactionTokensUsed?: { ... };      // Cost of compaction itself
+}
+```
+
+**Context loss risks:**
+1. **Tool call history may be compacted** — if coordinator spawned 5 agents 50 turns ago, that spawn history may be summarized away
+2. **Decision context may be lost** — if user set a directive 100 turns ago, it may not survive compaction
+3. **Agent identity drift** — if coordinator personality is established over 200 turns, compaction may erode it
+4. **Unpredictable timing** — compaction happens at 80% but WHEN that is depends on message length distribution
+
+**What's preserved (from SDK workspace):**
+- Checkpoints written to `~/.copilot/session-state/{sessionId}/checkpoints/`
+- `plan.md` and `files/` subdirectory preserved
+- **BUT:** We don't know checkpoint format, can't read/parse them programmatically
+
+**Impact on Squad:**
+- Long coordinator sessions (100+ turns) WILL hit compaction
+- **Risk:** Coordinator forgets earlier agent spawns, asks user to repeat themselves, loses decision context
+- **Current mitigation:** Squad uses filesystem memory (`.ai-team/`) for durable state — this is LOAD-BEARING
+- **Post-replatform:** Filesystem memory becomes even MORE critical — it's the only guaranteed durable channel
+
+**Mitigation:**
+1. **Spike: Infinite Sessions** — Trigger compaction deliberately (send 50 long messages), verify what survives. Test: tool call history, custom system message, session context.
+2. **Architecture:** Coordinator must write all critical state to `.ai-team/` files BEFORE context fills. Treat session history as ephemeral cache.
+3. **PRD 14 addition:** Compaction-aware state management — what goes to filesystem vs. what stays in session memory.
+
+---
+
+### 4. Error Handling — Silent Swallowing ⚠️ MEDIUM RISK
+
+**Files:**
+- `C:\src\copilot-sdk\nodejs\src\session.ts:291-311` (_dispatchEvent)
+- `C:\src\copilot-sdk\nodejs\src\session.ts:397-405` (_handlePermissionRequest)
+- `C:\src\copilot-sdk\nodejs\src\session.ts:465-471` (_handleHooksInvoke)
+
+**What I found:**
+```typescript
+_dispatchEvent(event: SessionEvent): void {
+  for (const handler of typedHandlers) {
+    try {
+      handler(event);
+    } catch (_error) {
+      // Handler error  ← ⚠️ SILENTLY SWALLOWED
+    }
+  }
+}
+```
+
+**Blast radius:**
+- **Event handlers:** If `session.on("assistant.message", ...)` throws → error swallowed, NO other handlers affected
+- **Permission handlers:** If `onPermissionRequest` throws → permission DENIED (session.ts:403)
+- **Hook handlers:** If `onPreToolUse` throws → hook returns `undefined` (session.ts:469)
+- **Tool handlers:** Errors ARE propagated (client.ts:1395-1430) — tool failures sent back to CLI as error results
+
+**Impact on Squad:**
+- **Event persistence failures will be silent** — if JSONL write fails, we won't know unless we add our own try/catch
+- **Permission handler bugs will block agents** — coordinator grants permission, but bug in handler code → agent sees DENIED
+- **Hook handler bugs will be invisible** — `onPreToolUse` meant to log telemetry, crashes → telemetry silently missing
+
+**Mitigation:**
+1. **Defensive programming:** Wrap ALL handler logic in try/catch, log errors ourselves
+2. **Monitoring:** Emit custom events for handler failures (cannot rely on SDK to surface them)
+3. **Testing:** Deliberate error injection in handlers to verify our error handling catches them
+
+---
+
+### 5. Session Lifecycle — No Automatic Cleanup ⚠️ MEDIUM RISK
+
+**Files:**
+- `C:\src\copilot-sdk\nodejs\src\client.ts:325-411` (stop method)
+- `C:\src\copilot-sdk\nodejs\src\session.ts:517-525` (destroy method)
+
+**What happens when session is abandoned:**
+1. **If `session.destroy()` is NOT called:**
+   - Session remains in `client.sessions` Map (client.ts:137)
+   - JSON-RPC connection stays open
+   - CLI server keeps session state in memory
+   - Workspace directory (`~/.copilot/session-state/{sessionId}/`) persists on disk
+2. **If `client.stop()` is called:**
+   - Attempts to destroy all sessions with 3 retries + exponential backoff (client.ts:328-358)
+   - Returns array of errors (empty = success)
+   - CLI process killed (client.ts:392-402)
+3. **If agent crashes / process killed:**
+   - CLI subprocess MAY continue running (orphaned process)
+   - Session state persists on disk
+   - No automatic cleanup
+
+**Memory leak potential:**
+- **In-process leak:** `client.sessions` Map grows unbounded if sessions not destroyed
+- **Disk leak:** Workspace directories accumulate in `~/.copilot/session-state/`
+- **CLI server leak:** Unknown — SDK doesn't expose CLI server memory usage
+
+**Impact on Squad:**
+- Current Squad: `task` tool spawns are isolated processes — crash = full cleanup
+- Post-replatform: Coordinator is long-lived process — abandoned sessions accumulate
+- **Risk:** Coordinator runs for 8 hours, spawns 50 agents, each creates a session → 50 sessions in memory if not destroyed
+
+**Mitigation:**
+1. **Explicit lifecycle management:** `try { session.send(...) } finally { await session.destroy() }` for every session
+2. **Periodic cleanup:** Background task to destroy sessions older than N minutes
+3. **Monitoring:** Track `client.sessions.size` — alert if it grows unbounded
+4. **Graceful shutdown:** `process.on("SIGTERM", async () => { await client.stop(); })` to clean up on kill
+
+---
+
+### 6. CustomAgentConfig Limitations — No Model Override ⚠️ CONFIRMED
+
+**File:** `C:\src\copilot-sdk\nodejs\src\types.ts:548-579`
+
+**What you CAN configure:**
+```typescript
+interface CustomAgentConfig {
+  name: string;                    // ✅ Agent identifier
+  displayName?: string;            // ✅ UI label
+  description?: string;            // ✅ Purpose
+  tools?: string[] | null;         // ✅ Tool filtering (null = all)
+  prompt: string;                  // ✅ System message
+  mcpServers?: Record<...>;        // ✅ Per-agent MCP servers
+  infer?: boolean;                 // ✅ Model inference eligibility (default: true)
+}
+```
+
+**What you CANNOT configure:**
+- ❌ `model` — No per-agent model selection
+- ❌ `reasoningEffort` — No per-agent reasoning configuration
+- ❌ `systemMessage.mode` — No append vs. replace control
+- ❌ `hooks` — No per-agent lifecycle hooks
+- ❌ `streaming` — No per-agent streaming control
+
+**This is PERMANENT per my 2026-02-21 analysis — sessions have ONE model, agents share it.**
+
+**Impact on Squad:**
+- Current Squad: Per-agent model selection (Designer→Opus, Tester→Haiku, Lead→Sonnet)
+- Post-replatform: **NOT POSSIBLE without building above SDK**
+- **Two options:**
+  1. Accept one-model-per-session constraint → spawn coordinator with "best compromise" model (Sonnet)
+  2. Build custom spawning → each agent gets its own session with specified model → 5 agents = 5 sessions
+
+**Mitigation:**
+- **This is a Spike 5: Adapter Pattern decision** — do we build multi-session orchestration?
+- **If yes:** Agent registry maps role → model, coordinator creates N sessions
+- **If no:** Accept Sonnet-for-all, defer per-agent models to post-replatform
+
+---
+
+### 7. Streaming Behavior — No Ordering Guarantees ⚠️ MEDIUM RISK
+
+**Files:**
+- `C:\src\copilot-sdk\nodejs\src\types.ts:703-704` (streaming config)
+- README.md:312-361 (streaming docs)
+
+**How streaming works:**
+1. Set `streaming: true` in session config
+2. Subscribe to `assistant.message_delta` and `assistant.reasoning_delta` events
+3. Accumulate `deltaContent` to build full response
+4. Final `assistant.message` event contains complete content
+
+**No guarantees documented:**
+- ❌ Event ordering (can deltas arrive out of order?)
+- ❌ Buffering (are deltas sent per-token or batched?)
+- ❌ Race conditions (multiple sessions streaming simultaneously — do events interleave?)
+- ❌ Reconnect (if connection drops mid-stream, can we resume?)
+
+**Impact on Squad:**
+- Current Squad: No streaming — we use `sendAndWait()` (blocking)
+- Post-replatform: Streaming NOT needed for agent-to-coordinator comms (agents work async, coordinator polls)
+- **Risk:** If we add streaming for user-facing output (show agent work in progress), race conditions may corrupt output
+
+**Mitigation:**
+1. **Don't use streaming for agent orchestration** — coordinator doesn't need real-time deltas
+2. **If adding streaming for UX:** Test multi-session concurrent streaming thoroughly
+3. **Buffer deltas per-session:** Don't assume SDK delivers them in order
+
+---
+
+## Secondary Findings
+
+### 8. Session Context — Limited Metadata
+
+**File:** `C:\src\copilot-sdk\nodejs\src\types.ts:884-893`
+
+```typescript
+interface SessionContext {
+  cwd: string;           // Working directory
+  gitRoot?: string;      // Git repo root
+  repository?: string;   // "owner/repo"
+  branch?: string;       // Current branch
+}
+```
+
+**What's missing:**
+- ❌ User identity (GitHub login)
+- ❌ Copilot entitlement tier (free/pro/enterprise)
+- ❌ Org policies (allowed models, cost limits)
+- ❌ Session creation time / last activity
+- ❌ Parent session ID (for nested sessions)
+
+**Impact:** Coordinator cannot make decisions based on user context (e.g., "spawn expensive agents only for Pro users").
+
+---
+
+### 9. Tool Collision Detection — NONE
+
+**File:** `C:\src\copilot-sdk\nodejs\src\client.ts:525-529`
+
+Tool registration is session-level:
+```typescript
+tools: config.tools?.map(tool => ({
+  name: tool.name,         // ⚠️ No uniqueness check
+  description: tool.description,
+  parameters: toJsonSchema(tool.parameters)
+}))
+```
+
+**If two agents define same tool name:** Last one wins (silent override). No error, no warning.
+
+**Impact:** 5 agents with `git_commit` tool → 1 handler registered, 4 ignored. Silent failure.
+
+**Mitigation:** Build tool namespacing above SDK (prefix agent name: `agent1_git_commit`).
+
+---
+
+### 10. MCP Server Health — Opaque
+
+**File:** `C:\src\copilot-sdk\nodejs\src\types.ts:510-539`
+
+MCP server config:
+```typescript
+interface MCPLocalServerConfig {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  timeout?: number;      // ⚠️ Only timeout control
+}
+```
+
+**What's missing:**
+- ❌ Health check API
+- ❌ Startup success/failure notification
+- ❌ Tool discovery (what tools does this server provide?)
+- ❌ Connection state (is server running?)
+
+**Impact:** Coordinator spawns agent with MCP server → server fails to start → agent gets "tool not found" errors → no way to detect MCP failure vs. agent bug.
+
+---
+
+## Recommendations
+
+### Immediate (Pre-Spike)
+
+1. **Validate `assistant.usage` ephemeral behavior** — Confirm event is NOT in message history, test reconnect scenarios.
+2. **Design event persistence architecture** — JSONL writer with fsync, buffer + retry, independent of SDK message history.
+3. **Document error handling strategy** — All handlers must wrap in try/catch, emit custom error events for monitoring.
+
+### Spike Additions
+
+4. **Spike 1 (Concurrent Sessions):** Add rate limit testing — 10 parallel sessions, measure error rate + latency.
+5. **Spike 3 (Infinite Sessions):** Add compaction testing — trigger deliberately, verify tool call history survival.
+6. **Spike 5 (Adapter Pattern):** Decide multi-session vs. single-session orchestration based on per-agent model requirement.
+
+### Architecture Decisions
+
+7. **Filesystem memory is non-negotiable** — SDK compaction makes session history ephemeral. All critical state must go to `.ai-team/`.
+8. **Tool namespacing above SDK** — Prefix tool names with agent ID to prevent collisions.
+9. **Explicit session lifecycle** — `try { ... } finally { await session.destroy() }` pattern for every session.
+10. **Defensive event handling** — Never assume SDK will surface errors; wrap everything in try/catch.
+
+---
+
+## Summary
+
+**Good news:**
+- `assistant.usage` event is comprehensive (tokens, cost, quota)
+- Infinite sessions solve context overflow automatically
+- CustomAgentConfig enables per-agent MCP servers
+- SDK handles CLI auth automatically
+
+**Bad news:**
+- `assistant.usage` is ephemeral → MUST persist ourselves
+- NO rate limiting → concurrent sessions may fail unpredictably
+- Compaction may lose tool call history → filesystem memory critical
+- Error handling swallows failures → defensive programming required
+- No per-agent model selection → multi-session orchestration OR accept constraint
+
+**Blockers resolved:**
+- None of the 5 planned spikes are invalidated by these findings
+- New spike needed: **Event Persistence** (validate ephemeral behavior, design JSONL architecture)
+
+**Recommendation:**
+Run all 5 spikes + Event Persistence spike BEFORE committing to replatform architecture. These findings change PRD 14 significantly (event persistence, error handling, compaction awareness).
+as a convenience feature (prompt isolation), not as the unit of agent identity. That's a different architecture than what the milestones assume.
+
+---
+
+*— Keaton, Lead. Read the SDK. Found the cracks. Let's fill them before we pour concrete.*
+---
+
+### 2026-02-22: Research Gap Analysis — 8 New Gaps, 10 SDK Gotchas Identified (consolidated)
+
+**By:** Keaton (Lead), Kujan (SDK Expert)  
+**Date:** 2026-02-22  
+**Context:** Brady requested research gaps beyond the 5 planned spikes; Kujan analyzed SDK source for gotchas.
+
+**Summary:** 8 research gaps identified (3 MUST priority, 4 SHOULD, 1 NICE). 10 SDK gotchas documented (3 critical, 5 high impact, 2 secondary). See full analysis in:
+- Keaton: Research gaps (usage telemetry, rate limiting, per-agent models, config schema, compaction, platform differences, ephemeral events, error hooks)
+- Kujan: SDK gotchas (ephemeral usage events, zero rate limiting, compaction context loss, error swallowing, session lifecycle, CustomAgentConfig limits, streaming ordering, session context metadata, tool collisions, MCP health)
+
+**MUST Priority Gaps (block M0):**
+1. Usage telemetry is ephemeral — not persisted in session history
+2. Zero rate limiting / backpressure for concurrent agents
+3. Per-agent model selection — CustomAgentConfig has no model field
+
+**SHOULD Priority Gaps (block M1–M2):**
+4. Config schema expressiveness — JSON/YAML must handle routing/fallback/casting
+5. Compaction behavior — what survives session.compaction_complete?
+6. Platform surface differences — SDK is CLI-only; VS Code integration unclear
+
+**Recommendation:** Telemetry spike needed immediately. Rate limiting test before session pool ships. Per-agent model question determines session topology.
+
+**Status:** Findings ready for Brady triage + spike prioritization.
+
