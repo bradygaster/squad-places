@@ -150,9 +150,9 @@ describe('Init Mode prompt structure (#66)', () => {
       const confirmMatch =
         initMode.match(/(\d+)\.\s.*(?:Look right\?|look right\?|ask_user.*confirm)/i) ||
         initMode.match(/(\d+)\.\s.*ask_user/i);
-      // Find the step number that contains creating .ai-team/
-      // Match lines like "6. Create the `.ai-team/` directory structure"
-      const createMatch = initMode.match(/^(\d+)\.\s.*(?:create|Create).*\.ai-team/m);
+      // Find the step number that contains creating .squad/
+      // Match lines like "6. Create the `.squad/` directory structure"
+      const createMatch = initMode.match(/^(\d+)\.\s.*(?:create|Create).*\.squad/m);
 
       assert.ok(confirmMatch, 'Should find a numbered step with confirmation question');
       assert.ok(createMatch, 'Should find a numbered step that creates .ai-team/');
@@ -187,7 +187,7 @@ describe('Init Mode prompt structure (#66)', () => {
       );
 
       const hasFileCreation =
-        /create.*\.ai-team/i.test(betweenProposeAndConfirm) ||
+        /create.*\.squad/i.test(betweenProposeAndConfirm) ||
         /mkdir/i.test(betweenProposeAndConfirm) ||
         /writeFile/i.test(betweenProposeAndConfirm) ||
         /fs\./i.test(betweenProposeAndConfirm);
@@ -242,7 +242,7 @@ describe('Init Mode prompt structure (#66)', () => {
       assert.ok(
         hasAskUser,
         'Init Mode should reference ask_user (or equivalent) to ensure the coordinator ' +
-        'explicitly waits for user input before creating .ai-team/ files'
+        'explicitly waits for user input before creating .squad/ files'
       );
     });
   });

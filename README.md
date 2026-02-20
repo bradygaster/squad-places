@@ -199,7 +199,7 @@ Both Claude Sonnet 4 and Claude Opus 4 have a **200K token** standard context wi
 ## What Gets Created
 
 ```
-.ai-team/
+.squad/
 ├── team.md              # Roster — who's on the team
 ├── routing.md           # Routing — who handles what
 ├── decisions.md         # Shared brain — team decisions
@@ -239,7 +239,7 @@ Squad generates a new agent, seeds them with project context and existing decisi
 > Remove the designer — we're past that phase.
 ```
 
-Agents aren't deleted. Their charter and history move to `.ai-team/agents/_alumni/`. Knowledge preserved, nothing lost. If you need them back later, they remember everything.
+Agents aren't deleted. Their charter and history move to `.squad/agents/_alumni/`. Knowledge preserved, nothing lost. If you need them back later, they remember everything.
 
 ---
 
@@ -316,7 +316,7 @@ Labels are auto-created from your team roster via the `sync-squad-labels` workfl
 | `squad:{name}` | Assigned to a specific squad member |
 | `squad:copilot` | Assigned to @copilot for autonomous coding agent work |
 
-Labels sync automatically when `.ai-team/team.md` changes, or you can trigger the workflow manually.
+Labels sync automatically when `.squad/team.md` changes, or you can trigger the workflow manually.
 
 ### Workflows
 
@@ -324,7 +324,7 @@ Squad installs three GitHub Actions workflows:
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `sync-squad-labels.yml` | Push to `.ai-team/team.md`, manual | Creates/updates `squad:*` labels from roster |
+| `sync-squad-labels.yml` | Push to `.squad/team.md`, manual | Creates/updates `squad:*` labels from roster |
 | `squad-triage.yml` | `squad` label added to issue | Lead triages and assigns `squad:{member}` label |
 | `squad-issue-assign.yml` | `squad:{member}` label added | Acknowledges assignment, queues for member |
 
@@ -360,7 +360,7 @@ Already have Squad? Update Squad-owned files to the latest version without touch
 npx github:bradygaster/squad upgrade
 ```
 
-This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow files in `.github/workflows/`. It never touches `.ai-team/` — your team's knowledge, decisions, and casting are safe.
+This overwrites `squad.agent.md`, `.ai-team-templates/`, and squad workflow files in `.github/workflows/`. It never touches `.squad/` — your team's knowledge, decisions, and casting are safe.
 
 ### Insider Program
 
@@ -378,7 +378,7 @@ npx github:bradygaster/squad#insider
 npx github:bradygaster/squad#insider upgrade
 ```
 
-The upgrade command updates Squad-owned files (`squad.agent.md`, workflows, templates) to the latest insider build. Your team state — `.ai-team/` including `team.md`, agents, decisions, and casting configuration — is always preserved.
+The upgrade command updates Squad-owned files (`squad.agent.md`, workflows, templates) to the latest insider build. Your team state — `.squad/` including `team.md`, agents, decisions, and casting configuration — is always preserved.
 
 **What to expect:** Insider builds may be unstable. They're intended for early adopters, testing, and feedback. New features ship as you code; breaking changes are rare but possible.
 
@@ -414,7 +414,7 @@ These are known platform-level issues affecting the Squad experience. They're no
 | **Silent success** (~7-10% of spawns) | Agent completes all file writes but returns no text response | Platform bug — agent's final turn is a tool call, not text. Squad detects this via filesystem checks and reports `"⚠️ completed (files verified) but response lost."` |
 
 **Workarounds:**
-- If you hit the server error loop, start a new session. The work likely completed — check `.ai-team/` for recent changes.
+- If you hit the server error loop, start a new session. The work likely completed — check `.squad/` for recent changes.
 - The `--no-warnings` error is cosmetic and can be safely ignored.
 
 ---
