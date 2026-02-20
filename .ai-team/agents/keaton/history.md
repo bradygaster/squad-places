@@ -42,6 +42,14 @@ _Summarized from 2026-02-07 through 2026-02-15. Full entries in session logs._
 
 ## Learnings
 
+- **2026-02-21: SDK Replatform Milestones & Work Items (Planning Gate)**
+  - **What changed:** Created comprehensive milestones document (`.ai-team/docs/milestones.md`) organizing the 14-PRD SDK replatform into 6 shippable milestones across 3 phases (~32 weeks).
+  - **Why:** Brady required complete planning before implementation begins. The milestones document is the planning gate — no code changes until Brady approves.
+  - **Key structure:** M0 (Foundation, 4w) → M1 (Core, 6w) → M2 (Config, 8w) → {M3 (Parity), M4 (Distro), M5 (Marketplace)} parallel → M6 (Launch, 4w). Critical path: M0 viability → M1 tools → M2 config → M3 parity → M6 launch.
+  - **Milestone design principles:** Each milestone has 10–14 granular work items, clear owner assignment, detailed exit criteria, and explicit dependencies. Includes risk mitigation (Brady checkpoints, real-repo testing, rollback plans). Incorporates all 27 resolved decisions (Q19–Q27) and addresses Kujan's feature risk punch list (14 GRAVE + 12 AT RISK items).
+  - **Key learning:** Milestones are compound — each feeds into the next. M0 is the gate (if PRD 1 fails, stop after 2 days). M3 is the validation (feature parity proves SDK viability). M6 is the launch (docs + migration guide + communication).
+  - **Timeline:** 7.5 months from M0 start to v0.6.0 release. Fenster (heavy, critical path), Verbal (sustained, design + docs), Kujan (extensions phase), Keaton (strategic, approval gates).
+
 - **2026-02-13: Context window optimization for squad.agent.md (Issue #37)**
   - **What changed:** Applied two surgical optimizations to squad.agent.md to reduce context window usage: (1) Spawn template deduplication — removed two redundant templates (Background spawn and Sync spawn), replaced with single generic template plus brief notes on mode parameter selection. Kept VS Code notes. Saved ~3,600 tokens. (2) Init Mode compression — compressed file tree example to one-liner reference, condensed post-setup input sources from repeated pattern to bulleted list, tightened casting state init. Reduced Init Mode from ~1,471 tokens to ~800 tokens (saved ~670 tokens).
   - **Why:** squad.agent.md is loaded on every coordinator message. Init Mode (lines 28-112) is only used once per repo lifetime but occupies context space on all messages. The spawn templates (lines 592-809) were 95% identical — three templates with same sections, differing only in mode parameter and example agent names. Total savings: ~4,270 tokens per coordinator message.

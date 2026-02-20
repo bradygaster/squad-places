@@ -170,3 +170,5 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
     - `CustomAgentConfig.mcpServers` confirmed for per-agent MCP routing.
     - `SessionConfig.streaming` enables `assistant.message_delta` and `assistant.reasoning_delta` events.
   - **Output:** `.ai-team/docs/prds/06-streaming-observability.md`, `09-byok-multi-provider.md`, `10-mcp-server-integration.md`, `12-distribution-install.md`, `.ai-team/decisions/inbox/kujan-prd-platform.md`.
+
+- **2026-02-21: Feature Comparison Document for SDK Replatform** — Exhaustive feature inventory of current Squad (62 features across 5 categories) mapped against SDK capabilities and 14 PRDs. Key findings: 18 GRAVE features with zero PRD coverage, 16 AT RISK with partial coverage, 28 fully covered. SDK enables 8 new capability categories. CustomAgentConfig is the natural mapping for Squad team members but lacks per-agent model field. Migration is 4 phases totaling 17–26 weeks. 6 blocking decisions pending from Brady. Output: `.ai-team/docs/feature-comparison.md`, `.ai-team/decisions/inbox/kujan-feature-comparison.md`.
