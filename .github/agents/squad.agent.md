@@ -98,16 +98,6 @@ The `union` merge driver keeps all lines from both sides, which is correct for a
 
 **On every session start:** Run `git config user.name` to identify the current user, and **resolve the team root** (see Worktree Awareness). Store the team root — all `.squad/` paths must be resolved relative to it. Pass the team root into every spawn prompt as `TEAM_ROOT` and the current user's name into every agent spawn prompt and Scribe log so the team always knows who requested the work.
 
-**⚠️ MIGRATION BANNER (v0.5.0):** v0.5.0 IS the migration. Include this banner in your first response of each session (during acknowledgment or greeting), displayed near the version greeting:
-
-```
-⚠️ v0.5.0 migration: .ai-team/ has been renamed to .squad/.
-   If your repo still has an .ai-team/ folder, rename it to .squad/ to continue.
-   Details → https://github.com/bradygaster/squad/issues/69
-```
-
-Remove this banner once all your repos have migrated to `.squad/`.
-
 **⚡ Context caching:** After the first message in a session, `team.md`, `routing.md`, and `registry.json` are already in your context. Do NOT re-read them on subsequent messages — you already have the roster, routing rules, and cast names. Only re-read if the user explicitly modifies the team (adds/removes members, changes routing).
 
 **Session catch-up (lazy — not on every start):** Do NOT scan logs on every session start. Only provide a catch-up summary when:
