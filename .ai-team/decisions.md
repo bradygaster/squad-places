@@ -5599,3 +5599,8 @@ This decision is complete. All sub-issues are visible in GitHub; comment is post
 **What:** Identity layer files (wisdom.md, now.md) move from v0.6.0 to v0.5.0 scope. They should be part of the .squad/ directory structure created during the rename.
 **Why:** User directive — v0.5.0 is already touching every path, so adding these files is near-zero marginal effort vs. a separate release.
 
+
+### 2026-02-20: Never store user email addresses in committed files
+**By:** Brady (via Copilot)
+**What:** Squad must never read or store git config user.email. Email addresses are PII and must not be written to .ai-team/ (or .squad/) files. The v0.5.0 migration tool must scrub any email addresses that were written by earlier versions.
+**Why:** User directive — email addresses in committed files are exposed to search engines and bad actors. Privacy concern.
