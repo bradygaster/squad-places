@@ -205,6 +205,39 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 ## Learnings
 
+### 2026-02-21: Copilot SDK Agent Design Impact Analysis
+
+**Context:** Brady evaluating SDK replatforming. Analyzed how SDK's CustomAgents, SessionHooks, and multi-session architecture map to Squad's agent model.
+
+**Key findings:**
+
+- **Agent sessions replace spawns.** SDK `CopilotSession` objects = persistent agents with lifecycle hooks, event streaming, and workspace persistence. Squad shifts from spawn-and-pray to session orchestration.
+
+- **CustomAgents = charter.md compilation.** SDK's CustomAgentConfig maps 1:1 to Squad charters (name, role, prompt, tools, MCP servers). Squad needs a charter→CustomAgentConfig compiler. Dynamic context (TEAM_ROOT, decisions) moves from prompt templates to `onSessionStart` hook.
+
+- **Hooks formalize governance.** `onPreToolUse` = reviewer lockouts enforced mechanically (SDK blocks tool calls). `onPostToolUse` = decision capture automated (every file write audited). `onUserPromptSubmitted` = directive capture centralized. `onSessionStart` = team context injected once per session. Governance moves from prompt logic to programmatic enforcement.
+
+- **Multi-session orchestration unlocks parallel visibility.** Coordinator creates N sessions (one per agent), subscribes to all events. Real-time observability: coordinator sees every tool call, message chunk, reasoning step from all agents simultaneously. Session affinity: agents keep same session across multi-comment GitHub issues.
+
+- **InfiniteSessions = agent long-term memory.** Each agent's workspace (`~/.copilot/session-state/squad-{name}/`) persists across work items. Agents write session summaries to `workspace/memory.md`, read on restart. Long-term continuity: Keaton remembers architectural decisions from weeks ago.
+
+**Bold experiments identified:**
+1. **Live Agent Inspector** — TUI/dashboard showing all agent sessions in real time
+2. **Agent Skills as MCP Servers** — Squad skills become portable MCP modules
+3. **Reviewer as Hook** — Inline review via `onPostToolUse` (50% faster than separate spawn)
+4. **Squad DM via SDK** — Messaging bridge (Telegram/Slack) trivial with sessions
+5. **InfiniteSessions as Long-Term Memory** — Agents persist identity across weeks
+
+**What gets better:** Real-time streaming, persistent memory, mechanical governance, parallel efficiency, programmatic tool control.
+
+**What gets harder:** Session lifecycle management, hook-based context injection, dependency weight (+SDK ~2MB), testing (mock sessions/events).
+
+**Strategic take:** This is a v2.0 moment. SDK is in preview — adopting early positions Squad as the reference multi-agent architecture on GitHub Copilot. By the time SDK hits GA, Squad could own the category.
+
+**Recommendation:** Start with POC (port Scribe to SDK session + one hook), compare DX, measure observability/memory/governance. If promising, migrate incrementally with CLI-spawn fallback until SDK parity proven.
+
+**Files created:** `.ai-team/docs/sdk-agent-design-impact.md` (full analysis), `.ai-team/decisions/inbox/verbal-sdk-agent-design.md` (decision proposal).
+
 ### 2026-02-19: GitHub Issue #102 — squad.agent.md path migration complete
 Updated all `.ai-team/` and `.ai-team-templates/` path references to `.squad/` and `.squad/templates/` in the coordinator prompt and all templates. 93 references migrated in squad.agent.md (reduced to 4 backward-compat fallback mentions). Updated deprecation banner to Migration Banner (v0.5.0) to reflect that the migration IS happening now. Preserved all backward-compatibility language for legacy repo detection. Updated `.gitattributes` examples and git commit message prefixes from `ai-team` to `squad`. All template files and 6 workflow YAMLs migrated. PR #113 opened to dev branch. Tests: 52/53 passing (1 pre-existing failure in marketplace test — `index.js` still writes to `.ai-team/`, fixed in Fenster's #101).
 

@@ -500,3 +500,15 @@ Brady's "forward-only" philosophy is correct for this stage of product maturity.
 📌 Team update (2026-02-19): Insider Program infrastructure verified and complete — Issue #94 all checklist items verified: CI/CD triggers, guard protection, insider release workflow, documentation, CLI help text. All 11 workflow templates in sync. Ready for Brady to create insider branch. — decided by Kobayashi
 
 📌 Team update (2026-02-20): Kobayashi merged all 5 v0.5.0 PRs (#109–#113) into dev in dependency order. All tests pass (53/53). Migration infrastructure (dual-path CLI/workflows, email scrubbing, docs) ready for v0.5.0 release. — Scribe
+
+
+- **2026-02-20: SDK Replatforming Strategic Assessment (Brady request)**
+  - **Context:** Brady asked for a thorough evaluation of replatforming Squad on @github/copilot-sdk (v0.1.8, Technical Preview). Deep-read the SDK source, docs, and API surface. Compared against Squad's current template-only architecture.
+  - **Core insight:** The SDK's CopilotClient/CopilotSession model maps directly to Squad's coordinator/agent pattern, but with programmatic session management, event streams, typed tool APIs, and lifecycle hooks. This transforms Squad from a template kit into a programmable multi-agent runtime.
+  - **Key capabilities gained:** Custom tools for typed handoff (squad_route, squad_decide, squad_memory), session hooks to replace prompt-based policy enforcement (30-50% prompt reduction), multi-session parallelism, MCP server integration, infinite sessions with auto-compaction, BYOK for enterprise widening, skill directories for runtime-loaded domain knowledge.
+  - **Key risks:** SDK is Technical Preview (breaking changes possible), adds runtime dependencies (vscode-jsonrpc, zod), migration complexity for existing users.
+  - **Verdict: Conditional Go.** Phase 1 must prove viability. SDK version pinned. Template engine stays. Brady reviews before Phase 2.
+  - **Artifacts:** .ai-team/docs/sdk-replatforming-proposal.md, .ai-team/decisions/inbox/keaton-sdk-replatforming.md
+  - **Strategic position:** Being an early, sophisticated SDK consumer positions Squad as the reference multi-agent implementation on Copilot. Competitive moat vs. AutoGen/CrewAI/LangGraph — only native GitHub integration.
+
+📌 Team update (2026-02-20): SDK Replatforming — Conditional Go. Replatform Squad orchestration on @github/copilot-sdk. Phased migration: Phase 1 proves viability, Phase 2 adds hooks/tools, Phase 3 multi-session orchestration, Phase 4 template migration. Template engine stays. Brady approval required before Phase 2. Full proposal in .ai-team/docs/sdk-replatforming-proposal.md. — decided by Keaton
