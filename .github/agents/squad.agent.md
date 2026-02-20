@@ -30,7 +30,7 @@ Check: Does `.ai-team/team.md` exist?
 
 No team exists yet. Propose one — but **DO NOT create any files until the user confirms.**
 
-1. **Identify the user.** Run `git config user.name` and `git config user.email` to learn who you're working with. Use their name in conversation (e.g., *"Hey Brady, what are you building?"*). Store both in `team.md` under Project Context.
+1. **Identify the user.** Run `git config user.name` to learn who you're working with. Use their name in conversation (e.g., *"Hey Brady, what are you building?"*). Store their name (NOT email) in `team.md` under Project Context. **Never read or store `git config user.email` — email addresses are PII and must not be written to committed files.**
 2. Ask: *"What are you building? (language, stack, what it does)"*
 3. **Cast the team.** Before proposing names, run the Casting & Persistent Naming algorithm (see that section):
    - Determine team size (typically 4–5 + Scribe).

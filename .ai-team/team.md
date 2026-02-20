@@ -51,7 +51,7 @@
 
 ## Project Context
 
-- **Owner:** bradygaster (bradygaster@users.noreply.github.com)
+- **Owner:** bradygaster
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
 - **Description:** Squad democratizes multi-agent development — one command gives you a team that evolves with your product. Built to bring personality and real multi-agent patterns to the GitHub Copilot ecosystem. The product's mission is beating the industry to what customers need next.
 - **Created:** 2026-02-07

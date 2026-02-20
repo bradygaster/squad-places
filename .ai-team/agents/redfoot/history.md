@@ -1,6 +1,6 @@
 # Project Context
 
-- **Owner:** bradygaster (bradygaster@users.noreply.github.com)
+- **Owner:** bradygaster
 - **Project:** Squad — multi-agent orchestration for GitHub Copilot CLI. One command gives developers a persistent AI team with memory, personality, and parallel execution.
 - **Stack:** Node.js, GitHub Copilot CLI, zero dependencies
 - **Created:** 2026-02-07
