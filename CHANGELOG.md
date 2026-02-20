@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0] — Unreleased
+
+### Added
+
+- **`.ai-team/` renamed to `.squad/`** — Full directory rename with backward-compatible migration utilities for existing installations
+- **Decision lifecycle management** — Archival and versioning support for design decisions across the agent lifecycle
+- **Identity layer** — New `wisdom.md` and `now.md` files for agent context and temporal awareness
+- **ISO 8601 UTC timestamps** — Standardized timestamp format throughout (decision dates, agent updates, metadata)
+- **Cold-path extraction** — Refactored `squad.agent.md` to separate active decision paths from historical logic
+- **Skills export/import verification** — Enhanced import/export validation and documentation for agent skill extension
+- **Email scrubbing** — Automatic email removal during migration to prevent accidental PII commits
+
 ## [0.4.2] — 2026-02-20
 
 ### Fixed
