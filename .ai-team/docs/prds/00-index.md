@@ -3,7 +3,7 @@
 **Owner:** Keaton (Lead)
 **Status:** Draft
 **Created:** 2026-02-20
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-21
 
 > This is the master index for Squad's SDK replatform plan. All 14 PRDs are listed here with owners, dependencies, phase assignments, and execution order. Start here.
 
@@ -23,19 +23,40 @@ The team has unanimously approved replatforming Squad on `@github/copilot-sdk` (
 
 ---
 
+## Cross-Cutting Concern: Agent Repository Architecture
+
+> **Status:** Non-negotiable core architectural requirement (Brady directive, elevated 2026-02-21)
+>
+> Agent resolution is pluggable from day one. Agents/team members can be pulled from pluggable sources — local disk, other GitHub repos, cloud APIs, a server endpoint. The `AgentSource` interface is foundational, not a Phase 3 addon. Every PRD that loads, resolves, or references agents MUST use this abstraction.
+
+```typescript
+interface AgentSource {
+  list(): Promise<AgentManifest[]>;
+  load(name: string): Promise<AgentConfig>;
+  type: 'local' | 'github' | 'api' | 'custom';
+}
+```
+
+First implementation: `LocalAgentSource` reads from `.squad/agents/`. But `SquadClient`, the coordinator, and the session lifecycle MUST use the `AgentSource` interface, never hardcoded paths.
+
+**PRDs affected:** 1, 4, 5, 7, 11, 14 (see integration notes per PRD below)
+
+---
+
 ## PRD Registry
 
 ### Phase 1 — Core (v0.6.0 MVP)
 
-The foundation. Every other PRD depends on these shipping first.
+The foundation. Every other PRD depends on these shipping first. Agent Repository Architecture (PRD 15) is cross-cutting and begins in Phase 1.
 
 | # | PRD | Owner | Depends On | Description |
 |---|-----|-------|------------|-------------|
-| 1 | SDK Orchestration Runtime | Fenster (Core Dev) | — | `CopilotClient` wrapper, connection lifecycle, SDK initialization |
+| 1 | SDK Orchestration Runtime | Fenster (Core Dev) | — | `CopilotClient` wrapper, connection lifecycle, SDK initialization. **Must define `AgentSource` interface in adapter layer.** |
 | 2 | Custom Tools API | Fenster (Core Dev) | PRD 1 | `squad_route`, `squad_decide`, `squad_memory`, `squad_status` tools |
 | 3 | Hooks & Policy Enforcement | Baer (Security) | PRD 1, 2 | `onPreToolUse`/`onPostToolUse` for governance, reviewer lockouts |
-| 4 | Agent Session Lifecycle | Verbal (Prompt Engineer) | PRD 1, 2 | Charters → `CustomAgentConfig`, session pool, persistent workspaces |
-| 5 | Coordinator Replatform | Keaton (Lead) | PRD 1–4 | 32KB prompt → TypeScript orchestrator using PRDs 1–4 as building blocks |
+| 4 | Agent Session Lifecycle | Verbal (Prompt Engineer) | PRD 1, 2 | Charters → `CustomAgentConfig`, session pool, persistent workspaces. **Charter compilation loads via `AgentSource`, not filesystem.** |
+| 5 | Coordinator Replatform | Keaton (Lead) | PRD 1–4 | 32KB prompt → TypeScript orchestrator. **`loadTeam()` resolves agents from configured sources via `AgentSource`.** |
+| 15 | Agent Repository Architecture | Fenster (Core Dev) | PRD 1 | `AgentSource` interface, `LocalAgentSource` implementation, source registry in `squad.config.ts`. **Cross-cutting — design in Phase 1, extends through Phase 3.** |
 
 ### Phase 2 — Extensions (v0.7.x)
 
@@ -44,7 +65,7 @@ Capabilities enabled by the core. All can execute in parallel once PRD 5 ships.
 | # | PRD | Owner | Depends On | Description |
 |---|-----|-------|------------|-------------|
 | 6 | Streaming Observability | Kujan (SDK Expert) | PRD 5 | Real-time event aggregation, token tracking, orchestration dashboard |
-| 7 | Skills Migration | Verbal (Prompt Engineer) | PRD 4 | `.squad/skills/` → SDK `skillDirectories`, portable skill packs |
+| 7 | Skills Migration | Verbal (Prompt Engineer) | PRD 4, 15 | `.squad/skills/` → SDK `skillDirectories`, portable skill packs. **Skills can also come from agent repositories — `SkillSource` mirrors `AgentSource`.** |
 | 8 | Ralph SDK Migration | Fenster (Core Dev) | PRD 4 | Ralph's watch loop → persistent SDK session, event-driven monitoring |
 | 9 | BYOK & Multi-Provider | Kujan (SDK Expert) | PRD 1 | Custom `ProviderConfig`, fallback chains, enterprise airgap support |
 | 10 | MCP Server Integration | Kujan (SDK Expert) | PRD 1, 4 | Per-agent MCP servers, Squad state as MCP server, third-party MCP |
@@ -55,10 +76,10 @@ Long-horizon work. Reshapes how Squad looks, feels, and ships.
 
 | # | PRD | Owner | Depends On | Description |
 |---|-----|-------|------------|-------------|
-| 11 | Casting System v2 | Verbal (Prompt Engineer) | PRD 4 | Casting registry → runtime `customAgents` generation, dynamic agent identity |
+| 11 | Casting System v2 | Verbal (Prompt Engineer) | PRD 4, 15 | Casting registry → runtime `customAgents` generation. **Cross-repo casting must resolve agents from any `AgentSource`.** |
 | 12 | Distribution & In-Copilot Install | Kujan (SDK Expert) | PRD 1, 5 | `npm install` path, SDK bundling, Copilot Extensions marketplace |
 | 13 | A2A Agent Communication | Verbal (Prompt Engineer) | PRD 4, 5 | Direct agent-to-agent messaging via SDK sessions, event-based handoff |
-| 14 | Clean-Slate Architecture | Keaton (Lead) | PRD 1 | Ground-zero redesign — `.squad/` structure, bundling, config, state management |
+| 14 | Clean-Slate Architecture | Keaton (Lead) | PRD 1, 15 | Ground-zero redesign — `.squad/` structure, bundling, config. **`squad.config.ts` defines `agentSources[]` for pluggable resolution.** |
 
 ---
 
@@ -73,23 +94,25 @@ Long-horizon work. Reshapes how Squad looks, feels, and ships.
                     │   │ (Fenster) │ ← THE GATE                              │
                     │   └─────┬─────┘                                          │
                     │         │                                                │
-                    │         ▼                                                │
-                    │   ┌───────────┐                                          │
-                    │   │  PRD 2    │ Custom Tools API                         │
-                    │   │ (Fenster) │                                          │
-                    │   └─────┬─────┘                                          │
-                    │         │                                                │
-                    │    ┌────┴────┐                                           │
-                    │    ▼         ▼                                           │
+                    │    ┌────┴────────────────┐                               │
+                    │    ▼                     ▼                               │
+                    │ ┌───────────┐   ┌──────────────┐                        │
+                    │ │  PRD 2    │   │   PRD 15     │ Agent Repository        │
+                    │ │ Tools API │   │   (Fenster)  │ Architecture            │
+                    │ │ (Fenster) │   │ CROSS-CUTTING│ ← AgentSource iface    │
+                    │ └─────┬─────┘   └──────┬───────┘                        │
+                    │       │                │                                 │
+                    │  ┌────┴────┐     ┌─────┘                                │
+                    │  ▼         ▼     ▼                                      │
                     │ ┌───────┐ ┌───────┐                                     │
-                    │ │ PRD 3 │ │ PRD 4 │  ← parallel                         │
+                    │ │ PRD 3 │ │ PRD 4 │  ← parallel (4 uses AgentSource)    │
                     │ │(Baer) │ │(Verbal)│                                    │
                     │ └───┬───┘ └───┬───┘                                     │
                     │     └────┬────┘                                          │
                     │          ▼                                               │
                     │    ┌───────────┐                                         │
                     │    │  PRD 5    │ Coordinator Replatform                  │
-                    │    │ (Keaton)  │ ← PHASE 1 EXIT                         │
+                    │    │ (Keaton)  │ ← PHASE 1 EXIT (uses AgentSource)      │
                     │    └───────────┘                                         │
                     └──────────────────────────────────────────────────────────┘
 
@@ -101,8 +124,8 @@ Long-horizon work. Reshapes how Squad looks, feels, and ships.
     │   │  PRD 6    │  │  PRD 7    │  │  PRD 8    │  │  PRD 9    │           │
     │   │ Streaming │  │  Skills   │  │  Ralph    │  │  BYOK     │           │
     │   │ (Kujan)   │  │ (Verbal)  │  │ (Fenster) │  │ (Kujan)   │           │
-    │   └───────────┘  └───────────┘  └───────────┘  └───────────┘           │
-    │                                                                          │
+    │   └───────────┘  │ +PRD 15   │  └───────────┘  └───────────┘           │
+    │                   └───────────┘                                          │
     │   ┌───────────┐                                                         │
     │   │  PRD 10   │                                                         │
     │   │  MCP      │                                                         │
@@ -117,10 +140,10 @@ Long-horizon work. Reshapes how Squad looks, feels, and ships.
     │   │  PRD 11   │  │  PRD 12   │  │  PRD 13   │  │  PRD 14   │           │
     │   │ Casting v2│  │  Distro   │  │  A2A      │  │ Clean     │           │
     │   │ (Verbal)  │  │ (Kujan)   │  │ (Verbal)  │  │  Slate    │           │
-    │   └───────────┘  └───────────┘  └───────────┘  │ (Keaton)  │           │
+    │   │ +PRD 15   │  └───────────┘  └───────────┘  │ (Keaton)  │           │
+    │   └───────────┘                                  │ +PRD 15   │           │
     │                                                  └───────────┘           │
-    │                                                  ↑ can start            │
-    │                                                    early (design)       │
+    │         PRD 15 extends through all phases (cross-cutting)               │
     └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -128,18 +151,21 @@ Long-horizon work. Reshapes how Squad looks, feels, and ships.
 
 ## Execution Order
 
-**Critical path:** PRD 1 → PRD 2 → PRDs 3+4 (parallel) → PRD 5 → Extensions (all parallel)
+**Critical path:** PRD 1 → PRD 2 + PRD 15 (parallel) → PRDs 3+4 (parallel, 4 uses AgentSource) → PRD 5 → Extensions (all parallel)
 
 ```
 Week 1-2:   PRD 1 — SDK Orchestration Runtime (Fenster)
             PRD 14 — Clean-Slate Architecture begins (Keaton, design-only, parallel)
+            PRD 15 — Agent Repository Architecture begins (Fenster, interface design)
 Week 3-4:   PRD 2 — Custom Tools API (Fenster)
+            PRD 15 — LocalAgentSource implementation (Fenster, parallel)
 Week 5-6:   PRD 3 — Hooks & Policy Enforcement (Baer)        ┐
-            PRD 4 — Agent Session Lifecycle (Verbal)          ┘ parallel
-Week 7-9:   PRD 5 — Coordinator Replatform (Keaton)
+            PRD 4 — Agent Session Lifecycle (Verbal)          ┘ parallel (uses AgentSource)
+Week 7-9:   PRD 5 — Coordinator Replatform (Keaton) — resolves agents via AgentSource
             ─── v0.6.0 MVP SHIPS ───
 Week 10+:   PRDs 6-13 — Extensions & Identity (all parallel, team-wide)
-            PRD 14 — Clean-Slate implementation begins
+            PRD 14 — Clean-Slate implementation begins (agentSources in config)
+            PRD 15 — GitHub/API source implementations (Phase 2-3)
 ```
 
 ### Phase Timeline
@@ -193,7 +219,7 @@ SDK is Technical Preview (`v0.1.x`). Policy:
 
 | Team Member | Role | PRDs | Load |
 |-------------|------|------|------|
-| **Fenster** | Core Dev | 1, 2, 8 | Heavy (critical path Weeks 1–4) |
+| **Fenster** | Core Dev | 1, 2, 8, 15 | Heavy (critical path Weeks 1–4, PRD 15 cross-cutting) |
 | **Baer** | Security | 3 | Focused (Weeks 5–6) |
 | **Verbal** | Prompt Engineer | 4, 7, 11, 13 | Sustained (Weeks 5+) |
 | **Keaton** | Lead | 5, 14 | Strategic (Weeks 7–9, plus ongoing design) |
@@ -241,4 +267,4 @@ PRDs reference each other by number (e.g., "PRD 1" or "see PRD 4 §Agent Session
 
 ---
 
-*This index is maintained by Keaton (Lead). Last updated 2026-02-20.*
+*This index is maintained by Keaton (Lead). Last updated 2026-02-21. Agent Repository Architecture elevated to cross-cutting concern per Brady directive.*
