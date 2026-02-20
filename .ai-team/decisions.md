@@ -1248,3 +1248,14 @@ The registry format is identical — any repo with a \places.json\ and \gents/\
 ### Status
 
 ✅ Repository scaffolded and pushed to \radygaster/squad-places-pr\ (commit \91ebd0e\).
+
+---
+
+
+
+---
+
+### 2026-02-20T10-10: User directive — places import/export granularity
+**By:** Brady (via Copilot)
+**What:** Places supports both granularities: export/import a single agent OR a full squad (team). Both are first-class from day one.
+**Why:** User request — resolves open question #3 (Agent Repository Backend)

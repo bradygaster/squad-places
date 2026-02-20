@@ -20,3 +20,8 @@ Brady iterated through open questions one-by-one with a "cat" gate (must type "c
 ### Next
 
 Resume open questions iteration at Q3 when Brady returns.
+
+### Update — Q3 resolved
+- Q3: Teams vs agents-only → Both first-class. Export/import a single agent OR a full squad.
+- Q4 presented (versioning for upstream updates) — awaiting Brady's answer
+- 22 questions remain unresolved
