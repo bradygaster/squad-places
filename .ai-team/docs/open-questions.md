@@ -36,7 +36,7 @@
 - [x] ~~Can multiple concurrent sessions share a single CopilotClient connection?~~ → RESOLVED: Study SDK samples for concurrent session patterns. Default to option 1 (single shared client) if samples support it. Let the implementation tell us — defer deep design until we're building it. (Brady, 2026-02-20)
 
 ### Feature Parity
-- [ ] squad.agent.md is user-readable/editable today — how do we preserve customizability in TypeScript? (Kujan flagged as #1 concern)
+- [x] ~~squad.agent.md is user-readable/editable today — how do we preserve customizability in TypeScript? (Kujan flagged as #1 concern)~~ → RESOLVED: Config-driven architecture — extract every customizable behavior into config files (JSON/YAML) that the TypeScript runtime reads. squad.agent.md becomes a reference doc. Users customize via config, not code. (Brady, 2026-02-20)
 - [ ] Export/import portability (~260 lines) has no PRD coverage — do we need a new PRD?
 - [ ] 12 workflow templates need path migration (.ai-team/ → .squad/) — who owns this?
 
@@ -75,3 +75,6 @@
 - [x] **SDK pinning:** Pin exact version during Technical Preview. Manual upgrade via `squad upgrade --sdk`. Relax to ~ or ^ at v1.0 stable. (Brady, 2026-02-20)
 - [x] **resumeSession for Ralph:** Assume it works, build on it. Study SDK samples for persistent loop patterns. Exercise the API early — file bugs if it breaks. Good partnering signal. (Brady, 2026-02-20)
 - [x] **Concurrent sessions:** Study SDK samples for concurrent patterns. Default to single shared CopilotClient if supported. Let implementation tell us — defer deep design. (Brady, 2026-02-20)
+
+### Feature Parity
+- [x] **Coordinator customizability:** Config-driven architecture — extract all customizable behavior into config files (JSON/YAML) that TypeScript runtime reads. squad.agent.md becomes reference doc only. Users customize via config, not code. (Brady, 2026-02-20)
