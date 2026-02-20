@@ -1,6 +1,22 @@
 # Changelog
 
-## [0.5.0] — Unreleased
+## [0.5.2] — 2026-02-20
+
+### Fixed
+
+- **`upgrade --migrate-directory` exits early** (#125) — The directory rename step no longer calls `process.exit(0)`, so the full upgrade (squad.agent.md, workflows, .ai-team-templates) now runs after migration in one command
+- **`.slnx`, `.fsproj`, `.vbproj` not detected as .NET** (#124) — `detectProjectType()` now recognizes modern Visual Studio solution files and F#/VB.NET project files; repos using these get proper dotnet stub CI workflows instead of generic stubs
+- **Migrations hardcoded to `.ai-team/`** (#126 partial) — Migration steps (skills/, plugins/ creation, email scrub) and `.gitattributes` union rules now use the detected squad directory (`.squad/` or `.ai-team/`) so they work correctly after `--migrate-directory` runs
+
+## [0.5.1] — 2026-02-20
+
+### Added
+
+- **`squad watch` command** — Ralph local watchdog for persistent polling. Run `npx github:bradygaster/squad watch` to poll GitHub every 10 minutes for untriaged squad work, auto-triage, and assign @copilot to `squad:copilot` issues. Use `--interval` flag to customize polling interval (e.g., `squad watch --interval 5` for 5-minute polling). Runs until Ctrl+C.
+- **Project type detection** — Squad now detects your project's language and stack (JavaScript, Python, Java, Go, Rust, etc.)
+- **Git safety rules** — Enforces guardrails based on detected project type to prevent common mistakes and state corruption
+
+## [0.5.0] — 2026-02-20
 
 ### Added
 
