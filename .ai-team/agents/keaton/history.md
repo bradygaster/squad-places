@@ -6,6 +6,7 @@
 
 ---
 
+📌 Team update (2026-02-20T22-58-22): Crossover vision delivered. Keaton authored v1 architecture plan (5-core agents, .squad/ canonical, transition gates March-June). Kujan authored SDK knowledge transfer (26KB technical lessons, Coordinator Runtime Architect universe). McManus authored v1 strategy (stamping convention, 9-post blog cadence, Usual Suspects locked). Brady's 4 crossover directives captured. All decisions merged. — decided by Keaton, Kujan, McManus
 📌 Team update (2026-02-20T22-40): User impact analysis complete — 0 permanent losses, 7 temporary gaps (6-24 weeks), v0.5.2 fallback safety window confirmed — decided by Keaton, Kujan, McManus
 - **Created:** 2026-02-07
 
@@ -47,6 +48,18 @@ _Summarized from 2026-02-07 through 2026-02-15. Full entries in session logs._
 📌 Team update (2026-02-13): Agent Progress Updates (Proposal 022a) designed and proposed — Milestone signals + coordinator polling (30s intervals). Recommended for v0.4.0 after Project Boards. Addresses user uncertainty during long-running work. Zero additional API cost. Preserves agent personality. — designed by Keaton
 
 ## Learnings
+
+- **2026-02-22: Crossover Vision Document (Brady request)**
+  - **What created:** `.ai-team/docs/crossover-vision-keaton.md` — strategic vision for the post-replatform Squad (v1), covering architecture decisions to carry forward, transition gates, redesign from scratch, universe selection, and what it means to be the template squad.
+  - **Why:** When v1 ships and we migrate to squad-sdk, this team becomes the reference implementation for all future squads. This document articulates my bet on what matters, what we can leave behind, and how the system should work knowing everything we know now.
+  - **Key principles carried forward:** Distributed context model (coordinator ~1.5% overhead, reasoning gets 90%+), proposal-first governance, per-agent history files, casting system for personality, ceremonies as rituals not process. These are load-bearing.
+  - **What we're leaving behind:** `.ai-team/` directory (migrate to `.squad/`), duplicate agent definitions (13 → 5-6 core agents), manual decision merging (automate on commit), proposal overhead for small changes (clearer guardrails via convention).
+  - **Transition gates (3 phases):** Gate 1 = M0 complete + Brady validation (end of March). Gate 2 = M1 complete + real-repo testing (early May). Gate 3 = M3 validation + migration guide + feature parity confirmed (mid-June). Fresh squad creation happens after M3 with template and documentation.
+  - **v1 redesigned from scratch:** Fewer, stronger agents (5 core: Keaton, Fenster, Verbal, Baer, Hockney). Flat directory structure (.squad/agents/, .squad/docs/, .squad/decisions.md, .squad/skills/). SDK defines contracts (input, output, state, tools) — not implementation. Streamlined ceremonies (4 instead of 8-10). Proposal-light for small changes, proposal-heavy for architecture. Skills as first-class (discoverable, shareable, marketplace-ready).
+  - **Universe choice:** The Usual Suspects. Why (internal only): Each agent is a skilled crew member. Team held by mission, not affinity. Intentional mystery (agents discover context). Coordinator is Verbal (extracting narrative from chaos). Film's structure handles failure states well — useful mental model for agent teams.
+  - **Being the first squad of many:** We are the proof that SDK works long-term. We define what "healthy" looks like. Future squads will copy our decisions.md, ceremonies.md, routing rules, and documented learnings. Every decision must be explainable (not just stated). We own the upgrade path (adopt new features first, test, document). We maintain a "Squad Patterns" doc explaining *why*, not just *what*.
+  - **The sustainability covenant:** Squad v1 becomes a replicable pattern. A new developer runs `npx create-squad`, gets a team with proven architecture, clear roles, autonomous agents, intentional ceremonies. No multi-agent development from first principles — they inherit our learning. The metric: "running a squad" feels as natural as "using git."
+  - **Decision reference:** Embedded all prior architectural work (distributed context model, proposal system, casting, ceremonies, skills lifecycle). This doc is the capstone that translates 14 PRDs + 27 decisions into a coherent vision for v1.
 
 - **2026-02-21: Pre-Implementation Readiness Assessment (Brady gate-check question)**
   - **What created:** `.ai-team/docs/pre-implementation-readiness.md` — comprehensive assessment of architectural assumptions that need validation before M0 implementation begins. Plus decision doc: `.ai-team/decisions/inbox/keaton-pre-implementation-spikes.md`.

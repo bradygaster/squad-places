@@ -1,14 +1,5 @@
 # Team Decisions
 
-> Historical decisions archived in decisions/archive/. Recent 30 days and permanent decisions stay here.
-> **Q1 2026 archive:** decisions/archive/2026-Q1.md
-
----
-
----
-
-# Team Decisions
-
 > Historical decisions archived in `decisions/archive/`. Recent 30 days and permanent decisions stay here.
 > **Q1 2026 archive:** `decisions/archive/2026-Q1.md`
 
@@ -1885,4 +1876,154 @@ These three form a coherent feature domain that doesn't fit existing PRD scope.
 3. **This decision document** — Recommendations and next steps
 
 Audit is complete. Ready for Brady's direction on PRDs 15-16 scope and timeline.
+
+---
+
+### 2026-02-20: Crossover Vision — Squad v1 Architecture & First Replication
+
+**Status:** Proposed  
+**Author:** Keaton (Lead)  
+**Date:** 2026-02-20  
+**Category:** Strategic / Architecture  
+**Affects:** V1 replatform, SDK design, agent team structure, ceremony design, documentation
+
+**Problem:** At SDK replatform completion (M3), we transition from current Squad to fresh v1 Squad on squad-sdk. Must decide: what architectural decisions are load-bearing and transfer exactly? What can we leave behind? How do we redesign with hindsight? What does it mean to be the template squad for all future squads?
+
+**Solution:**
+
+**Load-Bearing Architecture (Must Transfer Exactly)**
+- Distributed Context Model: Coordinator ~1.5% overhead, agents ~4.4%, reasoning 90%+
+- Proposal-First Governance: All meaningful changes require structured proposals, 48-hour review minimum
+- Per-Agent Memory Pattern: Each agent owns their own history.md (append-only except summaries)
+- Casting System: Agent selection by charter (personality + expertise), not arbitrary assignment
+- Ceremonies as Rituals: Scheduled, synchronous, documented agendas
+
+**What We're Leaving Behind**
+- Two-Directory Problem: Commit to `.squad/` as canonical in v1; retire `.ai-team/` support
+- Duplicate Agent Definitions: Start v1 with 5-6 core agents (Keaton, Fenster, Verbal, Baer, Hockney)
+- Proposal Overhead: Clearer guardrails — small changes skip proposals, big changes require them
+- Manual Decision Merging: Automate in v1 (merge script on PR merge)
+
+**Squad v1 Redesigned from Scratch**
+- Agent System: 5 core agents, agent templates via `squad add-agent`, each gets charter.md, history.md, _skill-manifest.json
+- Directory Structure: Flat and intentional (.squad/agents/, .squad/docs/, decisions.md, ceremonies.md, skills/, routing.md, team.md, sdk-config.json)
+- SDK Contract: Input (prompt + context JIT), Output (structured response with tool calls, decisions, after-work), State (write only to .squad/agents/{name}/history.md), Tools (SDK-provided only)
+- Coordinator Redesigned: Route via casting, enforce output contracts, manage session pooling, load context on-demand, auto-publish decisions. Target: <1,000 lines
+- Ceremonies Streamlined: From 8-10 to 4 (Weekly Standup, Retro, Planning, Casting Review)
+- Skills as First-Class: Discovered, shared, evolved, marketplace-ready
+
+**Transition Gates (3 Phases)**
+- Gate 1 (M0): SDK foundation complete, Brady's 5 spikes pass, real-repo testing 5+ days, zero blockers for M1
+- Gate 2 (M1): Agent lifecycle, tools, Ralph monitoring, session persistence, one full feature on new SDK
+- Gate 3 (M3): Feature parity confirmed, migration guide written, one dry-run migration completed
+- Timeline: End of March → Early May → Mid-June
+
+**Being the First Squad of Many**
+- This Squad becomes reference implementation when v1 launches
+- Every decision documented with reasoning (not just "we decided X")
+- Aggressive monitoring to catch problems before propagation
+- Fix gaps in SDK, not Squad state (SDK is guarantee; Squad is example)
+- Maintain "Squad Patterns" document explaining *why* not just *what*
+- Adopt SDK features first, test upgrade paths, document
+- Build anticipating customization (configuration, not forking)
+
+**Trade-offs**
+- Accept: Fewer agents at launch (5 vs 13), flatter structure, automation overhead, template agents less hand-holding
+- Avoid: Experimental decisions in production, design decisions that close doors, hidden complexity, architecture that doesn't scale to 20+ agents
+
+**Alternatives Considered**
+1. Keep All 13 Agents — Pro: turnkey. Con: bloat, harder customize. Rejected: doesn't align with Brady's "rebuild clean."
+2. Defer Universe Selection — Pro: more time. Con: inconsistency v0.x vs v1. Rejected: Usual Suspects proven, carries forward coherence.
+3. Automate Nothing in v1 — Pro: fewer moving parts. Con: tedious, doesn't scale. Rejected: automation table stakes for 20+ agents.
+4. Make v1 as Small as Possible (2-3 Agents) — Pro: minimal. Con: missing security/testing/architecture. Rejected: 5-6 is smallest viable.
+
+**Success Criteria**
+- ✅ Crossover vision document written and reviewed
+- ✅ All 3 transition gates clearly defined with measurable exit criteria
+- ✅ v1 architecture (5-agent, flat directory, SDK contracts) documented
+- ✅ "Squad Patterns" template outlined
+- ✅ Ceremony redesign finalized (4 instead of 8-10)
+- ✅ "First squad of many" responsibilities documented
+- ✅ Team consensus on universe choice (Usual Suspects carries forward)
+- ✅ Migration path from old Squad → v1 Squad designed
+- ✅ Agent scaffolding design specified
+
+---
+
+### 2026-02-20: Crossover Vision Document — SDK Knowledge Transfer (Kujan)
+
+**Date:** 2026-02-20  
+**Author:** Kujan  
+**Status:** ACCEPTED  
+**Owners:** Kujan, Brady
+
+**Problem:** When SDK replatform completes (v1), we're creating a fresh squad in the new repo. Current knowledge carries forward but squad resets clean. Question: **What must carry forward from this squad to the next?** What are the non-negotiable technical lessons, architectural patterns, and platform insights that will pay dividends in v1 and beyond?
+
+**Decision:** Authored `.ai-team/docs/crossover-vision-kujan.md` (26KB knowledge transfer) covering:
+
+1. **SDK knowledge carry-forward** — Hard guarantees, hard constraints, session management quirks, tool registration patterns, model selection patterns, cost handling
+2. **Platform evolution predictions** — What's coming in 18–24 months (session-level multi-tenancy, per-agent hooks, MCP health API, cost data in SDK, streaming chunks)
+3. **Technical debt to leave behind** — Prompt-level platform detection, manual session context, hardcoded model catalog, polling-based status, charter inlining at scale, regex decision parsing
+4. **SDK-native possibilities** — What becomes possible when coordinator moves from prompt to executable code (v0.7.0+): declarative tool namespacing, enforced cost governance, skill plugins, portable squad composition, multi-repo squads
+5. **Universe selection** — I choose: **Coordinator Runtime Architect** in v1.0.0
+6. **Lessons for future SDK experts** — 10 critical insights
+
+**Rationale:** Knowledge capture while deep in SDK internals is valuable; retrospective archaeology loses precision. Future SDK expert will face platform constraints, architecture decisions, evolution predictions — distilled directly saves 100+ hours of analysis.
+
+**Implications**
+- For Brady: Handoff document for new squad
+- For next squad's SDK expert: Day-one guidance on platform boundaries and migration priorities
+- For v0.6.0–v1.0.0 roadmap: Define what to optimize for
+
+---
+
+### 2026-02-20: v1 Content Strategy and DevRel Vision (McManus)
+
+**By:** McManus (DevRel)  
+**Date:** 2026-02-20  
+**Status:** APPROVED  
+**Scope:** Strategic direction for SDK replatform content and messaging
+
+**Decision:** ✅ **TWO STRATEGIC DOCUMENTS CREATED:**
+
+1. **`.ai-team/docs/v1-content-strategy.md`** (18.6 KB)
+   - v1 stamping convention (code comments, badges, blog tags, CHANGELOG emojis)
+   - Blog cadence: 9 posts over 32 weeks
+   - Documentation plan per milestone
+   - File placement rules (`.ai-team/docs/` internal, `docs/` public, root pristine)
+   - Content migration plan
+
+2. **`.ai-team/docs/crossover-vision-mcmanus.md`** (18.3 KB)
+   - Messaging arc (ACT 1: Confidence, ACT 2: Continuity, ACT 3: Clarity)
+   - v0.6.0 README vision (16-section structure)
+   - Universe selection: **Usual Suspects (locked in)**
+   - Voice of the first Squad
+
+**Rationale:** Clear tagging answers "Is this available to me?" Blog cadence aligns to milestones. File placement keeps repo pristine per Brady's directive. Universe locked to maintain continuity.
+
+**Success Looks Like (6 weeks post-launch):**
+- Users upgrading to v0.6.0 feel zero friction
+- New users understand Squad from README alone
+- v1-stamped content prevents user confusion
+
+---
+
+### 2026-02-20: Brady's Crossover Directives (4 Captured)
+
+**By:** Brady (via Copilot)  
+**Date:** 2026-02-20  
+**Status:** CAPTURED  
+**Document:** `.ai-team/decisions/inbox/copilot-directive-2026-02-20T14-53.md`
+
+**Directive 1 — Repo Cleanliness Policy**  
+Keep repo in pristine structure. Only put team work files in .squad/ folder. `docs/` is exclusively for public documentation. No markdown files scattered around repo root.
+
+**Directive 2 — Blog and Document as We Go**  
+Blog as we go, document as we go. All SDK-based work should be stamped/tagged as "v1" (not "v2") in docs and blogs.
+
+**Directive 3 — New Squad for New Repo at Cutover**  
+When we shift to the new repo (squad-sdk), create a fresh squad. Take names, personalities, and lessons learned, but carry the absolute bare minimum.
+
+**Directive 4 — Team Picks Their Own Universe at Crossover**  
+When the crossover happens, the team gets to pick their own universe(s) for casting. Each agent should document where we're headed and how they envision carving out new personalities.
 
