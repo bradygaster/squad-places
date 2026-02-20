@@ -71,6 +71,14 @@
       "legacy_named": false,
       "status": "active",
       "model": "claude-sonnet-4.5"
+    },
+    "baer": {
+      "persistent_name": "Baer",
+      "universe": "The Usual Suspects",
+      "created_at": "2026-02-20T05:50:00.000Z",
+      "legacy_named": false,
+      "status": "active",
+      "model": "auto"
     }
   }
 }

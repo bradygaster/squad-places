@@ -12,6 +12,7 @@ How to decide who handles what.
 | Code review | {Name} | Review PRs, check quality, suggest improvements |
 | Testing | {Name} | Write tests, find edge cases, verify fixes |
 | Scope & priorities | {Name} | What to build next, trade-offs, decisions |
+| Security, privacy, compliance, PII review | Baer 🔒 | Privacy policy review, PII audits, GitHub compliance, API data rules, security-sensitive code review |
 | Async issue work (bugs, tests, small features) | @copilot 🤖 | Well-defined tasks matching capability profile |
 | Session logging | Scribe | Automatic — never needs routing |
 
@@ -39,7 +40,7 @@ When triaging, the Lead should ask:
 1. **Is this well-defined?** Clear title, reproduction steps or acceptance criteria, bounded scope → likely 🟢
 2. **Does it follow existing patterns?** Adding a test, fixing a known bug, updating a dependency → likely 🟢
 3. **Does it need design judgment?** Architecture, API design, UX decisions → likely 🔴
-4. **Is it security-sensitive?** Auth, encryption, access control → always 🔴
+4. **Is it security-sensitive?** Auth, encryption, access control, PII handling → always 🔴, route to Baer
 5. **Is it medium complexity with specs?** Feature with clear requirements, refactoring with tests → likely 🟡
 
 ## Rules

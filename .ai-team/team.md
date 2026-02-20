@@ -21,6 +21,7 @@
 | [Kobayashi](https://en.wikipedia.org/wiki/The_Usual_Suspects) | Git & Release Engineer | `.ai-team/agents/kobayashi/charter.md` | ✅ Active |
 | [Redfoot](https://en.wikipedia.org/wiki/The_Usual_Suspects) | Graphic Designer | `.ai-team/agents/redfoot/charter.md` | ✅ Active |
 | [Strausz](https://en.wikipedia.org/wiki/The_Usual_Suspects) | VS Code Extension Expert | `.ai-team/agents/strausz/charter.md` | ✅ Active |
+| [Baer](https://en.wikipedia.org/wiki/The_Usual_Suspects) | Security Specialist | `.ai-team/agents/baer/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.ai-team/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
