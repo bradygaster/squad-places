@@ -26,7 +26,7 @@
 - [x] ~~**SkillSource parity:** Should `SkillSource` be a separate interface or a specialization of `AgentSource`? Skills and agents have different metadata shapes but similar resolution patterns.~~ → RESOLVED: Separate interfaces. SkillSource and AgentSource are mutually exclusive abstractions. No shared base, no inheritance. Clean separation despite similar resolution patterns. (Brady, 2026-02-20)
 
 ### Distribution  
-- [ ] Can Squad run as a global CLI tool outside of VS Code/Copilot? (depends on @github/copilot availability)
+- [x] ~~Can Squad run as a global CLI tool outside of VS Code/Copilot? (depends on @github/copilot availability)~~ → RESOLVED: GitHub Copilot CLI is P0 (hard dependency). VS Code is very close P1 — barely behind CLI. Fix the two existing VS Code extensions that sit on top of Squad. No standalone CLI outside Copilot for now. (Brady, 2026-02-20)
 - [ ] What's the bundle size target for the global install?
 - [ ] Should `squad init` remain SDK-free (scaffolding only) while `squad orchestrate` uses the SDK?
 
@@ -65,3 +65,6 @@
 - [x] **Offline mode:** If cached, use cached + warn. If no cache, fail gracefully with a friendly error message. Never hard-fail, never silent. (Brady, 2026-02-20)
 - [x] **Security model:** Trust but verify — full tool access for remote agents, validate structure on import (schema check, warn on suspicious patterns). No sandboxing. (Brady, 2026-02-20)
 - [x] **SkillSource parity:** Separate interfaces. SkillSource and AgentSource are mutually exclusive abstractions. No shared base, no inheritance. (Brady, 2026-02-20)
+
+### Distribution
+- [x] **Global CLI:** GitHub Copilot CLI is P0 (hard dependency). VS Code is very close P1. Fix existing VS Code extensions. No standalone outside Copilot for now. (Brady, 2026-02-20)
