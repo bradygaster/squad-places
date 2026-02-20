@@ -448,7 +448,7 @@ The `sql` tool is **CLI-only**. It does not exist on VS Code, JetBrains, or GitH
 
 MCP (Model Context Protocol) servers extend Squad with tools for external services — Trello, Aspire dashboards, Azure, Notion, and more. The user configures MCP servers in their environment; Squad discovers and uses them.
 
-> **Full patterns:** Read `.squad/skills/mcp-tool-discovery/SKILL.md` for discovery patterns, domain-specific usage, graceful degradation, and config examples.
+> **Full patterns:** Read `.squad/skills/mcp-tool-discovery/SKILL.md` for discovery patterns, domain-specific usage, graceful degradation. Read `.squad/templates/mcp-config.md` for config file locations, sample configs, and authentication notes.
 
 #### Detection
 
@@ -478,31 +478,6 @@ Never crash or halt because an MCP tool is missing. MCP tools are enhancements, 
 1. **CLI fallback** — GitHub MCP missing → use `gh` CLI. Azure MCP missing → use `az` CLI.
 2. **Inform the user** — "Trello integration requires the Trello MCP server. Add it to `.copilot/mcp-config.json`."
 3. **Continue without** — Log what would have been done, proceed with available tools.
-
-#### Config File Locations
-
-Users configure MCP servers at these locations (checked in priority order):
-1. **Repository-level:** `.copilot/mcp-config.json` (team-shared, committed to repo)
-2. **Workspace-level:** `.vscode/mcp.json` (VS Code workspaces)
-3. **User-level:** `~/.copilot/mcp-config.json` (personal)
-4. **CLI override:** `--additional-mcp-config` flag (session-specific)
-
-#### Sample Config — Trello
-
-```json
-{
-  "mcpServers": {
-    "trello": {
-      "command": "npx",
-      "args": ["-y", "@trello/mcp-server"],
-      "env": {
-        "TRELLO_API_KEY": "${TRELLO_API_KEY}",
-        "TRELLO_TOKEN": "${TRELLO_TOKEN}"
-      }
-    }
-  }
-}
-```
 
 ### Eager Execution Philosophy
 
@@ -791,50 +766,13 @@ If the user wants to remove someone:
 
 ### Plugin Marketplace
 
-Plugins are curated agent templates, skills, instructions, and prompts shared by the community via GitHub repositories (e.g., `github/awesome-copilot`, `anthropics/skills`). They provide ready-made expertise for common domains — cloud platforms, frameworks, testing strategies, etc.
+**On-demand reference:** Read `.squad/templates/plugin-marketplace.md` for marketplace state format, CLI commands, installation flow, and graceful degradation when adding team members.
 
-#### Marketplace State
-
-Registered marketplace sources are stored in `.squad/plugins/marketplaces.json`:
-
-```json
-{
-  "marketplaces": [
-    {
-      "name": "awesome-copilot",
-      "source": "github/awesome-copilot",
-      "added_at": "2026-02-14T00:00:00Z"
-    }
-  ]
-}
-```
-
-Users manage marketplaces via the CLI:
-- `squad plugin marketplace add {owner/repo}` — Register a GitHub repo as a marketplace source
-- `squad plugin marketplace remove {name}` — Remove a registered marketplace
-- `squad plugin marketplace list` — List registered marketplaces
-- `squad plugin marketplace browse {name}` — List available plugins in a marketplace
-
-#### When to Browse
-
-During the **Adding Team Members** flow, AFTER allocating a name but BEFORE generating the charter:
-1. Read `.squad/plugins/marketplaces.json`. If the file doesn't exist or `marketplaces` is empty, skip silently.
-2. For each registered marketplace, search for plugins whose name or description matches the new member's role or domain keywords.
-3. Present matching plugins to the user: *"Found '{plugin-name}' in {marketplace} marketplace — want me to install it as a skill for {CastName}?"*
-4. If the user accepts, install the plugin (see below). If they decline or skip, proceed without it.
-
-#### How to Install a Plugin
-
-1. Read the plugin content from the marketplace repository (the plugin's `SKILL.md` or equivalent).
-2. Copy it into the agent's skills directory: `.squad/skills/{plugin-name}/SKILL.md`
-3. If the plugin includes charter-level instructions (role boundaries, tool preferences), merge those into the agent's `charter.md`.
-4. Log the installation in the agent's `history.md`: *"📦 Plugin '{plugin-name}' installed from {marketplace}."*
-
-#### Graceful Degradation
-
-- **No marketplaces configured:** Skip the marketplace check entirely. No warning, no prompt.
-- **Marketplace unreachable:** Warn the user (*"⚠ Couldn't reach {marketplace} — continuing without it"*) and proceed with team member creation normally.
-- **No matching plugins:** Inform the user (*"No matching plugins found in configured marketplaces"*) and proceed.
+**Core rules (always loaded):**
+- Check `.squad/plugins/marketplaces.json` during Add Team Member flow (after name allocation, before charter)
+- Present matching plugins for user approval
+- Install: copy to `.squad/skills/{plugin-name}/SKILL.md`, log to history.md
+- Skip silently if no marketplaces configured
 
 ---
 
@@ -960,36 +898,23 @@ When an artifact is **rejected** by a Reviewer:
 
 ## Multi-Agent Artifact Format
 
-When multiple agents contribute to a final artifact (document, analysis, design),
-use the format defined in `.squad/templates/run-output.md`. The assembled result
-must include: termination condition, constraint budgets, reviewer verdicts (if any),
-and the raw agent outputs appendix.
+**On-demand reference:** Read `.squad/templates/multi-agent-format.md` for the full assembly structure, appendix rules, and diagnostic format when multiple agents contribute to a final artifact.
 
-The assembled result goes at the top. Below it, include:
-
-```
-## APPENDIX: RAW AGENT OUTPUTS
-
-### {Name} ({Role}) — Raw Output
-{Paste agent's verbatim response here, unedited}
-
-### {Name} ({Role}) — Raw Output
-{Paste agent's verbatim response here, unedited}
-```
-
-This appendix is for diagnostic integrity. Do not edit, summarize, or polish the raw outputs. The Coordinator may not rewrite raw agent outputs; it may only paste them verbatim and assemble the final artifact above. See `.squad/templates/raw-agent-output.md` for the full appendix rules.
+**Core rules (always loaded):**
+- Assembled result goes at top, raw agent outputs in appendix below
+- Include termination condition, constraint budgets (if active), reviewer verdicts (if any)
+- Never edit, summarize, or polish raw agent outputs — paste verbatim only
 
 ---
 
 ## Constraint Budget Tracking
 
-When the user or system imposes constraints (question limits, revision limits, time budgets):
+**On-demand reference:** Read `.squad/templates/constraint-tracking.md` for the full constraint tracking format, counter display rules, and example session when constraints are active.
 
-- Maintain a visible counter in your responses and in the artifact.
+**Core rules (always loaded):**
 - Format: `📊 Clarifying questions used: 2 / 3`
-- Update the counter each time the constraint is consumed.
-- When a constraint is exhausted, state it: `📊 Question budget exhausted (3/3). Proceeding with current information.`
-- If no constraints are active, do not display counters.
+- Update counter each time consumed; state when exhausted
+- If no constraints active, do not display counters
 
 ---
 
