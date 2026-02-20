@@ -278,3 +278,11 @@ Brady's "forward-only" philosophy is correct for this stage of product maturity.
   - **Artifacts:** `.ai-team/docs/prds/00-index.md`, `.ai-team/docs/prds/05-coordinator-replatform.md`, `.ai-team/docs/prds/14-clean-slate-architecture.md`
 
 📌 Team update (2026-02-21): Planning deliverables delivered — Keaton created milestones.md with 6 shippable milestones across 3 phases (~32 weeks). M0 viability gate documented. M3 validation checkpoint. All 27 resolved decisions (Q19–Q27) embedded in milestone work items. Feature risk punch list (14 GRAVE + 12 AT RISK) explicitly addressed. Milestone structure ready for execution pending Brady approval. — Scribe
+
+- **2026-02-22: Architectural Decisions Document (Brady request)**
+  - **What created:** `.ai-team/docs/architectural-decisions.md` — a clean, human-readable reference of all 27 architectural decisions from the SDK replatform planning.
+  - **Format:** ADR-lite. Each decision has Title, Decision (1-2 sentences), Why (1-2 sentences), Source (question number or Brady date).
+  - **Organization:** 9 categories: Distribution & Installation, Directory & File Structure, Authentication & Authorization, Versioning & Updates, Configuration & Customization, Agent & Skill Management, SDK Integration & Concurrency, Marketplace & Export/Import, Process & Coordination, Workflow & Template Migration.
+  - **Scope:** All 27 resolved decisions (Q9–Q46) from open-questions.md. Does NOT include the massive decisions.md operational ledger — this is strategic architecture only.
+  - **Key decisions captured:** .squad/ folder convention, config-driven architecture, SDK adapter pattern, agent repo directory convention (agents/{username}/{squad}/{name}/), gh CLI auth, commit SHA pinning, GitHub distribution, SDK-free init, single shared CopilotClient, marketplace conventions, plus all others.
+  - **Outcome:** Brady now has a single-page reference he can point teams to. Cleaner than digging through 27 question entries in open-questions.md. Serves as the source of truth for architecture during execution.
