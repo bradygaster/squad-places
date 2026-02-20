@@ -24,3 +24,13 @@
 - GitHub Actions bot email (github-actions[bot]@users.noreply.github.com) is standard and not PII
 - Plugin marketplace sources are stored in .ai-team/plugins/marketplaces.json — external repo references, not sensitive
 - MCP server configs can contain API keys via env vars (${TRELLO_API_KEY}) — these should never be committed
+- Template files (`templates/history.md`, `templates/roster.md`, `.ai-team-templates/history.md`) still contain `{user email}` placeholder — contradicts the email prohibition in squad.agent.md
+- `git config user.name` is stored in team.md, session logs, orchestration logs, and passed to every spawn prompt — low risk since it's already in git commits, but constitutes PII under GDPR
+- `squad export` serializes all agent histories to JSON — may contain PII (names, internal URLs). Warning exists but could be stronger
+- Plugin marketplace has no content verification — SKILL.md files from arbitrary repos are loaded directly into agent context windows (prompt injection vector)
+- Issue and PR bodies are injected into agent prompts without sanitization — prompt injection risk via GitHub issues
+- decisions.md is append-only with no archival — grows unbounded (~300KB in source repo), may accumulate sensitive business context
+- GitHub custom agents allow up to 30,000 characters in `.agent.md` files — squad.agent.md may exceed this if enforced
+- MCP data flow: user request → coordinator → agent → MCP server → third-party API. Users may not realize project data flows to Trello/Notion/Azure when MCP tools are configured
+- Committed MCP config files (`.copilot/mcp-config.json`, `.vscode/mcp.json`) use `${VAR}` references — correct pattern, but no guardrail prevents hardcoded secrets
+- Security audit v1 findings written to `.ai-team/decisions/inbox/baer-security-audit-v1.md` — 12 findings across PII, compliance, third-party data, git history, and threat model
