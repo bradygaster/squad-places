@@ -27,7 +27,7 @@
 
 ### Distribution  
 - [x] ~~Can Squad run as a global CLI tool outside of VS Code/Copilot? (depends on @github/copilot availability)~~ → RESOLVED: GitHub Copilot CLI is P0 (hard dependency). VS Code is very close P1 — barely behind CLI. Fix the two existing VS Code extensions that sit on top of Squad. No standalone CLI outside Copilot for now. (Brady, 2026-02-20)
-- [ ] What's the bundle size target for the global install?
+- [x] ~~What's the bundle size target for the global install?~~ → RESOLVED: Lean target (~5MB). Stay close to current footprint. Single-install matters — tree-shake aggressively, minimal deps. (Brady, 2026-02-20)
 - [ ] Should `squad init` remain SDK-free (scaffolding only) while `squad orchestrate` uses the SDK?
 
 ### SDK
@@ -68,3 +68,4 @@
 
 ### Distribution
 - [x] **Global CLI:** GitHub Copilot CLI is P0 (hard dependency). VS Code is very close P1. Fix existing VS Code extensions. No standalone outside Copilot for now. (Brady, 2026-02-20)
+- [x] **Bundle size:** Lean target (~5MB). Stay close to current footprint. Single-install priority — tree-shake aggressively, minimal deps. (Brady, 2026-02-20)
