@@ -135,3 +135,5 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 📌 Team update (2026-02-19): CLI output updated for #93 and #94 Phase 3. Post-install "Next steps" now shows both `/agent` (CLI) and `/agents` (VS Code). Help text now includes insider install path (`npx github:bradygaster/squad#insider`). Changes are index.js only — McManus owns README/docs updates. — decided by Fenster
 
+
+📌 Team update (2026-02-19): Insider Program infrastructure verified and complete — Issue #94 all checklist items verified: CI/CD triggers, guard protection, insider release workflow, documentation, CLI help text. All 11 workflow templates in sync. Ready for Brady to create insider branch. — decided by Kobayashi
