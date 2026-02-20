@@ -5272,3 +5272,274 @@ Each tier answers different questions for different audiences without informatio
 **What:** Audited all Phase 1-3 implementation of issue #94 (Insider Program). All checklist items verified: CI/CD triggers, guard protection, insider release workflow, documentation (README, CONTRIBUTING, docs/insider-program.md, CONTRIBUTORS.md), CLI help text. All 11 workflow templates confirmed in sync between .github/workflows/ and 	emplates/workflows/.
 **Why:** Implementation landed in commit 263626a on dev. Audit confirms the insider branch infrastructure is ready — once Brady creates the insider branch from dev, the CI/CD pipeline will auto-tag insider releases with {version}-insider+{short-sha} format and the guard workflow will prevent .ai-team/ state from leaking. Distribution path 
 px github:bradygaster/squad#insider is documented and ready.
+
+---
+
+### 2026-02-20: User directive — consolidate everything under .squad
+**By:** Brady (via Copilot)
+**What:** In v0.5.0, everything should be in .squad that isn't in .copilot — EXCEPT files that must stay at root for npx to work (index.js, package.json, templates/). Those stay at root.
+**Why:** User request — captured for team memory. Consolidation directive for the .ai-team → .squad rename migration. Clarified after team discussion: templates/ stays at root because npx needs it there. No guard carve-outs needed.
+
+
+
+### 2026-02-20: Branch content policy — what ships where
+**By:** Squad (Coordinator), requested by Brady
+**What:** Formal policy defining which files belong on each protected branch
+**Why:** 164 forbidden files leaked onto insider when branch was created from dev. Need a checklist to prevent this on every branch creation.
+
+---
+
+## Branch Content Policy
+
+### ✅ ALLOWED on all protected branches (main, preview, insider)
+
+| Path | Description |
+|------|-------------|
+| `.github/agents/` | Agent definition (squad.agent.md) |
+| `.github/workflows/` | CI/CD workflows |
+| `.github/copilot-instructions.md` | Copilot coding agent instructions |
+| `.gitattributes` | Merge driver config |
+| `.gitignore` | Git ignore rules |
+| `.npmignore` | npm publish ignore rules |
+| `index.js` | CLI entry point |
+| `package.json` | Package manifest |
+| `templates/` | Files copied to consumer repos during init |
+| `docs/` (except `docs/proposals/`) | Public documentation, blog, features, scenarios |
+| `test/` | Test suite |
+| `README.md` | Project readme |
+| `CHANGELOG.md` | Release changelog |
+| `CONTRIBUTING.md` | Contribution guide |
+| `CONTRIBUTORS.md` | Contributors list |
+| `LICENSE` | License file |
+
+### ❌ FORBIDDEN on all protected branches (main, preview, insider)
+
+| Path | Why | Enforced by |
+|------|-----|-------------|
+| `.ai-team/` | Runtime team state — dev/feature branches only | squad-main-guard.yml |
+| `.ai-team-templates/` | Internal format guides — dev only | squad-main-guard.yml |
+| `team-docs/` | Internal team content — dev only | squad-main-guard.yml |
+| `docs/proposals/` | Internal design proposals — dev only | squad-main-guard.yml |
+| `_site/` | Build output — never committed | .gitignore |
+
+### 🔀 Branch-specific extras
+
+| Branch | Extra files allowed | Notes |
+|--------|-------------------|-------|
+| **main** | — | Cleanest. Tagged releases cut from here. |
+| **preview** | — | Pre-release. Same content rules as main. |
+| **insider** | `docs/insider-program.md`, `.github/workflows/squad-insider-release.yml`, `templates/workflows/squad-insider-release.yml` | Early access channel. Auto-tags on push. |
+| **dev** | `.ai-team/`, `.ai-team-templates/`, `team-docs/`, `docs/proposals/` | Development. All internal files live here. |
+| **squad/* feature** | Same as dev | Feature branches inherit dev rules. |
+
+### 📋 Branch Creation Checklist
+
+When creating a new protected branch from dev:
+
+1. `git checkout -b {branch} dev`
+2. Remove forbidden paths:
+   ```bash
+   git rm -r --quiet .ai-team/ .ai-team-templates/ docs/proposals/ 2>/dev/null; true
+   git rm -r --quiet team-docs/ 2>/dev/null; true
+   ```
+3. Commit: `git commit -m "chore: remove dev-only files from {branch}"`
+4. Push: `git push -u origin {branch}`
+5. Verify: `git ls-tree -r --name-only origin/{branch} | grep -E "^\.ai-team|^team-docs|^docs/proposals"` (should return nothing)
+
+
+
+### 2026-02-20: .squad Consolidation — Architectural Analysis & Implementation Feasibility (consolidated)
+
+**By:** Keaton (Lead), Fenster (Core Dev)
+
+#### What
+
+Analysis of Brady's consolidation directive ("everything under .squad/ except npx-required files") with special focus on templates placement and implementation impact across 4 systems (index.js, guard workflow, tests, npm packaging).
+
+Two independent analyses converged on the same recommendation: **keep templates/ at root, merge .ai-team-templates/ into .squad/templates/ (reference only)**.
+
+#### Keaton's Architecture Analysis
+
+**The Tension:** Moving templates/ into .squad/ creates a conflict:
+- .squad/ is blocked from protected branches (guard workflow)
+- templates/ MUST be on main (ships in npm package via package.json files array)
+
+**Two Distinct Audiences:**
+- templates/ → public (shipped to npm consumers, consumer-facing)
+- .squad/ → private (runtime team state, dev branches only)
+
+**Architectural Concerns with Full Consolidation:**
+1. Guard workflow complexity — requires path-level exception (breaks semantic clarity of ".squad = team state that never ships")
+2. Consumer directory confusion — .squad/templates/ in consumer repo would mystify users ("is this for me to edit?")
+3. npm package oddity — dotted directory in package suggests "agent state" not "install boilerplate"
+4. Maintenance debt — future maintainers must remember templates are the exception
+5. Naming convention misalignment — .github/workflows/, .vscode/, .copilot/ all follow pattern "one purpose per directory"
+
+**Recommendation:** Keep templates/ at root. Full consolidation (Option B) creates more technical debt than it resolves.
+
+**Why this works:** Brady's underlying goal (eliminate .ai-team/ naming sprawl) is achieved by:
+- .ai-team/ → .squad/ (state)
+- .ai-team-templates/ → .squad/templates/ (reference guides, inside .squad/)
+- templates/ → templates/ (install boilerplate, root level)
+
+This gives one branded location (.squad/) for team artifacts while keeping install pipeline clear. 85% achieves Brady's goal with 80% less complexity.
+
+#### Fenster's Implementation Impact Analysis
+
+**4 Systems Affected, 6 Files, ~30 Lines Changed:**
+
+| System | Effort | Complexity | Risk |
+|--------|--------|-----------|------|
+| index.js | Low | Mechanical (18 refs → 1 variable) | Low |
+| Guard workflow | Low | 3-line carve-out (Option A: allowlist within blocklist) | Medium (must test) |
+| Tests | Trivial | 1 path constant change | Low |
+| npm packaging | Low | Precision required (package.json files array + .npmignore) | Medium (verify with npm pack) |
+| **Total** | **3–4 hours** | **Low-Medium** | **Medium** |
+
+**Verdict:** Feasible. Go with nested .squad/templates/ approach. Guard carve-out is negligible.
+
+**Guard Implementation (Option A - Recommended):**
+`javascript
+if (f.startsWith('.squad/')) {
+  // Templates ship on main — allow them
+  if (f.startsWith('.squad/templates/')) return false;
+  return true;
+}
+`
+This is 3 lines, clean, readable, future-proof.
+
+#### Synthesis
+
+Both analyses independently converged on the same recommendation: **keep templates/ at root** but **merge .ai-team-templates/ into .squad/templates/**. This approach:
+- Honors Brady's consolidation goal (one .squad/ namespace for team artifacts)
+- Simplifies guard workflow (no exceptions, or minimal 3-line carve-out)
+- Maintains semantic clarity (public boilerplate != private state)
+- Reduces maintenance burden
+- Improves consumer experience (no confusing .squad/templates/ in consumer repos)
+
+**Implementation scope:** 3–4 hours, low-medium complexity, manageable risk. Enables v0.5.0 timeline.
+
+---
+
+### Why
+
+Brady's consolidation directive is sound—reduce naming sprawl. But full consolidation of templates into .squad/ introduces unnecessary technical debt (guard exceptions, maintenance burden, semantic confusion). This decision balances Brady's organizational goal with operational simplicity. Both architectural and implementation perspectives align on the same path forward.
+
+#### Decision Status
+
+✅ **DECIDED.** Referenced in epic #69 clarification comment. Informs 6 sub-issues (#101–#106) for v0.5.0.
+
+
+
+## 2026-02-20: v0.5.0 Epic Update — Consolidated Directive & Sub-Issues
+
+**By:** Keaton (Lead)  
+**Context:** Brady's clarified consolidation directive from today's session + architectural decision (Feb 20) on `templates/` placement
+
+---
+
+## What Was Done
+
+### 1. Updated Issue #69 with Clarification Comment
+
+Added comprehensive comment to #69 (epic) documenting:
+- **Brady's directive:** Everything under `.squad/` except npx-required files (index.js, package.json, `templates/` at root)
+- **Directory migration plan:**
+  - `.ai-team/` → `.squad/`
+  - `.ai-team-templates/` → `.squad/templates/` (merged)
+  - `templates/` → stays at root (npx requirement)
+- **Guard workflow policy:** Block `.squad/**` entirely from protected branches (no carve-outs needed)
+- **Branch content policy:** Formalized Feb 20 in `copilot-branch-content-policy.md`
+- **Scope of affected work:** CLI, squad.agent.md, workflows, templates, docs, tests
+
+### 2. Created 6 Sub-Issues under #69 Epic
+
+Each sub-issue tagged with `release:v0.5.0` and `type:feature`, assigned to v0.5.0 milestone:
+
+| Issue # | Title | Scope |
+|---------|-------|-------|
+| #101 | CLI dual-path support for .squad/ migration | index.js: check .squad/ first, fall back to .ai-team/; `squad upgrade --migrate-directory` command; deprecation warning |
+| #102 | squad.agent.md path migration - 745 references | Update ~745 references across ~123 files; team root detection for both paths |
+| #103 | Workflow dual-path support for .squad/ migration | 6+ GitHub Actions workflows handle both paths; guard workflow verification |
+| #104 | Merge .ai-team-templates/ into .squad/templates/ | Move format guides from .ai-team-templates/ to .squad/templates/; update references |
+| #105 | Documentation and test updates for .squad/ paths | 27 docs files + 2 test files; migration guide; README updates |
+| #106 | Guard workflow enforcement - verify .squad/ blocking | Verify guard workflow blocks .squad/** and docs/proposals/**; test PR rejection |
+
+All sub-issues include:
+- Clear task description and scope
+- Acceptance criteria (checkboxes)
+- Parent epic reference (#69)
+- Related issue cross-links where appropriate
+
+### 3. Documented Architectural Decision
+
+This decision captures:
+- **Consolidation directive clarification** — Brady's explicit "everything under .squad/ except npx files" + rationale
+- **Templates placement rationale** — Why `templates/` stays at root despite the consolidation goal (guard simplicity, npm package clarity, consumer experience)
+- **Guard policy simplification** — Block `.squad/**` entirely; no path-level exceptions needed
+- **Timeline & scope** — Sub-issues enable discrete, parallelizable work toward v0.5.0 release (March 16)
+
+---
+
+## Why This Matters
+
+**Before today:** Ambiguity about which files belong where in `.squad/` migration. Unclear whether `templates/` should be nested (complexity) or stay at root (simplicity).
+
+**After today:** 
+1. Clear directive documented in epic comment + sub-issues
+2. Architectural decision documented (templates at root is simpler & safer)
+3. Six discrete work items enable parallel execution by team members
+4. Guard workflow stays simple (block `.squad/**` entirely; no exceptions)
+
+**For v0.5.0 release:** These sub-issues form the complete scope for the consolidation work. No hidden scopes or dependencies lurking in the epic description.
+
+---
+
+## What Depends on This
+
+- **v0.5.0 epic (#91)** — This clarification unblocks Fenster's implementation of #69
+- **Branch content policy enforcement** — Guard workflow already blocks `.squad/` and `docs/proposals/` (Feb 20); this formalizes the policy
+- **Consumer migration** — `squad upgrade --migrate-directory` (sub-issue #101) enables repos with `.ai-team/` to migrate
+
+---
+
+## Historical Context
+
+- **Feb 15:** #69 created with initial scope (1,672 references across 130+ files)
+- **Feb 17:** #91 (epic) marked as "IN PROGRESS" with #69 as MUST SHIP
+- **Feb 20 (today):** Brady clarified "everything under .squad/ EXCEPT npx files"; Keaton analyzed templates placement; squad decided: keep `templates/` at root, merge `.ai-team-templates/` into `.squad/templates/`
+- **Feb 20 (today):** Branch content policy formalized; guard workflow updated to block `docs/proposals/` too
+- **Feb 20 (today):** This epic updated with clarification comment + 6 sub-issues
+
+---
+
+## Acceptance
+
+This decision is complete. All sub-issues are visible in GitHub; comment is posted to #69; policy is documented in decisions inbox.
+
+**Next step:** Route sub-issues to team for implementation (Fenster on CLI/migration, Verbal on agent.md, Kobayashi on workflows, etc.).
+
+
+
+### 2026-02-19: CLI vs VS Code Command Parity
+
+**By:** McManus
+
+**What:** Documentation now explicitly mentions both `/agent` (Copilot CLI, singular) and `/agents` (VS Code, plural) wherever users are directed to launch Squad. Updated 6 documentation files across scenarios and guides.
+
+**Why:** Issue #93 reported confusion — users on the CLI see `/agent` but all docs say `/agents`. This creates friction at the critical first moment ("I can't find the command"). The fix is simple: be platform-aware. When instructing users to launch Squad, say "Type `/agent` (CLI) or `/agents` (VS Code)." This removes ambiguity and respects the fact that we ship on two platforms with different affordances.
+
+**Files changed:**
+- `docs/tour-first-session.md` — first-session walkthrough (critical UX)
+- `docs/scenarios/existing-repo.md` — adding Squad mid-project  
+- `docs/scenarios/mid-project.md` — onboarding late-stage projects
+- `docs/scenarios/new-project.md` — new project setup (also critical)
+- `docs/scenarios/private-repos.md` — private repo guidance
+- `docs/scenarios/troubleshooting.md` — problem statement for agent discovery
+
+**Platform context:** README.md and index.js already had correct dual-platform language (looks like this was partially addressed in HEAD). The fix ensures consistency across all scenarios and guides.
+
+**Decision:** Explicit platform notation is clearer than implicit. We say "CLI" and "VS Code" in parentheses to make it unmissable. No need for fancy UI—just honest writing.
+
+
+
