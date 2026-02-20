@@ -600,7 +600,7 @@ if (cmd === 'import') {
       fatal('A squad already exists here. Use --force to replace (current squad will be archived).');
     }
     // Archive existing squad
-    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '-').slice(0, 19);
+    const ts = new Date().toISOString().replace(/:/g, '-').replace(/\./g, '-');
     const archiveDir = path.join(dest, `.ai-team-archive-${ts}`);
     fs.renameSync(aiTeamDir, archiveDir);
   }
@@ -623,7 +623,7 @@ if (cmd === 'import') {
 
   // Determine source project name from filename
   const sourceProject = path.basename(importPath, '.json');
-  const importDate = new Date().toISOString().split('T')[0];
+  const importDate = new Date().toISOString();
 
   // Write agents
   const agentNames = Object.keys(manifest.agents);
