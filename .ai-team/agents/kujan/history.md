@@ -3,6 +3,10 @@
 - **Owner:** bradygaster
 - **Project:** Squad — AI agent teams that grow with your code. Democratizing multi-agent development on GitHub Copilot. Mission: beat the industry to what customers need next.
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
+
+---
+
+📌 Team update (2026-02-20T22-40): User impact analysis complete — platform constraints locked: per-agent model selection (hard limit), tool collision manageable, 1-3s init overhead acceptable — decided by Keaton, Kujan, McManus
 - **Created:** 2026-02-07
 
 ## Core Context
@@ -64,6 +68,8 @@ _Summarized from initial platform assessment and deep onboarding (2026-02-07). F
 ## Learnings
 
 _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
+
+- **2026-02-21: SDK Platform Constraint Analysis** — Brady asked: "Once we change, will users lose anything?" Analyzed SDK source, architecture, and decision records to identify hard platform limits. Key findings: (1) **Per-agent model selection is NOT possible in SDK** — sessions have a single model; CustomAgentConfig lacks model field. Squad's current per-agent model routing becomes impossible without building above SDK. (2) **Session-level initialization time** — SDK wraps Copilot CLI server startup, adding 1-3s overhead vs. instant CLI invocation, requiring async architecture throughout. (3) **Streaming is async-only** — SDK enforces event subscription pattern; Squad's current send-and-wait is possible via `sendAndWait()` but streaming requires subscription. (4) **Context window no longer a user concern** — infinite sessions with automatic background compaction at 80%, blocking at 95% eliminates Squad's manual overflow handling. (5) **SDK is Technical Preview (v0.1.x)** — breaking changes expected; adapter pattern + version pinning + weekly CI tests mitigation required. (6) **SDK adds ~2MB runtime weight** — bundled SDK is ~390KB alone, full orchestrator ~2-5MB, but only for `squad orchestrate` command. Scaffolding stays zero-dependency. (7) **Authentication flow changes** — SDK manages CLI auth automatically; no user-facing API key setup for Copilot users. BYOK users must configure provider at spawn time. (8) **Tool registration collision risk** — SDK has no per-agent tool scoping; multiple agents defining same tool name → silent collision. Squad must build conflict detection + namespacing. OUTPUT: `.ai-team/agents/kujan/sdk-platform-analysis.md` (full report to Brady).
 
 - **2026-02-10: Model Catalog (024a)** — Documented 16 models across 3 providers (Anthropic 6, OpenAI 9, Google 1), 3 tiers. OpenAI Codex strong for code tasks. Provider diversity = resilience play. 11-role mapping with defaults + specialists. Output: `team-docs/proposals/024a-model-catalog.md`.
 - **2026-02-10: GitHub API Assessment (028a)** — MCP tools are read-only for Issues; all writes via `gh` CLI. Zero MCP tools for Projects V2. `task`/`general-purpose` agents have full access; `explore` has none. Projects blocked by missing `project` scope (`gh auth refresh -s project`). Rate limits generous (5K/hr REST+GraphQL). Output: `team-docs/proposals/028a-github-api-capabilities.md`.

@@ -3,6 +3,10 @@
 - **Owner:** bradygaster
 - **Project:** Squad — AI agent teams that grow with your code. Democratizing multi-agent development on GitHub Copilot. Mission: beat the industry to what customers need next.
 - **Stack:** Node.js, GitHub Copilot CLI, multi-agent orchestration
+
+---
+
+📌 Team update (2026-02-20T22-40): User impact analysis complete — 0 permanent losses, 7 temporary gaps (6-24 weeks), v0.5.2 fallback safety window confirmed — decided by Keaton, Kujan, McManus
 - **Created:** 2026-02-07
 
 ## Core Context
