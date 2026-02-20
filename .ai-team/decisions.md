@@ -5,6 +5,16 @@
 
 ---
 
+### 2026-02-20T10-18: User directive — SDK distribution model
+
+**By:** Brady (via Copilot)
+
+**What:** Keep distributing via GitHub + npx (npx github:bradygaster/squad). Do NOT move to npmjs.com. The SDK/CLI stays on GitHub for distribution. This preserves the current zero-config install model.
+
+**Why:** User request — continuity with existing distribution, GitHub-native
+
+---
+
 ### 2026-02-20: Documentation Content Architecture (consolidated)
 
 **By:** Brady, Keaton

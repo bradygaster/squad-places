@@ -13,7 +13,7 @@
 - [x] ~~What happens on import conflict — local agent same name as places agent?~~ → RESOLVED: DISALLOWED. Block import, require rename on the way in. Never overwrite, never auto-namespace. (Brady, 2026-02-20)
 
 ### Architecture
-- [ ] Is `@github/copilot` npm-published or host-provided only? (Rabin flagged — blocks global install outside VS Code)
+- [x] ~~Is `@github/copilot` npm-published or host-provided only? (Rabin flagged — blocks global install outside VS Code)~~ → RESOLVED: Keep distributing via GitHub + npx (npx github:bradygaster/squad). SDK stays on GitHub, not npmjs.com. (Brady, 2026-02-20)
 - [ ] How does the AgentSource interface interact with the casting system when agents come from remote repositories?
 - [ ] Should skills also be pullable from agent repositories, or only agent configs?
 - [ ] What's the authentication model for cloud-hosted agent repositories?
@@ -52,3 +52,6 @@
 - [x] **Import/export granularity:** Both agent-level and squad-level are first-class. Users can export/import a single agent OR a full squad. (Brady, 2026-02-20)
 - [x] **Versioning:** Pin to commit SHA at import. `squad places check` shows updates, `squad places upgrade {agent}` pulls latest. No auto-refresh. (Team decision, 2026-02-20)
 - [x] **Import conflict:** DISALLOWED. Block import on name collision, require rename on the way in. Never overwrite, never auto-namespace. (Brady, 2026-02-20)
+
+### Architecture
+- [x] **SDK distribution:** Keep on GitHub via npx (npx github:bradygaster/squad). Not npmjs.com. (Brady, 2026-02-20)

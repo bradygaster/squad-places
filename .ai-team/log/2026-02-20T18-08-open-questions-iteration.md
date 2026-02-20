@@ -36,3 +36,8 @@ Resume open questions iteration at Q3 when Brady returns.
 - All 5 Agent Repository Backend questions now resolved
 - Q6 presented (SDK npm availability) — awaiting Brady's answer
 - 20 questions remain unresolved
+
+### Update — Q6 resolved
+- Q6: SDK distribution → Keep on GitHub via npx. Not npmjs.com.
+- Q7 presented (AgentSource + casting interaction) — awaiting Brady's answer
+- 19 questions remain unresolved
