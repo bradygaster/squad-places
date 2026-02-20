@@ -15,15 +15,21 @@ The Insider Program gives you continuous access to development builds of Squad. 
 
 ---
 
-## How to Install
+## How to Install and Upgrade
+
+### Install Insider Build
 
 ```bash
 npx github:bradygaster/squad#insider
 ```
 
-That's it. You're now on insider builds.
+### Upgrade Existing Repo to Insider
 
-Run this same command periodically to get the latest updates. The `npx` cache pulls fresh code regularly, so you'll get new features as they're committed.
+```bash
+npx github:bradygaster/squad#insider upgrade
+```
+
+This updates Squad-owned files (`squad.agent.md`, workflows, templates) to the latest insider build. Your `.squad/` team state (agents, decisions, casting, history) is always preserved.
 
 ---
 
@@ -52,18 +58,24 @@ Run this same command periodically to get the latest updates. The `npx` cache pu
 Insider builds use this version scheme:
 
 ```
-v0.4.2-insider+abc1234f
+v0.5.2-insider+abc1234f
 ```
 
 Where:
-- `v0.4.2` — The semver for the upcoming release
+- `v0.5.2` — The semver for the upcoming release
 - `insider` — Insider build flag
 - `abc1234f` — Commit hash (first 8 chars)
 
 You'll see this in your `squad.agent.md` HTML version comment:
 
 ```markdown
-<!-- version: v0.4.2-insider+abc1234f -->
+<!-- version: v0.5.2-insider+abc1234f -->
+```
+
+**Pin a specific tagged version:**
+
+```bash
+npx github:bradygaster/squad#v0.5.2-insider+<sha>
 ```
 
 ---

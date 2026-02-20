@@ -247,3 +247,30 @@ px github:bradygaster/squad#insider), expectations (continuous updates, rough ed
 - **Command clarity across platforms matters hugely** — Issue #93 revealed that users don't expect /agent vs /agents variation. Single docs mention of /agents becomes the canonical reference users internalize, then they get confused when CLI says something different. Solution: always show both, mark which is which. The post-init message got it right; docs needed to match.
 - **Insider programs for open source need minimal ceremony** — Binary model (insider branch, honor system, no caps/rings/onboarding) is the right calibration for a small OSS project. Formal programs create friction; simple branch-based access lowers barrier to "try the latest." CONTRIBUTORS.md badges and issue templates provide recognition without overhead.
 - **Tiered documentation depth serves different audiences** — One-liner in README catches people shopping, CONTRIBUTORS.md section serves active community members, full docs/insider-program.md guide is for committed insiders. Each audience gets exactly what they need to make a decision or take action without info overload.
+
+---
+
+### 2026-02-20: README & Docs Update for v0.5.2 Release
+
+**Updated files:**
+1. **README.md** — Added "What's New in v0.5.2" (3 fixes), v0.5.1 (3 features), v0.5.0 (7 features — the .squad/ rename release), v0.4.2 (3 features + custom universe), v0.4.1 (6 fixes/additions) sections between existing v0.4.0 and v0.3.0. Reordered v0.4.0 to bottom. Updated Status line from "v0.4.0-dev" to "v0.5.2". All new sections follow existing format: linked feature names, brief bullets, consistent tone.
+
+2. **docs/scenarios/upgrading.md** — Added comprehensive "Migrating .ai-team/ → .squad/ (v0.5.0+)" section covering: two-step migration process (upgrade + upgrade --migrate-directory), what the migration does (renames, .gitignore/.gitattributes updates, email scrubbing), timeline (v0.5.0-v0.6.0 support, v1.0.0 required), migration guide reference. Inserted between Migrations and Version Stamping sections.
+
+3. **docs/insider-program.md** — Restructured install/upgrade section to clearly separate install and upgrade commands; added emphasis on team state preservation. Updated version format example from 0.4.2 to 0.5.2 for current relevance; added "pin specific version" documentation.
+
+4. **docs/features/ralph.md** — Verified complete: already documents watch mode (npx github:bradygaster/squad watch), --interval flag, three layers of Ralph (in-session/local watchdog/cloud heartbeat). No changes needed.
+
+5. **docs/migration/v0.5.0-squad-rename.md** — Verified complete: already covers two-step migration process, what migration does, email scrubbing, backward compatibility timeline, troubleshooting, post-migration verification, deprecation timeline. No changes needed.
+
+**Key messaging decisions:**
+- v0.5.0 is properly framed as "The .squad/ Rename Release" to signal architectural maturity before 1.0
+- v0.5.1 and v0.5.2 feature descriptions are concise and direct, mirroring existing "What's New" format
+- Watch mode documented with concrete examples (default 10-minute interval, customization via --interval flag)
+- Migration docs now comprehensive and discoverable from upgrading.md (primary entry point)
+- Insider program documentation clarified for both new installs and upgrades
+
+**Learnings:**
+- Release note frequency (5 releases in 6 days: v0.4.0→v0.4.1→v0.4.2→v0.5.0→v0.5.1→v0.5.2) requires bulk README/docs updates. Adding per-version sections all at once is less disruptive than incremental updates. Readers see the full release arc in one place.
+- Migration docs serve dual purpose: user-facing (how to migrate) and reference (backward compatibility policy, timeline). Bridge both with clear cross-references from upgrading.md → migration guide.
+- Insider program needs both shallow entry (README link + command) and deep dive (full docs guide) for different audience tiers. Updated install/upgrade section to be crystal clear on command parity.

@@ -45,13 +45,45 @@ Your team state in `.ai-team/` is never touched. Agent charters, histories, deci
 
 ## Migrations
 
-Some upgrades require additive changes to your `.ai-team/` directory — like creating a new subdirectory that didn't exist in older versions.
+Some upgrades require additive changes to your team state directory — like creating a new subdirectory that didn't exist in older versions.
 
 Migrations are:
 - **Additive** — they only create new files or directories, never modify existing ones
 - **Idempotent** — safe to re-run; if the change already exists, it's skipped
 
 Example: upgrading to v0.2.0 creates `.ai-team/skills/` if it doesn't already exist.
+
+---
+
+## Migrating .ai-team/ → .squad/ (v0.5.0+)
+
+In Squad v0.5.0, the team state directory was renamed from `.ai-team/` to `.squad/`. Existing repos continue to work — Squad detects both. If you're still on `.ai-team/`, you'll see a deprecation warning.
+
+**To migrate your repo:**
+
+```bash
+# Step 1: Upgrade to get the latest migration tooling
+npx github:bradygaster/squad upgrade
+
+# Step 2: Rename the directory
+npx github:bradygaster/squad upgrade --migrate-directory
+```
+
+Then commit:
+
+```bash
+git add -A
+git commit -m "chore: migrate .ai-team/ → .squad/"
+```
+
+**What the migration does:**
+- Renames `.ai-team/` → `.squad/`
+- Updates `.gitignore` and `.gitattributes` references
+- Scrubs email addresses from migrated files (PII cleanup)
+
+**Timeline:** `.ai-team/` support continues through v0.6.0. Migration becomes required in v1.0.0.
+
+**Full details:** See the [Migration Guide](../migration/v0.5.0-squad-rename.md).
 
 ---
 

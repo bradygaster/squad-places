@@ -179,6 +179,13 @@ _Summarized 2026-02-10+ learnings (full entries available in session logs):_
 
 📌 Team update (2026-02-11): Per-agent model selection implemented with cost-first directive (optimize cost unless writing code) — decided by Brady and Verbal
 
+- **2026-02-20: Content Architecture — README What's New and docs/whatsnew.md (Keaton decision)**
+  - **Directed by Brady:** README should show only the LATEST release's What's New block. Full release history moves to a new `docs/whatsnew.md` page.
+  - **Rationale:** Prevents README from growing unbounded over time. Keeps README focused on current state. Historical release notes are preserved and discoverable.
+  - **Architecture decision:** Implemented two-tier docs structure — `README.md` shows v0.5.2 (current) with a link to `docs/whatsnew.md`, while `docs/whatsnew.md` contains the full reverse-chronological archive (v0.5.2 → v0.1.0) sourced from CHANGELOG.md.
+  - **Implementation workflow:** After McManus completes adding all What's New sections to README, two follow-up tasks: (1) Create docs/whatsnew.md from all blocks, (2) Trim README to only v0.5.2 + link. Plan documented in `.ai-team/decisions/inbox/keaton-whatsnew-content-plan.md`.
+  - **Key insight:** Content pagination is a scaling pattern. As projects mature, docs need architecture to stay navigable. This mirrors the proposal → issues transition (032) — as content volume grows, push historical artifacts to dedicated surfaces.
+
 - **2026-02-11: Issue #9 triage and GitHub-native client parity (Keaton decision)**
   - **Issue #9 from @miketsui3a:** Raised a valid question—no `task` tool in VS Code Copilot, only `runSubagent`. This exposed a critical gap: Squad conflates CLI-specific tooling with core architecture.
   - **Root cause:** Squad was designed on and for the Copilot CLI. The `task` tool (sub-agent spawn) is CLI-specific; VS Code exposes `runSubagent`. `/delegate` (user-facing background work) is also CLI-specific. Squad's coordinator assumes these tools exist.
