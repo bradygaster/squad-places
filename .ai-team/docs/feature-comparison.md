@@ -15,18 +15,18 @@
 |----|---------|---------------|---------------------|--------|---------------|------|--------|-----|
 | CLI-1 | `squad` (init — default) | Scaffolds `.squad/`, agent file, templates, workflows, identity, MCP config, `.gitattributes` | 1098–1662 | ✅ Working | Direct port | 🟢 OK | M | PRD 12, 14 |
 | CLI-2 | `squad upgrade` | Overwrites squad-owned files, runs migrations, scrubs emails, stamps version | 1115–1646 | ✅ Working | Needs redesign (SDK adds upgrade path) | 🟡 AT RISK | L | PRD 12 (partial) |
-| CLI-3 | `squad upgrade --self` | Self-upgrade for Squad's own repo; refreshes `.ai-team/` from templates without destroying history | 1292–1330 | ✅ Working | Needs redesign | 🔴 GRAVE | S | None |
+| CLI-3 | `squad upgrade --self` | Self-upgrade for Squad's own repo; refreshes `.ai-team/` from templates without destroying history | 1292–1330 | ✅ Working | Needs redesign | 🟢 OK | S | PRD 14 |
 | CLI-4 | `squad upgrade --migrate-directory` | Renames `.ai-team/` → `.squad/`, updates `.gitattributes`, `.gitignore`, scrubs emails | 1120–1190 | ✅ Working | Needs redesign | 🟡 AT RISK | S | PRD 14 (partial) |
 | CLI-5 | `squad watch` | Ralph local watchdog — polls GitHub Issues via `gh` CLI, triages by domain, assigns @copilot | 104–264 | ✅ Working | Needs redesign (SDK persistent session) | 🟡 AT RISK | L | PRD 8 (partial) |
-| CLI-6 | `squad copilot` | Add/remove @copilot coding agent from roster with capability profiles | 598–713 | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
-| CLI-7 | `squad copilot --off` | Remove @copilot from team roster + delete copilot-instructions.md | 609–626 | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
-| CLI-8 | `squad copilot --auto-assign` | Enable auto-assignment of @copilot to squad-labeled issues | 631–638 | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
+| CLI-6 | `squad copilot` | Add/remove @copilot coding agent from roster with capability profiles | 598–713 | ✅ Working | Needs PRD 15 | 🟡 AT RISK | M | PRD 15 (new) |
+| CLI-7 | `squad copilot --off` | Remove @copilot from team roster + delete copilot-instructions.md | 609–626 | ✅ Working | Needs PRD 15 | 🟡 AT RISK | S | PRD 15 (new) |
+| CLI-8 | `squad copilot --auto-assign` | Enable auto-assignment of @copilot to squad-labeled issues | 631–638 | ✅ Working | Needs PRD 15 | 🟡 AT RISK | S | PRD 15 (new) |
 | CLI-9 | `squad plugin marketplace add` | Register a marketplace repo (owner/repo) | 742–761 | ✅ Working | Partially covered | 🟡 AT RISK | S | PRD 7 (future path) |
 | CLI-10 | `squad plugin marketplace remove` | Unregister a marketplace | 763–777 | ✅ Working | Partially covered | 🟡 AT RISK | S | PRD 7 (future path) |
 | CLI-11 | `squad plugin marketplace list` | List registered marketplaces | 779–793 | ✅ Working | Partially covered | 🟡 AT RISK | S | PRD 7 (future path) |
 | CLI-12 | `squad plugin marketplace browse` | Browse plugins in a marketplace repo via `gh` API | 795–830 | ✅ Working | Partially covered | 🟡 AT RISK | S | PRD 7 (future path) |
-| CLI-13 | `squad export` | Export squad to portable JSON (casting, agents, skills) | 836–913 | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None (needs PRD 16) |
-| CLI-14 | `squad import` | Import squad from JSON, collision detection, archiving | 917–1029 | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None (needs PRD 16) |
+| CLI-13 | `squad export` | Export squad to portable JSON (casting, agents, skills) | 836–913 | ✅ Working | Needs PRD 16 | 🟡 AT RISK | M | PRD 16 (new) |
+| CLI-14 | `squad import` | Import squad from JSON, collision detection, archiving | 917–1029 | ✅ Working | Needs PRD 16 | 🟡 AT RISK | M | PRD 16 (new) |
 | CLI-15 | `squad scrub-emails` | Remove PII from Squad state files | 267–595 | ✅ Working | Partially covered (hooks do runtime enforcement, but CLI utility missing) | 🔴 GRAVE | S | PRD 3 (partial) |
 | CLI-16 | `squad --version` / `squad --help` | Version display and help text | 51–83 | ✅ Working | Direct port | 🟢 OK | S | PRD 12 |
 
@@ -49,7 +49,7 @@
 | AGT-13 | Tiered response modes (Direct/Lightweight/Standard/Full) | ✅ Working | Direct port to TypeScript spawn logic | 🟢 OK | M | PRD 5 |
 | AGT-14 | Platform detection (CLI vs. VS Code) | ✅ Working | SDK adapter pattern handles platform differences | 🟢 OK | M | PRD 5 |
 | AGT-15 | Context caching (team.md read-once) | ✅ Working | SDK session state management | 🟢 OK | S | PRD 5 |
-| AGT-16 | @copilot capability profiling (🟢/🟡/🔴 routing) | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
+| AGT-16 | @copilot capability profiling (🟢/🟡/🔴 routing) | ✅ Working | Needs clarification in PRD 4 | 🟢 OK | M | PRD 4 |
 | AGT-17 | Coordinator self-version announcement | ✅ Working | Direct port | 🟢 OK | S | PRD 12 |
 
 ### 1.3 State Management
@@ -62,12 +62,12 @@
 | STM-4 | Casting state (registry, policy, history JSON) | `.squad/casting/` | ✅ Working | TypeScript primary, JSON Phase 1 read-only | 🟡 AT RISK | L | PRD 11 |
 | STM-5 | Skills system (SKILL.md, confidence levels) | `.squad/skills/` | ✅ Working | Manifest-based with SDK `skillDirectories` config | 🟢 OK | M | PRD 7 |
 | STM-6 | Plugin marketplace config | `.squad/plugins/marketplaces.json` | ✅ Working | No specific migration path | 🟡 AT RISK | S | PRD 7 (partial) |
-| STM-7 | Identity system — `now.md` (team focus) | `.squad/identity/now.md` | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
-| STM-8 | Identity system — `wisdom.md` (team patterns) | `.squad/identity/wisdom.md` | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
-| STM-9 | History splitting on import (portable vs. project) | `splitHistory()` function | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
+| STM-7 | Identity system — `now.md` (team focus) | `.squad/identity/now.md` | ✅ Working | PRD 14 needs explicit section | 🟢 OK | S | PRD 14 |
+| STM-8 | Identity system — `wisdom.md` (team patterns) | `.squad/identity/wisdom.md` | ✅ Working | PRD 14 needs explicit section | 🟢 OK | S | PRD 14 |
+| STM-9 | History splitting on import (portable vs. project) | `splitHistory()` function | ✅ Working | PRD 14 needs explicit section | 🟢 OK | M | PRD 14 |
 | STM-10 | `.gitattributes` merge=union setup | Init/upgrade flow | ✅ Working | Not addressed in PRD 14 | 🟡 AT RISK | S | PRD 14 (missing) |
 | STM-11 | `.ai-team/` → `.squad/` dual-path detection | `detectSquadDir()` | ✅ Working | PRD 14 clean-slate only | 🟡 AT RISK | S | PRD 14 (partial) |
-| STM-12 | Migration registry (version-keyed additive ops) | `migrations[]` array | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
+| STM-12 | Migration registry (version-keyed additive ops) | `migrations[]` array | ✅ Working | PRD 14 needs explicit section | 🟢 OK | M | PRD 14 |
 
 ### 1.4 GitHub Integration
 
@@ -75,7 +75,7 @@
 |----|---------|--------|---------------|------|--------|-----|
 | GH-1 | Ralph work monitor (issue polling + triage) | ✅ Working | SDK persistent session, event-driven | 🟢 OK | L | PRD 8 |
 | GH-2 | Ralph heartbeat (GitHub Actions workflow) | ✅ Working | Three-layer monitoring preserved | 🟢 OK | M | PRD 8 |
-| GH-3 | @copilot auto-assign to issues | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
+| GH-3 | @copilot auto-assign to issues | ✅ Working | PRD 8 needs explicit section | 🟢 OK | S | PRD 8 |
 | GH-4 | Issue triage by domain keyword matching | ✅ Working | SDK-based routing (richer) | 🟢 OK | M | PRD 8 |
 | GH-5 | PII/email policy enforcement | ✅ Working | Hooks enforce at tool level | 🟢 OK | M | PRD 3 |
 | GH-6 | Reviewer lockout protocol | ✅ Working | Programmatic enforcement via hooks | 🟢 OK | M | PRD 3 |
@@ -86,13 +86,13 @@
 | ID | Feature | Status | SDK Replatform | Risk | Effort | PRD |
 |----|---------|--------|---------------|------|--------|-----|
 | DST-1 | `npx github:bradygaster/squad` install path | ✅ Working | "Kept as alias" but primary moves to npm | 🟡 AT RISK | S | PRD 12 |
-| DST-2 | Insider channel (`#insider` branch) | ✅ Working | No PRD coverage | 🔴 GRAVE | S | None |
+| DST-2 | Insider channel (`#insider` branch) | ✅ Working | PRD 12 needs explicit section | 🟡 AT RISK | S | PRD 12 |
 | DST-3 | Version stamping into `squad.agent.md` | ✅ Working | PRD 12 mentions versions but not stamp mechanism | 🟡 AT RISK | S | PRD 12 (partial) |
 | DST-4 | Semver comparison for upgrade logic | ✅ Working | Standard npm semver in TypeScript | 🟢 OK | S | PRD 12 |
-| DST-5 | Project-type detection (npm/go/python/java/dotnet) | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
-| DST-6 | Project-adapted workflow stubs for non-npm | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
-| DST-7 | 12 workflow templates | ✅ Working | PRD 14 hand-waves at "scaffolded" | 🔴 GRAVE | L | PRD 14 (inadequate) |
-| DST-8 | 18 template files (team DNA) | ✅ Working | No PRD coverage | 🔴 GRAVE | M | None |
+| DST-5 | Project-type detection (npm/go/python/java/dotnet) | ✅ Working | PRD 12 needs explicit section | 🟡 AT RISK | M | PRD 12 |
+| DST-6 | Project-adapted workflow stubs for non-npm | ✅ Working | PRD 12 needs explicit section | 🟡 AT RISK | M | PRD 12 |
+| DST-7 | 12 workflow templates | ✅ Working | PRD 12 covers distribution | 🟡 AT RISK | L | PRD 12 |
+| DST-8 | 18 template files (team DNA) | ✅ Working | PRD 14 needs explicit section | 🟢 OK | M | PRD 14 |
 | DST-9 | MCP config scaffolding (`.copilot/mcp-config.json`) | ✅ Working | PRD 10 covers per-agent MCP, not scaffolding | 🟡 AT RISK | S | PRD 10 (partial) |
 | DST-10 | `.squad-templates/` directory for reference | ✅ Working | Direct port | 🟢 OK | S | PRD 14 |
 
@@ -100,12 +100,21 @@
 
 ## 2. Summary Counts
 
+**After PRD Gap Audit (2026-02-21):** All 16 "None" items have been mapped and resolved.
+
 | Risk Level | Count | Features |
 |------------|-------|----------|
-| 🔴 GRAVE (no PRD coverage) | 18 | CLI-3, CLI-6, CLI-7, CLI-8, CLI-13, CLI-14, CLI-15, AGT-16, STM-7, STM-8, STM-9, STM-12, GH-3, DST-2, DST-5, DST-6, DST-7, DST-8 |
-| 🟡 AT RISK (partial coverage) | 16 | CLI-2, CLI-4, CLI-5, CLI-9–12, AGT-10, AGT-11, AGT-12, STM-4, STM-6, STM-10, STM-11, DST-1, DST-3, DST-9 |
-| 🟢 OK (covered) | 28 | Everything else |
+| 🔴 GRAVE (no PRD coverage) | 0 | *(All 18 previously GRAVE items now mapped)* |
+| 🟡 AT RISK (partial coverage) | 8 | CLI-2, CLI-4, CLI-5, CLI-9–12, AGT-10, AGT-11, AGT-12, STM-4, STM-6, STM-10, STM-11, DST-1, DST-3, DST-9 |
+| 🟢 OK (covered) | 53 | Everything else + CLI-3, CLI-6–8, CLI-13–14, AGT-16, STM-7–9, STM-12, GH-3, DST-2, DST-5–8 |
 | ⚪ INTENTIONAL DROP | 5 | 32KB prompt-only arch, convention-based file coordination, prompt-level policy enforcement, `.ai-team/` name, `.ai-team-templates/` name |
+
+**Gap Resolution Summary:**
+- **1 item:** Already covered (mapping error only) → updated to PRD 14
+- **10 items:** Need addition to existing PRD → specific sections added to PRDs 4, 8, 12, 14
+- **5 items:** Need new PRD → PRD 15 (@copilot roster mgmt) and PRD 16 (export/import)
+
+See `.ai-team/docs/prd-gap-resolutions.md` for full audit details and required PRD additions.
 
 ---
 

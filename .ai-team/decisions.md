@@ -1732,3 +1732,157 @@ If ANY assumption is wrong, weeks of rework after M0 commits.
 
 **Status:** ⏳ Awaiting Brady approval. Implementation does NOT begin until Brady signals "Go implement M0."
 
+
+
+---
+
+# Decision: PRD Gap Audit Findings & Recommendations
+
+**Date:** 2026-02-21  
+**Owner:** Kujan (Copilot SDK Expert)  
+**Status:** Completed — awaiting Brady decision on PRD 15/16
+
+---
+
+## Context
+
+Brady observed that `feature-comparison.md` shows 16 features marked "None" in the PRD column, all flagged 🔴 GRAVE. He expected complete PRD coverage and wanted an audit to close the gap.
+
+## Audit Findings
+
+I audited all 16 "None" items against the actual PRD text (PRDs 1-14). Results:
+
+| Category | Count | Outcome |
+|----------|-------|---------|
+| ✅ Already covered (mapping error only) | 1 | Update feature-comparison.md, no PRD work needed |
+| 📝 Covered by existing PRD but implicit | 10 | Add specific sections to existing PRDs (4, 8, 12, 14) |
+| 🆕 Requires new PRD | 5 | PRD 15 (@copilot agent roster) and PRD 16 (export/import) |
+
+## Detailed Findings
+
+### Already Covered (1 item)
+
+**CLI-3: `squad upgrade --self`**
+- Feature: Self-upgrade for Squad's own repo
+- Finding: **Documented in PRD 14 §5.3 (Migration Registry)** — was a mapping gap
+- Action: Update `feature-comparison.md` CLI-3 row: PRD None → PRD 14, risk 🔴 → 🟢
+- Decision: **Close this gap by updating mapping only**
+
+### Needs Addition to Existing PRD (10 items)
+
+These are in scope of existing PRDs but not explicitly named in the PRD's scope sections. PRD owners should add one short section per feature.
+
+**PRD 4 (Agent Session Lifecycle) — add 1 section:**
+- AGT-16: @copilot capability profiling (health-aware routing)
+  - Spec: Agents report 🟢/🟡/🔴 health via `squad_status` tool; coordinator routes accordingly
+
+**PRD 8 (Ralph SDK Migration) — add 1 section:**
+- GH-3: @copilot auto-assign to issues
+  - Spec: Ralph's monitoring loop auto-assigns issues to agents based on domain routing rules
+
+**PRD 12 (Distribution & In-Copilot Install) — add 3 sections:**
+- DST-2: Insider channel (`#insider` branch) — Phase 2 release channel
+- DST-5: Project-type detection (npm/go/python/java/dotnet) — Phase 1 init enhancement
+- DST-6: Project-adapted workflow stubs — follows project-type detection
+
+**PRD 14 (Clean-Slate Architecture) — add 4 sections:**
+- STM-7/STM-8: Identity system (`now.md` + `wisdom.md`)
+- STM-9: History splitting on import (portable vs. project-specific)
+- STM-12: Migration registry structure and replay semantics
+- DST-8: 18 template files system and upgrade preservation
+
+**Decision: Have PRD owners add the sections.** These are low-effort additions (2-3 sentences each) that make coverage explicit.
+
+### Requires New PRD (5 items)
+
+These three form a coherent feature domain that doesn't fit existing PRD scope.
+
+#### PRD 15: @copilot Agent Roster Management (NEW)
+
+**Items:** CLI-6, CLI-7, CLI-8
+- CLI-6: `squad copilot` — Add/remove @copilot agent with capability profiles
+- CLI-7: `squad copilot --off` — Remove @copilot + delete copilot-instructions.md
+- CLI-8: `squad copilot --auto-assign` — Enable auto-assignment policy
+
+**Rationale:**
+- These three are tightly coupled (roster management + special agent handling + assignment policy)
+- Separate from SDK replatform work (Phase 1) — this is product feature work (Phase 2)
+- Not SDK-centric; focuses on @copilot's unique role in Squad
+
+**Suggested Details:**
+- **Owner:** Brady (Product) or Keaton (Lead)
+- **Phase:** 2 (v0.7.x) — depends on PRD 5 stable
+- **Scope:**
+  - CLI commands for roster management
+  - @copilot capability profiling system (🟢/🟡/🔴)
+  - Auto-assignment policies per team
+  - GitHub Issues integration for domain routing
+  - Backward compatibility with `copilot-instructions.md`
+
+**Decision: Approve PRD 15 scope and assign owner (Brady or Keaton).**
+
+#### PRD 16: Portable Squads — Export/Import (NEW)
+
+**Items:** CLI-13, CLI-14
+- CLI-13: `squad export` — Export squad to portable JSON
+- CLI-14: `squad import` — Import squad with collision detection
+
+**Rationale:**
+- Already identified as needed (feature-comparison.md notes "needs PRD 16")
+- Top-level feature (Proposal 008 — Portable Squads)
+- Spans: serialization, collision detection, history splitting, state merging
+
+**Suggested Details:**
+- **Owner:** TBD (new assignment)
+- **Phase:** 2 (v0.7.x) or 3 (v0.8.x)
+- **Scope:**
+  - JSON schema for portable squad
+  - Merge algorithm with collision detection
+  - History splitting: portable vs. project-specific (links to STM-9)
+  - Skill/capability migration
+  - Casting registry merge
+  - Archiving strategy for replaced agents
+  - Round-trip fidelity guarantees
+
+**Decision: Approve PRD 16 scope and assign owner.**
+
+---
+
+## Recommendations
+
+### Immediate (This Sprint)
+
+1. **Update `feature-comparison.md`** — Change all 16 "None" mappings (already done in draft, awaiting approval)
+2. **Assign PRD 15 & 16 owners** — Brady decides scope and assigns
+3. **Update PRD 14 (Keaton)** — Add sections for STM-7, STM-8, STM-9, STM-12, DST-8
+4. **Have PRD owners add sections** — PRD 4 (Verbal), PRD 8 (Fenster), PRD 12 (Kujan)
+
+### Medium-term (Phase 2 Planning)
+
+5. **Create PRD 15 & 16** — Start design after Phase 1 coordinator is stable
+6. **Update PRD Index** — Add PRDs 15-16 to `.ai-team/docs/prds/00-index.md`
+
+### Verification
+
+- All features in `feature-comparison.md` have a PRD reference ✓
+- All PRD references are documented in actual PRD text (after additions)
+- Risk level reflects actual scope (no more 🔴 GRAVE)
+
+---
+
+## Questions for Brady
+
+1. **PRD 15 (@copilot roster):** Approved scope? Should PRD 15 also cover general agent roster CLI commands (not just @copilot)?
+2. **PRD 16 (export/import):** Timeline? Phase 2 (v0.7) or Phase 3 (v0.8)? Which team member owns?
+3. **PRD 12 enhancements (DST-2, DST-5, DST-6):** Should these be Phase 1 (with distribution) or Phase 2 (after v0.6 stable)?
+
+---
+
+## Deliverables
+
+1. **Updated `feature-comparison.md`** — All 16 gaps mapped
+2. **New file `.ai-team/docs/prd-gap-resolutions.md`** — Full audit details with spec additions
+3. **This decision document** — Recommendations and next steps
+
+Audit is complete. Ready for Brady's direction on PRDs 15-16 scope and timeline.
+

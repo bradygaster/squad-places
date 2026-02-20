@@ -59,6 +59,8 @@ _Summarized from initial platform assessment and deep onboarding (2026-02-07). F
 📌 Team update (2026-02-09): Preview branch added to release pipeline — two-phase workflow: preview then ship. Brady eyeballs preview before anything hits main. — decided by Kobayashi
 📌 Team update (2026-02-20): SDK replatform 14 PRDs grounded in verified SDK source. Cost data native in SDK. JSONL for event persistence. Tier-based model aliases (fast/standard/premium). Per-agent MCP via SDK customAgents[]. esbuild bundling. In-Copilot install Phase 1, Marketplace Phase 2. Brady pending: package name, fallback chains, provider override, quota routing, OTLP export. — decided by Kujan with Keaton, Fenster, Verbal, Baer
 
+📌 Kujan audit (2026-02-21): PRD gap audit completed — 16 "None" items in feature-comparison mapped. Finding: 1 already covered (CLI-3), 10 need PRD section additions (STM-7/8/9/12 to PRD 14; AGT-16 to PRD 4; GH-3 to PRD 8; DST-2/5/6 to PRD 12), 5 need new PRDs (PRD 15 @copilot roster, PRD 16 export/import). Updated feature-comparison with all mappings. Deliverables: .ai-team/docs/prd-gap-resolutions.md (full audit) and decisions/inbox/kujan-prd-gap-audit.md (recommendations). — decided by Kujan
+
 ## Learnings
 
 _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
@@ -66,6 +68,7 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
 - **2026-02-10: Model Catalog (024a)** — Documented 16 models across 3 providers (Anthropic 6, OpenAI 9, Google 1), 3 tiers. OpenAI Codex strong for code tasks. Provider diversity = resilience play. 11-role mapping with defaults + specialists. Output: `team-docs/proposals/024a-model-catalog.md`.
 - **2026-02-10: GitHub API Assessment (028a)** — MCP tools are read-only for Issues; all writes via `gh` CLI. Zero MCP tools for Projects V2. `task`/`general-purpose` agents have full access; `explore` has none. Projects blocked by missing `project` scope (`gh auth refresh -s project`). Rate limits generous (5K/hr REST+GraphQL). Output: `team-docs/proposals/028a-github-api-capabilities.md`.
 - **2026-02-10: Async Comms Feasibility (030)** — CCA-as-squad-member is the breakthrough: `squad.agent.md` + CCA guidance = async work via Issues for 2-4h prompt engineering, zero infrastructure. Copilot SDK confirmed for Telegram bridge (8-16h, conditional on nested session spike). Ranking: CCA+Issues > Telegram > Discord > Discussions > Teams > Slack. Two-tier MVP: Tier 1 (CCA, guaranteed) + Tier 2 (Telegram, conditional). Output: `team-docs/proposals/030-async-comms-feasibility.md`.
+- **2026-02-21: PRD Gap Audit — Feature Coverage Complete** — Brady identified 16 "None" PRDs in feature-comparison. Audit of PRDs 1-14 shows: 1 was mapping error (CLI-3 IS in PRD 14), 10 features ARE covered but implicit in existing PRDs and need section additions (STM-7/8/9/12, AGT-16, GH-3, DST-2/5/6/8), 5 features need entirely new PRDs (PRD 15 @copilot roster, PRD 16 export/import). All mappings updated in feature-comparison.md. PRD owners have clear spec additions for their PRDs. Brady decides PRD 15/16 scope/timeline. No GRAVE items remain unmapped.
 
 📌 Team update (2026-02-10): v0.3.0 sprint plan approved — your model catalog research (024a) and GitHub API assessment (028a) are foundational inputs. — decided by Keaton
 
@@ -188,3 +191,5 @@ _Summarized 2026-02-10 learnings (full entries in session logs and proposals):_
   - **Where Squad builds:** Import/export manifest format, tool conflict detection, MCP validation, version pinning, casting system, skill definitions, atomic import transactions.
   - **Customer risks:** Tool conflicts (silent wrong tool invocation), missing tools (runtime errors), MCP offline (graceful degradation needed), token expiry (rollback strategy), version mismatch (schema adapter).
   - Output: `.ai-team/docs/import-export-sdk-constraints.md` (7 sections, 9 recommendations, failure mode matrix)
+
+📌 Team update (2026-02-21): PRD gap audit finalized — Kujan's 16 'None' item resolution merged to decisions.md. Audit findings: 1 mapping error (CLI-3 in PRD 14), 10 features need explicit PRD sections (STM-7/8/9/12 to PRD 14; AGT-16 to PRD 4; GH-3 to PRD 8; DST-2/5/6 to PRD 12), 5 need new PRDs (PRD 15 @copilot roster, PRD 16 export/import). Feature-comparison.md updated with all mappings. Deliverables in .ai-team/docs/prd-gap-resolutions.md. Awaiting Brady decision on PRD 15/16 scope and ownership. — decided by Kujan, merged by Scribe
