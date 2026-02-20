@@ -551,3 +551,78 @@ All Squad code imports from `src/adapter/`, never from `@github/copilot-sdk` dir
 
 **Status:** ✅ Ready for v0.5.3 release cycle. Include this issue in v0.5.3 release notes and CHANGELOG.md.
 
+
+
+### 2026-02-20T17:27: User directive
+**By:** Brady (via Copilot)
+**What:** ONE `.squad/` directory only. Everything lives in it. No `.ai-team/`, no `.ai-team-templates/`, no `team-docs/`. Single directory, single source of truth.
+**Why:** User request — clean architecture for the squad-sdk replatform. Captured for team memory.
+
+
+### 2026-02-20T17:34: User directive — Global installation
+**By:** Brady (via Copilot)
+**What:** Squad should support machine-wide (global) installation. Not restricted to source code projects — people use it for all kinds of things. Expand scope to global CLI tool.
+**Why:** User request — increases adoption surface. Squad is not just for code.
+
+
+### 2026-02-20T17:34: User directive — Agent repositories
+**By:** Brady (via Copilot)
+**What:** Team members / agents should be pullable from "repositories" (term used loosely). An agent repository could be on disk, in the cloud, in another repo, or behind an API on a server. Build with that flexibility in mind. First implementation follows current design docs (local .squad/ on disk). This replaces the fixed "agents live in .squad/agents/" assumption with a pluggable source model.
+**Why:** User request — enables cloud-hosted agent knowledge, shared teams across machines, marketplace-style agent distribution. First impl stays local, but architecture must not hardcode it.
+
+
+### 2026-02-20T17:34: User directive — Zero-config installation
+**By:** Brady (via Copilot)
+**What:** The user shouldn't need to change a single thing about how they set Squad up. Installation and configuration should be zero-friction — works out of the box.
+**Why:** User request — adoption depends on frictionless onboarding. No manual config steps.
+
+
+# Decision: Squad SDK Repository Created
+
+**Author:** Fenster (Core Dev)
+**Date:** 2026-02-20
+**Status:** Implemented
+
+## Context
+
+Brady approved the SDK replatform as a clean-slate rebuild in a new repository, separate from the existing `squad` source repo. The 14 PRDs (documented in `.ai-team/docs/prds/`) define the full replatform plan. PRD 1 (SDK Orchestration Runtime) is the gate — everything else blocks on it.
+
+## Decision
+
+Created `C:\src\squad-sdk` as a new git repository with a complete TypeScript project scaffold aligned to the PRD architecture.
+
+### Repository Details
+
+- **Location:** `C:\src\squad-sdk` (peer to `C:\src\squad`)
+- **Package:** `@bradygaster/squad` v0.6.0-alpha.0
+- **Runtime:** Node.js ≥ 20, ESM (`"type": "module"`)
+- **Language:** TypeScript (strict, ES2022, NodeNext)
+- **Testing:** Vitest
+- **Bundling:** esbuild
+- **SDK:** `@github/copilot-sdk` v0.1.8 via local file reference (`file:../copilot-sdk/nodejs`)
+
+### Module Structure
+
+| Module | PRD | Public API |
+|--------|-----|------------|
+| `src/client/` | PRD 1 | `SquadClient`, `SessionPool`, `EventBus` |
+| `src/tools/` | PRD 2 | `ToolRegistry`, route/decide/memory/status/skill types |
+| `src/hooks/` | PRD 3 | `HookPipeline`, pre/post tool hooks, `PolicyConfig` |
+| `src/agents/` | PRD 4 | `AgentSessionManager`, `CharterCompiler`, `AgentCharter` |
+| `src/coordinator/` | PRD 5 | `Coordinator`, `RoutingDecision` |
+| `src/casting/` | PRD 11 | `CastingRegistry`, `CastingEntry` |
+| `src/ralph/` | PRD 8 | `RalphMonitor`, `AgentWorkStatus` |
+
+### Key Choices
+
+1. **Local SDK dependency** — `@github/copilot-sdk` is referenced as `file:../copilot-sdk/nodejs` since it's not published to npm. This will change to a registry reference when the SDK ships publicly.
+2. **Stubs define API shape** — Each module exports typed interfaces and classes with TODO comments referencing their PRD. No implementation yet — that starts with PRD 1.
+3. **Adapter pattern baked in** — `src/client/` wraps the SDK; no other module imports from `@github/copilot-sdk` directly. This is the kill-shot mitigation from PRD 1.
+4. **EventBus is functional** — The cross-session event bus (`src/client/event-bus.ts`) has a working pub/sub implementation with typed events and unsubscribe support. 3 of 7 tests cover it.
+
+## Impact
+
+- PRD 1 implementation can begin immediately in `src/client/`
+- All PRD owners have their module directories ready with typed API stubs
+- No changes to the existing `squad` source repo are needed
+
