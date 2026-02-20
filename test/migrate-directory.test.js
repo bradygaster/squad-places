@@ -136,11 +136,15 @@ describe('upgrade --migrate-directory: full upgrade runs (no early exit)', () =>
     assert.ok(files.length > 0, 'workflow files should be written after migrate+upgrade');
   });
 
-  it('.ai-team-templates/ is created/updated after migration', () => {
+  it('.squad-templates/ is created/updated after migration (not .ai-team-templates/)', () => {
     runSquad(['upgrade', '--migrate-directory'], tmpDir);
     assert.ok(
-      fs.existsSync(path.join(tmpDir, '.ai-team-templates')),
-      '.ai-team-templates/ should exist after migrate+upgrade'
+      fs.existsSync(path.join(tmpDir, '.squad-templates')),
+      '.squad-templates/ should exist after migrate+upgrade'
+    );
+    assert.ok(
+      !fs.existsSync(path.join(tmpDir, '.ai-team-templates')),
+      '.ai-team-templates/ should NOT exist after migrate+upgrade'
     );
   });
 
@@ -358,6 +362,97 @@ describe('upgrade from v0.3.0 (without --migrate-directory)', () => {
     assert.ok(
       !fs.existsSync(path.join(tmpDir, '.squad')),
       '.squad/ should not be created by plain upgrade without --migrate-directory'
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 9: templates directory migration
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('templates directory migration', () => {
+  let tmpDir;
+  afterEach(() => cleanDir(tmpDir));
+
+  it('.ai-team-templates/ is renamed to .squad-templates/ during --migrate-directory', () => {
+    tmpDir = makeTempDir();
+    makeOldSquadRepo(tmpDir);
+    // Create .ai-team-templates/ with a dummy file
+    const aiTeamTemplates = path.join(tmpDir, '.ai-team-templates');
+    fs.mkdirSync(aiTeamTemplates, { recursive: true });
+    fs.writeFileSync(path.join(aiTeamTemplates, 'dummy.md'), '# dummy\n');
+
+    const result = runSquad(['upgrade', '--migrate-directory'], tmpDir);
+    assert.equal(result.exitCode, 0, `expected exit 0: ${result.stdout}`);
+    assert.ok(
+      fs.existsSync(path.join(tmpDir, '.squad-templates')),
+      '.squad-templates/ should exist after migration'
+    );
+    assert.ok(
+      !fs.existsSync(path.join(tmpDir, '.ai-team-templates')),
+      '.ai-team-templates/ should NOT exist after migration'
+    );
+  });
+
+  it('.squad-templates/ contents are preserved after rename', () => {
+    tmpDir = makeTempDir();
+    makeOldSquadRepo(tmpDir);
+    const aiTeamTemplates = path.join(tmpDir, '.ai-team-templates');
+    fs.mkdirSync(aiTeamTemplates, { recursive: true });
+    fs.writeFileSync(path.join(aiTeamTemplates, 'my-template.md'), '# preserved\n');
+
+    runSquad(['upgrade', '--migrate-directory'], tmpDir);
+    const preservedFile = path.join(tmpDir, '.squad-templates', 'my-template.md');
+    assert.ok(
+      fs.existsSync(preservedFile),
+      'my-template.md should be in .squad-templates/ after rename'
+    );
+    const content = fs.readFileSync(preservedFile, 'utf8');
+    assert.equal(content, '# preserved\n', 'file contents should be unchanged after rename');
+  });
+
+  it('migration succeeds even when no .ai-team-templates/ exists', () => {
+    tmpDir = makeTempDir();
+    makeOldSquadRepo(tmpDir);
+    // Deliberately do NOT create .ai-team-templates/
+
+    const result = runSquad(['upgrade', '--migrate-directory'], tmpDir);
+    assert.equal(result.exitCode, 0, `migration should succeed without .ai-team-templates/: ${result.stdout}`);
+    assert.ok(
+      fs.existsSync(path.join(tmpDir, '.squad')),
+      '.squad/ should exist after successful migration'
+    );
+  });
+
+  it('after migration, upgrade writes templates to .squad-templates/ not .ai-team-templates/', () => {
+    tmpDir = makeTempDir();
+    // Set up a fully migrated state: .squad/ exists, no .ai-team/
+    const squadDir = path.join(tmpDir, '.squad');
+    fs.mkdirSync(path.join(squadDir, 'decisions', 'inbox'), { recursive: true });
+    fs.mkdirSync(path.join(squadDir, 'orchestration-log'), { recursive: true });
+    fs.mkdirSync(path.join(squadDir, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(squadDir, 'team.md'), '# Team\n');
+
+    const agentDir = path.join(tmpDir, '.github', 'agents');
+    fs.mkdirSync(agentDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(agentDir, 'squad.agent.md'),
+      `<!-- version: 0.3.0 -->\n\n- **Version:** 0.3.0\n`
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, '.gitattributes'),
+      '.squad/decisions.md merge=union\n.squad/agents/*/history.md merge=union\n'
+    );
+
+    const result = runSquad(['upgrade'], tmpDir);
+    assert.equal(result.exitCode, 0, `upgrade from migrated state should succeed: ${result.stdout}`);
+    assert.ok(
+      fs.existsSync(path.join(tmpDir, '.squad-templates')),
+      '.squad-templates/ should be created/updated by upgrade on migrated repo'
+    );
+    assert.ok(
+      !fs.existsSync(path.join(tmpDir, '.ai-team-templates')),
+      '.ai-team-templates/ should NOT be (re-)created after migration'
     );
   });
 });
