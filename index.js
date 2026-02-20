@@ -59,7 +59,7 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   console.log(`Commands:`);
   console.log(`  ${BOLD}(default)${RESET}  Initialize Squad (skip files that already exist)`);
   console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
-  console.log(`             Overwrites: squad.agent.md, .ai-team-templates/`);
+  console.log(`             Overwrites: squad.agent.md, templates dir (.squad-templates/ or .ai-team-templates/)`);
   console.log(`             Never touches: .squad/ or .ai-team/ (your team state)`);
   console.log(`             Flags: --migrate-directory (rename .ai-team/ → .squad/)`);
   console.log(`  ${BOLD}copilot${RESET}    Add/remove the Copilot coding agent (@copilot)`);
@@ -1166,7 +1166,15 @@ if (isMigrateDirectory) {
     } else {
       console.log(`${GREEN}✓${RESET} No email addresses found`);
     }
-    
+
+    // Rename .ai-team-templates/ → .squad-templates/ if it exists
+    const aiTeamTemplatesDir = path.join(dest, '.ai-team-templates');
+    const squadTemplatesDir = path.join(dest, '.squad-templates');
+    if (fs.existsSync(aiTeamTemplatesDir)) {
+      fs.renameSync(aiTeamTemplatesDir, squadTemplatesDir);
+      console.log(`${GREEN}✓${RESET} Renamed .ai-team-templates/ → .squad-templates/`);
+    }
+
     console.log();
     console.log(`${BOLD}Migration complete.${RESET}`);
     console.log(`${DIM}Commit the change:${RESET}`);
@@ -1557,19 +1565,20 @@ if (missing.length) {
 
 // Copy templates (Squad-owned — overwrite on upgrade)
 const templatesSrc = path.join(root, 'templates');
-const templatesDest = path.join(dest, '.ai-team-templates');
+const templatesDestName = squadInfo.isLegacy ? '.ai-team-templates' : '.squad-templates';
+const templatesDest = path.join(dest, templatesDestName);
 
 if (isUpgrade) {
   copyRecursive(templatesSrc, templatesDest);
-  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} .ai-team-templates/`);
+  console.log(`${GREEN}✓${RESET} ${BOLD}upgraded${RESET} ${templatesDestName}/`);
 
   // Run migrations applicable for this version jump
   runMigrations(dest, oldVersion || '0.0.0', squadInfo.path);
 } else if (fs.existsSync(templatesDest)) {
-  console.log(`${DIM}.ai-team-templates/ already exists — skipping (run 'upgrade' to update)${RESET}`);
+  console.log(`${DIM}${templatesDestName}/ already exists — skipping (run 'upgrade' to update)${RESET}`);
 } else {
   copyRecursive(templatesSrc, templatesDest);
-  console.log(`${GREEN}✓${RESET} .ai-team-templates/`);
+  console.log(`${GREEN}✓${RESET} ${templatesDestName}/`);
 }
 
 // Copy workflow templates (Squad-owned — overwrite on upgrade)
