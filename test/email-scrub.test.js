@@ -86,17 +86,14 @@ Contact admin.
   });
 
   it('should scrub email addresses during regular upgrade', () => {
-    // Initialize squad first
-    runSquad([], tempDir);
-
-    // Manually add email addresses to .squad/team.md
+    // Create .squad/ manually (no init so upgrade takes the full path, not the early-exit path)
     const squadDir = path.join(tempDir, '.squad');
     fs.mkdirSync(squadDir, { recursive: true });
     
     const teamMd = path.join(squadDir, 'team.md');
     fs.writeFileSync(teamMd, `# Team
 
-- Alice (alice@example.com)
+- Alice (alice@corp.io)
 - Bob (bob@test.org)
 `);
 
@@ -108,7 +105,7 @@ Contact admin.
     const scrubbedTeamMd = fs.readFileSync(teamMd, 'utf8');
     assert.ok(scrubbedTeamMd.includes('Alice'), 'team.md should keep names');
     assert.ok(scrubbedTeamMd.includes('Bob'), 'team.md should keep names');
-    assert.ok(!scrubbedTeamMd.includes('alice@example.com'), 'team.md should not have alice email');
+    assert.ok(!scrubbedTeamMd.includes('alice@corp.io'), 'team.md should not have alice email');
     assert.ok(!scrubbedTeamMd.includes('bob@test.org'), 'team.md should not have bob email');
 
     // Verify the scrubbing was reported
@@ -117,10 +114,7 @@ Contact admin.
   });
 
   it('should handle files without email addresses gracefully', () => {
-    // Initialize squad
-    runSquad([], tempDir);
-
-    // Create .squad/team.md without emails
+    // Create .squad/ manually (no init so upgrade takes the full path)
     const squadDir = path.join(tempDir, '.squad');
     fs.mkdirSync(squadDir, { recursive: true });
     

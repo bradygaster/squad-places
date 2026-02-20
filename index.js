@@ -1248,10 +1248,11 @@ if (isUpgrade) {
   // Scrub email addresses from existing squad directory
   console.log(`${DIM}Scrubbing email addresses from ${squadInfo.name}/ files...${RESET}`);
   const scrubResult = scrubEmailsFromDirectory(squadInfo.path);
-  if (scrubResult.filesModified > 0) {
-    console.log(`${GREEN}✓${RESET} Scrubbed ${scrubResult.replacements} email address(es) from ${scrubResult.filesModified} file(s)`);
+  const scrubbed = Array.isArray(scrubResult) ? scrubResult : [];
+  if (scrubbed.length > 0) {
+    console.log(`${GREEN}✓${RESET} Scrubbed email addresses from ${scrubbed.length} file(s)`);
   } else {
-    console.log(`${GREEN}✓${RESET} No email addresses found (scanned ${scrubResult.filesScanned} files)`);
+    console.log(`${GREEN}✓${RESET} No email addresses found`);
   }
   
   console.log(`\n${DIM}${squadInfo.name}/ untouched — your team state is safe${RESET}`);
