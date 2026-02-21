@@ -1,86 +1,145 @@
-# Squad SDK
+# Squad
 
-**Programmable multi-agent runtime for GitHub Copilot.** Write agent orchestration in code, not in prompts.
+**AI agent teams for any project.** One command. A team that grows with your code.
 
 [![Status](https://img.shields.io/badge/status-alpha-blueviolet)](#status)
-[![Platform](https://img.shields.io/badge/platform-GitHub%20Copilot-blue)](#about-squad-sdk)
-
-> 🚀 This is the **v0.6+ replatform** of [Squad](https://github.com/bradygaster/squad). The original prompt-based orchestrator still works. This SDK gives you types, tools, and total control.
+[![Platform](https://img.shields.io/badge/platform-GitHub%20Copilot-blue)](#about-squad)
 
 ---
 
-## About Squad SDK
+## What is Squad?
 
-Squad started as a team template kit in markdown. Good enough for early projects. But as your squad grows—more agents, more decisions, more complexity—you hit a wall: prompts don't scale. No type safety. No crash recovery. No visibility into what's happening. You're reading `.md` files hoping agents did the right thing.
+Squad gives you an AI development team through GitHub Copilot. Describe what you're building. Get a team of specialists — frontend, backend, tester, lead — that live in your repo as files. They persist across sessions, learn your codebase, share decisions, and get better the more you use them.
 
-The SDK flips that. Agent orchestration becomes a **first-class Node.js runtime**. Sessions are objects, not mysteries. Tools are typed. Governance is enforced in code, not crossed fingers in prompts. Agents themselves don't change—your team still lives in `.squad/`, still has names, still learn from history. What changes is **how they talk to each other**.
-
-### What You Get
-
-- **Typed sessions** — `createSession()`, `resumeSession()`, `endSession()` with full TypeScript support
-- **Real tools** — `squad_route`, `squad_decide`, `squad_memory`, `squad_status`, `squad_skill` with JSON schema validation
-- **Hook-based governance** — File-write guards, PII scrubbing, reviewer lockouts. Not suggestions. Rules. Enforced before tools run.
-- **Event-driven coordination** — Subscribe to agent work in real time. Ralph (the work monitor) lives as a persistent session that watches everything.
-- **Crash recovery** — Sessions persist to disk. If an agent dies mid-task, `resumeSession()` picks it up exactly where it left off.
-- **Parallel spawning** — `spawnParallel()` launches all your agents at once. No waiting. No sequential bottlenecks.
-
-### What Doesn't Change
-
-Your team. Their names. Their history. Their decisions. All the `.squad/` folder—agents, decisions, casting—is **agnostic to the runtime**. Use the prompt-only orchestrator or the SDK. Your team survives either way. Git-store it, clone it, use it anywhere.
+It's not a chatbot wearing hats. Each team member runs in its own context, reads only its own knowledge, and writes back what it learned.
 
 ---
 
 ## Quick Start
 
-### 1. Install
+### 1. Create your project
 
 ```bash
-npm install
-npm run build
-npm test
+mkdir my-project && cd my-project
+git init
 ```
 
-### 2. Create Your First Agent Session
+### 2. Install Squad
 
-```typescript
-import { SquadClient } from './src/client/index.js';
-import { CastingEngine } from './src/casting/index.js';
-
-const client = new SquadClient({
-  sdkConfig: { /* ... SDK config ... */ },
-  squadRoot: '.squad',
-});
-
-const casting = new CastingEngine({
-  universe: 'usual-suspects',
-  agentCount: 5,
-});
-
-const session = await client.createSession({
-  agentName: 'Keaton', // The lead agent
-  charter: { role: 'lead', expertise: 'architecture and routing' },
-  task: 'Set up the team for a new e-commerce API',
-});
-
-const response = await session.send('Here\'s what we\'re building: a product catalog with search, inventory, and webhooks.');
-console.log(response);
+```bash
+npx github:bradygaster/squad-sdk
 ```
 
-### 3. Observe Your Squad
+This installs the Squad agent, 12 GitHub Actions workflows for automation (Ralph heartbeat, CI, triage, etc.), templates, and starter skills.
 
-```typescript
-const pool = client.sessionPool();
-const status = await pool.query({ agentName: 'Keaton' });
-console.log(`${status.activeSessions} agents working, ${status.completed} done`);
+### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
+
+```bash
+gh auth login
+```
+
+### 4. Open Copilot and go
+
+```
+copilot
+```
+
+**In the GitHub Copilot CLI**, type `/agent` and select **Squad**.
+**In VS Code**, type `/agents` and select **Squad**.
+
+Then:
+
+```
+I'm starting a new project. Set up the team.
+Here's what I'm building: a recipe sharing app with React and Node.
+```
+
+Squad proposes a team — each member named from a persistent thematic cast. You say **yes**. They're ready.
+
+---
+
+## All 9 Commands
+
+| Command | What it does |
+|---------|-------------|
+| `npx github:bradygaster/squad-sdk` | **Init** — scaffold Squad in the current directory (skips existing files) |
+| `npx github:bradygaster/squad-sdk upgrade` | Update Squad-owned files to latest; never touches your team state |
+| `npx github:bradygaster/squad-sdk upgrade --migrate-directory` | Rename `.ai-team/` → `.squad/` (legacy migration) |
+| `npx github:bradygaster/squad-sdk copilot` | Add the Copilot coding agent (@copilot) to your squad |
+| `npx github:bradygaster/squad-sdk watch` | Run Ralph's work monitor as a local polling process |
+| `npx github:bradygaster/squad-sdk plugin marketplace add\|remove\|list\|browse` | Manage plugin marketplaces |
+| `npx github:bradygaster/squad-sdk export` | Export squad to a portable JSON snapshot |
+| `npx github:bradygaster/squad-sdk import <file>` | Import squad from an export file |
+| `npx github:bradygaster/squad-sdk scrub-emails` | Remove email addresses from Squad state files |
+
+### Insider Channel
+
+Want the latest features before they ship?
+
+```bash
+npx github:bradygaster/squad-sdk#insider
 ```
 
 ---
 
-## How It Works: The Architecture
+## Agents Work in Parallel — You Catch Up When You're Ready
 
-The SDK doesn't replace the original Squad—it sits alongside it. Your agents still run. Your decisions still accumulate. What's new is **structured, observable coordination**.
+Squad doesn't work on a human schedule. When you give a task, the coordinator launches every agent that can usefully start — simultaneously.
 
-### The Layers
+```
+You: "Team, build the login page"
+
+  🏗️ Lead — analyzing requirements...          ⎤
+  ⚛️ Frontend — building login form...          ⎥ all launched
+  🔧 Backend — setting up auth endpoints...     ⎥ in parallel
+  🧪 Tester — writing test cases from spec...   ⎥
+  📋 Scribe — logging everything...             ⎦
+```
+
+When agents finish, the coordinator immediately chains follow-up work. If you step away, a breadcrumb trail is waiting when you get back:
+
+- **`decisions.md`** — every decision any agent made
+- **`orchestration-log/`** — what was spawned, why, and what happened
+- **`log/`** — full session history, searchable
+
+**Knowledge compounds across sessions.** Every time an agent works, it writes lasting learnings to its `history.md`. After a few sessions, agents know your conventions, your preferences, your architecture. They stop asking questions they've already answered.
+
+**And it's all in git.** Anyone who clones your repo gets the team — with all their accumulated knowledge.
+
+---
+
+## What Gets Created
+
+```
+.squad/
+├── team.md              # Roster — who's on the team
+├── routing.md           # Routing — who handles what
+├── decisions.md         # Shared brain — team decisions
+├── ceremonies.md        # Sprint ceremonies config
+├── casting/
+│   ├── policy.json      # Casting configuration
+│   ├── registry.json    # Persistent name registry
+│   └── history.json     # Universe usage history
+├── agents/
+│   ├── {name}/
+│   │   ├── charter.md   # Identity, expertise, voice
+│   │   └── history.md   # What they know about YOUR project
+│   └── scribe/
+│       └── charter.md   # Silent memory manager
+├── skills/              # Compressed learnings from work
+├── identity/
+│   ├── now.md           # Current team focus
+│   └── wisdom.md        # Reusable patterns
+└── log/                 # Session history (searchable archive)
+```
+
+**Commit this folder.** Your team persists. Names persist. Anyone who clones gets the team — with the same cast.
+
+---
+
+## The SDK: Programmable Agent Runtime
+
+> Everything above works out of the box. The sections below are for developers who want **programmatic control** over agent orchestration.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -439,6 +498,7 @@ const newCast = casting.castTeam({
 npm test                # Run all tests (1551 tests across 45 files)
 npm run test:watch     # Watch mode for development
 npm run build          # Compile TypeScript to dist/
+npm run build:cli      # Build + bundle CLI into cli.js
 npm run dev            # Watch TypeScript in background
 npm run lint           # Type check (tsc --noEmit)
 ```
@@ -456,11 +516,20 @@ npm run lint           # Type check (tsc --noEmit)
 
 ---
 
+## Known Limitations
+
+- **Alpha** — API and file formats may change between versions
+- **Node 20+** — requires Node.js 20.0.0 or later
+- **GitHub Copilot CLI & VS Code** — Squad works on both CLI and VS Code
+- **`gh` CLI required** — GitHub Issues, PRs, Ralph, and Project Boards all need `gh auth login`
+- **Knowledge grows with use** — the first session is the least capable; agents improve as they accumulate history
+- **SSH agent required for install** — `npx github:bradygaster/squad-sdk` resolves via `git+ssh://`. If no SSH agent is running, npm's progress spinner hides git's passphrase prompt, making install appear frozen. Fix: start your SSH agent first (`ssh-add`), or use `npx --progress=false github:bradygaster/squad-sdk`
+
+---
+
 ## Status
 
 🟣 **Alpha** — v0.6.0-alpha.0.
-
-This is the SDK replatform of Squad. Stable for internal use. API and file formats may change between versions. Backward compat is a goal, not a guarantee, until v1.0.
 
 Your team (`.squad/` folder) is always portable and safe. The orchestration runtime is what evolves.
 
