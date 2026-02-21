@@ -48,12 +48,16 @@ export * from './marketplace/index.js';
 export * from './build/index.js';
 export * from './sharing/index.js';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { fatal } from './cli/core/errors.js';
-import { BOLD, RESET } from './cli/core/output.js';
+import { BOLD, RESET, DIM } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
+import { resolveSquad, resolveGlobalSquadPath } from './resolution.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  const hasGlobal = args.includes('--global');
   const cmd = args[0];
 
   // --version / -v
@@ -85,17 +89,20 @@ async function main(): Promise<void> {
     console.log(`             Usage: import <file> [--force]`);
     console.log(`  ${BOLD}scrub-emails${RESET}  Remove email addresses from Squad state files`);
     console.log(`             Usage: scrub-emails [directory] (default: .ai-team/)`);
+    console.log(`  ${BOLD}status${RESET}     Show which squad is active and why`);
     console.log(`  ${BOLD}help${RESET}       Show this help message`);
     console.log(`\nFlags:`);
     console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
     console.log(`  ${BOLD}--help, -h${RESET}     Show help`);
+    console.log(`  ${BOLD}--global${RESET}       Use personal (global) squad path (for init, upgrade)`);
     console.log(`\nInsider channel: npx github:bradygaster/squad-sdk#insider\n`);
     process.exit(0);
   }
 
   // Route subcommands
   if (!cmd || cmd === 'init') {
-    runInit(process.cwd()).catch(err => {
+    const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
+    runInit(dest).catch(err => {
       fatal(err.message);
     });
     return;
@@ -107,15 +114,16 @@ async function main(): Promise<void> {
     
     const migrateDir = args.includes('--migrate-directory');
     const selfUpgrade = args.includes('--self');
+    const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
     
     // Handle --migrate-directory flag
     if (migrateDir) {
-      await migrateDirectory(process.cwd());
+      await migrateDirectory(dest);
       // Continue with regular upgrade after migration
     }
     
     // Run upgrade
-    await runUpgrade(process.cwd(), { 
+    await runUpgrade(dest, { 
       migrateDirectory: migrateDir,
       self: selfUpgrade
     });
@@ -175,6 +183,36 @@ async function main(): Promise<void> {
     } else {
       console.log('No email addresses found.');
     }
+    process.exit(0);
+  }
+
+  if (cmd === 'status') {
+    const repoSquad = resolveSquad(process.cwd());
+    const globalPath = resolveGlobalSquadPath();
+    const globalSquadDir = path.join(globalPath, '.squad');
+    const globalExists = fs.existsSync(globalSquadDir);
+
+    console.log(`\n${BOLD}Squad Status${RESET}\n`);
+
+    if (repoSquad) {
+      console.log(`  Active squad: ${BOLD}repo${RESET}`);
+      console.log(`  Path:         ${repoSquad}`);
+      console.log(`  Reason:       Found .squad/ in repository tree`);
+    } else if (globalExists) {
+      console.log(`  Active squad: ${BOLD}personal (global)${RESET}`);
+      console.log(`  Path:         ${globalSquadDir}`);
+      console.log(`  Reason:       No repo .squad/ found; personal squad exists at global path`);
+    } else {
+      console.log(`  Active squad: ${DIM}none${RESET}`);
+      console.log(`  Reason:       No .squad/ found in repo tree or at global path`);
+    }
+
+    console.log();
+    console.log(`  ${DIM}Repo resolution:   ${repoSquad ?? 'not found'}${RESET}`);
+    console.log(`  ${DIM}Global path:       ${globalPath}${RESET}`);
+    console.log(`  ${DIM}Global squad:      ${globalExists ? globalSquadDir : 'not initialized'}${RESET}`);
+    console.log();
+
     process.exit(0);
   }
 
