@@ -20,3 +20,11 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 
 ### 📌 Team update (2026-02-21T21:35Z): CLI naming finalized — decided by Brady
 **Final directives:** `squad triage` (confirmed), `squad loop` (replaces Keaton's `squad monitor` proposal), `squad hire` (replaces `squad init`). Commands chosen for clarity and identity alignment. Brady's preference supersedes earlier recommendations.
+
+### 📌 M3 Resolution (#210, #211) — implemented
+- Created `src/resolution.ts` with `resolveSquad()` (walk-up to .git boundary) and `resolveGlobalSquadPath()` (platform-specific global config dir)
+- Both exported from `src/index.ts` public API
+- 10 tests in `test/resolution.test.ts` — all passing
+- PR #275 on branch `squad/210-resolution-algorithms` → `bradygaster/dev`
+- Decision: placed in `src/resolution.ts` (root src, not packages/squad-sdk) since code hasn't moved to monorepo packages yet
+- Decision: `resolveSquad()` intentionally does NOT fall back to `resolveGlobalSquadPath()` — kept as separate concerns per #210/#211 separation. Consumer code can chain them.

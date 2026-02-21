@@ -88,3 +88,28 @@
 **Verified:** Build passes (0 errors), all 1592 tests pass with npm reference. No tests require live Copilot CLI server. PR #271 merged successfully.
 **Reference:** Kujan audit + Edie implementation in `.squad/decisions/inbox/edie-sdk-swap.md`
 **Closes:** #190, #193, #194
+
+### 2026-02-21T21:35:22Z: User directive — no temp/memory files in repo root
+**By:** Brady (via Copilot)
+**What:** NEVER write temp files, issue files, or memory files to the repo root. All squad state/scratch files belong in .squad/ and ONLY .squad/. Root tree of a user's repo is sacred — don't clutter it.
+**Why:** User request — hard rule. Captured for all agents.
+
+### 2026-02-21: npm workspace protocol for monorepo
+**By:** Edie (TypeScript Engineer)
+**Date:** 2026-02-21
+**PR:** #274
+**What:** Use npm-native workspace resolution (version-string references like `"0.6.0-alpha.0"`) instead of `workspace:*` protocol for cross-package dependencies.
+**Why:** The `workspace:*` protocol is pnpm/Yarn-specific. npm workspaces resolve workspace packages automatically by matching the package name in the `workspaces` glob — a version-string reference is all that's needed. Using npm-native semantics avoids toolchain lock-in and keeps the monorepo compatible with stock npm.
+**Impact:** All future inter-package dependencies in `packages/*/package.json` should use the actual version string, not `workspace:*`.
+
+### 2026-02-21: Resolution module placement and API separation
+**By:** Fenster (Core Dev)
+**Date:** 2026-02-21
+**Re:** #210, #211
+**What:**
+- `resolveSquad()` and `resolveGlobalSquadPath()` live in `src/resolution.ts` at the repo root, not in `packages/squad-sdk/`.
+- The two functions are independent — `resolveSquad()` does NOT automatically fall back to `resolveGlobalSquadPath()`.
+**Why:**
+1. **Placement:** Code hasn't migrated to the monorepo packages yet. Putting it in `packages/squad-sdk/src/` would create a split that doesn't match the current build pipeline (`tsc` compiles `src/` to `dist/`). When the monorepo migration happens, `src/resolution.ts` moves with everything else.
+2. **Separation of concerns:** Issue #210 says "repo squad always wins over personal squad" — that's a *policy* decision for the consumer, not for the resolution primitives. Keeping the two functions independent lets CLI/runtime compose them however needed (e.g., try repo first, fall back to global, or merge both).
+**Impact:** Low. When packages split happens, move `src/resolution.ts` into `packages/squad-sdk/src/`. The public API shape stays the same.
