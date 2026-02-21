@@ -8,6 +8,7 @@
 const VERSION = '0.6.0-alpha.0'; // TODO: use getPackageVersion() when not a barrel export file
 
 // Export public API
+export { resolveSquad, resolveGlobalSquadPath } from './resolution.js';
 export * from './config/index.js';
 export * from './agents/onboarding.js';
 export * from './casting/index.js';
