@@ -54,6 +54,7 @@ import { fatal } from './cli/core/errors.js';
 import { BOLD, RESET, DIM } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
 import { resolveSquad, resolveGlobalSquadPath } from './resolution.js';
+import { runShell } from './cli/shell/index.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -103,8 +104,14 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // No args → launch interactive shell
+  if (!cmd) {
+    await runShell();
+    return;
+  }
+
   // Route subcommands
-  if (!cmd || cmd === 'init') {
+  if (cmd === 'init') {
     const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
     runInit(dest).catch(err => {
       fatal(err.message);

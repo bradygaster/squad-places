@@ -41,4 +41,11 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 - ensureSquadPath() guard (#273): validation function for .squad/ paths, testable composition pattern for routing logic
 - CLI integration tests: direct logic testing instead of process spawning (sets pattern for future CLI tests)
 
+### 📌 #234/#235: Shell module structure + main entry wiring — implemented
+- Created `src/cli/shell/` module: `index.ts` (placeholder `runShell()`), `types.ts` (ShellState, ShellMessage, AgentSession), `components/.gitkeep`
+- `runShell()` prints version header + exit hint, handles SIGINT, exits cleanly — placeholder until ink UI is wired (#233)
+- Wired `src/index.ts`: `squad` with no args now calls `runShell()` instead of `runInit()`. `squad init` is now an explicit subcommand.
+- Types defined: `ShellState` (status + agents + history), `ShellMessage` (role/agent/content/timestamp), `AgentSession` (name/role/status/startedAt)
+- PR #282 on branch `squad/234-235-shell-module` → `bradygaster/dev`
+- Decision: no ink dependency added — another agent (#233) handles that. Shell uses console.log only.
 
