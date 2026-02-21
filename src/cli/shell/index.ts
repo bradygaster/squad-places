@@ -9,6 +9,9 @@ import { createRequire } from 'node:module';
 import * as readline from 'node:readline/promises';
 
 export { SessionRegistry } from './sessions.js';
+export { StreamBridge } from './stream-bridge.js';
+export type { StreamBridgeOptions } from './stream-bridge.js';
+export { ShellRenderer } from './render.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../../../package.json') as { version: string };
