@@ -28,3 +28,11 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 - PR #275 on branch `squad/210-resolution-algorithms` → `bradygaster/dev`
 - Decision: placed in `src/resolution.ts` (root src, not packages/squad-sdk) since code hasn't moved to monorepo packages yet
 - Decision: `resolveSquad()` intentionally does NOT fall back to `resolveGlobalSquadPath()` — kept as separate concerns per #210/#211 separation. Consumer code can chain them.
+
+### 📌 #212/#213: --global flag and squad status command — implemented
+- Added `--global` flag to `squad init` and `squad upgrade` in `src/index.ts` main()
+- `--global` passes `resolveGlobalSquadPath()` as the dest instead of `process.cwd()`
+- Added `squad status` command: shows active squad type (repo/personal/none), path, and resolution reason
+- Status command composes `resolveSquad()` + `resolveGlobalSquadPath()` — the chaining pattern envisioned in #210/#211
+- All changes in `src/index.ts` only — no modifications to resolution.ts, init.ts, or upgrade.ts needed
+- PR on branch `squad/212-213-global-flag-status` → `bradygaster/dev`
