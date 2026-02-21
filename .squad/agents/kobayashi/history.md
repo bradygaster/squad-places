@@ -31,3 +31,14 @@
 ### 📌 Team update (2026-02-21T22:25Z): M5 round complete — decided by Scribe
 - Decision inbox merged: ensureSquadPath() guard (#273), CLI routing testability pattern
 - Status: Two PRs merged (#280, #279); one issue blocked (#209 needs GitHub Pro)
+
+### 2026-02-21: Issue #215 — Insider channel publish scaffolds
+**Status:** PR #283 opened → bradygaster/dev
+- Added minimal publishable entry points to both workspace packages:
+  - `packages/squad-sdk/src/index.ts`: VERSION export placeholder
+  - `packages/squad-cli/src/cli.ts`: placeholder binary entry point
+  - Both: `tsconfig.json` extending root, `build` scripts, `files` lists for npm publish
+- Root `build` script updated to chain `--workspaces --if-present`
+- Build passes (root + workspaces), all 1621 tests pass
+- **Does NOT push to insider.** PR only — coordinator handles insider branch push after merge.
+- **Package structure:** ESM-only, strict mode, Node >=20. squad-cli depends on squad-sdk via version string (npm workspace protocol, per Edie's decision).

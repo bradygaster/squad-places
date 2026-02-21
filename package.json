@@ -12,7 +12,7 @@
     "squad": "./cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build --workspaces --if-present",
     "build:cli": "tsc && npx esbuild dist/cli-entry.js --bundle --format=esm --platform=node --target=node20 --outfile=cli.js",
     "dev": "tsc --watch",
     "test": "vitest run",
