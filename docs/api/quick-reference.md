@@ -328,3 +328,90 @@
 | `PendingOperation` | interface | Queued operation for later sync |
 | `SyncResult` | interface | Sync result (synced, failed, remaining) |
 | `detectConnectivity` | function | Checks current connectivity status |
+
+## Streaming (`src/runtime/streaming.ts`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `StreamDelta` | interface | Streaming content delta event |
+| `UsageEvent` | interface | Token usage event |
+| `ReasoningDelta` | interface | Reasoning/thinking delta event |
+| `StreamingEvent` | type | `StreamDelta \| UsageEvent \| ReasoningDelta` |
+| `DeltaHandler` | type | Async callback for stream deltas |
+| `UsageHandler` | type | Async callback for usage events |
+| `ReasoningHandler` | type | Async callback for reasoning deltas |
+| `UsageSummary` | interface | Aggregated usage totals |
+| `AgentUsage` | interface | Per-agent usage breakdown |
+| `StreamingPipeline` | class | Manages streaming event handlers and dispatch |
+
+## Cost Tracking (`src/runtime/cost-tracker.ts`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `AgentCostEntry` | interface | Per-agent cost record |
+| `SessionCostEntry` | interface | Per-session cost record |
+| `CostSummary` | interface | Aggregated cost summary |
+| `CostTracker` | class | Tracks and aggregates model usage costs |
+
+## Telemetry (`src/runtime/telemetry.ts`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `TelemetryEventName` | type | Named telemetry event types |
+| `TelemetryEvent` | interface | Telemetry event with name, timestamp, payload |
+| `TelemetryConfig` | interface | Telemetry configuration (endpoint, enabled, sampling) |
+| `TelemetryTransport` | type | Pluggable transport callback for telemetry events |
+| `setTelemetryTransport` | function | Sets the global telemetry transport |
+| `TelemetryCollector` | class | Collects and dispatches telemetry events |
+| `shouldNotifyUpdate` | function | Checks if update notification interval has elapsed |
+
+## Internationalization (`src/runtime/i18n.ts`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `MessageCatalog` | type | `Record<string, string>` message key→value map |
+| `AccessibilityFinding` | interface | Single accessibility audit finding |
+| `AccessibilityReport` | interface | Full accessibility audit report |
+| `defaultCatalog` | const | Default English message catalog |
+| `I18nManager` | class | Message catalog management and lookup |
+| `auditAccessibility` | function | Audits SquadConfig for accessibility issues |
+
+## Benchmarks (`src/runtime/benchmarks.ts`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `BenchmarkResult` | interface | Single benchmark result with stats |
+| `TimingResult` | interface | Timing measurement result |
+| `BenchmarkReport` | interface | Full benchmark report with all results |
+| `BenchmarkFn` | type | Async or sync benchmark function |
+| `percentile` | function | Computes percentile from sorted array |
+| `measureIterations` | function | Measures function over N iterations |
+| `BenchmarkSuite` | class | Registers and runs benchmark suites |
+| `formatBenchmarkReport` | function | Formats benchmark results for display |
+
+## Casting (`src/casting/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `AgentRole` | type | Agent role identifier |
+| `UniverseId` | type | `"usual-suspects" \| "oceans-eleven" \| "custom"` |
+| `CastMember` | interface | Assembled cast member with role, model, tools |
+| `CastingConfig` | interface | Casting engine configuration |
+| `CastingEngine` | class | Assembles agent teams for tasks |
+| `CastingRecordMember` | interface | Cast member in a history record |
+| `CastingRecord` | interface | Single casting history entry |
+| `SerializedCastingHistory` | interface | Serializable casting history |
+| `CastingHistory` | class | Tracks past team assemblies |
+| `CastingUniverse` | interface | Named agent universe definition |
+| `CastingEntry` | interface | Entry in a casting registry |
+| `CastingRegistryConfig` | interface | Casting registry configuration |
+| `CastingRegistry` | class | Multi-universe casting with pluggable sources |
+
+## Monitor (`src/ralph/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `MonitorConfig` | interface | Monitor configuration (intervals, thresholds) |
+| `AgentWorkStatus` | interface | Agent work status snapshot |
+| `MonitorState` | interface | Full monitor state with all agent statuses |
+| `RalphMonitor` | class | Monitors agent work status and health |
