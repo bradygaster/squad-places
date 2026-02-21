@@ -3,29 +3,38 @@
   "version": "0.6.0-alpha.0",
   "description": "Squad — Programmable multi-agent runtime for GitHub Copilot, built on @github/copilot-sdk",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "squad": "./cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build --workspaces --if-present",
     "build:cli": "tsc && npx esbuild dist/cli-entry.js --bundle --format=esm --platform=node --target=node20 --outfile=cli.js",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "changeset:check": "changeset status"
   },
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ink": "^6.8.0",
+    "react": "^19.2.4"
+  },
   "optionalDependencies": {
-    "@github/copilot-sdk": "file:../copilot-sdk/nodejs"
+    "@github/copilot-sdk": "^0.1.25"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/react": "^19.2.14",
     "esbuild": "^0.25.0",
+    "ink-testing-library": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },

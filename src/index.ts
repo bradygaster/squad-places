@@ -5,9 +5,10 @@
  * Programmable multi-agent runtime for GitHub Copilot
  */
 
-const VERSION = '0.6.0-alpha.0'; // TODO: use getPackageVersion() when not a barrel export file
+const VERSION = '0.6.0'; // TODO: use getPackageVersion() when not a barrel export file
 
 // Export public API
+export { resolveSquad, resolveGlobalSquadPath, ensureSquadPath } from './resolution.js';
 export * from './config/index.js';
 export * from './agents/onboarding.js';
 export * from './casting/index.js';
@@ -47,12 +48,17 @@ export * from './marketplace/index.js';
 export * from './build/index.js';
 export * from './sharing/index.js';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { fatal } from './cli/core/errors.js';
-import { BOLD, RESET } from './cli/core/output.js';
+import { BOLD, RESET, DIM } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
+import { resolveSquad, resolveGlobalSquadPath } from './resolution.js';
+import { runShell } from './cli/shell/index.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  const hasGlobal = args.includes('--global');
   const cmd = args[0];
 
   // --version / -v
@@ -64,18 +70,27 @@ async function main(): Promise<void> {
   // --help / -h / help
   if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
     console.log(`\n${BOLD}squad${RESET} v${VERSION} — Add an AI agent team to any project\n`);
-    console.log(`Usage: npx github:bradygaster/squad-sdk [command]\n`);
+    console.log(`Usage: squad [command] [options]\n`);
     console.log(`Commands:`);
-    console.log(`  ${BOLD}(default)${RESET}  Initialize Squad (skip files that already exist)`);
+    console.log(`  ${BOLD}(default)${RESET}  Launch interactive shell (no args)`);
+    console.log(`             Flags: --global (init in personal squad directory)`);
+    console.log(`  ${BOLD}init${RESET}       Initialize Squad (skip files that already exist)`);
+    console.log(`             Flags: --global (init in personal squad directory)`);
     console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
     console.log(`             Overwrites: squad.agent.md, templates dir (.squad-templates/ or .ai-team-templates/)`);
     console.log(`             Never touches: .squad/ or .ai-team/ (your team state)`);
-    console.log(`             Flags: --migrate-directory (rename .ai-team/ → .squad/)`);
+    console.log(`             Flags: --global (upgrade personal squad), --migrate-directory (rename .ai-team/ → .squad/)`);
+    console.log(`  ${BOLD}status${RESET}     Show which squad is active and why`);
+    console.log(`  ${BOLD}triage${RESET}     Scan for work and categorize issues`);
+    console.log(`             Usage: triage [--interval <minutes>]`);
+    console.log(`             Default: checks every 10 minutes (Ctrl+C to stop)`);
+    console.log(`  ${BOLD}loop${RESET}       Continuous work loop (Ralph mode)`);
+    console.log(`             Usage: loop [--filter <label>] [--interval <minutes>]`);
+    console.log(`             Default: checks every 10 minutes (Ctrl+C to stop)`);
+    console.log(`  ${BOLD}hire${RESET}       Team creation wizard`);
+    console.log(`             Usage: hire [--name <name>] [--role <role>]`);
     console.log(`  ${BOLD}copilot${RESET}    Add/remove the Copilot coding agent (@copilot)`);
     console.log(`             Usage: copilot [--off] [--auto-assign]`);
-    console.log(`  ${BOLD}watch${RESET}      Run Ralph's work monitor as a local polling process`);
-    console.log(`             Usage: watch [--interval <minutes>]`);
-    console.log(`             Default: checks every 10 minutes (Ctrl+C to stop)`);
     console.log(`  ${BOLD}plugin${RESET}     Manage plugin marketplaces`);
     console.log(`             Usage: plugin marketplace add|remove|list|browse`);
     console.log(`  ${BOLD}export${RESET}     Export squad to a portable JSON snapshot`);
@@ -88,13 +103,24 @@ async function main(): Promise<void> {
     console.log(`\nFlags:`);
     console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
     console.log(`  ${BOLD}--help, -h${RESET}     Show help`);
-    console.log(`\nInsider channel: npx github:bradygaster/squad-sdk#insider\n`);
+    console.log(`  ${BOLD}--global${RESET}       Use personal (global) squad path (for init, upgrade)`);
+    console.log(`\nInstallation:`);
+    console.log(`  npm install --save-dev @bradygaster/squad-cli`);
+    console.log(`\nInsider channel:`);
+    console.log(`  npm install --save-dev @bradygaster/squad-cli@insider\n`);
     process.exit(0);
   }
 
+  // No args → launch interactive shell
+  if (!cmd) {
+    await runShell();
+    return;
+  }
+
   // Route subcommands
-  if (!cmd || cmd === 'init') {
-    runInit(process.cwd()).catch(err => {
+  if (cmd === 'init') {
+    const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
+    runInit(dest).catch(err => {
       fatal(err.message);
     });
     return;
@@ -106,15 +132,16 @@ async function main(): Promise<void> {
     
     const migrateDir = args.includes('--migrate-directory');
     const selfUpgrade = args.includes('--self');
+    const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
     
     // Handle --migrate-directory flag
     if (migrateDir) {
-      await migrateDirectory(process.cwd());
+      await migrateDirectory(dest);
       // Continue with regular upgrade after migration
     }
     
     // Run upgrade
-    await runUpgrade(process.cwd(), { 
+    await runUpgrade(dest, { 
       migrateDirectory: migrateDir,
       self: selfUpgrade
     });
@@ -122,14 +149,39 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  if (cmd === 'watch') {
-    const { runWatch } = await import('./cli/commands/watch.js');
+  if (cmd === 'triage' || cmd === 'watch') {
+    console.log('🕵️ Squad triage — scanning for work... (full implementation pending)');
+    process.exit(0);
+  }
+
+  if (cmd === 'loop') {
+    const filterIdx = args.indexOf('--filter');
+    const filter = (filterIdx !== -1 && args[filterIdx + 1]) ? args[filterIdx + 1] : undefined;
     const intervalIdx = args.indexOf('--interval');
     const intervalMinutes = (intervalIdx !== -1 && args[intervalIdx + 1])
-      ? parseInt(args[intervalIdx + 1], 10)
+      ? parseInt(args[intervalIdx + 1]!, 10)
       : 10;
-    await runWatch(process.cwd(), intervalMinutes);
-    return;
+    console.log(`🔄 Squad loop starting... (full implementation pending)`);
+    if (filter) {
+      console.log(`   Filter: ${filter}`);
+    }
+    console.log(`   Interval: ${intervalMinutes} minutes`);
+    process.exit(0);
+  }
+
+  if (cmd === 'hire') {
+    const nameIdx = args.indexOf('--name');
+    const name = (nameIdx !== -1 && args[nameIdx + 1]) ? args[nameIdx + 1] : undefined;
+    const roleIdx = args.indexOf('--role');
+    const role = (roleIdx !== -1 && args[roleIdx + 1]) ? args[roleIdx + 1] : undefined;
+    console.log('👋 Squad hire — team creation wizard starting... (full implementation pending)');
+    if (name) {
+      console.log(`   Name: ${name}`);
+    }
+    if (role) {
+      console.log(`   Role: ${role}`);
+    }
+    process.exit(0);
   }
 
   if (cmd === 'export') {
@@ -174,6 +226,36 @@ async function main(): Promise<void> {
     } else {
       console.log('No email addresses found.');
     }
+    process.exit(0);
+  }
+
+  if (cmd === 'status') {
+    const repoSquad = resolveSquad(process.cwd());
+    const globalPath = resolveGlobalSquadPath();
+    const globalSquadDir = path.join(globalPath, '.squad');
+    const globalExists = fs.existsSync(globalSquadDir);
+
+    console.log(`\n${BOLD}Squad Status${RESET}\n`);
+
+    if (repoSquad) {
+      console.log(`  Active squad: ${BOLD}repo${RESET}`);
+      console.log(`  Path:         ${repoSquad}`);
+      console.log(`  Reason:       Found .squad/ in repository tree`);
+    } else if (globalExists) {
+      console.log(`  Active squad: ${BOLD}personal (global)${RESET}`);
+      console.log(`  Path:         ${globalSquadDir}`);
+      console.log(`  Reason:       No repo .squad/ found; personal squad exists at global path`);
+    } else {
+      console.log(`  Active squad: ${DIM}none${RESET}`);
+      console.log(`  Reason:       No .squad/ found in repo tree or at global path`);
+    }
+
+    console.log();
+    console.log(`  ${DIM}Repo resolution:   ${repoSquad ?? 'not found'}${RESET}`);
+    console.log(`  ${DIM}Global path:       ${globalPath}${RESET}`);
+    console.log(`  ${DIM}Global squad:      ${globalExists ? globalSquadDir : 'not initialized'}${RESET}`);
+    console.log();
+
     process.exit(0);
   }
 
