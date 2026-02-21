@@ -17,6 +17,14 @@ export {
   type UniverseId,
 } from './casting-engine.js';
 
+// Re-export casting history (M3-10)
+export {
+  CastingHistory,
+  type CastingRecord,
+  type CastingRecordMember,
+  type SerializedCastingHistory,
+} from './casting-history.js';
+
 // --- Legacy Types (kept for backward compat) ---
 
 export interface CastingUniverse {
