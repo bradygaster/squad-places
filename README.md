@@ -1,27 +1,38 @@
 # Squad SDK
 
-**Programmable multi-agent runtime for GitHub Copilot**, built on [`@github/copilot-sdk`](https://github.com/nicolo-ribaudo/github-copilot-sdk).
+**Programmable multi-agent runtime for GitHub Copilot.** Write agent orchestration in code, not in prompts.
 
-> ⚠️ **Alpha** — This is the SDK replatform of [Squad](https://github.com/bradygaster/squad). The original prompt-based orchestrator lives in the source repo.
+[![Status](https://img.shields.io/badge/status-alpha-blueviolet)](#status)
+[![Platform](https://img.shields.io/badge/platform-GitHub%20Copilot-blue)](#about-squad-sdk)
 
-## What is this?
+> 🚀 This is the **v0.6+ replatform** of [Squad](https://github.com/bradygaster/squad). The original prompt-based orchestrator still works. This SDK gives you types, tools, and total control.
 
-Squad transforms from a "team template kit" into a **programmable multi-agent runtime**. Instead of a 32KB markdown prompt orchestrating agents via string templates, this SDK-based version provides:
+---
 
-- **Typed session management** — Create, resume, and observe agent sessions programmatically
-- **Custom tools** — `squad_route`, `squad_decide`, `squad_memory`, `squad_status`, `squad_skill`
-- **Hook-based governance** — File-write guards, PII scrubbing, reviewer lockouts enforced in code
-- **Event-driven coordination** — Real-time agent observation via cross-session event bus
-- **Crash recovery** — Persistent sessions with auto-resumption
+## About Squad SDK
 
-## Tech Stack
+Squad started as a team template kit in markdown. Good enough for early projects. But as your squad grows—more agents, more decisions, more complexity—you hit a wall: prompts don't scale. No type safety. No crash recovery. No visibility into what's happening. You're reading `.md` files hoping agents did the right thing.
 
-- **Runtime:** Node.js ≥ 20, TypeScript (ESM)
-- **SDK:** `@github/copilot-sdk` v0.1.8 (Technical Preview)
-- **Testing:** Vitest
-- **Bundling:** esbuild
+The SDK flips that. Agent orchestration becomes a **first-class Node.js runtime**. Sessions are objects, not mysteries. Tools are typed. Governance is enforced in code, not crossed fingers in prompts. Agents themselves don't change—your team still lives in `.squad/`, still has names, still learn from history. What changes is **how they talk to each other**.
 
-## Getting Started
+### What You Get
+
+- **Typed sessions** — `createSession()`, `resumeSession()`, `endSession()` with full TypeScript support
+- **Real tools** — `squad_route`, `squad_decide`, `squad_memory`, `squad_status`, `squad_skill` with JSON schema validation
+- **Hook-based governance** — File-write guards, PII scrubbing, reviewer lockouts. Not suggestions. Rules. Enforced before tools run.
+- **Event-driven coordination** — Subscribe to agent work in real time. Ralph (the work monitor) lives as a persistent session that watches everything.
+- **Crash recovery** — Sessions persist to disk. If an agent dies mid-task, `resumeSession()` picks it up exactly where it left off.
+- **Parallel spawning** — `spawnParallel()` launches all your agents at once. No waiting. No sequential bottlenecks.
+
+### What Doesn't Change
+
+Your team. Their names. Their history. Their decisions. All the `.squad/` folder—agents, decisions, casting—is **agnostic to the runtime**. Use the prompt-only orchestrator or the SDK. Your team survives either way. Git-store it, clone it, use it anywhere.
+
+---
+
+## Quick Start
+
+### 1. Install
 
 ```bash
 npm install
@@ -29,21 +40,439 @@ npm run build
 npm test
 ```
 
-## Architecture
+### 2. Create Your First Agent Session
 
-See the [PRD Index](https://github.com/bradygaster/squad/blob/main/.ai-team/docs/prds/00-index.md) in the source repo for the full 14-PRD replatform plan.
+```typescript
+import { SquadClient } from './src/client/index.js';
+import { CastingEngine } from './src/casting/index.js';
 
-### Module Map
+const client = new SquadClient({
+  sdkConfig: { /* ... SDK config ... */ },
+  squadRoot: '.squad',
+});
 
-| Module | PRD | Description |
-|--------|-----|-------------|
-| `src/client/` | PRD 1 | SquadClient adapter, session pool, event bus |
-| `src/tools/` | PRD 2 | Custom tools via SDK `defineTool()` |
-| `src/hooks/` | PRD 3 | Hook pipeline for policy enforcement |
-| `src/agents/` | PRD 4 | Agent session lifecycle, charter compiler |
-| `src/coordinator/` | PRD 5 | Coordinator orchestrator |
-| `src/casting/` | PRD 11 | Casting system v2 |
-| `src/ralph/` | PRD 8 | Ralph work monitor |
+const casting = new CastingEngine({
+  universe: 'usual-suspects',
+  agentCount: 5,
+});
+
+const session = await client.createSession({
+  agentName: 'Keaton', // The lead agent
+  charter: { role: 'lead', expertise: 'architecture and routing' },
+  task: 'Set up the team for a new e-commerce API',
+});
+
+const response = await session.send('Here\'s what we\'re building: a product catalog with search, inventory, and webhooks.');
+console.log(response);
+```
+
+### 3. Observe Your Squad
+
+```typescript
+const pool = client.sessionPool();
+const status = await pool.query({ agentName: 'Keaton' });
+console.log(`${status.activeSessions} agents working, ${status.completed} done`);
+```
+
+---
+
+## How It Works: The Architecture
+
+The SDK doesn't replace the original Squad—it sits alongside it. Your agents still run. Your decisions still accumulate. What's new is **structured, observable coordination**.
+
+### The Layers
+
+```
+┌─────────────────────────────────────────────┐
+│  Your Code (TypeScript)                     │
+│  - createSession(), spawnParallel()         │
+│  - SquadClient, EventBus, HookPipeline      │
+└─────────────────────────────────────────────┘
+           ↓
+┌─────────────────────────────────────────────┐
+│  Agent Orchestration Runtime                │
+│  - Router (matchRoute, compileRoutingRules) │
+│  - Charter Compiler (permissions, voice)    │
+│  - Tool Registry (squad_route, etc.)        │
+│  - Hook Pipeline (governance enforcement)   │
+└─────────────────────────────────────────────┘
+           ↓
+┌─────────────────────────────────────────────┐
+│  Session Pool + Event Bus                   │
+│  - Each agent gets a persistent session     │
+│  - Cross-session event pub/sub               │
+│  - Crash recovery via session state         │
+└─────────────────────────────────────────────┘
+           ↓
+┌─────────────────────────────────────────────┐
+│  @github/copilot-sdk                        │
+│  - Real-time agent streaming                │
+│  - Tool execution                           │
+└─────────────────────────────────────────────┘
+```
+
+### The Key Difference
+
+**Prompt-only orchestration** (v0.5.2): One 32KB prompt describes all agents, all rules, all decision-making. The coordinator is text. Agents read it, interpret it, maybe follow it.
+
+```
+Prompt says:
+"If the agent is Keaton, apply this logic. If McManus, apply that logic."
+Agent reads it (consumes tokens), decides what to do (might ignore it).
+```
+
+**SDK orchestration** (v0.6+): Rules are code. Sessions are objects. Routing is compiled. Tools are validated before they run.
+
+```
+Router.matchRoute(message) → { agent: 'Keaton', priority: 'high' }
+TypeScript knows exactly which agent will run, with what permissions.
+HookPipeline runs file-write guards BEFORE the tool executes.
+No interpretation. No ambiguity. Just code.
+```
+
+---
+
+## The Custom Tools
+
+These five tools let agents coordinate without calling you back.
+
+### `squad_route` — Hand off work to another agent
+
+```typescript
+const tool = toolRegistry.getTool('squad_route');
+const result = await tool.handler({
+  targetAgent: 'McManus',  // Route to DevRel
+  task: 'Write a blog post on the new casting system',
+  priority: 'high',
+  context: 'This feature launches next week',
+});
+```
+
+**What it does:** Keaton (lead) routes a task to McManus (DevRel). Creates a new session for McManus, passes context, queues it with priority. McManus picks it up next.
+
+### `squad_decide` — Record a team decision
+
+```typescript
+const result = await tool.handler({
+  author: 'Keaton',
+  summary: 'Use PostgreSQL, not MongoDB',
+  body: 'We chose PostgreSQL because: (1) transactions, (2) known team expertise, (3) schema flexibility via JSONB.',
+  references: ['PRD-5-coordinator', 'architecture-spike'],
+});
+```
+
+**What it does:** Writes to `.squad/decisions/inbox/`. Every agent reads `decisions.md` before working. This is how Keaton's call cascades to the whole team without re-explaining.
+
+### `squad_memory` — Append to agent history
+
+```typescript
+const result = await tool.handler({
+  agent: 'Frontend',
+  section: 'learnings',
+  content: 'This project uses Tailwind v4 with dark mode plugin. Store under .styles/theme.config.ts',
+});
+```
+
+**What it does:** Agents learn as they work. Next session, Frontend reads this and knows immediately. No context hunting.
+
+### `squad_status` — Query the session pool
+
+```typescript
+const result = await tool.handler({
+  agentName: 'Keaton',
+  status: 'active',
+  verbose: true,
+});
+// Returns: { poolSize: 5, activeSessions: 3, sessionsByAgent: {...} }
+```
+
+**What it does:** Ralph uses this to monitor work. You use it to debug ("Is Backend actually running or stalled?").
+
+### `squad_skill` — Read/write agent skills
+
+```typescript
+const result = await tool.handler({
+  skillName: 'react-query-setup',
+  operation: 'read',
+});
+// Returns: skill content from .squad/skills/react-query-setup/SKILL.md
+
+await tool.handler({
+  skillName: 'auth-patterns',
+  operation: 'write',
+  content: 'Pattern for Clerk integration with Next.js...',
+  confidence: 'high',
+});
+```
+
+**What it does:** Skills are compressed learnings. Frontend writes "here's how we do auth" once. Every future Frontend session inherits it. Confidence levels let you track "we're sure" vs "we're experimenting".
+
+---
+
+## The Hook Pipeline
+
+Rules don't live in prompts. They run before tools execute.
+
+### File-Write Guards
+
+```typescript
+const pipeline = new HookPipeline({
+  allowedWritePaths: [
+    'src/**/*.ts',
+    '.squad/**',
+    'docs/**',
+  ],
+});
+
+// Backend tries to write to /etc/passwd
+// Hook intercepts, blocks, returns:
+// "File write blocked: '/etc/passwd' does not match allowed paths: src/**, ..."
+```
+
+**Why it matters:** No agent (compromised or confused) can write outside your safe zones. Not because we asked nicely in the prompt. Because code won't let them.
+
+### PII Scrubbing
+
+```typescript
+const pipeline = new HookPipeline({
+  scrubPii: true,
+});
+
+// Agent logs "contact brady@example.com about deploy"
+// After tool execution, output is:
+// "contact [EMAIL_REDACTED] about deploy"
+```
+
+**Why it matters:** Sensitive data never escapes. Automatic. Invisible to the agent.
+
+### Reviewer Lockout
+
+```typescript
+const lockout = pipeline.getReviewerLockout();
+
+// Tester rejects Backend's auth code
+lockout.lockout('src/auth.ts', 'Backend');
+
+// Next turn, Backend tries to re-write auth.ts
+// Hook blocks it:
+// "Reviewer lockout: Agent 'Backend' is locked out of artifact 'src/auth.ts'. Another reviewer must handle this artifact."
+```
+
+**Why it matters:** When a reviewer says "no," it sticks. The original author can't sneak a fix in. Protocol enforced.
+
+### Ask-User Rate Limiter
+
+```typescript
+const pipeline = new HookPipeline({
+  maxAskUserPerSession: 3,
+});
+
+// Agent has called ask_user 3 times
+// Fourth attempt is blocked:
+// "ask_user rate limit exceeded: 3/3 calls used for this session. The agent should proceed without user input."
+```
+
+**Why it matters:** Agents don't stall waiting for you. They decide or move on.
+
+---
+
+## Event-Driven Coordination: Ralph
+
+Ralph is your work monitor. Not a polling loop. A **persistent agent session** that subscribes to everything.
+
+```typescript
+const ralph = new RalphMonitor({
+  teamRoot: '.squad',
+  healthCheckInterval: 30000,  // Every 30s
+  statePath: '.squad/ralph-state.json',
+});
+
+ralph.subscribe('agent:task-complete', (event) => {
+  console.log(`✅ ${event.agentName} finished: ${event.task}`);
+});
+
+ralph.subscribe('agent:error', (event) => {
+  console.log(`❌ ${event.agentName} failed: ${event.error}`);
+});
+
+await ralph.start();
+```
+
+Ralph is always watching. When agents complete work, write decisions, or hit errors, Ralph logs it. Crash? Ralph remembers. Next session, it knows exactly where you left off.
+
+---
+
+## Crash Recovery: Persistent Sessions
+
+Sessions aren't ephemeral. They're durable.
+
+```typescript
+const session = await client.createSession({
+  agentName: 'Backend',
+  task: 'Implement user auth endpoints',
+  persistPath: '.squad/sessions/backend-auth-001.json',
+});
+
+// Agent dies mid-work (network hiccup, model timeout, whatever)
+// Next time:
+
+const resumed = await client.resumeSession(
+  '.squad/sessions/backend-auth-001.json'
+);
+
+// Backend wakes up knowing:
+// - What the task was
+// - What it already wrote (file system has the changes)
+// - Where it was in the work
+// - No repetition, no lost context
+```
+
+---
+
+## The Cast: Persistent Agent Identity
+
+Squad's secret weapon is **casting**. Agents aren't `role-1`, `role-2`. They're Keaton, McManus, Verbal, Fenster, Kujan. Names from *The Usual Suspects* (1995).
+
+Why?
+
+1. **Memorable.** Devs say "Keaton handles routing," not "the lead agent coordinates." It sticks.
+2. **Persistent.** Same agent, same name, across every session. You build a relationship with Keaton over time.
+3. **Extensible.** Adding a sixth agent? Cast them from the same universe. The identity pattern carries forward.
+
+The casting engine compiles agent personas from the universe theme. Your `.squad/agents/` folder has the actual files, but the SDK's `CastingEngine` makes the assignment automatic and consistent.
+
+```typescript
+const casting = new CastingEngine({
+  universe: 'usual-suspects',
+  agentCount: 5,
+});
+
+const cast = casting.castTeam({
+  roles: ['lead', 'frontend', 'backend', 'tester', 'scribe'],
+});
+
+// cast = [
+//   { role: 'lead', agentName: 'Keaton', ... },
+//   { role: 'frontend', agentName: 'McManus', ... },
+//   { role: 'backend', agentName: 'Verbal', ... },
+//   { role: 'tester', agentName: 'Fenster', ... },
+//   { role: 'scribe', agentName: 'Kobayashi', ... },
+// ]
+```
+
+---
+
+## What Gets Created
+
+The SDK doesn't replace your squad directory. It uses it.
+
+```
+.squad/
+├── team.md                # Roster — who's on the team
+├── routing.md             # Routing rules — who handles what
+├── decisions.md           # Shared brain — every decision
+├── casting/
+│   ├── policy.json        # Casting config (universe, agent count, etc.)
+│   ├── registry.json      # Persistent name registry
+│   └── history.json       # Who was cast when
+├── agents/
+│   ├── Keaton/
+│   │   ├── charter.md     # Identity, expertise, voice
+│   │   └── history.md     # What Keaton knows about YOUR project
+│   ├── McManus/
+│   │   ├── charter.md
+│   │   └── history.md
+│   └── ... (others)
+├── skills/
+│   ├── react-patterns/
+│   │   └── SKILL.md       # Compressed learnings
+│   ├── auth-flows/
+│   │   └── SKILL.md
+│   └── ... (learned over time)
+├── sessions/              # Persisted sessions for crash recovery
+│   ├── backend-auth-001.json
+│   └── ... (auto-cleanup older than 30 days)
+└── log/                   # Session history (searchable archive)
+```
+
+**Commit all of this.** It's your team's memory. Clone the repo, you get the team—with everything they've learned.
+
+---
+
+## Growing Your Squad
+
+### Add an Agent
+
+```typescript
+const casting = new CastingEngine({ universe: 'usual-suspects', agentCount: 6 });
+const newCast = casting.castTeam({
+  roles: ['lead', 'frontend', 'backend', 'tester', 'devops', 'scribe'],
+});
+// The SDK creates a new session for the sixth agent automatically.
+```
+
+### Remove an Agent
+
+```typescript
+// Update team.md to remove the agent, update casting config
+// Old agent files move to .squad/agents/_alumni/{name}/
+// Knowledge preserved forever, but not active in routing
+```
+
+---
+
+## The Tech Stack
+
+| What | Version | Why |
+|------|---------|-----|
+| **Node.js** | ≥ 20.0.0 | Stable async/await, strong TypeScript support |
+| **TypeScript** | 5.7+ | Every tool, session, hook is fully typed |
+| **@github/copilot-sdk** | v0.1.8+ (Technical Preview) | Real-time agent streaming, tool execution |
+| **Vitest** | 3.0+ | Fast, concurrent test runner; great DX |
+| **esbuild** | 0.25+ | Bundling, dead-code elimination |
+
+---
+
+## Testing & Coverage
+
+```bash
+npm test                # Run all tests (1551 tests across 45 files)
+npm run test:watch     # Watch mode for development
+npm run build          # Compile TypeScript to dist/
+npm run dev            # Watch TypeScript in background
+npm run lint           # Type check (tsc --noEmit)
+```
+
+**Test coverage:** 1,551 tests across 45 test files. Core modules tested:
+- Session lifecycle (create, resume, end)
+- Tool execution and validation
+- Hook pipeline (guards, PII scrubbing, lockouts)
+- Router matching and charter compilation
+- Parallel fan-out spawning
+- Event bus and subscription
+- Casting engine and universe selection
+- Ralph monitoring and health checks
+- Crash recovery and persistence
+
+---
+
+## Status
+
+🟣 **Alpha** — v0.6.0-alpha.0.
+
+This is the SDK replatform of Squad. Stable for internal use. API and file formats may change between versions. Backward compat is a goal, not a guarantee, until v1.0.
+
+Your team (`.squad/` folder) is always portable and safe. The orchestration runtime is what evolves.
+
+**Conceived by** [@bradygaster](https://github.com/bradygaster).
+
+---
+
+## Contributing
+
+See [CONTRIBUTORS.md](../CONTRIBUTORS.md) in the source repo.
+
+---
 
 ## License
 
