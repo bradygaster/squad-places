@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   build:
@@ -68,11 +67,11 @@ jobs:
         run: npm -w packages/squad-sdk run build && npm -w packages/squad-cli run build
 
       - name: Publish squad-sdk
-        run: npm -w packages/squad-sdk publish --provenance --access public
+        run: npm -w packages/squad-sdk publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish squad-cli
-        run: npm -w packages/squad-cli publish --provenance --access public
+        run: npm -w packages/squad-cli publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
