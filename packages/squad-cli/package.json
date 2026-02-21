@@ -1,0 +1,27 @@
+{
+  "name": "@bradygaster/squad-cli",
+  "version": "0.6.0-alpha.0",
+  "description": "Squad CLI — Command-line interface for the Squad multi-agent runtime",
+  "type": "module",
+  "bin": {
+    "squad": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@bradygaster/squad-sdk": "0.6.0-alpha.0"
+  },
+  "keywords": [
+    "copilot",
+    "multi-agent",
+    "squad",
+    "cli"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bradygaster/squad.git",
+    "directory": "packages/squad-cli"
+  }
+}
