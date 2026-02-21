@@ -14,3 +14,11 @@
 - Spawn template design: charter inline, history read, decisions read — ceremony varies by tier
 - Coordinator prompt structure: squad.agent.md is the authoritative governance file
 - respawn-prompt.md is the team DNA — owned by Verbal, reviewed by Keaton
+
+### #241: Coordinator Session — Routing LLM Prompt + Parser
+- Created `src/cli/shell/coordinator.ts` with three exports: `buildCoordinatorPrompt()`, `parseCoordinatorResponse()`, `formatConversationContext()`
+- Prompt assembles from team.md (roster) + routing.md (rules) — graceful fallback if either is missing
+- Response parser handles three routing modes: DIRECT (answer inline), ROUTE (single agent), MULTI (fan-out)
+- Removed unused `resolveSquad` import from the task spec — kept imports clean for strict mode
+- Exported all functions and types from `src/cli/shell/index.ts`
+- PR #286 → bradygaster/dev
