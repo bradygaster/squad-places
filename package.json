@@ -17,7 +17,8 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "changeset:check": "changeset status"
   },
   "engines": {
     "node": ">=20.0.0"
