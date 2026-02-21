@@ -4108,3 +4108,23 @@ With M0 foundation complete, the runtime is ready for:
 ---
 
 
+
+### 2026-02-21: Respawn Prompt Architecture for squad-sdk
+
+**By:** Verbal
+
+**What:** Created squad-sdk/docs/respawn-prompt.md — the complete team DNA document for replatforming Squad into the SDK codebase. Document includes:
+- Project context (SDK-native, TypeScript strict, 13 modules, 1551 tests)
+- Full roster (13 specialists + Scribe + Ralph with roles and expertise)
+- Casting context (The Usual Suspects universe, persistent naming rules)
+- Routing rules (module-level ownership mapping)
+- Key decisions (GitHub distribution, v1 docs internal-only, strict type safety, hook-based governance)
+- Module map (structure of src/ with 13 modules)
+- Initialization prompt (exact text to spawn team)
+- Post-init checklist (verification steps)
+
+**Why:** The team rebuilt Squad beta with accumulated knowledge (tiered response modes, silent success mitigation, casting system, skills lifecycle, reviewer rejection lockout, proposal-first workflow). That knowledge must transfer to squad-sdk through the respawn prompt as the vector. Without this document, Brady would manually explain every agent's role and knowledge; agents would spawn without context; ownership would be ambiguous. With it, one paste recreates the exact team with full context.
+
+**Implementation:** C:\src\squad-sdk\docs\respawn-prompt.md — ~18K chars (~3K words), structured markdown with tables and prose. Owned by Verbal, reviewed by Keaton, updated when team DNA changes.
+
+**Future Use:** This pattern works for any Squad replatform or major codebase transition. Respawn prompt is the serialization format for team identity + knowledge.
