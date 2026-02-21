@@ -1,136 +1,221 @@
 /**
- * Squad Client — SDK Orchestration Runtime (PRD 1)
- *
- * Adapter layer wrapping @github/copilot-sdk's CopilotClient.
- * All Squad code imports from here, never from the SDK directly.
- * This isolates us from Technical Preview breaking changes.
+ * Squad Client — High-Level API with Session Pool Management (PRD 1)
+ * 
+ * This module provides the main Squad client API that combines:
+ * - SquadClient adapter (from adapter/client.ts) for connection management
+ * - SessionPool for multi-session lifecycle management
+ * - EventBus for cross-session event handling
+ * 
+ * Applications should import from this module, not from adapter/ directly.
  */
 
-// --- Configuration ---
+// Re-export core types and classes from adapter layer
+export {
+  SquadClient,
+  type SquadClientOptions,
+  type SquadConnectionState,
+} from '../adapter/client.js';
 
-export interface SquadClientConfig {
-  /** Path to the .squad/ or .ai-team/ team directory */
-  teamRoot: string;
+export type {
+  SquadSession,
+  SquadSessionConfig,
+  SquadSessionMetadata,
+  SquadGetStatusResponse,
+  SquadGetAuthStatusResponse,
+  SquadModelInfo,
+} from '../adapter/types.js';
 
-  /** Model to use for the coordinator session */
-  model?: string;
-
-  /** Custom agents registered with the SDK */
-  customAgents?: CustomAgentConfig[];
-
-  /** MCP server configurations */
-  mcpServers?: Record<string, McpServerConfig>;
-
-  /** Maximum concurrent sessions (default: 10) */
-  maxSessions?: number;
-
-  /** Connection timeout in milliseconds (default: 5000) */
-  connectionTimeout?: number;
-
-  /** Enable auto-reconnection on connection loss */
-  autoReconnect?: boolean;
-}
-
-export interface CustomAgentConfig {
-  name: string;
-  displayName: string;
-  description: string;
-  prompt: string;
-  tools?: string[];
-  mcpServers?: string[];
-}
-
-export interface McpServerConfig {
-  command: string;
-  args?: string[];
-  env?: Record<string, string>;
-}
-
-// --- Session Types ---
-
-export interface SquadSessionConfig {
-  /** Agent name (maps to a charter) */
-  agentName: string;
-
-  /** System message content */
-  systemMessage?: string;
-
-  /** System message mode: append to or replace agent prompt */
-  systemMessageMode?: 'append' | 'replace';
-
-  /** Tools available to this session */
-  availableTools?: string[];
-
-  /** Tools excluded from this session */
-  excludedTools?: string[];
-
-  /** Model override for this session */
-  model?: string;
-
-  /** Enable infinite session with auto-compaction */
-  infiniteSession?: boolean;
-}
-
-export interface SquadSession {
-  id: string;
-  agentName: string;
-  status: SessionStatus;
-  createdAt: Date;
-}
-
+// Session status type for pool management
 export type SessionStatus = 'creating' | 'active' | 'idle' | 'error' | 'destroyed';
 
-// --- Client ---
+// Re-export pool and event bus
+export { SessionPool, type SessionPoolConfig, type PoolEvent, DEFAULT_POOL_CONFIG } from './session-pool.js';
+export { EventBus, type SquadEvent, type SquadEventType } from './event-bus.js';
 
-export class SquadClient {
-  private config: SquadClientConfig;
-  private sessions: Map<string, SquadSession> = new Map();
+// --- High-Level Client with Pool Management ---
 
-  constructor(config: SquadClientConfig) {
-    this.config = config;
-    // TODO: PRD 1 — Initialize CopilotClient from @github/copilot-sdk
-    // TODO: PRD 1 — Check sdkProtocolVersion compatibility
-    // TODO: PRD 1 — Set up auto-reconnection if configured
+import { SquadClient as BaseSquadClient, type SquadClientOptions } from '../adapter/client.js';
+import type { SquadSession, SquadSessionConfig } from '../adapter/types.js';
+import { SessionPool, type SessionPoolConfig } from './session-pool.js';
+import { EventBus } from './event-bus.js';
+
+export interface SquadClientWithPoolConfig extends SquadClientOptions {
+  /** Session pool configuration */
+  pool?: Partial<SessionPoolConfig>;
+}
+
+/**
+ * Squad Client with integrated session pool management.
+ * 
+ * This is the recommended client for applications that need to manage
+ * multiple concurrent agent sessions. It provides:
+ * - Connection lifecycle management (from SquadClient)
+ * - Session pool with capacity limits and health checks
+ * - Event bus for cross-session event handling
+ * 
+ * @example
+ * ```typescript
+ * const client = new SquadClientWithPool({
+ *   pool: { maxConcurrent: 5 }
+ * });
+ * 
+ * await client.connect();
+ * 
+ * const session1 = await client.createSession({ model: 'claude-sonnet-4.5' });
+ * const session2 = await client.createSession({ model: 'claude-haiku-4.5' });
+ * 
+ * client.eventBus.on('session.created', (event) => {
+ *   console.log('New session:', event.sessionId);
+ * });
+ * 
+ * await client.shutdown();
+ * ```
+ */
+export class SquadClientWithPool {
+  private baseClient: BaseSquadClient;
+  public readonly pool: SessionPool;
+  public readonly eventBus: EventBus;
+  
+  constructor(config: SquadClientWithPoolConfig = {}) {
+    this.baseClient = new BaseSquadClient(config);
+    this.pool = new SessionPool(config.pool);
+    this.eventBus = new EventBus();
+    
+    // Wire pool events to event bus
+    this.pool.on((event) => {
+      this.eventBus.emit({
+        type: event.type as any,
+        sessionId: event.sessionId,
+        payload: event,
+        timestamp: event.timestamp,
+      });
+    });
   }
-
-  /** Initialize the client and connect to the Copilot server */
+  
+  /** Connect to the Copilot CLI server */
   async connect(): Promise<void> {
-    // TODO: PRD 1 — Spawn or connect to Copilot server
-    // TODO: PRD 1 — Verify protocol version via getStatus()
-    // TODO: PRD 1 — Discover available models via listModels()
+    return this.baseClient.connect();
   }
-
-  /** Create a new agent session */
-  async createSession(config: SquadSessionConfig): Promise<SquadSession> {
-    // TODO: PRD 1 — Map SquadSessionConfig to SDK SessionConfig
-    // TODO: PRD 1 — Register session in pool
-    // TODO: PRD 1 — Emit 'session.created' event
-    throw new Error('Not implemented');
+  
+  /** Disconnect from the Copilot CLI server */
+  async disconnect(): Promise<Error[]> {
+    await this.pool.shutdown();
+    return this.baseClient.disconnect();
   }
-
-  /** Resume an existing session by ID */
-  async resumeSession(sessionId: string): Promise<SquadSession> {
-    // TODO: PRD 1 — Call SDK resumeSession()
-    // TODO: PRD 1 — Restore session metadata
-    throw new Error('Not implemented');
+  
+  /** Force disconnect without graceful cleanup */
+  async forceDisconnect(): Promise<void> {
+    await this.pool.shutdown();
+    return this.baseClient.forceDisconnect();
   }
-
-  /** List all active sessions */
-  listSessions(): SquadSession[] {
-    return Array.from(this.sessions.values());
+  
+  /** Get current connection state */
+  getState() {
+    return this.baseClient.getState();
   }
-
-  /** Destroy a session and release resources */
-  async destroySession(sessionId: string): Promise<void> {
-    // TODO: PRD 1 — Call SDK session.destroy()
-    // TODO: PRD 1 — Remove from pool, emit 'session.destroyed'
-    this.sessions.delete(sessionId);
+  
+  /** Check if connected */
+  isConnected(): boolean {
+    return this.baseClient.isConnected();
   }
-
-  /** Graceful shutdown — destroy all sessions and disconnect */
+  
+  /**
+   * Create a new session and add it to the pool.
+   * Throws if the pool is at capacity.
+   */
+  async createSession(config: SquadSessionConfig = {}): Promise<SquadSession> {
+    const session = await this.baseClient.createSession(config);
+    
+    // Convert to pool-compatible session format
+    const poolSession = {
+      id: session.sessionId,
+      agentName: config.model ?? 'default',
+      status: 'active' as const,
+      createdAt: new Date(),
+    };
+    
+    this.pool.add(poolSession);
+    
+    await this.eventBus.emit({
+      type: 'session.created',
+      sessionId: session.sessionId,
+      payload: { session },
+      timestamp: new Date(),
+    });
+    
+    return session;
+  }
+  
+  /**
+   * Resume an existing session and add it to the pool if not present.
+   */
+  async resumeSession(sessionId: string, config: SquadSessionConfig = {}): Promise<SquadSession> {
+    const session = await this.baseClient.resumeSession(sessionId, config);
+    
+    if (!this.pool.get(sessionId)) {
+      const poolSession = {
+        id: session.sessionId,
+        agentName: config.model ?? 'resumed',
+        status: 'active' as const,
+        createdAt: new Date(),
+      };
+      this.pool.add(poolSession);
+    }
+    
+    return session;
+  }
+  
+  /**
+   * Delete a session and remove it from the pool.
+   */
+  async deleteSession(sessionId: string): Promise<void> {
+    await this.baseClient.deleteSession(sessionId);
+    this.pool.remove(sessionId);
+    
+    await this.eventBus.emit({
+      type: 'session.destroyed',
+      sessionId,
+      payload: null,
+      timestamp: new Date(),
+    });
+  }
+  
+  /** List all sessions from the base client */
+  async listSessions() {
+    return this.baseClient.listSessions();
+  }
+  
+  /** Send a ping to verify connectivity */
+  async ping(message?: string) {
+    return this.baseClient.ping(message);
+  }
+  
+  /** Get CLI status information */
+  async getStatus() {
+    return this.baseClient.getStatus();
+  }
+  
+  /** Get authentication status */
+  async getAuthStatus() {
+    return this.baseClient.getAuthStatus();
+  }
+  
+  /** List available models */
+  async listModels() {
+    return this.baseClient.listModels();
+  }
+  
+  /** Subscribe to session lifecycle events */
+  on(eventType: any, handler: any) {
+    return this.baseClient.on(eventType, handler);
+  }
+  
+  /**
+   * Graceful shutdown — destroy all sessions and disconnect.
+   */
   async shutdown(): Promise<void> {
-    // TODO: PRD 1 — Destroy all sessions
-    // TODO: PRD 1 — Close CopilotClient connection
-    this.sessions.clear();
+    await this.pool.shutdown();
+    await this.baseClient.disconnect();
   }
 }
+

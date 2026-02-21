@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Squad SDK — CLI entry point
+ * Squad SDK — CLI entry point and exports
  * Programmable multi-agent runtime for GitHub Copilot
  */
 
 const VERSION = '0.6.0-alpha.0';
+
+// Export public API
+export * from './config/index.js';
+export * from './agents/onboarding.js';
+export * from './casting/index.js';
+export { loadConfig, loadConfigSync } from './runtime/config.js';
+export type { ConfigLoadResult, ConfigValidationError } from './runtime/config.js';
 
 function main(): void {
   const args = process.argv.slice(2);
@@ -25,6 +32,7 @@ Usage:
 Commands:
   start       Start the Squad orchestrator
   status      Show agent session status
+  init        Initialize a new Squad project
 
 Options:
   -v, --version   Show version

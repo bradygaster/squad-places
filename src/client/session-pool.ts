@@ -6,7 +6,14 @@
  * cleanup of idle/errored sessions.
  */
 
-import type { SquadSession, SessionStatus } from './index.js';
+export type SessionStatus = 'creating' | 'active' | 'idle' | 'error' | 'destroyed';
+
+export interface SquadSession {
+  id: string;
+  agentName: string;
+  status: SessionStatus;
+  createdAt: Date;
+}
 
 // --- Pool Configuration ---
 
@@ -49,24 +56,44 @@ export interface PoolEvent {
 export class SessionPool {
   private config: SessionPoolConfig;
   private sessions: Map<string, SquadSession> = new Map();
+  private healthCheckTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: NodeJS.Timeout | null = null;
+  private listeners: Array<(event: PoolEvent) => void> = [];
 
   constructor(config: Partial<SessionPoolConfig> = {}) {
     this.config = { ...DEFAULT_POOL_CONFIG, ...config };
-    // TODO: PRD 1 — Start health check interval
-    // TODO: PRD 1 — Set up idle session cleanup timer
+    this.startHealthCheckTimer();
+    this.startCleanupTimer();
   }
 
   /** Add a session to the pool */
   add(session: SquadSession): void {
-    // TODO: PRD 1 — Check capacity limit
-    // TODO: PRD 1 — Emit 'session.added' event
+    if (this.atCapacity) {
+      this.emitEvent({
+        type: 'pool.at_capacity',
+        timestamp: new Date(),
+      });
+      throw new Error(`SessionPool at capacity (${this.config.maxConcurrent})`);
+    }
     this.sessions.set(session.id, session);
+    this.emitEvent({
+      type: 'session.added',
+      sessionId: session.id,
+      timestamp: new Date(),
+    });
   }
 
   /** Remove a session from the pool */
   remove(sessionId: string): boolean {
-    // TODO: PRD 1 — Emit 'session.removed' event
-    return this.sessions.delete(sessionId);
+    const existed = this.sessions.delete(sessionId);
+    if (existed) {
+      this.emitEvent({
+        type: 'session.removed',
+        sessionId,
+        timestamp: new Date(),
+      });
+    }
+    return existed;
   }
 
   /** Get a session by ID */
@@ -87,6 +114,24 @@ export class SessionPool {
     return Array.from(this.sessions.values()).filter(s => s.status === 'active');
   }
 
+  /** Update session status and emit event */
+  updateStatus(sessionId: string, newStatus: SessionStatus): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+    
+    const oldStatus = session.status;
+    if (oldStatus !== newStatus) {
+      session.status = newStatus;
+      this.emitEvent({
+        type: 'session.status_changed',
+        sessionId,
+        oldStatus,
+        newStatus,
+        timestamp: new Date(),
+      });
+    }
+  }
+
   /** Current pool size */
   get size(): number {
     return this.sessions.size;
@@ -99,8 +144,55 @@ export class SessionPool {
 
   /** Destroy all sessions and stop timers */
   async shutdown(): Promise<void> {
-    // TODO: PRD 1 — Stop health check timer
-    // TODO: PRD 1 — Destroy all sessions gracefully
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = null;
+    }
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
     this.sessions.clear();
+  }
+
+  /** Subscribe to pool events */
+  on(handler: (event: PoolEvent) => void): () => void {
+    this.listeners.push(handler);
+    return () => {
+      const index = this.listeners.indexOf(handler);
+      if (index !== -1) this.listeners.splice(index, 1);
+    };
+  }
+
+  /** Emit a pool event to all listeners */
+  private emitEvent(event: PoolEvent): void {
+    for (const listener of this.listeners) {
+      listener(event);
+    }
+  }
+
+  /** Start the health check timer */
+  private startHealthCheckTimer(): void {
+    this.healthCheckTimer = setInterval(() => {
+      this.emitEvent({
+        type: 'pool.health_check',
+        timestamp: new Date(),
+      });
+    }, this.config.healthCheckInterval);
+  }
+
+  /** Start the idle session cleanup timer */
+  private startCleanupTimer(): void {
+    this.cleanupTimer = setInterval(() => {
+      const now = Date.now();
+      for (const session of this.sessions.values()) {
+        if (session.status === 'idle') {
+          const idleTime = now - session.createdAt.getTime();
+          if (idleTime > this.config.idleTimeout) {
+            this.remove(session.id);
+          }
+        }
+      }
+    }, this.config.idleTimeout);
   }
 }

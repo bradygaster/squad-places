@@ -1,20 +1,49 @@
-import { describe, it, expect } from 'vitest';
-import { SquadClient, type SquadClientConfig } from '../src/client/index.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SquadClientWithPool } from '../src/client/index.js';
 import { SessionPool, DEFAULT_POOL_CONFIG } from '../src/client/session-pool.js';
 import { EventBus } from '../src/client/event-bus.js';
 
-describe('SquadClient', () => {
-  it('should construct with config', () => {
-    const config: SquadClientConfig = {
-      teamRoot: '/tmp/test-squad',
-    };
-    const client = new SquadClient(config);
+// Mock the SDK CopilotClient to avoid import.meta.resolve issues in tests
+vi.mock('@github/copilot-sdk', () => ({
+  CopilotClient: vi.fn().mockImplementation(() => ({
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue([]),
+    forceStop: vi.fn().mockResolvedValue(undefined),
+    createSession: vi.fn().mockResolvedValue({ sessionId: 'test-session' }),
+    resumeSession: vi.fn().mockResolvedValue({ sessionId: 'test-session' }),
+    listSessions: vi.fn().mockResolvedValue([]),
+    deleteSession: vi.fn().mockResolvedValue(undefined),
+    getLastSessionId: vi.fn().mockResolvedValue('test-session'),
+    ping: vi.fn().mockResolvedValue({ message: 'pong', timestamp: Date.now() }),
+    getStatus: vi.fn().mockResolvedValue({ version: '0.1.0', protocolVersion: 1 }),
+    getAuthStatus: vi.fn().mockResolvedValue({ isAuthenticated: true }),
+    listModels: vi.fn().mockResolvedValue([]),
+    on: vi.fn().mockReturnValue(() => {}),
+  })),
+}));
+
+describe('SquadClientWithPool', () => {
+  it('should construct with pool config', () => {
+    const client = new SquadClientWithPool({
+      pool: { maxConcurrent: 5 }
+    });
     expect(client).toBeDefined();
+    expect(client.pool).toBeDefined();
+    expect(client.eventBus).toBeDefined();
   });
 
-  it('should list sessions (empty initially)', () => {
-    const client = new SquadClient({ teamRoot: '/tmp/test' });
-    expect(client.listSessions()).toEqual([]);
+  it('should have pool with correct capacity', () => {
+    const client = new SquadClientWithPool({
+      pool: { maxConcurrent: 3 }
+    });
+    expect(client.pool.size).toBe(0);
+    expect(client.pool.atCapacity).toBe(false);
+  });
+
+  it('should check connection state', () => {
+    const client = new SquadClientWithPool();
+    expect(client.isConnected()).toBe(false);
+    expect(client.getState()).toBe('disconnected');
   });
 });
 

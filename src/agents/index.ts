@@ -6,6 +6,39 @@
  * Injects dynamic context via session hooks instead of string templates.
  */
 
+// --- M1-8 Charter Compilation ---
+export { compileCharter, type CharterCompileOptions, type ParsedCharter } from './charter-compiler.js';
+
+// --- M1-9 Model Selection ---
+export { 
+  resolveModel, 
+  type ModelResolutionOptions, 
+  type ResolvedModel,
+  type TaskType,
+  type ModelTier,
+  type ModelResolutionSource 
+} from './model-selector.js';
+
+// --- M1-7 Agent Lifecycle ---
+export {
+  AgentLifecycleManager,
+  type AgentHandle,
+  type AgentStatus,
+  type SpawnAgentOptions,
+  type LifecycleManagerConfig,
+} from './lifecycle.js';
+
+// --- M1-11 History Shadows ---
+export {
+  createHistoryShadow,
+  appendToHistory,
+  readHistory,
+  shadowExists,
+  deleteHistoryShadow,
+  type HistorySection,
+  type ParsedHistory,
+} from './history-shadow.js';
+
 // --- Charter Types ---
 
 export interface AgentCharter {
