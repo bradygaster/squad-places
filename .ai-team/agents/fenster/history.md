@@ -31,6 +31,8 @@ _Summarized from initial architecture review (2026-02-07). Full entries in `hist
 
 ## Recent Updates
 
+📌 **Team update (2026-02-21):** PRD 15 shipped — CLI entry point with full subcommand routing implemented in squad-sdk. Zero-dep color/emoji output utilities, error handling (fatal), squad directory detection (.squad/ with .ai-team/ legacy fallback), and subcommand stubs for all 9 commands (init, upgrade, watch, export, import, plugin, copilot, scrub-emails). Each stub prints helpful placeholder message with PRD reference. PR #173 opened on bradygaster/squad-pr. — Fenster
+
 📌 Team update (2026-02-20): Recruitment wave complete. Three new team members hired: Edie (TypeScript Engineer), Rabin (Distribution Engineer), Fortier (Node.js Runtime Dev). All onboarded with assessments. Keaton created 19 issues, 3 milestones, 12 labels on bradygaster/squad-pr. Kujan delivered feature risk punch list (14 GRAVE, 12 AT RISK, 28 COVERED, 5 INTENTIONAL). — decided by Keaton, Kujan, Edie, Rabin, Fortier
 
 📌 Team update (2026-02-13): VS Code runSubagent spawning — platform parity and adaptation strategy (consolidated). runSubagent viable with platform detection and custom .agent.md files. Spawn patterns all map 1:1; model selection is the gap; recommendation: prompt-level platform detection, no abstraction layer. Unblocks #32-35. — decided by Keaton, Strausz, Kujan

@@ -22,6 +22,8 @@ _Summarized from sessions through 2026-02-09. Full entries in `history-archive.m
 
 ## Recent Updates
 
+📌 Created PRD 15-22 issues and M7-M9 milestones in bradygaster/squad-pr for CLI migration plan. Issues: #164 (PRD 15, M7), #165 (PRD 16, M7), #166 (PRD 17, M8), #167 (PRD 18, M8), #168 (PRD 19, M8), #169 (PRD 20, M8), #170 (PRD 21, M8), #171 (PRD 22, M9).
+
 📌 Team update (2026-02-09): No npm publish — GitHub-only distribution. Kobayashi hired as Git & Release Engineer. Release plan (021) filed. Sprint plan 019a amended: item 1.8 cancelled, items 1.11-1.13 added.
 📌 Team update (2026-02-08): CI pipeline created — release workflow should depend on CI passing. Tests are minimum release gate. — decided by Hockney
 📌 Team update (2026-02-08): Coordinator now captures user directives to decisions inbox before routing work. Directives persist to decisions.md via Scribe. — decided by Kujan

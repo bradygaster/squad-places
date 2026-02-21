@@ -40,3 +40,14 @@
 - `@types/node` version mismatch: ours `^22`, SDK has `^25`
 - Missing `zod` dependency in squad-sdk package.json (needed for PRD 2)
 - Missing `noUncheckedIndexedAccess: true` in our tsconfig
+
+## Recent Updates
+### Template Migration for PRD 16 (2026-02-20)
+- Copied 34 template files from beta repo (C:\src\squad\templates\) to squad-sdk repo
+- Includes squad.agent.md coordinator prompt, workflows, casting data, template files
+- Created `src/cli/core/templates.ts` with TypeScript manifest
+- Manifest categorizes files: squad-owned (overwriteOnUpgrade: true) vs user-owned (false)
+- Squad-owned: coordinator, workflows, casting system, template files
+- User-owned: ceremonies.md, routing.md, identity/, agent-specific files
+- Exported via cli/index.ts barrel, build verified
+- PR #172 created: https://github.com/bradygaster/squad-pr/pull/172

@@ -4128,3 +4128,226 @@ With M0 foundation complete, the runtime is ready for:
 **Implementation:** C:\src\squad-sdk\docs\respawn-prompt.md — ~18K chars (~3K words), structured markdown with tables and prose. Owned by Verbal, reviewed by Keaton, updated when team DNA changes.
 
 **Future Use:** This pattern works for any Squad replatform or major codebase transition. Respawn prompt is the serialization format for team identity + knowledge.
+
+---
+
+# Decision: CLI Router Architecture (PRD 15)
+
+**Date:** 2026-02-21  
+**Author:** Fenster  
+**Status:** Implemented  
+**PR:** #173
+
+## Context
+
+PRD 15 required implementing the CLI entry point with full subcommand routing for squad-sdk. The beta CLI at `C:\src\squad\index.js` (1,496 lines) has 9 commands, but squad-sdk had only a stub main() with TODO.
+
+## Decision
+
+Implemented the CLI router using a **hybrid zero-dep + SDK-integrated architecture**:
+
+### Core Layer (Zero Dependencies)
+- `src/cli/core/output.ts` — ANSI color codes (GREEN, RED, YELLOW, DIM, BOLD, RESET) and helper functions (success, error, warn, info, dim, bold)
+- `src/cli/core/errors.ts` — fatal(msg) function that prints red error and exits with code 1
+- `src/cli/core/detect-squad-dir.ts` — detectSquadDir() that checks .squad/ first, falls back to .ai-team/, returns { path, name, isLegacy }
+
+### Entry Point
+- Rewrote `src/index.ts` main() with real subcommand routing:
+  - No args or 'init' → init stub
+  - upgrade, watch, export, import, plugin, copilot, scrub-emails → stubs with helpful messages
+  - --version/-v → print version
+  - --help/-h/help → comprehensive help text (ported from beta)
+  - Unknown commands → fatal() with suggestion
+
+### Stub Messages
+All command stubs print: `"⚠️ '{command}' is not yet implemented. Coming in PRD {N}. See: https://github.com/bradygaster/squad-sdk/issues/164"`
+
+### Package.json
+Verified bin field already exists: `"bin": { "squad": "./dist/index.js" }`
+
+## Rationale
+
+1. **Zero-dep core** — Scaffolding commands (init, upgrade) need to run without SDK installation. Pure Node.js stdlib only.
+2. **Helpful stubs** — Each command points to its PRD and issue number, making it clear what's coming.
+3. **Port help text** — Beta help text is production-tested and user-familiar. Port verbatim with squad-sdk branding.
+4. **Directory detection** — .squad/ is the new standard, but .ai-team/ legacy support is critical for existing users.
+
+## Implementation Notes
+
+- All new files use TypeScript strict mode, ESM-only
+- Exports added to `src/cli/index.ts` barrel
+- Compiled with `npm run build`, all 1,551 tests pass
+- Verified CLI works: --help, --version, command stubs, error handling
+
+## Next Steps
+
+- PRD 16: Init command (template copying, squad.agent.md installation)
+- PRD 17: Upgrade command (migrations, --migrate-directory)
+- PRD 18-21: Runtime commands (watch, export/import, plugin, copilot)
+
+## Preservation
+
+This decision establishes the CLI architecture pattern for all future commands:
+- Core scaffolding = zero-dep (fs, path, child_process only)
+- Runtime commands = SDK-integrated (config, sharing, marketplace modules)
+- Entry point conditionally loads SDK only when needed
+
+
+---
+
+# Decision: Template Manifest Structure
+
+**Date:** 2026-02-20  
+**Author:** Edie (TypeScript Engineer)  
+**Context:** PRD 16 (Init Command) — Template migration from beta to SDK
+
+## Decision
+
+Created `src/cli/core/templates.ts` with a typed manifest that categorizes all 34 template files into two groups:
+
+1. **Squad-owned** (`overwriteOnUpgrade: true`): 
+   - Coordinator prompt (squad.agent.md)
+   - Workflows (12 GitHub Actions)
+   - Casting system (3 JSON files)
+   - Template files (14 markdown templates)
+   - Skills directory
+
+2. **User-owned** (`overwriteOnUpgrade: false`):
+   - ceremonies.md, routing.md
+   - identity/ directory (now.md, wisdom.md)
+   - Agent-specific files users will customize
+
+## Rationale
+
+This categorization enables safe upgrades: Squad can push coordinator improvements and workflow fixes without clobbering user customizations to ceremonies, routing rules, or agent identity files.
+
+The manifest uses relative paths from `templates/` (source) to `.squad/` (destination), with some files going up to `.github/` for workflows and the coordinator agent.
+
+## Type Contract
+
+```typescript
+interface TemplateFile {
+  source: string;              // e.g., "squad.agent.md"
+  destination: string;         // e.g., "../.github/agents/squad.agent.md"
+  overwriteOnUpgrade: boolean; // true = squad-owned, false = user-owned
+  description: string;         // Human-readable label
+}
+```
+
+This strongly-typed manifest replaces the old dynamic file-walking approach, giving us compile-time verification of template integrity and explicit upgrade semantics.
+
+
+---
+
+# Decision: CLI Migration Plan — Beta to SDK v1
+
+**Date:** 2026-02-22  
+**Author:** Keaton (Lead)  
+**Status:** Proposed (awaiting Brady approval)
+
+---
+
+## Context
+
+Brady asked: "Where is the CLI part of the new v1 squad? Is it JUST the SDK we've created out there? I'd also like to start working inside the new repos and no longer passing through from the beta. Can we forge a plan or set of PRDs to get us there?"
+
+**The Gap:**
+- Beta CLI: 1,496 lines, 9 commands (init, upgrade, watch, export, import, plugin, copilot, scrub-emails, --migrate-directory)
+- SDK CLI: 65 lines of type stubs only
+- Squad team lives in beta repo — needs to be respawned in squad-sdk
+
+---
+
+## Decision
+
+**Hybrid Architecture (Port + Rewrite):**
+1. **Port scaffolding** (init, upgrade) as **zero-dep** Node.js (fs, path, child_process only)
+2. **Rewrite runtime** (watch, export/import, plugin) using **SDK primitives** (config, sharing, marketplace, ralph)
+
+**Rationale:**
+- Preserves zero-dep constraint where it matters (can't require SDK install to run init)
+- Leverages SDK type safety for runtime commands
+- Reasonable risk profile (scaffolding is mechanical, runtime is greenfield)
+- Allows phased delivery
+
+---
+
+## PRDs Created
+
+| PRD | Scope | Effort | Dependencies |
+|-----|-------|--------|--------------|
+| PRD 15 | CLI router, entry point, subcommand dispatch | 2-3h | None |
+| PRD 16 | Init command (templates, squad.agent.md, version stamping) | 8-10h | PRD 15 |
+| PRD 17 | Upgrade command (migrations, --migrate-directory) | 6-8h | PRD 15 |
+| PRD 18 | Watch command (Ralph polling, gh CLI) | 4-5h | PRD 15 |
+| PRD 19 | Export/import (squad-export.json, history split) | 6-7h | PRD 15 |
+| PRD 20 | Plugin marketplace CLI (add/remove/list/browse) | 3-4h | PRD 15 |
+| PRD 21 | Copilot agent CLI (add/remove, auto-assign) | 3-4h | PRD 15 |
+| PRD 22 | Repo independence (respawn team in squad-sdk) | 4-6h | PRD 16 |
+
+---
+
+## Milestones
+
+**M7: CLI Foundation (2-3 weeks)** — "npx can init again"
+- PRD 15 (router) + PRD 16 (init)
+- Templates moved to squad-sdk
+
+**M8: CLI Parity (3-4 weeks)** — "Every beta command works in v1"
+- PRD 17, 18, 19, 20, 21
+- Test coverage ≥80%
+
+**M9: Repo Independence (1-2 weeks)** — "Team lives in squad-sdk, beta is archived"
+- PRD 22 (respawn team)
+- Beta repo archived with redirect
+
+**Total:** 6-9 weeks, 36-46 hours effort
+
+---
+
+## Risks & Mitigations
+
+1. **Template Drift:** Freeze beta templates during M7, SDK becomes source of truth after
+2. **Distribution Change:** `npx github:bradygaster/squad` → `npx github:bradygaster/squad-sdk` (breaking, but communicated)
+3. **Zero-Dep vs SDK:** Split CLI into two layers (core/ vs commands/)
+4. **Team Respawn:** Use `docs/respawn-prompt.md` verbatim, manual history transfer for core agents
+
+---
+
+## Next Steps
+
+1. ✅ CLI migration plan written (C:\src\squad-sdk\docs\cli-migration-plan.md)
+2. ⏳ Brady approval (this decision)
+3. ⏳ Create GitHub issues for PRD 15-22 in squad-sdk
+4. ⏳ Create milestones M7, M8, M9 in squad-sdk
+5. ⏳ Copy templates from beta to SDK (kickoff M7)
+6. ⏳ Spawn team in squad-sdk (respawn-prompt.md)
+7. ⏳ Start PRD 15 (CLI router)
+
+---
+
+## Alternatives Considered
+
+**Option A: Line-by-Line Port**
+- ✅ Low risk, fast
+- ❌ Carries tech debt, no SDK leverage
+
+**Option B: Full Rewrite**
+- ✅ Type-safe, clean
+- ❌ High risk, breaks zero-dep, long timeline
+
+**Option C: Hybrid (SELECTED)**
+- ✅ Preserves zero-dep where needed
+- ✅ Leverages SDK for runtime
+- ✅ Phased delivery
+- ⚠️ Two dependency profiles (managed via clear separation)
+
+---
+
+## Outcome
+
+CLI migration plan delivered to Brady. Awaiting approval to proceed with M7 (CLI Foundation).
+
+**Document:** C:\src\squad-sdk\docs\cli-migration-plan.md  
+**Commit:** 49be164 (squad-sdk master)
+
