@@ -22,3 +22,16 @@
 - Symlink test skipped on Windows (requires elevated privileges) — pattern: `if (process.platform === 'win32') return;`
 - CLI routing testable without spawning processes by replicating the conditional logic from src/index.ts main()
 - resolveGlobalSquadPath() always creates the directory — tests that check global .squad/ must clean up after themselves
+
+### Issue #248: Shell module integration tests (2026-02-21)
+- Created test/shell.test.ts with 47 tests covering all shell module components
+- **SessionRegistry** (9 tests): register, get, getAll, getActive filter, updateStatus, remove (true/false), clear
+- **Spawn infrastructure** (6 tests): loadAgentCharter (load, case-insensitive, missing), buildAgentPrompt (charter, systemContext, omit)
+- **Coordinator** (11 tests): buildCoordinatorPrompt (team.md, routing.md, fallbacks), parseCoordinatorResponse (DIRECT, ROUTE, ROUTE no-context, MULTI, fallback), formatConversationContext (all, maxMessages, agentName prefix)
+- **ShellLifecycle** (10 tests): init state, ready transition, agent discovery, registry population, addUserMessage, addAgentMessage, addSystemMessage, getHistory (all/filtered), shutdown
+- **StreamBridge** (11 tests): message_delta, buffer accumulation, usage, reasoning_delta, flush, flush empty, getBuffer unknown, clear, streaming/idle status transitions
+- Created test-fixtures/.squad/ with team.md, routing.md, and agent charters for hockney/fenster
+- Test count grew from 1621 to 1668 across 52 files — all passing
+- Shell modules are well-structured for testing: pure functions (coordinator parsing), simple classes (SessionRegistry), callback-based bridges (StreamBridge)
+- loadAgentCharter accepts optional teamRoot param — critical for test isolation (avoids resolveSquad() cwd dependency)
+- Ink components (render.ts replacement) left untested — separate issue per task brief
