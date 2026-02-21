@@ -6,7 +6,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { resolveSquad, resolveGlobalSquadPath } from '../src/resolution.js';
+import { tmpdir } from 'node:os';
+import { resolveSquad, resolveGlobalSquadPath, ensureSquadPath } from '../src/resolution.js';
 
 const TMP = join(process.cwd(), `.test-resolution-${randomBytes(4).toString('hex')}`);
 
@@ -121,5 +122,33 @@ describe('resolveGlobalSquadPath()', () => {
     const result = resolveGlobalSquadPath();
     expect(result).toBe(join(customXdg, 'squad'));
     expect(existsSync(result)).toBe(true);
+  });
+});
+
+describe('ensureSquadPath()', () => {
+  const squadRoot = join(TMP, '.squad');
+
+  it('allows a path inside .squad/', () => {
+    const p = join(squadRoot, 'agents', 'fenster', 'scratch.md');
+    expect(ensureSquadPath(p, squadRoot)).toBe(p);
+  });
+
+  it('allows .squad/ root itself', () => {
+    expect(ensureSquadPath(squadRoot, squadRoot)).toBe(squadRoot);
+  });
+
+  it('allows a path inside the system temp directory', () => {
+    const p = join(tmpdir(), 'squad-temp-file.txt');
+    expect(ensureSquadPath(p, squadRoot)).toBe(p);
+  });
+
+  it('rejects a path at the repo root', () => {
+    const repoRoot = join(TMP, 'issue1.txt');
+    expect(() => ensureSquadPath(repoRoot, squadRoot)).toThrow(/outside the \.squad\/ directory/);
+  });
+
+  it('rejects an arbitrary absolute path', () => {
+    const arbitrary = join(TMP, 'some', 'other', 'dir', 'file.txt');
+    expect(() => ensureSquadPath(arbitrary, squadRoot)).toThrow(/outside the \.squad\/ directory/);
   });
 });

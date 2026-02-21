@@ -88,3 +88,35 @@ export function resolveGlobalSquadPath(): string {
 
   return globalDir;
 }
+
+/**
+ * Validate that a file path is within `.squad/` or the system temp directory.
+ *
+ * Use this guard before writing any scratch/temp/state files to ensure Squad
+ * never clutters the repo root or arbitrary filesystem locations.
+ *
+ * @param filePath  - Absolute path to validate.
+ * @param squadRoot - Absolute path to the `.squad/` directory (e.g. from `resolveSquad()`).
+ * @returns The resolved absolute `filePath` if it is safe.
+ * @throws If `filePath` is outside `.squad/` and not in the system temp directory.
+ */
+export function ensureSquadPath(filePath: string, squadRoot: string): string {
+  const resolved = path.resolve(filePath);
+  const resolvedSquad = path.resolve(squadRoot);
+  const resolvedTmp = path.resolve(os.tmpdir());
+
+  // Allow paths inside the .squad/ directory
+  if (resolved === resolvedSquad || resolved.startsWith(resolvedSquad + path.sep)) {
+    return resolved;
+  }
+
+  // Allow paths inside the system temp directory
+  if (resolved === resolvedTmp || resolved.startsWith(resolvedTmp + path.sep)) {
+    return resolved;
+  }
+
+  throw new Error(
+    `Path "${resolved}" is outside the .squad/ directory ("${resolvedSquad}"). ` +
+    'All squad scratch/temp/state files must be written inside .squad/ or the system temp directory.'
+  );
+}
