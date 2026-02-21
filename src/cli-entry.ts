@@ -9,8 +9,9 @@
 import { fatal } from './cli/core/errors.js';
 import { BOLD, RESET } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
+import { getPackageVersion } from './cli/core/version.js';
 
-const VERSION = '0.6.0-alpha.0';
+const VERSION = getPackageVersion();
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);

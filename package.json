@@ -19,7 +19,8 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {
+  "dependencies": {},
+  "optionalDependencies": {
     "@github/copilot-sdk": "file:../copilot-sdk/nodejs"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@
  * Programmable multi-agent runtime for GitHub Copilot
  */
 
-const VERSION = '0.6.0-alpha.0';
+const VERSION = '0.6.0-alpha.0'; // TODO: use getPackageVersion() when not a barrel export file
 
 // Export public API
 export * from './config/index.js';
