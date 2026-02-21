@@ -20,6 +20,8 @@ export * from './runtime/streaming.js';
 export * from './runtime/cost-tracker.js';
 export * from './runtime/telemetry.js';
 export * from './runtime/offline.js';
+export * from './runtime/i18n.js';
+export * from './runtime/benchmarks.js';
 export * from './cli/index.js';
 export * from './marketplace/index.js';
 export * from './build/index.js';

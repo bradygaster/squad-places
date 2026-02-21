@@ -156,3 +156,175 @@
 | `MemoryEntry` | interface | Entry for agent history (learnings, updates) |
 | `StatusQuery` | interface | Query filter for session pool status |
 | `SkillRequest` | interface | Parameters for reading/writing agent skills |
+
+## Skills (`src/skills/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `SkillRegistry` | class | In-memory skill store with keyword+role matching |
+| `SkillDefinition` | interface | Skill metadata: id, name, domain, content, triggers, agentRoles |
+| `SkillMatch` | interface | Match result with skill, score (0–1), and reason |
+| `loadSkillsFromDirectory` | function | Loads all SKILL.md files from a directory tree |
+| `parseFrontmatter` | function | Parses YAML-like frontmatter from SKILL.md strings |
+| `parseSkillFile` | function | Parses a single SKILL.md into a SkillDefinition |
+| `SkillSource` | interface | Pluggable skill discovery (local or GitHub) |
+| `SkillManifest` | interface | Lightweight skill catalog entry (id, name, domain, source) |
+| `SkillSourceRegistry` | class | Multi-source skill discovery with priority ordering |
+| `LocalSkillSource` | class | Discovers skills from `.squad/skills/` on disk |
+| `GitHubSkillSource` | class | Fetches skills from GitHub repositories |
+
+## Build (`src/build/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `BundleConfig` | interface | esbuild config: entry points, outDir, format, minify, sourcemap, externals |
+| `BundleFormat` | type | `"esm" \| "cjs"` |
+| `BundleValidationResult` | interface | Validation result with errors, warnings, and file list |
+| `createBundleConfig` | function | Creates BundleConfig with Squad-aware defaults |
+| `getBundleTargets` | function | Returns default SDK entry points |
+| `validateBundleOutput` | function | Validates build output directory for expected artifacts |
+| `NpmPackageConfig` | interface | npm package generation config (name, version, exports, bin) |
+| `PackageJsonOutput` | interface | Generated package.json structure |
+| `PackageValidationResult` | interface | npm package validation result |
+| `generatePackageJson` | function | Generates publish-ready package.json from config |
+| `validatePackageJson` | function | Validates package.json for npm publish readiness |
+| `GitHubDistConfig` | interface | GitHub Releases distribution config (owner, repo, binary) |
+| `ReleaseValidationResult` | interface | GitHub release validation result |
+| `generateInstallScript` | function | Generates shell install script for GitHub Releases |
+| `validateGitHubRelease` | function | Validates release has expected assets |
+| `CIPipelineConfig` | interface | CI/CD pipeline config (steps, triggers, artifacts, env) |
+| `CIPipelineStep` | interface | Single pipeline step (name, command, condition, env) |
+| `CIPipelineTrigger` | interface | Pipeline trigger (push, PR, release, schedule) |
+| `CIPipelineArtifact` | interface | Build artifact config (name, path, retention) |
+| `PipelineValidationResult` | interface | Pipeline validation result |
+| `generatePipelineYaml` | function | Generates GitHub Actions workflow YAML |
+| `CommitInfo` | interface | Commit metadata (sha, message, author, date, type) |
+| `ConventionalCommit` | interface | Parsed conventional commit (type, scope, description, breaking) |
+| `parseConventionalCommit` | function | Parses conventional commit messages |
+| `bumpVersion` | function | Bumps semver version by major/minor/patch/prerelease |
+| `InstallMethod` | type | `"npx-github" \| "npm-global" \| "npm-local" \| "unknown"` |
+| `MigrationPlan` | interface | Install migration plan (from, to, steps) |
+| `MigrationStep` | interface | Single migration step (description, command) |
+| `detectInstallMethod` | function | Detects current install method from environment |
+| `generateMigrationPlan` | function | Generates steps to migrate between install methods |
+
+## Sharing (`src/sharing/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `ExportBundle` | interface | Portable config bundle (config, agents, skills, routing, metadata) |
+| `ExportOptions` | interface | Export options (includeHistory, format, anonymize) |
+| `ExportMetadata` | interface | Bundle metadata (version, timestamp, source) |
+| `exportSquadConfig` | function | Exports Squad config as a portable bundle |
+| `ImportOptions` | interface | Import options (merge, dryRun, skipValidation) |
+| `ImportResult` | interface | Import result (success, changes, warnings) |
+| `ImportChange` | interface | Single import change (type, path, reason) |
+| `deserializeBundle` | function | Deserializes JSON bundle string into ExportBundle |
+| `validateBundle` | function | Validates ExportBundle structural correctness |
+| `importSquadConfig` | function | Imports a bundle into a target project |
+| `HistoryEntry` | interface | History record (id, timestamp, type, content, agent) |
+| `AgentHistory` | interface | Agent history container with entries |
+| `SplitResult` | interface | History split result (exportable + private) |
+| `splitHistory` | function | Separates shareable history from private data |
+| `VersionPin` | interface | Agent version pin (agentId, sha, timestamp, source) |
+| `VersionDiff` | interface | Version diff between two pins |
+| `pinAgentVersion` | function | Pins an agent to a specific commit SHA |
+| `getAgentVersion` | function | Gets the current version pin for an agent |
+| `AgentRepoConfig` | interface | Agent repository config (owner, repo, branch, auth) |
+| `AgentRepoOperations` | interface | GitHub operations for agent repo management |
+| `PushResult` | interface | Push result (success, sha, errors) |
+| `configureAgentRepo` | function | Validates and returns agent repo config |
+| `AgentCache` | class | TTL-based cache for remote agent definitions |
+| `CacheEntry` | interface | Cache entry with value, timestamp, TTL, source |
+| `CacheStats` | interface | Cache statistics (hits, misses, evictions, size) |
+| `DEFAULT_AGENT_TTL` | const | Default agent cache TTL (1 hour) |
+| `DEFAULT_SKILL_TTL` | const | Default skill cache TTL (5 minutes) |
+| `Conflict` | interface | Config conflict (path, existingValue, incomingValue, type) |
+| `ConflictType` | type | `"added" \| "modified" \| "removed"` |
+| `ConflictStrategy` | type | `"keep-existing" \| "use-incoming" \| "merge" \| "manual"` |
+| `IncomingBundle` | interface | Incoming config bundle for conflict detection |
+| `detectConflicts` | function | Detects conflicts between existing and incoming config |
+| `resolveConflicts` | function | Applies a conflict resolution strategy |
+
+## Marketplace (`src/marketplace/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `ManifestCategory` | enum | `Productivity \| Development \| Testing \| DevOps \| Documentation \| Security \| Other` |
+| `MarketplaceManifest` | interface | Full marketplace manifest (name, version, author, categories, pricing) |
+| `ManifestPricing` | interface | Pricing config (model: free/paid/freemium) |
+| `ManifestValidationResult` | interface | Manifest validation result (valid, errors, warnings) |
+| `validateManifest` | function | Validates a marketplace manifest |
+| `generateManifest` | function | Generates manifest from SquadConfig |
+| `MarketplaceEntry` | interface | Marketplace catalog record with stats and verification |
+| `MarketplaceEntryStats` | interface | Entry stats (downloads, rating, reviews) |
+| `MarketplaceIndex` | interface | Full marketplace catalog with search support |
+| `MarketplaceSearchQuery` | interface | Search query (text, category, tags, sort, pagination) |
+| `MarketplaceSearchResult` | interface | Paginated search result |
+| `MarketplaceSortField` | type | `"downloads" \| "rating" \| "name" \| "recent"` |
+| `EntryValidationResult` | interface | Entry validation result |
+| `searchMarketplace` | function | Searches marketplace index with filters |
+| `validateEntry` | function | Validates a marketplace entry |
+| `generateEntryFromConfig` | function | Creates entry from SquadConfig |
+| `MarketplaceBrowser` | class | CLI interface for browsing marketplace |
+| `MarketplaceFetcher` | interface | Pluggable marketplace data fetcher |
+| `InstallResult` | interface | Install result with created files and conflicts |
+| `formatEntryList` | function | Formats entry list for CLI output |
+| `formatEntryDetails` | function | Formats single entry detail view |
+| `MarketplaceBackend` | class | Reference marketplace API backend |
+| `PublishResult` | interface | Publish result (success, url, warnings) |
+| `OperationResult` | interface | Generic operation result |
+| `ExtensionAdapter` | class | Bridges Squad to Copilot Extensions API |
+| `ExtensionConfig` | interface | Extension config shape |
+| `ExtensionEvent` | interface | Extension event (type, timestamp, payload) |
+| `RegistrationResult` | interface | Extension registration result |
+| `toExtensionConfig` | function | Converts SquadConfig to ExtensionConfig |
+| `fromExtensionEvent` | function | Converts extension events to Squad events |
+| `registerExtension` | function | Registers extension with marketplace |
+| `packageForMarketplace` | function | Packages project directory for marketplace |
+| `validatePackageContents` | function | Validates package contents before publish |
+| `PackageResult` | interface | Package result (outputPath, size, files) |
+| `MarketplacePackageValidationResult` | interface | Package validation result |
+| `SECURITY_RULES` | const | Array of 7 SecurityRule checks for remote agents |
+| `SecurityRule` | interface | Rule definition (name, severity, check function) |
+| `SecuritySeverity` | type | `"warning" \| "critical"` |
+| `SecurityReport` | interface | Validation report (passed, warnings, blocked, riskScore) |
+| `RemoteAgentDefinition` | interface | Agent definition with charter and tools for security context |
+| `validateRemoteAgent` | function | Runs all 7 security rules against a remote agent |
+| `quarantineAgent` | function | Sanitizes a blocked agent (strips injection, caps tools) |
+| `generateSecurityReport` | function | Produces audit-ready security summary |
+
+## CLI (`src/cli/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `ReleaseChannel` | type | `"stable" \| "preview" \| "insider"` |
+| `UpdateInfo` | interface | Available update info (newVersion, releaseUrl, changelog) |
+| `UpgradeOptions` | interface | Upgrade options (force, dryRun, channel) |
+| `UpgradeResult` | interface | Upgrade result (success, fromVersion, toVersion, changes) |
+| `SDKUpgradeOptions` | interface | SDK-specific upgrade options with MigrationRegistry |
+| `SDKUpgradeResult` | interface | SDK upgrade result with migration steps |
+| `VersionFetcher` | type | Pluggable version resolver callback |
+| `PackageJsonReader` | type | Pluggable package.json reader |
+| `PackageJsonWriter` | type | Pluggable package.json writer |
+| `checkForUpdate` | function | Checks registry for available updates |
+| `performUpgrade` | function | Applies an upgrade in-place |
+| `CopilotEnvironment` | type | `"cli" \| "vscode" \| "web" \| "unknown"` |
+| `InstallConfig` | interface | In-Copilot installation config (project name, agents, format) |
+| `CopilotInstallResult` | interface | Install result (success, environment, createdFiles, instructions) |
+| `InstallStep` | interface | Single install instruction step |
+| `EnvironmentIndicators` | interface | Environment detection inputs (env vars, argv) |
+| `detectCopilotEnvironment` | function | Detects active Copilot environment (CLI, VS Code, web) |
+| `installInCopilot` | function | Scaffolds a Squad project from within Copilot |
+
+## Runtime Extensions (`src/runtime/`)
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `ConnectivityStatus` | type | `"online" \| "offline" \| "degraded"` |
+| `OfflineManager` | class | Manages offline detection, pending ops queue, and sync |
+| `OfflineCapabilities` | interface | What works offline (local agents, cached skills, config editing) |
+| `OfflineStatus` | interface | Current status (connectivity, pendingOps, lastSync, cachedAgents) |
+| `PendingOperation` | interface | Queued operation for later sync |
+| `SyncResult` | interface | Sync result (synced, failed, remaining) |
+| `detectConnectivity` | function | Checks current connectivity status |
