@@ -133,13 +133,22 @@ async function main(): Promise<void> {
   }
 
   if (cmd === 'export') {
-    console.log(`⚠️  'export' is not yet implemented. Coming in PRD 19. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    const { runExport } = await import('./cli/commands/export.js');
+    const outIdx = args.indexOf('--out');
+    const outPath = (outIdx !== -1 && args[outIdx + 1]) ? args[outIdx + 1] : undefined;
+    await runExport(process.cwd(), outPath);
+    process.exit(0);
   }
 
   if (cmd === 'import') {
-    console.log(`⚠️  'import' is not yet implemented. Coming in PRD 19. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    const { runImport } = await import('./cli/commands/import.js');
+    const importFile = args[1];
+    if (!importFile) {
+      fatal('Usage: squad import <file> [--force]');
+    }
+    const hasForce = args.includes('--force');
+    await runImport(process.cwd(), importFile, hasForce);
+    process.exit(0);
   }
 
   if (cmd === 'plugin') {
@@ -148,8 +157,11 @@ async function main(): Promise<void> {
   }
 
   if (cmd === 'copilot') {
-    console.log(`⚠️  'copilot' is not yet implemented. Coming in PRD 21. See: https://github.com/bradygaster/squad-sdk/issues/164`);
-    process.exit(1);
+    const { runCopilot } = await import('./cli/commands/copilot.js');
+    const isOff = args.includes('--off');
+    const autoAssign = args.includes('--auto-assign');
+    await runCopilot(process.cwd(), { off: isOff, autoAssign });
+    process.exit(0);
   }
 
   if (cmd === 'scrub-emails') {
