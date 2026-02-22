@@ -2,12 +2,22 @@
  * Error handling utilities — zero dependencies
  */
 
-import { RED, RESET } from './output.js';
+/**
+ * Error class for fatal CLI errors.
+ * CLI entry points catch these and call process.exit(1).
+ * Library consumers can catch the SquadError normally.
+ */
+export class SquadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SquadError';
+  }
+}
 
 /**
- * Print error message and exit with code 1
+ * Throw a fatal error. In CLI context, the entry point catches and exits.
+ * In library context, callers can catch the SquadError normally.
  */
 export function fatal(msg: string): never {
-  console.error(`${RED}✗${RESET} ${msg}`);
-  process.exit(1);
+  throw new SquadError(msg);
 }

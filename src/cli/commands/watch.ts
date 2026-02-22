@@ -201,20 +201,22 @@ export async function runWatch(dest: string, intervalMinutes: number): Promise<v
   // Run immediately, then on interval
   await runCheck(members, hasCopilot, autoAssign);
   
-  const intervalId = setInterval(
-    async () => {
-      await runCheck(members, hasCopilot, autoAssign);
-    },
-    intervalMinutes * 60 * 1000
-  );
-  
-  // Graceful shutdown
-  const shutdown = () => {
-    clearInterval(intervalId);
-    console.log(`\n${DIM}🔄 Ralph — Watch stopped${RESET}`);
-    process.exit(0);
-  };
-  
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  return new Promise<void>((resolve) => {
+    const intervalId = setInterval(
+      async () => {
+        await runCheck(members, hasCopilot, autoAssign);
+      },
+      intervalMinutes * 60 * 1000
+    );
+    
+    // Graceful shutdown
+    const shutdown = () => {
+      clearInterval(intervalId);
+      console.log(`\n${DIM}🔄 Ralph — Watch stopped${RESET}`);
+      resolve();
+    };
+    
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  });
 }

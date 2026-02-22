@@ -48,12 +48,6 @@ function printHeader(): void {
 const EXIT_COMMANDS = new Set(['exit', '/quit']);
 
 export async function runShell(): Promise<void> {
-  // Graceful Ctrl+C handling
-  process.on('SIGINT', () => {
-    console.log('\n👋 Squad out.');
-    process.exit(0);
-  });
-
   printHeader();
 
   // Agent names will be populated from team discovery; empty for now
@@ -64,6 +58,12 @@ export async function runShell(): Promise<void> {
     input: process.stdin,
     output: process.stdout,
     completer,
+  });
+
+  // Graceful Ctrl+C handling
+  process.on('SIGINT', () => {
+    console.log('\n👋 Squad out.');
+    rl.close();
   });
 
   try {
