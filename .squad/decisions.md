@@ -890,3 +890,13 @@ OTel metrics tests use a spy-meter pattern: mock `getMeter()` to return a fake m
 - `test/otel-metric-wiring.test.ts` (5 tests)
 - Future OTel metric tests should follow this same pattern.
 
+### 2026-02-22T10:31:23Z: User directive — squad-pr repository scope
+**By:** Brady (via Copilot)
+**What:** **This squad works on `bradygaster/squad-pr` ONLY — not `bradygaster/squad`. Until further notice, all issue tracking, PRs, and work target the squad-pr repository.**
+**Why:** User request — captured for team memory
+
+### 2026-02-22T10:39:51Z: User directive — Work priority order
+**By:** Brady (via Copilot)
+**What:** Priority order for remaining work: (1) OTel + Aspire dashboard, (2) Fix the squad REPL experience, (3) CI/CD for npm publishing with GitHub Actions + releases, (4) Docs and website — last. SquadOffice repo at C:\src\SquadOffice has a telemetry watcher UI whose telemetry expectations should be integrated into OTel work if possible. Changes to that repo are welcome too.
+**Why:** User request — captured for team memory
+

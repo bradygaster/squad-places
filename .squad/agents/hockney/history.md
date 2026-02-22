@@ -118,3 +118,17 @@ Two EventBus APIs require different mocks: client bus uses on()/emit(), runtime 
 
 ### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
 All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.
+
+### Issue #267: OTel integration tests (2026-02-22)
+- Created `test/otel-integration.test.ts` (37 tests) covering 9 integration suites across all OTel modules.
+- **Bridge + Provider pipeline** (5 tests): End-to-end span capture, error spans with status/exception events, unknown events, timestamp attributes, multiple transports.
+- **Bridge span sequencing** (3 tests): Mixed batch integrity, sequential batches, empty-then-nonempty.
+- **Agent spawn telemetry flow** (3 tests): Name/mode/model attributes through bridge, multiple independent agents, missing properties handled.
+- **Session lifecycle spans** (4 tests): Run/error event mapping, ERROR status chain, full init→spawn→run→error sequence.
+- **Metrics end-to-end** (7 tests): Full agent lifecycle, session lifecycle, latency metrics, token usage, concurrent multi-agent, _resetMetrics.
+- **Error scenarios** (6 tests): No-op tracer/meter, bridge with no-op, shutdown safety, events without properties/timestamps.
+- **Provider lifecycle** (4 tests): Disabled init, independent tracing/metrics, manual provider, cleanup isolation.
+- **EventBus → Bridge translation** (3 tests): All 5 event types, error fallback chain, property type preservation.
+- **Cross-module coordination** (2 tests): Bridge + direct spans coexist, concurrent transports safe.
+- Key pattern: vi.mock at module scope with spyMeter declared globally; vi.importActual() to bypass mock in error scenario tests.
+- Test count: 1969 → 2006+ (37 new integration tests, all passing). Pre-existing squad-observer.test.ts failures unrelated.
