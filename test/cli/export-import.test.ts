@@ -166,9 +166,8 @@ describe('CLI: export/import commands', () => {
     const importTeamPath = join(IMPORT_ROOT, '.squad', 'team.md');
     await writeFile(importTeamPath, '# Existing Team\n');
     
-    // Import should fail without --force
-    // Note: fatal() calls process.exit(), so we can't easily test the error message
-    // Instead, verify that the import fails and the original squad is unchanged
+    // Import should fail without --force (fatal() throws SquadError)
+    // Verify that the import fails and the original squad is unchanged
     try {
       await runImport(IMPORT_ROOT, exportPath, false);
       // If we get here, the import succeeded when it shouldn't have

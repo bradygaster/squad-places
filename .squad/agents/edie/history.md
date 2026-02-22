@@ -31,3 +31,23 @@ The `file:../copilot-sdk/nodejs` reference can be upgraded to `"@github/copilot-
 - npm uses version-string workspace references (`"0.6.0-alpha.0"`) not `workspace:*` protocol (that's pnpm/Yarn)
 - Build clean, 1592/1592 tests still pass — no source files moved, scaffold only
 - PR #274, branch `squad/197-monorepo-scaffold`, closes #197, #198, #200
+
+### CLI entry point split (#187)
+- Moved `main()` and all CLI bootstrap code from `src/index.ts` to `src/cli-entry.ts`
+- `src/index.ts` is now a pure re-export barrel with zero side effects — safe for library import
+- `VERSION` stays exported from `index.ts` (public API); `cli-entry.ts` imports it
+- `SquadError` added to barrel exports so library consumers can catch CLI errors
+- `cli-entry.ts` imports `VERSION` from `./index.js` — no duplicate constant
+- Build clean, 1683/1683 tests pass
+- Branch `squad/181-squadui-p0`, closes #187
+
+### 📌 Team update (2026-02-22T020714Z): CLI entry point split complete
+Edie's refactor split src/index.ts into pure barrel (zero side effects) and src/cli-entry.ts (CLI routing + main). SquadUI can now safely import @bradygaster/squad as a library without triggering process.exit() on import. Decision merged to decisions.md. Issue #187 closed. 1683 tests passing. Related: Kujan's process.exit() refactor.
+
+### Subpath exports (#227)
+- Added 7 subpath exports to `packages/squad-sdk/package.json`: `.`, `./parsers`, `./types`, `./config`, `./skills`, `./agents`, `./cli`
+- Every export uses types-first condition ordering (`"types"` before `"import"`) per Node.js resolution algorithm
+- All source barrels verified: `src/parsers.ts`, `src/types.ts`, `src/config/index.ts`, `src/skills/index.ts`, `src/agents/index.ts`, `src/cli/index.ts`
+- All dist artifacts confirmed after build: `.js` + `.d.ts` for each subpath
+- Build clean, 1719/1719 tests pass
+- Branch `squad/181-squadui-p2`, closes #227

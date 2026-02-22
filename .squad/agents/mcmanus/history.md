@@ -46,4 +46,57 @@
 - M5 round complete: McManus (docs PR #280), Fenster (guard PR #279), Kobayashi (blocked #209)
 - Decisions merged: ensureSquadPath() guard, CLI routing testability pattern
 
+### 2026-02-21: Epic #181 P0 docs — CHANGELOG and SquadUI integration guide
+**Status:** Complete.
+**Changes made:**
+1. **CHANGELOG.md** — Created with [Unreleased] section documenting three P0 items:
+   - Breaking: CLI entry point moved to `dist/cli-entry.js`
+   - Fixed: CRLF normalization across 8 parsers
+   - Fixed: `process.exit()` removed from library functions
+   - Internal: Notes on new `normalizeEol()` utility and `src/cli-entry.ts`
+   - Also backfilled v0.6.0 section for context
+2. **docs/squadui-integration.md** — Created practical integration guide for SquadUI team:
+   - Three subsections matching the P0 work (CRLF, entry point, process.exit)
+   - Code snippets showing safe import patterns for extensions
+   - Simple table summarizing breaking changes and migration paths
+   - Brief P1 roadmap section (type extensions, subpath exports, error types)
+3. **Commit on branch `squad/181-squadui-p0`** with proper Co-authored-by trailer
+**Tone notes:**
+- No hype in CHANGELOG — factual, issue-linked, clear scope
+- SquadUI guide is practical not promotional — code-first, minimal prose, brief sections
+- Separated "What Changed" (P0) from "What's Coming" (P1) to set expectations
+- Breaking changes table is explicit (Impact + Migration Path) to reduce support burden
+**Process:** Read history.md and decisions.md for context; verified tone ceiling; no source changes — docs-only.
 
+
+
+### 📌 Team update (2026-02-22T020714Z): SquadUI integration docs complete
+McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integration.md. Documentation captures the SquadUI integration work (library-safe CLI, error handling patterns, cross-platform robustness). User directive decision merged: docs as you go during integration. Epic #181 archived.
+
+### 2026-02-22: Issue #231 — SquadUI v2 type mapping corrections
+**Status:** Complete.
+**Changes made:**
+1. **docs/squadui-type-corrections.md** — Created comprehensive type alignment document for SquadUI team:
+   - 4 type mapping errors clearly documented with before/after comparisons
+   - Error 1: `SkillDefinition` — proposal wrong on `description` (should be `content`), `requiredTools` (should be `agentRoles`), missing `id`, `domain`
+   - Error 2: `ParsedCharter` — proposal assumes flat object, actual is nested `identity: { name?, role?, expertise?, style? }`, no `voice` (use `collaboration`), no `owns` (use `ownership`)
+   - Error 3: `RoutingConfig` — missing `issueRouting`, `governance`, `copilotEvaluation`; `RoutingRule` uses `workType` not `pattern`
+   - Error 4: `parseDecisionsMarkdown()` returns `{ decisions, warnings }` not `ParsedDecision[]` directly
+   - 2 architectural clarifications: two routing parsers (parseRoutingRulesMarkdown vs parseRoutingMarkdown) and orchestration log parsing is out of scope
+   - Correct type shapes with exact interfaces from source
+   - Migration path table for each error
+2. **Commit on branch `squad/181-squadui-p2`** with closes #231 reference
+**Tone applied:** 
+- No hype — factual, error-driven ("Here's what's wrong and why")
+- Action-oriented table mapping proposal assumptions to correct reality
+- Citations to exact source files (line numbers not included per "tone ceiling" — readers can verify easily)
+- Closing with "Questions? Contact the SDK team" rather than "let us know" (professional, boundaried)
+**Process:** 
+- Read all type definitions from source (skills/skill-loader.ts, agents/charter-compiler.ts, runtime/config.ts, config/markdown-migration.ts, config/routing.ts)
+- Verified return types by examining function signatures and actual code
+- Cross-referenced parser locations to clarify "two routing parsers" architectural issue
+- No speculative content — every statement grounded in actual type inspection
+**Notes:**
+- Document serves as a blocker for SquadUI adapter development (prevents costly refactors)
+- Type corrections enable them to build adapters on correct assumptions from day one
+- Orchestration log parsing note prevents scope creep (that's SquadUI's responsibility)

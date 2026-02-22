@@ -8,6 +8,8 @@
  * @module config/markdown-migration
  */
 
+import { normalizeEol } from '../utils/normalize-eol.js';
+
 import type {
   SquadConfig,
   RoutingConfig,
@@ -34,6 +36,10 @@ export interface ParsedAgent {
   model?: string;
   /** Status */
   status?: string;
+  /** Alternative names / aliases */
+  aliases?: string[];
+  /** Whether this agent is auto-assigned to matching work */
+  autoAssign?: boolean;
 }
 
 /**
@@ -58,6 +64,12 @@ export interface ParsedDecision {
   body: string;
   /** Whether this decision affects configuration */
   configRelevant: boolean;
+  /** ISO 8601 date extracted from heading (e.g. "2026-02-21") */
+  date?: string;
+  /** Author extracted from **By:** lines */
+  author?: string;
+  /** Heading depth (2 for ##, 3 for ###) */
+  headingLevel?: number;
 }
 
 /**
@@ -117,6 +129,7 @@ export interface MarkdownMigrationResult {
  * @returns Array of parsed agents and any warnings
  */
 export function parseTeamMarkdown(content: string): { agents: ParsedAgent[]; warnings: string[] } {
+  content = normalizeEol(content);
   const agents: ParsedAgent[] = [];
   const warnings: string[] = [];
 
@@ -169,9 +182,9 @@ export function parseTeamMarkdown(content: string): { agents: ParsedAgent[]; war
     // Key-value lines within an agent section
     if (currentAgent) {
       // Match patterns like: - **Role:** Lead, - Role: Lead, * **Skills:** x, y
-      const kvMatch = trimmed.match(/^[-*]*\s*\*{0,2}(role|skills?|model|status|preferred\s*model)\s*:?\s*\*{0,2}\s*:?\s*(.+)/i);
+      const kvMatch = trimmed.match(/^[-*]*\s*\*{0,2}(role|skills?|model|status|preferred\s*model|aliases?|auto[-\s]*assign)\s*:?\s*\*{0,2}\s*:?\s*(.+)/i);
       if (kvMatch) {
-        const key = kvMatch[1].toLowerCase().replace(/\s+/g, '');
+        const key = kvMatch[1].toLowerCase().replace(/[\s-]+/g, '');
         const value = kvMatch[2].replace(/^\*+\s*/, '').trim();
 
         switch (key) {
@@ -188,6 +201,13 @@ export function parseTeamMarkdown(content: string): { agents: ParsedAgent[]; war
             break;
           case 'status':
             currentAgent.status = value;
+            break;
+          case 'alias':
+          case 'aliases':
+            currentAgent.aliases = value.split(',').map((s) => s.trim()).filter(Boolean);
+            break;
+          case 'autoassign':
+            currentAgent.autoAssign = /^(yes|true|1)$/i.test(value);
             break;
         }
       }
@@ -243,6 +263,8 @@ function parseTeamTable(lines: string[]): ParsedAgent[] {
         skills: (get('skill') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
         model: get('model') || undefined,
         status: get('status') || undefined,
+        aliases: get('alias') ? get('alias')!.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+        autoAssign: get('auto') !== undefined ? /^(yes|true|1)$/i.test(get('auto') ?? '') : undefined,
       });
     }
   }
@@ -268,6 +290,7 @@ function parseTeamTable(lines: string[]): ParsedAgent[] {
 export function parseRoutingRulesMarkdown(
   content: string,
 ): { rules: ParsedRoutingRule[]; warnings: string[] } {
+  content = normalizeEol(content);
   const rules: ParsedRoutingRule[] = [];
   const warnings: string[] = [];
 
@@ -345,6 +368,7 @@ export function parseRoutingRulesMarkdown(
 export function parseDecisionsMarkdown(
   content: string,
 ): { decisions: ParsedDecision[]; warnings: string[] } {
+  content = normalizeEol(content);
   const decisions: ParsedDecision[] = [];
   const warnings: string[] = [];
 
@@ -354,27 +378,60 @@ export function parseDecisionsMarkdown(
 
   const lines = content.split('\n');
   let currentTitle: string | null = null;
+  let currentHeadingLevel: number | undefined;
+  let currentDate: string | undefined;
   let bodyLines: string[] = [];
 
   const CONFIG_KEYWORDS = /\b(model|routing|governance|tier|agent|fallback|config|migration)\b/i;
+  const DATE_IN_HEADING = /^(\d{4}-\d{2}-\d{2}):\s*(.+)/;
+  const AUTHOR_LINE = /^\*\*By:\*\*\s*(.+)/i;
 
   const flush = () => {
     if (currentTitle) {
       const body = bodyLines.join('\n').trim();
       const configRelevant = CONFIG_KEYWORDS.test(currentTitle) || CONFIG_KEYWORDS.test(body);
-      decisions.push({ title: currentTitle, body, configRelevant });
+
+      // Extract author from body lines
+      let author: string | undefined;
+      for (const bl of bodyLines) {
+        const authorMatch = bl.trim().match(AUTHOR_LINE);
+        if (authorMatch) {
+          author = authorMatch[1].trim();
+          break;
+        }
+      }
+
+      const decision: ParsedDecision = { title: currentTitle, body, configRelevant };
+      if (currentDate) decision.date = currentDate;
+      if (author) decision.author = author;
+      if (currentHeadingLevel !== undefined) decision.headingLevel = currentHeadingLevel;
+
+      decisions.push(decision);
     }
     currentTitle = null;
+    currentDate = undefined;
+    currentHeadingLevel = undefined;
     bodyLines = [];
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    const headingMatch = trimmed.match(/^###?\s+(.+)/);
+    const headingMatch = trimmed.match(/^(###?)\s+(.+)/);
     if (headingMatch) {
       flush();
-      currentTitle = headingMatch[1];
+      const hashes = headingMatch[1];
+      let titleText = headingMatch[2];
+      currentHeadingLevel = hashes.length;
+
+      // Extract date from heading like "### 2026-02-21: Title"
+      const dateMatch = titleText.match(DATE_IN_HEADING);
+      if (dateMatch) {
+        currentDate = dateMatch[1];
+        titleText = dateMatch[2];
+      }
+
+      currentTitle = titleText;
       continue;
     }
 
@@ -542,5 +599,7 @@ function finalizeAgent(partial: Partial<ParsedAgent>): ParsedAgent {
     skills: partial.skills ?? [],
     model: partial.model,
     status: partial.status,
+    aliases: partial.aliases,
+    autoAssign: partial.autoAssign,
   };
 }
