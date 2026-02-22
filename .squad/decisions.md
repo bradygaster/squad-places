@@ -733,3 +733,84 @@ This keeps the Ink component decoupled from StreamBridge internals — the compo
 
 
 
+
+### OpenTelemetry version alignment: pin core packages to 1.30.x line
+**By:** Edie
+**Issue:** #254
+**What:** All OTel optional dependencies in `packages/squad-sdk/package.json` must stay version-aligned: `sdk-node@^0.57.x` requires `sdk-trace-base@^1.30.0`, `sdk-trace-node@^1.30.0`, `sdk-metrics@^1.30.0`, `resources@^1.30.0`. These must be explicit optional dependencies, not left to transitive resolution.
+**Why:** Without explicit pins, npm hoists the latest versions (2.x) of `sdk-trace-base`, `sdk-metrics`, and `resources` to the top-level `node_modules`. The 2.x types are structurally incompatible with the 1.x types that `sdk-node@0.57.x` transitively depends on, causing TS2345/TS2741 type errors (e.g., missing `instrumentationScope` on `ReadableSpan`, missing `getRawAttributes` on `Resource`). Explicit pins at `^1.30.0` force npm to deduplicate on the 1.x line, eliminating the type conflicts.
+
+
+# Decision: OpenTelemetry Tracing for Agent Lifecycle & Coordinator Routing
+
+**Date:** 2026-02-22  
+**By:** Fenster  
+**Issues:** #257, #258  
+**Status:** Implemented
+
+## What
+
+Added OpenTelemetry trace instrumentation to four files in `packages/squad-sdk/src/`:
+
+1. **`agents/index.ts`** — AgentSessionManager: `spawn()`, `resume()`, `destroy()` wrapped with spans (`squad.agent.spawn`, `squad.agent.resume`, `squad.agent.destroy`).
+2. **`agents/lifecycle.ts`** — AgentLifecycleManager: `spawnAgent()`, `destroyAgent()` wrapped with spans (`squad.lifecycle.spawnAgent`, `squad.lifecycle.destroyAgent`).
+3. **`coordinator/index.ts`** — Coordinator: `initialize()`, `route()`, `execute()`, `shutdown()` wrapped with spans (`squad.coordinator.initialize`, `squad.coordinator.route`, `squad.coordinator.execute`, `squad.coordinator.shutdown`).
+4. **`coordinator/coordinator.ts`** — SquadCoordinator: `handleMessage()` wrapped with span (`squad.coordinator.handleMessage`).
+
+## Why
+
+- Observability is foundational for debugging multi-agent orchestration at runtime.
+- Using `@opentelemetry/api` only — no-ops without a registered provider, so zero cost in production unless OTel is configured.
+- Trace hierarchy: `coordinator.handleMessage → coordinator.route → coordinator.execute → lifecycle.spawnAgent → agent.spawn`.
+
+## Convention Established
+
+- **Tracer name:** `trace.getTracer('squad-sdk')` — one tracer per package.
+- **Span naming:** `squad.{module}.{method}` (e.g., `squad.agent.spawn`).
+- **Attributes:** Use descriptive keys like `agent.name`, `routing.tier`, `target.agents`, `spawn.mode`.
+- **Error handling:** `span.setStatus({ code: SpanStatusCode.ERROR })` + `span.recordException(err)` in catch blocks. Always `span.end()` in `finally`.
+- **Import only from `@opentelemetry/api`** — never from SDK packages directly.
+
+
+# Decision: OTel Foundation — NodeSDK over individual providers
+
+**Author:** Fortier (Node.js Runtime)
+**Date:** 2026-02-22
+**Issues:** #255, #256
+**Status:** Implemented
+
+## Context
+
+Issues #255 and #256 require OTel provider initialization and a bridge from the existing TelemetryCollector to OTel spans. The OpenTelemetry JS ecosystem has multiple packages (`sdk-trace-base`, `sdk-trace-node`, `sdk-metrics`, `resources`, `exporter-*`) that frequently ship with incompatible transitive versions, causing TypeScript type errors even when runtime behavior is correct.
+
+## Decision
+
+Use `@opentelemetry/sdk-node`'s `NodeSDK` class as the single provider manager, and import `Resource` and `PeriodicExportingMetricReader` from its re-exports (`resources`, `metrics` sub-modules) rather than installing them as direct dependencies.
+
+Direct deps added to `packages/squad-sdk`:
+- `@opentelemetry/api`
+- `@opentelemetry/sdk-node`
+- `@opentelemetry/exporter-trace-otlp-http`
+- `@opentelemetry/exporter-metrics-otlp-http`
+- `@opentelemetry/semantic-conventions`
+
+NOT added (bundled via `sdk-node`):
+- `@opentelemetry/sdk-trace-base`
+- `@opentelemetry/sdk-trace-node`
+- `@opentelemetry/sdk-metrics`
+- `@opentelemetry/resources`
+
+## Consequences
+
+- Single `_sdk.shutdown()` handles both tracing and metrics cleanup.
+- No version skew between trace and metric providers.
+- `getTracer()` / `getMeter()` return no-op instances when OTel is not initialized — zero overhead in the default case.
+- The bridge (`otel-bridge.ts`) is additive — it produces a `TelemetryTransport` that can be registered alongside any existing transport.
+
+## Files Changed
+
+- `packages/squad-sdk/src/runtime/otel.ts` — Provider initialization module
+- `packages/squad-sdk/src/runtime/otel-bridge.ts` — TelemetryCollector → OTel span bridge
+- `packages/squad-sdk/src/index.ts` — Barrel exports for both modules
+- `packages/squad-sdk/package.json` — Dependencies + subpath exports
+
