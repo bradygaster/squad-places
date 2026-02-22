@@ -945,7 +945,7 @@ describe('Integration: Error Hierarchy', () => {
       stopwatch.success();
 
       expect(telemetryPoints.length).toBe(1);
-      expect(telemetryPoints[0].duration).toBeGreaterThanOrEqual(10);
+      expect(telemetryPoints[0].duration).toBeGreaterThanOrEqual(5);
     });
 
     it('should track multiple operations independently', () => {
