@@ -121,6 +121,10 @@
     "./runtime/otel-bridge": {
       "types": "./dist/runtime/otel-bridge.d.ts",
       "import": "./dist/runtime/otel-bridge.js"
+    },
+    "./runtime/otel-metrics": {
+      "types": "./dist/runtime/otel-metrics.d.ts",
+      "import": "./dist/runtime/otel-metrics.js"
     }
   },
   "files": [

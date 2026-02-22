@@ -123,3 +123,16 @@ App component accepts `onReady` prop that fires on mount, delivering ShellApi ob
 - **No-op by default:** Without a registered TracerProvider, all spans are no-ops. Zero overhead unless OTel is configured.
 - **Build:** 0 errors in instrumented files (2 pre-existing errors in Fortier's `otel.ts` — unrelated SDK type mismatch).
 - **Tests:** All 1828 passing tests unaffected. 23 pre-existing failures in `otel-provider.test.ts` are Fortier's parallel work.
+
+### 📌 Tool trace enhancements + agent metric wiring (2026-02-22) — Fenster (Issues #260, #262)
+- **Issue #260 — Tool traces enhanced** in `tools/index.ts`:
+  - Added `sanitizeArgs()` — strips fields matching `/token|secret|password|key|auth/i`, truncates to 1024 chars. Exported for reuse.
+  - `defineTool` now accepts optional `agentName` in config → recorded as `agent.name` span attribute.
+  - `squad.tool.result` event now includes `result.length` (textResultForLlm length).
+  - `duration_ms` verified present on both result and error events (was already there, confirmed consistent).
+  - TODO comment added re: parent span context propagation (deferred until agent.work span lifecycle is complete).
+- **Issue #262 — Agent metrics wired** into lifecycle code:
+  - `AgentSessionManager` (agents/index.ts): `recordAgentSpawn` in spawn(), `recordAgentDuration`+`recordAgentDestroy` in destroy(), `recordAgentError` in catch blocks.
+  - `AgentLifecycleManager` (agents/lifecycle.ts): `recordAgentSpawn` in spawnAgent(), `recordAgentDestroy` in destroyAgent(), `recordAgentError` in catch.
+  - Duration computed from `createdAt` timestamp in destroy path.
+- **Build:** tsc clean (0 errors). **Tests:** All 1886 tests passing (65 files).

@@ -85,3 +85,10 @@ Two EventBus APIs require different mocks: client bus uses on()/emit(), runtime 
 - Key discovery: `@opentelemetry/sdk-trace-base` v2.x uses `BasicTracerProvider` (not `NodeTracerProvider`), requires `spanProcessors` in constructor, and uses `trace.setGlobalTracerProvider()` instead of `provider.register()`.
 - `AgentSessionInfo` uses `charter.name` and `state` fields (not `name`/`status` directly).
 - OTel SDK deps (`@opentelemetry/api`, `@opentelemetry/sdk-trace-base`, `@opentelemetry/sdk-metrics`) installed at root for test resolution.
+
+### OTel Metrics tests — Issues #261-264 (2026-02-23)
+- Created `test/otel-metrics.test.ts` (34 tests): Comprehensive coverage of all four metric categories — token usage (#261), agent performance (#262), session pool (#263), response latency (#264), plus reset/cleanup and no-op safety.
+- Created `test/otel-metric-wiring.test.ts` (5 tests): Integration tests verifying StreamingPipeline calls recordTokenUsage on usage events, module resolution of otel-metrics subpath and barrel exports.
+- Testing strategy: Mock `getMeter()` from otel provider to return spy-enabled meter with tracked instruments. Each `createCounter`/`createHistogram`/`createUpDownCounter`/`createGauge` call returns a spy with `.add()` and `.record()` mocks, allowing precise verification of metric names, values, and attributes.
+- Key findings: (1) StreamingPipeline has no constructor args — just `new StreamingPipeline()`, (2) session attach method is `attachToSession()` not `attachSession()`, (3) `_resetMetrics()` clears all four cached instrument categories independently, (4) all metric functions are safe no-ops when OTel is not configured.
+- Test count grew from 1901→1940 across 68 files — all passing.

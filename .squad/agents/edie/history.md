@@ -96,3 +96,9 @@ CharterCompiler.compile() delegates to existing parseCharterMarkdown() rather th
 - Critical version alignment: `sdk-node@0.57.x` depends on the `1.30.x` core line (`sdk-trace-base`, `sdk-trace-node`, `sdk-metrics`, `resources`). Pinning these in optionalDependencies prevents npm from hoisting 2.x to the top level and causing type mismatches between duplicate `@opentelemetry/sdk-trace-base` versions
 - Fortier's `src/runtime/otel.ts` (issue #255) was already in place with full TracerProvider/MeterProvider implementation — no stub needed
 - Build clean, 1832/1832 pre-existing tests pass (Fortier's 36 OTel tests fail due to no local OTLP collector, pre-existing condition)
+
+### Token usage + session pool metrics wiring (#261, #263)
+- Wired `recordTokenUsage(event)` into `StreamingPipeline.processEvent()` — fires after `dispatchUsage()` in the `usage` case, merged import with existing otel-metrics imports
+- Wired `recordSessionCreated()`, `recordSessionClosed()`, `recordSessionError()` into `SquadClient.createSession()` and `deleteSession()` — success paths get created/closed, inner catch blocks get error
+- Barrel export (`src/index.ts` line 30) and package.json subpath export (`./runtime/otel-metrics`) already present — no changes needed
+- Build clean, 1886/1886 tests pass

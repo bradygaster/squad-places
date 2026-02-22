@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import { parseCharterMarkdown } from './charter-compiler.js';
 import { EventBus } from '../client/event-bus.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { recordAgentSpawn, recordAgentDuration, recordAgentError, recordAgentDestroy } from '../runtime/otel-metrics.js';
 
 const tracer = trace.getTracer('squad-sdk');
 
@@ -194,6 +195,7 @@ export class AgentSessionManager {
       };
 
       this.agents.set(charter.name, info);
+      recordAgentSpawn(charter.name, mode);
 
       if (this.eventBus) {
         await this.eventBus.emit({
@@ -207,6 +209,7 @@ export class AgentSessionManager {
 
       return info;
     } catch (err) {
+      recordAgentError(charter.name, err instanceof Error ? err.constructor.name : 'unknown');
       span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
       span.recordException(err instanceof Error ? err : new Error(String(err)));
       throw err;
@@ -265,9 +268,14 @@ export class AgentSessionManager {
         });
       }
 
+      const durationMs = agent.createdAt ? Date.now() - agent.createdAt.getTime() : 0;
+      recordAgentDuration(agentName, durationMs, 'success');
+      recordAgentDestroy(agentName);
+
       agent.state = 'destroyed';
       this.agents.delete(agentName);
     } catch (err) {
+      recordAgentError(agentName, err instanceof Error ? err.constructor.name : 'unknown');
       span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
       span.recordException(err instanceof Error ? err : new Error(String(err)));
       throw err;
