@@ -35,3 +35,16 @@
 - Shell modules are well-structured for testing: pure functions (coordinator parsing), simple classes (SessionRegistry), callback-based bridges (StreamBridge)
 - loadAgentCharter accepts optional teamRoot param — critical for test isolation (avoids resolveSquad() cwd dependency)
 - Ink components (render.ts replacement) left untested — separate issue per task brief
+
+### Issue #228: CRLF normalization tests (2026-02-21)
+- Created test/crlf-normalization.test.ts with 13 CRLF-specific test cases across all 5 parsers
+- `withCRLF(input)` helper converts \n → \r\n to replay happy-path inputs with Windows line endings
+- `expectNoCR(value)` recursive helper asserts no \r in strings, arrays, or object values
+- **parseTeamMarkdown** (4 tests): table format, section format, mixed endings, skill list values
+- **parseDecisionsMarkdown** (3 tests): headings, body content, config relevance detection
+- **parseRoutingMarkdown** (2 tests): basic routing table, multi-agent routing rows
+- **parseCharterMarkdown** (3 tests): identity section, boundaries/ownership, model preference
+- **loadSkillsFromDirectory** (1 test): CRLF SKILL.md frontmatter written to disk with \r\n
+- All 13 tests pass — Fenster's normalizeEol() is already applied to all 5 parsers
+- Note: `npm run build` has a pre-existing TS error (VERSION export in cli-entry.ts) unrelated to this work
+- Pattern: test CRLF by wrapping existing happy-path markdown in withCRLF(), assert identical outputs with no \r contamination
