@@ -81,6 +81,38 @@
     "./resolution": {
       "types": "./dist/resolution.d.ts",
       "import": "./dist/resolution.js"
+    },
+    "./adapter/errors": {
+      "types": "./dist/adapter/errors.d.ts",
+      "import": "./dist/adapter/errors.js"
+    },
+    "./config/migrations": {
+      "types": "./dist/config/migrations/index.d.ts",
+      "import": "./dist/config/migrations/index.js"
+    },
+    "./runtime/event-bus": {
+      "types": "./dist/runtime/event-bus.d.ts",
+      "import": "./dist/runtime/event-bus.js"
+    },
+    "./runtime/benchmarks": {
+      "types": "./dist/runtime/benchmarks.d.ts",
+      "import": "./dist/runtime/benchmarks.js"
+    },
+    "./runtime/i18n": {
+      "types": "./dist/runtime/i18n.d.ts",
+      "import": "./dist/runtime/i18n.js"
+    },
+    "./runtime/telemetry": {
+      "types": "./dist/runtime/telemetry.d.ts",
+      "import": "./dist/runtime/telemetry.js"
+    },
+    "./runtime/offline": {
+      "types": "./dist/runtime/offline.d.ts",
+      "import": "./dist/runtime/offline.js"
+    },
+    "./runtime/cost-tracker": {
+      "types": "./dist/runtime/cost-tracker.d.ts",
+      "import": "./dist/runtime/cost-tracker.js"
     }
   },
   "files": [
