@@ -1,33 +1,43 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { getRoleEmoji } from '../lifecycle.js';
 import type { AgentSession } from '../types.js';
 
 interface AgentPanelProps {
   agents: AgentSession[];
+  streamingContent?: { agentName: string; content: string } | null;
 }
 
-const statusIcon = (status: AgentSession['status']): string => {
-  switch (status) {
-    case 'idle': return '⚪';
-    case 'working': return '🔵';
-    case 'streaming': return '🟢';
-    case 'error': return '🔴';
-    default: return '⚪';
-  }
-};
-
-export const AgentPanel: React.FC<AgentPanelProps> = ({ agents }) => {
+export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent }) => {
   if (agents.length === 0) return null;
+
+  const hasActive = agents.some(a => a.status === 'working' || a.status === 'streaming');
+
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1}>
-      <Text bold>Active Agents</Text>
-      {agents.map(agent => (
-        <Box key={agent.name} gap={1}>
-          <Text>{statusIcon(agent.status)}</Text>
-          <Text bold>{agent.name}</Text>
-          <Text dimColor>({agent.role})</Text>
-        </Box>
-      ))}
+    <Box flexDirection="column" paddingX={1} marginTop={1}>
+      <Box flexWrap="wrap" gap={1}>
+        {agents.map((agent) => {
+          const active = agent.status === 'streaming' || agent.status === 'working';
+          const errored = agent.status === 'error';
+          return (
+            <Text
+              key={agent.name}
+              dimColor={!active && !errored}
+              bold={active}
+              color={active ? 'green' : errored ? 'red' : undefined}
+            >
+              {getRoleEmoji(agent.role)} {agent.name}{active ? ' ●' : errored ? ' ✖' : ''}
+            </Text>
+          );
+        })}
+      </Box>
+      {streamingContent ? (
+        <Text color="yellow">
+          {'  '}💭 {streamingContent.agentName} is responding{streamingContent.content ? '...' : ''}
+        </Text>
+      ) : !hasActive ? (
+        <Text dimColor>{'  '}Team idle — ready for work</Text>
+      ) : null}
     </Box>
   );
 };
