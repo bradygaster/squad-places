@@ -89,3 +89,10 @@ CharterCompiler.compile() delegates to existing parseCharterMarkdown() rather th
 - Key file: `packages/squad-sdk/src/agents/index.ts` — barrel re-exports from submodules remain intact, only class stubs replaced
 - EventBus event types: `session.created`, `session.destroyed` (from `SquadEventType` union in `client/event-bus.ts`)
 - All 1727 tests pass, build clean
+
+### OpenTelemetry dependency wiring (#254)
+- Added `@opentelemetry/api` as optional peer dep (`^1.9.0`) with `peerDependenciesMeta` marking it optional — and in devDependencies so tsc can resolve types during build
+- Added 8 OTel packages as `optionalDependencies`: `sdk-node`, `sdk-trace-node`, `sdk-trace-base`, `sdk-metrics`, `exporter-trace-otlp-http`, `exporter-metrics-otlp-http`, `resources`, `semantic-conventions`
+- Critical version alignment: `sdk-node@0.57.x` depends on the `1.30.x` core line (`sdk-trace-base`, `sdk-trace-node`, `sdk-metrics`, `resources`). Pinning these in optionalDependencies prevents npm from hoisting 2.x to the top level and causing type mismatches between duplicate `@opentelemetry/sdk-trace-base` versions
+- Fortier's `src/runtime/otel.ts` (issue #255) was already in place with full TracerProvider/MeterProvider implementation — no stub needed
+- Build clean, 1832/1832 pre-existing tests pass (Fortier's 36 OTel tests fail due to no local OTLP collector, pre-existing condition)
