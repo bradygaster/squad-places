@@ -1966,3 +1966,53 @@ Security audit of `packages/squad-cli/src/cli/commands/upstream.ts` identified 3
 - **Before:** Critical — unauthenticated RCE via CLI argument injection
 - **After:** Mitigated — defense in depth (no shell + input validation)
 
+---
+
+## Kobayashi Decision: Version Alignment Release 0.8.2 (2026-02-22)
+
+**Status:** ✅ EXECUTED  
+**Decided by:** Kobayashi (Git & Release engineer)  
+**Requested by:** Brady  
+**Context:** Independent feature development caused version drift. Explicit alignment required to unblock publish workflows and establish clear release checkpoint.
+
+### Problem
+
+Three package.json files at different versions:
+- Root: 0.6.0-alpha.0
+- SDK: 0.8.0
+- CLI: 0.8.1
+
+This skew required nuanced tag management and left CI/CD workflows (squad-publish.yml, squad-release.yml) in ambiguous state. Stable release required canonical version.
+
+### Decision
+
+Synchronize all three versions to **0.8.2** and create release tag v0.8.2:
+1. Update root `package.json`: 0.6.0-alpha.0 → 0.8.2
+2. Update SDK `package.json`: 0.8.0 → 0.8.2
+3. Update CLI `package.json`: 0.8.1 → 0.8.2
+4. Regenerate package-lock.json via `npm install --package-lock-only`
+5. Commit: `chore: align CLI and SDK versions to 0.8.2` (with Copilot co-author trailer)
+6. Create tag: v0.8.2 (pushed to origin)
+7. Create GitHub Release with version history notes
+
+### Execution
+
+- **Commit:** db5d621 on bradygaster/dev
+- **Tag:** v0.8.2 (pushed to origin/v0.8.2)
+- **Release:** https://github.com/bradygaster/squad-pr/releases/tag/v0.8.2
+
+### Impact
+
+- ✅ squad-publish.yml now triggers on v* tags → publishes both packages to npm
+- ✅ squad-release.yml can validate version consistency across workspace
+- ✅ Clear release checkpoint: all packages at 0.8.2
+- ✅ CI/CD pipeline unblocked
+
+### Future Versioning
+
+Independent versioning via changesets remains correct between releases. CLI and SDK can evolve at different cadences, tracked in separate changeset files per decision #208. Version alignment at release boundaries is the pattern.
+
+### Precedent
+
+Earlier decision (2026-02-21, Kobayashi) stated that SDK 0.8.0 and CLI 0.8.1 skew was "intentional and appropriate for pre-1.0 development." That decision is superseded by this explicit release checkpoint decision. The skew served its purpose during development; now the workspace synchronizes for v0.8.2 release.
+

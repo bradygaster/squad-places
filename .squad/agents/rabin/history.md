@@ -34,3 +34,9 @@ Fix: Added `"squad-cli": "./dist/cli-entry.js"` as a second bin entry alongside 
 - **Both bin entries active:** `squad` works for global installs, `squad-cli` works for npx resolution. Future releases must maintain both.
 - **Distribution status:** Both packages published and verified on npm. SDK@0.8.0, CLI@0.8.1 (intentional skew). Install paths working correctly.
 - **Decision merged to decisions.md.** Status: npm distribution production-ready, all package metadata and bin entries validated.
+
+### 📌 Manual publish (2026-02-22): CI publish broken, manual publish to 0.8.2 successful
+- **Root cause:** CI publish workflow failed due to pre-existing test job configuration issue (test job doesn't build first, causing test failures).
+- **Workaround:** Manual publish required. Logged into npm interactively, published squad-sdk@0.8.2 first (prepublishOnly hook ran build), then squad-cli@0.8.2 (CLI depends on SDK).
+- **Verification:** Both packages confirmed published at 0.8.2 via `npm view`.
+- **CI fix needed:** Test job in CI workflow needs to run build step before tests to prevent future publish failures.

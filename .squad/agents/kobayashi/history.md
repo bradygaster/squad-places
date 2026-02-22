@@ -132,3 +132,16 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Insider channel:** Ready now for continuous pre-release validation (no tag creation needed, branch push auto-publishes).
 - **Stable release:** Ready when next tag (v0.8.0 or v0.8.1) created — CHANGELOG and version alignment already finalized.
 - **Decision merged to decisions.md.** Status: Release infrastructure production-ready, version skew intentional and documented.
+
+### 2026-02-22T12:00Z: Version Alignment Release 0.8.2 — Brady requested
+**Status:** EXECUTED — Tag v0.8.2 created, release published to GitHub.
+- **Rationale:** Brady requested explicit version alignment across all three package.json files and creation of a stable release tag to unblock publish workflows.
+- **Changes:**
+  - Root `package.json` → version `0.8.2` (was 0.6.0-alpha.0)
+  - `packages/squad-sdk/package.json` → version `0.8.2` (was 0.8.0)
+  - `packages/squad-cli/package.json` → version `0.8.2` (was 0.8.1)
+  - `package-lock.json` → updated via `npm install --package-lock-only`
+- **Commit:** db5d621 on branch bradygaster/dev, message: "chore: align CLI and SDK versions to 0.8.2"
+- **Tag:** v0.8.2 created and pushed to origin
+- **GitHub Release:** Created with changelog notes describing the alignment (CLI 0.8.1→0.8.2, SDK 0.8.0→0.8.2, root 0.6.0-alpha.0→0.8.2)
+- **Decision:** Explicit version synchronization across workspace as a deliberate release milestone. All packages now at 0.8.2. Unblocks squad-publish.yml v* tag workflows.
