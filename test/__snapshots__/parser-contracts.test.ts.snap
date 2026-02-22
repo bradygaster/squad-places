@@ -107,6 +107,8 @@ exports[`Snapshot tests > snapshot: parseTeamMarkdown against canonical team.md 
 {
   "agents": [
     {
+      "aliases": undefined,
+      "autoAssign": undefined,
       "model": "claude-opus-4.5",
       "name": "keaton",
       "role": "Lead",
@@ -118,6 +120,8 @@ exports[`Snapshot tests > snapshot: parseTeamMarkdown against canonical team.md 
       "status": undefined,
     },
     {
+      "aliases": undefined,
+      "autoAssign": undefined,
       "model": "claude-sonnet-4.5",
       "name": "fenster",
       "role": "Core Dev",
@@ -129,6 +133,8 @@ exports[`Snapshot tests > snapshot: parseTeamMarkdown against canonical team.md 
       "status": undefined,
     },
     {
+      "aliases": undefined,
+      "autoAssign": undefined,
       "model": "claude-sonnet-4.5",
       "name": "hockney",
       "role": "Tester",
