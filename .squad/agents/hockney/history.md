@@ -126,3 +126,29 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Searched: all branches (25 remote), all PRs (open/closed), issues, local filesystem, glob patterns. Zero matches for "upstream" in any context.
 - Prepared a test coverage requirements spec for when this PR materializes. Key gaps to enforce: CLI command tests (add/remove/list/sync), circular reference detection, .ai-team/ fallback, malformed JSON, empty upstreams array, transitive inheritance proof in E2E.
 - Baseline at time of review: 1940 tests across 68 files, all passing.
+### Issue #267: OTel integration tests (2026-02-22)
+- Created `test/otel-integration.test.ts` (37 tests) covering 9 integration suites across all OTel modules.
+- **Bridge + Provider pipeline** (5 tests): End-to-end span capture, error spans with status/exception events, unknown events, timestamp attributes, multiple transports.
+- **Bridge span sequencing** (3 tests): Mixed batch integrity, sequential batches, empty-then-nonempty.
+- **Agent spawn telemetry flow** (3 tests): Name/mode/model attributes through bridge, multiple independent agents, missing properties handled.
+- **Session lifecycle spans** (4 tests): Run/error event mapping, ERROR status chain, full init→spawn→run→error sequence.
+- **Metrics end-to-end** (7 tests): Full agent lifecycle, session lifecycle, latency metrics, token usage, concurrent multi-agent, _resetMetrics.
+- **Error scenarios** (6 tests): No-op tracer/meter, bridge with no-op, shutdown safety, events without properties/timestamps.
+- **Provider lifecycle** (4 tests): Disabled init, independent tracing/metrics, manual provider, cleanup isolation.
+- **EventBus → Bridge translation** (3 tests): All 5 event types, error fallback chain, property type preservation.
+- **Cross-module coordination** (2 tests): Bridge + direct spans coexist, concurrent transports safe.
+- Key pattern: vi.mock at module scope with spyMeter declared globally; vi.importActual() to bypass mock in error scenario tests.
+- Test count: 1969 → 2006+ (37 new integration tests, all passing). Pre-existing squad-observer.test.ts failures unrelated.
+
+### Issue #267: OTel integration E2E tests + aspire CLI tests (2026-02-23)
+- Created `test/otel-integration-e2e.test.ts` (21 tests): Full trace hierarchy, zero-overhead verification, metrics integration, EventBus → OTel bridge.
+- Created `test/cli/aspire.test.ts` (16 tests): Docker availability, container command generation, OTLP endpoint configuration, stop/cleanup, module resolution.
+- **Trace hierarchy** (5 tests): Request → route → agent → tool span chain with verified parentSpanContext linkage, shared traceId, error isolation, attribute flow, parallel fan-out.
+- **Zero-overhead** (5 tests): No-op tracer, no-op metrics, transport with no provider, nested no-op spans, all safe without throwing.
+- **Metrics integration** (4 tests): StreamingPipeline usage aggregation, TTFT tracking, unattached session filtering, multi-session independence.
+- **EventBus → OTel bridge** (7 tests): TelemetryCollector flush → spans, subscribeAll bridge pattern, tool_call events, ERROR status on session:error, 50-event burst, no-op after disable, detach stops span creation.
+- **Aspire CLI** (16 tests): Docker version check, absent Docker handling, default/custom docker run commands (port, OTLP port, container name, image), env var config, OTLP port mapping, stop+rm commands, idempotent lifecycle, [PROACTIVE] module resolution.
+- Key discovery: OTel SDK v2 uses `parentSpanContext` (not `parentSpanId`) for parent-child relationships on `ReadableSpan`.
+- Key discovery: `BasicTracerProvider` requires explicit `AsyncLocalStorageContextManager` registration for context propagation in vitest — without it, `trace.setSpan()` creates contexts but `startSpan()` ignores the parent.
+- Key discovery: `bridgeEventBusToOTel` function is referenced in `otel-init.ts` but not yet exported from `otel-bridge.ts` — tests use manual bridge pattern.
+- Test count grew from 1985 → 2022 across 74 files — all passing.

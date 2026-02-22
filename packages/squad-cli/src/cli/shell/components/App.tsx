@@ -10,7 +10,7 @@ import { Box, Text, useApp, useInput } from 'ink';
 import { AgentPanel } from './AgentPanel.js';
 import { MessageStream } from './MessageStream.js';
 import { InputPrompt } from './InputPrompt.js';
-import { parseInput } from '../router.js';
+import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';
@@ -29,11 +29,12 @@ export interface AppProps {
   teamRoot: string;
   version: string;
   onReady?: (api: ShellApi) => void;
+  onDispatch?: (parsed: ParsedInput) => Promise<void>;
 }
 
 const EXIT_WORDS = new Set(['exit']);
 
-export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, onReady }) => {
+export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, onReady, onDispatch }) => {
   const { exit } = useApp();
   const [messages, setMessages] = useState<ShellMessage[]>([]);
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
@@ -98,24 +99,24 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           timestamp: new Date(),
         }]);
       }
-    } else if (parsed.type === 'direct_agent') {
-      // Direct agent messages — placeholder until coordinator wiring
-      setMessages(prev => [...prev, {
-        role: 'system' as const,
-        content: `[routing to ${parsed.agentName}] ${parsed.content ?? input}`,
-        timestamp: new Date(),
-      }]);
-    } else {
-      // Coordinator routing — placeholder until coordinator wiring
-      setMessages(prev => [...prev, {
-        role: 'system' as const,
-        content: `[coordinator] ${parsed.content ?? input}`,
-        timestamp: new Date(),
-      }]);
+    } else if (parsed.type === 'direct_agent' || parsed.type === 'coordinator') {
+      if (!onDispatch) {
+        setMessages(prev => [...prev, {
+          role: 'system' as const,
+          content: '⚠️ SDK not connected — agent routing unavailable.',
+          timestamp: new Date(),
+        }]);
+        return;
+      }
+      setProcessing(true);
+      onDispatch(parsed).finally(() => {
+        setProcessing(false);
+        setAgents([...registry.getAll()]);
+      });
     }
 
     setAgents([...registry.getAll()]);
-  }, [registry, renderer, teamRoot, exit]);
+  }, [registry, renderer, teamRoot, exit, onDispatch]);
 
   return (
     <Box flexDirection="column">

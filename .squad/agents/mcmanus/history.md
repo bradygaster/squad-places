@@ -100,3 +100,39 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 - Document serves as a blocker for SquadUI adapter development (prevents costly refactors)
 - Type corrections enable them to build adapters on correct assumptions from day one
 - Orchestration log parsing note prevents scope creep (that's SquadUI's responsibility)
+
+### 2026-02-22: Issue #302 — Upstream inheritance feature documentation
+**Status:** Complete.
+**Changes made:**
+1. **docs/guide/upstream-inheritance.md** — Comprehensive 21KB guide covering:
+   - Overview: why upstream inheritance matters (knowledge sharing without duplication)
+   - Core concepts: three source types (local/git/export), hierarchy (Org→Team→Repo), closest-wins resolution
+   - What gets inherited: skills, decisions, wisdom, casting policy, routing
+   - Getting started: quick-start examples for local, git, and export sources
+   - CLI reference: all 4 commands (`add`, `remove`, `list`, `sync`) with signatures, examples, and behavior
+   - SDK API reference: 5 types (`UpstreamType`, `UpstreamSource`, `UpstreamConfig`, `ResolvedUpstream`, `UpstreamResolution`) and 4 functions (`readUpstreamConfig`, `resolveUpstreams`, `buildInheritedContextBlock`, `buildSessionDisplay`) with TypeScript signatures and usage examples
+   - All 6 end-to-end scenarios with detailed narrative:
+     1. Platform Team at Scale — org-wide practices flowing to product teams
+     2. Open-Source Framework with Community Plugins — community alignment without forking
+     3. Consultancy Methodology Across Client Projects — consistent engagement model across clients
+     4. Multi-Team Shared Domain Model — single source of truth for domain models
+     5. Post-Acquisition Engineering Convergence — merging two organizations' practices
+     6. Enterprise Application Modernization — architectural coherence during microservices migration
+   - Troubleshooting: 6 common issues (git clone failures, local path issues, export validation, missing context, stale caches, ordering conflicts) with solutions
+**Tone applied:** 
+- Grounded in actual implementation (CLI commands read from upstream.ts, SDK API from resolver.ts and types.ts)
+- No hype — each feature explained with "what" and "why" separately
+- Scenarios are realistic narratives grounded in actual engineering problems, not idealized cases
+- Every claim about behavior verified against source code (type definitions, function signatures, error handling)
+- Troubleshooting section prevents support burden by addressing real failure modes
+**Process:**
+- Read implementation files: upstream.ts (all CLI commands), resolver.ts (resolution algorithm), types.ts (public API)
+- Built type reference from actual interface definitions
+- Derived CLI examples from command argument parsing and flag handling
+- Scenarios drawn from real patterns: org hierarchy, open-source governance, consultancy standardization, domain-driven design, M&A integration, monolith→microservices migration
+- Verified each scenario's code structure against resolution algorithm (what gets inherited, in what order)
+**Notes:**
+- Document is internal-only per v1 decision; targets team and early adopters
+- Closest-wins resolution algorithm and ordering importance emphasized to prevent user error
+- Troubleshooting focuses on common paths (git auth, local path validation, cache invalidation, order dependency)
+- All SDK examples use actual public exports from `@bradygaster/squad-sdk`

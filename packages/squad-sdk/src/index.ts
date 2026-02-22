@@ -26,8 +26,10 @@ export * from './runtime/offline.js';
 export * from './runtime/i18n.js';
 export * from './runtime/benchmarks.js';
 export * from './runtime/otel.js';
-export { createOTelTransport } from './runtime/otel-bridge.js';
+export { createOTelTransport, bridgeEventBusToOTel } from './runtime/otel-bridge.js';
 export * from './runtime/otel-metrics.js';
+export { initSquadTelemetry } from './runtime/otel-init.js';
+export type { SquadTelemetryOptions, SquadTelemetryHandle } from './runtime/otel-init.js';
 
 export * from './marketplace/index.js';
 export * from './build/index.js';

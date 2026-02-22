@@ -41,3 +41,13 @@
 
 ### 📌 Team update (2026-02-22T020714Z): Process.exit() refactor complete
 Kujan's error handling refactor makes all library functions throw SquadError instead of calling process.exit(). Only CLI entry point (src/cli-entry.ts) calls process.exit() now. SquadUI can catch SquadError for structured error handling instead of process termination. Pattern: library functions throw, CLI entry point catches. Decision merged to decisions.md. Issue #189 closed. 1683 tests passing.
+
+### OTel Public API Export (Issue #266)
+- Exported the 3-layer OTel API from `src/index.ts`:
+  - **Low-level** (`otel.ts`): `initializeOTel`, `shutdownOTel`, `getTracer`, `getMeter`, `OTelConfig` — already exported via `export *`
+  - **Mid-level** (`otel-bridge.ts`): Added `bridgeEventBusToOTel(bus)` — subscribes to an EventBus and creates OTel spans per event, returns unsubscribe function
+  - **High-level** (`otel-init.ts`): Created `initSquadTelemetry(options)` — one-call setup that wires OTel providers + EventBus bridge + TelemetryTransport, returns `SquadTelemetryHandle` with shutdown()
+- All OTel instrumentation is no-op when no provider is registered (zero overhead for non-OTel consumers)
+- Tree-shaking friendly: each layer is a separate module, named exports for bridge/init
+- `SquadTelemetryOptions` extends `OTelConfig` with optional `eventBus` and `installTransport` fields
+- Build passes with all changes

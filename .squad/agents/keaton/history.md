@@ -7,6 +7,20 @@
 
 ## Learnings
 
+### 2026-02-22: Issue #306 Cleanup Audit (Phase 1 — AUDIT ONLY)
+- **Scope:** Comprehensive audit of hardcoded values, code quality, and test coverage gaps across `packages/squad-sdk/src/` and `packages/squad-cli/src/`
+- **Findings:** 47 total findings across 4 categories:
+  - **Hardcoded Logic (18):** Model names duplicated in 6 files with no single source of truth; default model conflicts (haiku vs. sonnet); timeouts hard-coded with no env var overrides; agent roles not config-driven; OTLP endpoint localhost assumption
+  - **Code Quality (16):** CRITICAL command injection (CWE-78) in upstream.ts ×3 occurrences (execSync with template string interpolation); error handling inconsistency (fatal() vs error() semantic clash); TODO markers in spawn.ts blocking full shell integration
+  - **Test Coverage (8):** HealthMonitor untested; ModelFallbackExecutor cross-tier rules untested; upstream git clone not exercised in tests; watch.ts GitHub triage logic untested; shell integration end-to-end untested
+  - **Empathy/UX (5):** Generic error messages (no context for GitHub vs. config failures); hardcoded timeouts affect slow networks; quiet CLI failures; no debug logging
+- **Critical Issue:** Command injection in upstream.ts: `execSync(\`git clone ... --branch ${ref}\`...)`  allows shell metacharacter injection if ref or cloneDir naming is attacker-controlled
+- **Architecture Pattern:** All hardcoded values should be extracted to `constants.ts` with environment variable overrides (cost, deployment flexibility)
+- **Recommended Sequencing:** Phase 1 (Security & Stability): CWE-78 fix. Phase 2 (Configuration Extraction): Centralize models, timeouts, roles. Phase 3 (Test Coverage): HealthMonitor, fallback executor, shell integration. Phase 4 (UX): Error messages, DEBUG logging.
+- **Agent Assignment Recommendations:** Fenster (upstream.ts fix + tests), Edie (config extraction), Hockney (test coverage), Baer (error messages/UX)
+- **Report Location:** `.squad/decisions/inbox/keaton-cleanup-audit.md`
+- **Next Step:** Brady/Keaton review, assign specific tasks to agents, create GitHub issues for each finding
+
 ### From Beta (carried forward)
 - Architecture patterns that compound — decisions that make future features easier
 - Silent success mitigation lessons: ~7-10% of background spawns return no text, mitigated by RESPONSE ORDER block + filesystem checks
