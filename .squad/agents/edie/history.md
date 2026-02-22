@@ -72,6 +72,9 @@ Edie fixed root tsconfig (base config + project refs), SDK tsconfig (composite +
 - Verified: `npm install` succeeds, `npm run build` compiles both packages cleanly
 - Also verified: prepublishOnly scripts and dynamic VERSION (via createRequire) from previous commit are working correctly
 
+### 📌 Team update (2026-02-22T08:50:00Z): CharterCompiler reuses parseCharterMarkdown — decided by Edie
+CharterCompiler.compile() delegates to existing parseCharterMarkdown() rather than duplicate parsing logic. Single source of truth. AgentSessionManager accepts optional EventBus injection — when present, spawn() emits session.created; when absent, manager works silently. Improves testability.
+
 ### 📌 Team update (2026-02-22T070156Z): npm workspace protocol decision merged, test import migration complete, barrel conventions finalized — decided by Edie, Fenster, Hockney
 - **npm workspace protocol (Decision):** Use `"*"` version string for CLI→SDK dependency, not pnpm's `workspace:*`. npm workspaces auto-resolve local packages by name regardless of version specifier.
 - **Test import migration (Decision):** 56 test files successfully migrated from `../src/` to `@bradygaster/squad-sdk` / `@bradygaster/squad-cli` package paths. 26 SDK subpath exports + 16 CLI subpath exports. All 1727 tests passing. Vitest resolves through compiled `dist/`.

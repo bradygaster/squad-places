@@ -29,6 +29,9 @@
 - **State machine**: `initializing` → `ready` (on success) or `error` (on missing `.squad/` or `team.md`). Shutdown transitions back through `initializing` while clearing all state.
 - **PR**: #287
 
+### 📌 Team update (2026-02-22T08:50:00Z): Runtime EventBus as canonical bus for orchestration classes — decided by Fortier
+runtime/event-bus.ts (colon-notation: session:created, subscribe() API, error isolation) is canonical for orchestration classes. client/event-bus.ts (dot-notation, on() API) remains for backward-compat but shouldn't be used in new code. Coordinator and RalphMonitor now import from runtime/event-bus. All new EventBus consumers follow this pattern.
+
 ### Coordinator + Ralph Runtime Stubs
 - **Coordinator** (`src/coordinator/index.ts`): Legacy Coordinator class fully implemented — constructor accepts optional `CoordinatorDeps` (client, eventBus, agentManager, hookPipeline, toolRegistry), `initialize()` subscribes to lifecycle events via RuntimeEventBus, `route()` classifies messages by tier (direct/standard/full), `execute()` emits `coordinator:routing` events, `shutdown()` unsubscribes and nulls references.
 - **RalphMonitor** (`src/ralph/index.ts`): Event-driven work monitor — `start()` subscribes to session lifecycle + milestone events, `handleEvent()` maintains per-agent work status map, `healthCheck()` flags stale sessions beyond configurable threshold (default 5min), `stop()` persists state to JSON file if `statePath` configured.

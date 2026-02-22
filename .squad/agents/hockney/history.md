@@ -91,6 +91,9 @@ Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewri
 - **Test file coverage:** Distributed across SDK (config, runtime, agents, casting, coordinator, marketplace, sharing, shell, adapter, tools) and CLI (init, upgrade, export-import, cli-global). Strong test-to-source-file ratio.
 - **CI Health:** Recent runs show mixed status on feature branches (squad-UI, feat/remote-squad-mode), but main dev branch (run 103) and most completed runs are green. squad-ci.yml triggers on push/PR to main/bradygaster/dev/insider. Two-job matrix (build-node, test-node) with Node 20/22. Rollup "build" job requires both to pass for branch protection.
 - **Coverage Infrastructure:** Vitest configured for v8 provider with text, text-summary, html reporters. Include patterns: `packages/*/src/**/*.ts`. Coverage dir: `./coverage/` (gitignored).
+
+### 📌 Team update (2026-02-22T08:50:00Z): Runtime Module Test Patterns — decided by Hockney
+Two EventBus APIs require different mocks: client bus uses on()/emit(), runtime bus uses subscribe()/emit(). Tests must use correct mock based on module. CharterCompiler tests use real test-fixtures (integration-level confidence); parseCharterMarkdown uses inline strings (unit isolation). Coordinator routing priority verified: direct > @mention > team keyword > default. RalphMonitor tests future-proof stubs. 105 new tests written (1727 → 1832, all passing).
 - **Test Patterns:** Good structure observed: pure functions (parsers, coordinators), simple classes (SessionRegistry, StreamBridge), callback-based async (shell lifecycle). Windows symlink tests skipped (elevated privileges).
 - **Flaky tests:** One pre-existing flake in export-import CLI tests (timing-sensitive fs operations on first run, passes on retry). Not blocking merges.
 - **Known Issues:** None blocking. Pre-existing TS error in cli-entry.ts VERSION export (mentioned in history). Test import migration deferred until root `src/` deletion.

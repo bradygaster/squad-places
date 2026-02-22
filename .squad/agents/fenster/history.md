@@ -104,6 +104,9 @@
 2. CopilotClient session integration: Ralph.start() and spawnAgent() need live session creation/resumption.
 3. Coordinator.initialize() and route(): Accept user message, load charters, route to agents.
 4. Shell UI: Wire ink components for agent display, streaming responses, session status.
+
+### 📌 Team update (2026-02-22T08:50:00Z): Ink Shell Wiring — ShellApi callback pattern — decided by Fenster
+App component accepts `onReady` prop that fires on mount, delivering ShellApi object with `addMessage`, `setStreamingContent`, `refreshAgents` methods. Host captures API and wires to StreamBridge callbacks. Keeps Ink component decoupled from bridge internals. Streaming content accumulation uses per-agent buffers. Ready for coordinator integration (Phase 3).
 5. Triage/Loop/Hire: Implement placeholder commands (low priority, can defer).
 
 **Assessment for Brady:** Core runtime foundation is solid — SDK/CLI split is complete, command routing works, type safety is enforced. Phase 3 (integrating with CopilotClient, EventBus event emission, Coordinator logic) is the next lift. Ralph and Coordinator are well-structured but need internal wiring. No broken code — just incomplete TODOs. Estimate 2-3 weeks to wire Phase 3 fully.

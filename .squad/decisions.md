@@ -486,6 +486,87 @@ Medium. Changes error handling contract for all functions that used `fatal()`. B
 **Import Rewriting Rules:**
 - CLI → SDK relative imports become package imports (`from '../config/'` → `from '@bradygaster/squad-sdk/config'`)
 - Intra-SDK and intra-CLI imports stay relative (unchanged)
+
+### 2026-02-22: CharterCompiler reuses parseCharterMarkdown — no duplicate parsing
+
+**By:** Edie
+
+**What:** `CharterCompiler.compile()` delegates to the existing `parseCharterMarkdown()` function from `charter-compiler.ts` rather than implementing its own markdown parser. The legacy class is a thin filesystem wrapper around the already-tested parsing logic.
+
+**Why:** Single source of truth for charter parsing. The `parseCharterMarkdown` function already handles all `## Identity` and `## Model` field extraction with tested regex patterns. Duplicating that logic would create drift risk.
+
+### 2026-02-22: AgentSessionManager uses optional EventBus injection
+
+**By:** Edie
+
+**What:** `AgentSessionManager` constructor accepts an optional `EventBus` parameter. When present, `spawn()` emits `session.created` and `destroy()` emits `session.destroyed`. When absent, the manager works silently (no events).
+
+**Why:** Keeps the manager testable without requiring a full event bus setup. Coordinator can wire the bus when available; unit tests can omit it.
+
+### 2026-02-22: Ink Shell Wiring — ShellApi callback pattern
+
+**By:** Fenster
+
+**Date:** 2026-02-22
+
+**Status:** Implemented
+
+**Context:** The shell needed to move from a readline echo loop to an Ink-based UI using the three existing components (AgentPanel, MessageStream, InputPrompt). The key challenge was connecting the StreamBridge (which pushes events from the streaming pipeline) into React component state.
+
+**Decision:** **ShellApi callback pattern:** The `App` component accepts an `onReady` prop that fires once on mount, delivering a `ShellApi` object with three methods: `addMessage`, `setStreamingContent`, `refreshAgents`. The host (`runShell()`) captures this API and wires it to StreamBridge callbacks.
+
+This keeps the Ink component decoupled from StreamBridge internals — the component doesn't import or know about the bridge. The host is the only place where both meet.
+
+**`React.createElement` in index.ts:** Rather than renaming `index.ts` to `index.tsx` (which would ripple through exports maps and imports), `runShell()` uses `React.createElement(App, props)` directly. This keeps the file extension stable.
+
+**Streaming content accumulation:** StreamBridge's `onContent` callback delivers deltas. The host maintains a `streamBuffers` Map to accumulate content per agent and pushes the full accumulated string to `setStreamingContent`. On `onComplete`, the buffer is cleared and the final message is added.
+
+**Consequences:** StreamBridge is ready for coordinator wiring — call `_bridge.handleEvent(event)` when the coordinator emits streaming events. Direct agent messages and coordinator routing show placeholders until coordinator integration (Phase 3). All existing exports from `shell/index.ts` are preserved. New exports: `App`, `ShellApi`, `AppProps`.
+
+### 2026-02-22: Runtime EventBus as canonical bus for orchestration classes
+
+**By:** Fortier
+
+**Date:** 2026-02-22
+
+**Scope:** Coordinator, Ralph, and future orchestration components
+
+**Decision:** The `runtime/event-bus.ts` (colon-notation: `session:created`, `subscribe()` API, built-in error isolation via `executeHandler()`) is the canonical EventBus for all orchestration classes. The `client/event-bus.ts` (dot-notation: `session.created`, `on()` API) remains for backward-compat but should not be used in new code.
+
+**Rationale:**
+- Runtime EventBus has proper error isolation — one handler failure doesn't crash others
+- SquadCoordinator (M3-1) tests already use RuntimeEventBus
+- Consistent API surface (`subscribe`/`subscribeAll`/`unsubscribe`) is cleaner than `on`/`onAny`
+- Event type strings use colon-notation which avoids ambiguity with property access patterns
+
+**Impact:**
+- Coordinator and RalphMonitor now import from `../runtime/event-bus.js`
+- All new EventBus consumers should follow this pattern
+- Client EventBus remains exported for external consumers
+
+### 2026-02-22: Runtime Module Test Patterns
+
+**By:** Hockney (Tester)
+
+**Date:** 2026-02-22
+
+**Status:** Adopted
+
+**Context:** Writing proactive tests for runtime modules (CharterCompiler, AgentSessionManager, Coordinator, RalphMonitor) being built in parallel by multiple team members.
+
+**Decisions:**
+
+1. **Two EventBus APIs require different mocks.** The client EventBus uses `on()`/`emit()` while the runtime EventBus uses `subscribe()`/`emit()`. Tests must use the correct mock depending on which bus the module under test consumes. AgentSessionManager uses the client bus (`on`); Coordinator uses the runtime bus (`subscribe`).
+
+2. **CharterCompiler tests use real test-fixtures.** Instead of mocking the filesystem, we read from `test-fixtures/.squad/agents/` for `compile()` and `compileAll()` tests. This gives integration-level confidence. Only `parseCharterMarkdown` uses inline string fixtures for unit isolation.
+
+3. **Coordinator routing priority is: direct > @mention > team keyword > default.** Tests explicitly verify this ordering. Any change to routing logic must preserve this priority chain.
+
+4. **RalphMonitor tests are future-proof stubs.** Since Ralph is mostly TODO stubs, tests validate current behavior (empty arrays, no-throw lifecycle) and will automatically exercise real logic once implemented — no test changes needed.
+
+**Impact:**
+- 105 new tests across 4 files, all passing
+- Test count: 1727 → 1832 across 61 files
 - No circular dependencies verified (clean DAG)
 
 **Migration Order:**
