@@ -30,28 +30,15 @@
 
 ## Learnings
 
-### 📌 SDK/CLI File Migration — Keaton's split plan executed
-- **Phase 1 (SDK):** Copied all 15 directories (adapter, agents, build, casting, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools, utils) and 4 standalone files (index.ts, resolution.ts, parsers.ts, types.ts) from root `src/` into `packages/squad-sdk/src/`. Cleaned the SDK barrel (`packages/squad-sdk/src/index.ts`) — removed the CLI re-exports block (lines 25-52 of the original, exporting success/error/warn/fatal/SquadError/detectSquadDir/runWatch/runInit/runExport/runImport/runCopilot etc. from `./cli/index.js`). Updated SDK `package.json` exports map: removed `./cli`, added all subpath exports from Keaton's plan (resolution, runtime/streaming, coordinator, hooks, tools, adapter, client, marketplace, build, sharing, ralph, casting).
-- **Phase 2 (CLI):** Copied `src/cli/` directory and `src/cli-entry.ts` into `packages/squad-cli/src/`. Copied `templates/` into `packages/squad-cli/templates/`. Rewrote 4 cross-package imports in CLI source:
-  - `cli/upgrade.ts`: `../config/migration.js` → `@bradygaster/squad-sdk/config`
-  - `cli/copilot-install.ts`: `../config/init.js` → `@bradygaster/squad-sdk/config`
-  - `cli/shell/spawn.ts`: `../../resolution.js` → `@bradygaster/squad-sdk/resolution`
-  - `cli/shell/stream-bridge.ts`: `../../runtime/streaming.js` → `@bradygaster/squad-sdk/runtime/streaming`
-  - `cli-entry.ts`: `./resolution.js` and `./index.js` → `@bradygaster/squad-sdk`
-- **Intra-CLI imports** (within `cli/` directory) left untouched — all relative.
-- **Root `src/` preserved** — not deleted, per plan (cleanup after tests pass).
-- Pattern: SDK subpath exports match the directory barrel structure — `@bradygaster/squad-sdk/{module}` resolves to `dist/{module}/index.js`. Special cases: `./resolution` → `dist/resolution.js`, `./runtime/streaming` → `dist/runtime/streaming.js`.
+### 📌 Core Context: SDK/CLI Migration & Test Import Foundation
 
-### 📌 Test import migration to workspace packages — completed
-- Migrated all 56 test files (173 import replacements) from relative `../src/` paths to workspace package imports.
-- SDK imports use 26 subpath exports (18 existing + 8 new): `@bradygaster/squad-sdk/config`, `@bradygaster/squad-sdk/agents`, etc.
-- CLI imports use 16 new subpath exports: `@bradygaster/squad-cli/shell/sessions`, `@bradygaster/squad-cli/core/init`, etc.
-- Added 8 new SDK subpath exports for deep modules not covered by barrels: `adapter/errors`, `config/migrations`, `runtime/event-bus`, `runtime/benchmarks`, `runtime/i18n`, `runtime/telemetry`, `runtime/offline`, `runtime/cost-tracker`.
-- Added missing barrel re-exports: `selectResponseTier`/`getTier` in coordinator/index.ts, `onboardAgent`/`addAgentToConfig` in agents/index.ts.
-- Updated consumer-imports test: CLI functions (`runInit`, `runExport`, `runImport`, `scrubEmails`) now imported from `@bradygaster/squad-cli` instead of SDK barrel.
-- Rebuilt SDK and CLI packages to update dist. All 1727 tests pass across 57 files.
-- Pattern: vitest resolves through compiled `dist/` files, not TypeScript source — barrel changes require a package rebuild to take effect.
-- Pattern: when consolidating deep imports to barrel paths, verify the barrel actually re-exports the needed symbols before assuming availability.
+**SDK/CLI File Migration (2026-02-21):**
+Migrated 15 directories (adapter, agents, build, casting, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools, utils) and 4 files (index.ts, resolution.ts, parsers.ts, types.ts) into packages/squad-sdk/src/ and packages/squad-cli/src/. Updated exports maps: 18 SDK subpaths, 14 CLI subpaths. Rewrote 4 cross-package imports. SDK barrel cleaned (no CLI re-exports). Root src/ preserved. Pattern: SDK subpath exports resolve to dist/{module}/index.js.
+
+**Test Import Migration (2026-02-21→2026-02-22):**
+Migrated 56 test files (173 imports) from ../src/ to @bradygaster/squad-sdk/* and @bradygaster/squad-cli/*. 26 SDK + 16 CLI subpath exports. Added 8 new deep SDK exports (adapter/errors, config/migrations, runtime/event-bus, etc.). Verified barrel re-exports for missing symbols. All 1727 tests passing. Pattern: vitest resolves through compiled dist/, so barrel changes require npm run build.
+
+---
 
 ### 📌 Runtime Implementation Assessment (2026-02-22T22:00Z) — Fenster
 **Status:** Phase 1-2 complete (SDK/CLI split, monorepo structure). Phase 3 (runtime integration) blocked.
