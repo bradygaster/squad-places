@@ -11,6 +11,7 @@ export const VERSION: string = pkg.version;
 
 // Export public API
 export { resolveSquad, resolveGlobalSquadPath, ensureSquadPath } from './resolution.js';
+export { MODELS, TIMEOUTS, AGENT_ROLES } from './runtime/constants.js';
 export * from './config/index.js';
 export * from './agents/onboarding.js';
 export * from './casting/index.js';

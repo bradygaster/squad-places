@@ -24,3 +24,10 @@
 - Upstream content flows directly into agent spawn prompts — governance risk if org-level repo is compromised
 - No size limits on file reads from upstream sources
 - Tests cover functionality well but have zero security-boundary tests (no traversal, injection, or symlink tests)
+
+### CWE-78 Command Injection Fix — upstream.ts (2026-02-22)
+- Fixed 3 `execSync` → `execFileSync` call sites in upstream.ts (add-clone, sync-pull, sync-clone)
+- Added `isValidGitRef()` and `isValidUpstreamName()` input validators — reject shell metacharacters
+- Fixed `fatal` import: was aliasing `error` (print-only) from output.js; now imports real `fatal` from errors.js (throws SquadError)
+- Defense in depth: `execFileSync` prevents shell interpretation even if validation is bypassed
+- Build and all 2022 tests pass after fix

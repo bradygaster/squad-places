@@ -1,12 +1,13 @@
 /**
  * Agent spawning — loads charters, builds prompts, and manages spawn lifecycle.
  *
- * Full SDK session integration is stubbed pending CopilotClient session API wiring.
+ * Creates SDK sessions via SquadClient, sends the task, and streams the response.
  */
 
 import { resolveSquad } from '@bradygaster/squad-sdk/resolution';
+import { SquadClient } from '@bradygaster/squad-sdk/client';
+import type { SquadSession } from '@bradygaster/squad-sdk/client';
 import { SessionRegistry } from './sessions.js';
-import type { AgentSession } from './types.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -17,6 +18,10 @@ export interface SpawnOptions {
   systemContext?: string;
   /** Tool definitions to register */
   tools?: ToolDefinition[];
+  /** SquadClient instance for SDK session creation */
+  client?: SquadClient;
+  /** Working directory for the session */
+  teamRoot?: string;
 }
 
 export interface ToolDefinition {
@@ -61,13 +66,10 @@ export function buildAgentPrompt(charter: string, options?: { systemContext?: st
 
 /**
  * Spawn an agent session.
- * In this initial version, this is a stub that:
- * 1. Loads the agent's charter
- * 2. Registers the session in the registry
- * 3. Returns a SpawnResult
  *
- * Full SDK session integration comes in a follow-up when the CopilotClient
- * session API is wired in.
+ * When a SquadClient is provided via options.client, creates a real SDK session,
+ * sends the task, streams the response, and returns the accumulated result.
+ * Without a client, returns a stub result for backward compatibility.
  */
 export async function spawnAgent(
   name: string,
@@ -75,11 +77,9 @@ export async function spawnAgent(
   registry: SessionRegistry,
   options: SpawnOptions = { mode: 'sync' }
 ): Promise<SpawnResult> {
-  // Load charter
-  const charter = loadAgentCharter(name);
+  const teamRoot = options.teamRoot ?? process.cwd();
+  const charter = loadAgentCharter(name, teamRoot);
 
-  // Register in session registry
-  // Read role from charter (first line after "# Name — Role")
   const roleMatch = charter.match(/^#\s+\w+\s+—\s+(.+)$/m);
   const role = roleMatch?.[1] ?? 'Agent';
 
@@ -87,21 +87,46 @@ export async function spawnAgent(
   registry.updateStatus(name, 'working');
 
   try {
-    // Build prompt
-    const _systemPrompt = buildAgentPrompt(charter, { systemContext: options.systemContext });
+    const systemPrompt = buildAgentPrompt(charter, { systemContext: options.systemContext });
 
-    // TODO: Wire to CopilotClient session API
-    // For now, return a stub result indicating the spawn infrastructure is ready
-    // but actual LLM session creation requires the SDK session management
+    if (!options.client) {
+      // No client provided — return stub for backward compatibility
+      registry.updateStatus(name, 'idle');
+      return {
+        agentName: name,
+        status: 'completed',
+        response: `[Agent ${name} spawn ready — no client provided]`,
+      };
+    }
 
-    const result: SpawnResult = {
-      agentName: name,
-      status: 'completed',
-      response: `[Agent ${name} spawn infrastructure ready — SDK session wiring pending]`,
+    const session: SquadSession = await options.client.createSession({
+      streaming: true,
+      systemMessage: { mode: 'append', content: systemPrompt },
+      workingDirectory: teamRoot,
+    });
+
+    // Accumulate streamed response
+    let accumulated = '';
+    const onDelta = (event: { type: string; [key: string]: unknown }): void => {
+      const val = event['delta'] ?? event['content'];
+      if (typeof val === 'string') accumulated += val;
     };
 
+    session.on('message_delta', onDelta);
+    try {
+      await session.sendMessage({ prompt: task });
+    } finally {
+      try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
+    }
+
+    try { await session.close(); } catch { /* best-effort cleanup */ }
+
     registry.updateStatus(name, 'idle');
-    return result;
+    return {
+      agentName: name,
+      status: 'completed',
+      response: accumulated || undefined,
+    };
   } catch (error) {
     registry.updateStatus(name, 'error');
     return {

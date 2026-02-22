@@ -25,6 +25,7 @@
 | Baer | Security | `.squad/agents/baer/charter.md` | ✅ Active |
 | Redfoot | Graphic Designer | `.squad/agents/redfoot/charter.md` | ✅ Active |
 | Strausz | VS Code Extension | `.squad/agents/strausz/charter.md` | ✅ Active |
+| Saul | Aspire & Observability | `.squad/agents/saul/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
