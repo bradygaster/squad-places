@@ -53,3 +53,6 @@
   - `package.json` (root) → added `"private": true` (safety guard against accidental publish)
 - **Verification:** All three version strings aligned. CLI SDK dependency pinned. Pre-existing TS build errors unrelated to alignment.
 - **Next:** Changeset + npm publish (when TS issues resolved). Decision document: `.squad/decisions/inbox/kobayashi-version-alignment.md`
+
+### 📌 Team update (2026-02-22T041800Z): Version alignment complete, both packages published to npm at 0.8.0 — decided by Kobayashi, Coordinator
+Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSION export, root private flag). Coordinator published @bradygaster/squad-sdk@0.8.0 and @bradygaster/squad-cli@0.8.0 to npm registry. Version bump signals clear break from 0.7.0 stubs. Release infrastructure production-ready. Both packages live and resolvable on npm.

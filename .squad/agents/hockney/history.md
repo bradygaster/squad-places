@@ -73,3 +73,6 @@ Hockney added 13 CRLF-specific test cases covering Windows line ending handling.
   4. Migrating requires either expanding the `exports` maps in both packages or adding vitest `resolve.alias` config. Both are non-trivial.
 - **Recommendation:** Migration should happen as a dedicated task when root `src/` is actually removed. Attempting it now risks breaking 1719 passing tests for no immediate benefit.
 - **Flaky test observed:** One run showed 1 failure / 1718 pass in CLI export-import tests (timing-sensitive fs operations). Not reproducible on immediate re-run — pre-existing flake.
+
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
+Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewriting (6 cross-package imports) verified correct. Test import migration deferred until root `src/` deletion blocks (lazy approach reduces risk). Tests remain on old `../src/` paths for now — migration requires expanding exports maps or vitest alias config, both non-trivial. Exports map gap + CLI no exports + barrel divergence make premature migration risky. Decision merged to decisions.md (hockney-test-import-migration.md).

@@ -37,9 +37,16 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 - All changes in `src/index.ts` only — no modifications to resolution.ts, init.ts, or upgrade.ts needed
 - PR on branch `squad/212-213-global-flag-status` → `bradygaster/dev`
 
-### 📌 Team update (2026-02-21T22:25Z): Decision inbox merged — decided by Fenster, Hockney
-- ensureSquadPath() guard (#273): validation function for .squad/ paths, testable composition pattern for routing logic
-- CLI integration tests: direct logic testing instead of process spawning (sets pattern for future CLI tests)
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split executed, versions aligned to 0.8.0, 1719 tests passing — decided by Keaton, Fenster, Edie, Kobayashi, Hockney, Rabin, Coordinator
+- **Phase 1 (SDK):** Migrated 15 directories + 4 standalone files from root `src/` into `packages/squad-sdk/src/`. Cleaned SDK barrel (removed CLI re-exports block). Updated exports map from 7 to 18 subpath entries.
+- **Phase 2 (CLI):** Migrated `src/cli/` + `src/cli-entry.ts` to `packages/squad-cli/src/`. Copied `templates/` into CLI package. Rewrote 6 cross-package imports to use `@bradygaster/squad-sdk/*` package names.
+- **Configuration:** All 6 config files fixed (root tsconfig with project refs, SDK/CLI tconfigs with composite builds, package.json exports maps). Root marked private (prevents accidental npm publish).
+- **Versions:** All strings aligned to 0.8.0 — clear break from 0.7.0 stubs. CLI dependency on SDK pinned to `0.8.0`.
+- **Testing:** Build clean (0 errors), all 1719 tests passing. Test import migration deferred until root `src/` deletion (lazy migration reduces risk).
+- **Distribution:** Both packages published to npm (@bradygaster/squad-sdk@0.8.0, @bradygaster/squad-cli@0.8.0). Publish workflows verified ready.
+- **Dependency graph verified:** Clean DAG (CLI → SDK → @github/copilot-sdk, no cycles). SDK pure library (zero UI deps). CLI thin consumer (owns ink, react).
+- **Next phase:** Phase 3 (root cleanup) — delete root src/, update test imports when blocking.
+
 
 ### 📌 #234/#235: Shell module structure + main entry wiring — implemented
 - Created `src/cli/shell/` module: `index.ts` (placeholder `runShell()`), `types.ts` (ShellState, ShellMessage, AgentSession), `components/.gitkeep`

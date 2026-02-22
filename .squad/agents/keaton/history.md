@@ -37,3 +37,6 @@
 - **Exports map:** SDK subpath exports expand from 7 to 18 entries — every module independently importable.
 - **File path:** `.squad/decisions/inbox/keaton-sdk-cli-split-plan.md`
 - **Pattern:** One-way dependency graphs enable independent package evolution. SDK stays pure library; CLI stays thin consumer.
+
+### 📌 Team update (2026-02-22T041800Z): SDK/CLI split plan executed, versions aligned to 0.8.0, 1719 tests passing
+Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → SDK → @github/copilot-sdk). Fenster migrated 154 files across both packages. Edie fixed all 6 config files (tsconfigs with composite builds, package.json exports maps). Kobayashi aligned all versions to 0.8.0 (clear break from 0.7.0 stubs). Hockney verified build clean + all 1719 tests pass, deferred test import migration until root src/ removal. Rabin verified publish workflows ready. Coordinator published both packages to npm (0.8.0). Inbox merged to decisions.md. Ready for Phase 3 (root cleanup).
