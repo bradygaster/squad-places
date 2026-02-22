@@ -71,3 +71,9 @@ Edie fixed root tsconfig (base config + project refs), SDK tsconfig (composite +
 - Changed to `"*"` which achieves the same local resolution under npm workspaces
 - Verified: `npm install` succeeds, `npm run build` compiles both packages cleanly
 - Also verified: prepublishOnly scripts and dynamic VERSION (via createRequire) from previous commit are working correctly
+
+### 📌 Team update (2026-02-22T070156Z): npm workspace protocol decision merged, test import migration complete, barrel conventions finalized — decided by Edie, Fenster, Hockney
+- **npm workspace protocol (Decision):** Use `"*"` version string for CLI→SDK dependency, not pnpm's `workspace:*`. npm workspaces auto-resolve local packages by name regardless of version specifier.
+- **Test import migration (Decision):** 56 test files successfully migrated from `../src/` to `@bradygaster/squad-sdk` / `@bradygaster/squad-cli` package paths. 26 SDK subpath exports + 16 CLI subpath exports. All 1727 tests passing. Vitest resolves through compiled `dist/`.
+- **Barrel file conventions (Decision):** `src/parsers.ts` and `src/types.ts` created as public API barrels — parsers re-export all functions + types, types exports ONLY types (zero runtime imports). Both follow ESM barrel pattern.
+- **All decisions merged to decisions.md.** Status: Production-ready, awaiting Phase 3 SDK session integration for final runtime wiring.

@@ -581,5 +581,74 @@ Medium. Changes error handling contract for all functions that used `fatal()`. B
 
 **Impact:** Low. Two new files, no changes to existing source. Build passes, all 1683 tests pass.
 
+### 2026-02-22: Use npm-native workspace resolution (not pnpm `workspace:*`)
+**By:** Edie (TypeScript Engineer)
+**Date:** 2026-02-22
+**Status:** Applied
+
+**Context:** Brady's task requested using `workspace:*` for the CLI→SDK dependency. However, this project uses npm workspaces (not pnpm or Yarn). The `workspace:` protocol is a pnpm/Yarn feature and npm rejects it with `EUNSUPPORTEDPROTOCOL`.
+
+**Decision:** Use `"*"` as the version specifier instead. Under npm workspaces, when a dependency name matches a local workspace package, npm automatically resolves to the local package regardless of the version specifier. `"*"` accepts any version, ensuring the local SDK is always used during development.
+
+**Trade-off:** `"*"` will be published as-is to npm (unlike pnpm's `workspace:*` which gets replaced with the real version at publish time). Before publishing the CLI package, the SDK dependency version should be pinned to the actual release version. A `prepublishOnly` script or CI step could automate this.
+
+### 2026-02-22: Test import migration to workspace packages
+**By:** Fenster (Core Dev)
+**Date:** 2026-02-22
+**Status:** Implemented
+
+**Context:** All 56 test files imported from root `src/` via relative paths (`../src/...`). With the SDK/CLI workspace split, tests needed to import from `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` packages instead.
+
+**Decision:**
+1. **Barrel-first imports:** Where a barrel/index file re-exports symbols from sub-modules, tests import from the barrel path (e.g., `@bradygaster/squad-sdk/config` instead of individual files).
+2. **New subpath exports for orphaned modules:** 8 runtime/adapter modules not covered by existing barrels got new subpath exports in the SDK package.json.
+3. **Missing barrel re-exports fixed:** `selectResponseTier`/`getTier` added to coordinator barrel; `onboardAgent`/`addAgentToConfig` added to agents barrel.
+4. **CLI functions correctly located:** Consumer imports test updated to import CLI functions from `@bradygaster/squad-cli` (not SDK), reflecting intentional separation.
+
+**Consequence:** Zero `grep -r "from '../src/" test/` results. All 1727 tests pass. SDK has 26 subpath exports, CLI has 17.
+
+### 2026-02-22: CI/CD & Release Readiness Assessment
+**By:** Kobayashi (Git & Release)
+**Date:** 2026-02-22
+**Status:** ASSESSMENT COMPLETE
+
+**Summary:** All 13 CI/CD workflows are production-ready and correctly configured. Merge drivers are in place. Branch protection is working. Publishing infrastructure works both for stable releases (v* tags) and pre-releases (insider branch).
+
+**Version Status:**
+- SDK `package.json`: 0.8.0
+- CLI `package.json`: 0.8.1 (intentional patch for bin entry fix)
+- CHANGELOG: 0.6.0-alpha.0 (root workspace marker)
+
+**Workflow Audit:**
+- ✅ Core CI validates on PR/push to main, dev, insider
+- ✅ squad-publish.yml: Publishes both packages on v* tags with public access
+- ✅ squad-insider-publish.yml: Auto-publishes on insider push with `--tag insider`
+- ✅ Release/promote workflows fully functional
+
+**Merge Drivers:** Union merge configured for append-only files (decisions.md, agents/*/history.md, log/**, orchestration-log/**).
+
+**Release Readiness:** Insider channel ready now. Stable release ready after version alignment if desired.
+
+**Recommendation:** Version alignment (SDK 0.8.0, CLI 0.8.0) simplifies CHANGELOG during pre-1.0. Separate versioning can be deferred post-1.0 if needed.
+
+### 2026-02-22: Fix npx bin resolution for squad-cli
+**By:** Rabin (Distribution)
+**Date:** 2026-02-22
+**Status:** Implemented & Published
+
+**Context:** `npx @bradygaster/squad-cli@0.8.0` printed placeholder text instead of running the real CLI. The bin entry was `"squad": "./dist/cli-entry.js"` but npx resolves by unscoped package name (`squad-cli`), not by custom bin names.
+
+**Decision:**
+1. Added `"squad-cli"` as second bin entry pointing to `./dist/cli-entry.js`
+2. Replaced orphaned placeholder `dist/cli.js` with redirect to `cli-entry.js`
+3. Bumped version to 0.8.1 (0.8.0 immutable on npm)
+4. Published @bradygaster/squad-cli@0.8.1 to npm
+
+**Consequence:**
+- `npx @bradygaster/squad-cli` now runs the real CLI
+- `squad` command still works for global installs
+- Both bin names resolve to the same entry point
+- Future releases must keep both bin entries
+
 
 

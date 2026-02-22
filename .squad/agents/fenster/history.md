@@ -175,3 +175,9 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 5. Triage/Loop/Hire: Implement placeholder commands (low priority, can defer).
 
 **Assessment for Brady:** Core runtime foundation is solid — SDK/CLI split is complete, command routing works, type safety is enforced. Phase 3 (integrating with CopilotClient, EventBus event emission, Coordinator logic) is the next lift. Ralph and Coordinator are well-structured but need internal wiring. No broken code — just incomplete TODOs. Estimate 2-3 weeks to wire Phase 3 fully.
+
+### 📌 Team update (2026-02-22T070156Z): Test import migration merged to decisions, CLI functions correctly exported from CLI package — decided by Fenster, Edie, Hockney
+- **Test import migration decision:** 56 test files migrated from `../src/` to `@bradygaster/squad-sdk` / `@bradygaster/squad-cli`. 26 SDK subpath exports, 16 CLI subpath exports. Barrel re-exports verified for missing symbols. All 1727 tests passing.
+- **CLI function placement clarified:** runInit, runExport, runImport, scrubEmails correctly exported from `@bradygaster/squad-cli` (not SDK), reflecting intentional architecture separation.
+- **Pattern established:** Vitest resolves through compiled `dist/`, so barrel changes require `npm run build` in the package before tests see them.
+- **Decision merged to decisions.md.** Status: Test infrastructure aligned with workspace split, ready for Phase 3 runtime integration.

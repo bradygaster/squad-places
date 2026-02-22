@@ -84,3 +84,13 @@ Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewri
 - Config subpath exports `DEFAULT_CONFIG`, `AgentRegistry`, `ModelRegistry`, etc. — not `loadSquadConfig` as initially assumed.
 - `npm install` needed `--legacy-peer-deps` flag due to `workspace:*` protocol in squad-cli's package.json (pnpm syntax, not native npm).
 - Build passes cleanly. All 8 package-exports tests pass with coverage reporting.
+
+### Test Health Assessment (2026-02-22T23:02Z)
+- **Test Results:** All 1727 tests passing across 57 files. Duration: 4.08s (transform 7.23s, setup 0ms, collect 21.44s, tests 16.15s, environment 12ms, prepare 16.17s).
+- **No skipped/pending tests:** Zero `.skip()` or `.only()` patterns found. All 57 test files active.
+- **Test file coverage:** Distributed across SDK (config, runtime, agents, casting, coordinator, marketplace, sharing, shell, adapter, tools) and CLI (init, upgrade, export-import, cli-global). Strong test-to-source-file ratio.
+- **CI Health:** Recent runs show mixed status on feature branches (squad-UI, feat/remote-squad-mode), but main dev branch (run 103) and most completed runs are green. squad-ci.yml triggers on push/PR to main/bradygaster/dev/insider. Two-job matrix (build-node, test-node) with Node 20/22. Rollup "build" job requires both to pass for branch protection.
+- **Coverage Infrastructure:** Vitest configured for v8 provider with text, text-summary, html reporters. Include patterns: `packages/*/src/**/*.ts`. Coverage dir: `./coverage/` (gitignored).
+- **Test Patterns:** Good structure observed: pure functions (parsers, coordinators), simple classes (SessionRegistry, StreamBridge), callback-based async (shell lifecycle). Windows symlink tests skipped (elevated privileges).
+- **Flaky tests:** One pre-existing flake in export-import CLI tests (timing-sensitive fs operations on first run, passes on retry). Not blocking merges.
+- **Known Issues:** None blocking. Pre-existing TS error in cli-entry.ts VERSION export (mentioned in history). Test import migration deferred until root `src/` deletion.
