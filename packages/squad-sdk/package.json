@@ -125,6 +125,18 @@
     "./runtime/otel-metrics": {
       "types": "./dist/runtime/otel-metrics.d.ts",
       "import": "./dist/runtime/otel-metrics.js"
+    },
+    "./runtime/squad-observer": {
+      "types": "./dist/runtime/squad-observer.d.ts",
+      "import": "./dist/runtime/squad-observer.js"
+    },
+    "./runtime/event-payloads": {
+      "types": "./dist/runtime/event-payloads.d.ts",
+      "import": "./dist/runtime/event-payloads.js"
+    },
+    "./runtime/event-bus-ws-bridge": {
+      "types": "./dist/runtime/event-bus-ws-bridge.d.ts",
+      "import": "./dist/runtime/event-bus-ws-bridge.js"
     }
   },
   "files": [
@@ -157,11 +169,13 @@
     "@opentelemetry/sdk-node": "^0.57.2",
     "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@opentelemetry/sdk-trace-node": "^1.30.0",
-    "@opentelemetry/semantic-conventions": "^1.28.0"
+    "@opentelemetry/semantic-conventions": "^1.28.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.9.0",
     "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.13",
     "typescript": "^5.7.0"
   },
   "keywords": [

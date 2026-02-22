@@ -28,6 +28,8 @@ export * from './runtime/benchmarks.js';
 export * from './runtime/otel.js';
 export { createOTelTransport } from './runtime/otel-bridge.js';
 export * from './runtime/otel-metrics.js';
+export { SquadObserver, classifyFile } from './runtime/squad-observer.js';
+export type { SquadFileChange, SquadFileCategory, SquadObserverConfig } from './runtime/squad-observer.js';
 
 export * from './marketplace/index.js';
 export * from './build/index.js';
