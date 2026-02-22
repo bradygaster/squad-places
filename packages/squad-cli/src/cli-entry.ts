@@ -62,6 +62,8 @@ async function main(): Promise<void> {
     console.log(`             Usage: import <file> [--force]`);
     console.log(`  ${BOLD}scrub-emails${RESET}  Remove email addresses from Squad state files`);
     console.log(`             Usage: scrub-emails [directory] (default: .ai-team/)`);
+    console.log(`  ${BOLD}aspire${RESET}     Launch Aspire dashboard for Squad observability`);
+    console.log(`             Flags: --docker (force Docker), --port <number> (OTLP port)`);
     console.log(`  ${BOLD}help${RESET}       Show this help message`);
     console.log(`\nFlags:`);
     console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
@@ -189,6 +191,15 @@ async function main(): Promise<void> {
     } else {
       console.log('No email addresses found.');
     }
+    return;
+  }
+
+  if (cmd === 'aspire') {
+    const { runAspire } = await import('./cli/commands/aspire.js');
+    const useDocker = args.includes('--docker');
+    const portIdx = args.indexOf('--port');
+    const port = (portIdx !== -1 && args[portIdx + 1]) ? parseInt(args[portIdx + 1]!, 10) : undefined;
+    await runAspire({ docker: useDocker, port });
     return;
   }
 

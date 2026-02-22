@@ -30,6 +30,8 @@ export { createOTelTransport, bridgeEventBusToOTel } from './runtime/otel-bridge
 export * from './runtime/otel-metrics.js';
 export { initSquadTelemetry } from './runtime/otel-init.js';
 export type { SquadTelemetryOptions, SquadTelemetryHandle } from './runtime/otel-init.js';
+export { SquadObserver, classifyFile } from './runtime/squad-observer.js';
+export type { SquadFileChange, SquadFileCategory, SquadObserverConfig } from './runtime/squad-observer.js';
 
 export * from './marketplace/index.js';
 export * from './build/index.js';

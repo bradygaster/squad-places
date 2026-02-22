@@ -185,3 +185,22 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 - **Missing integration:** `upstream` command is not registered in `cli-entry.ts` command router. Users can't actually invoke it.
 - **Test import pattern violated:** Tests import from `../packages/squad-sdk/src/upstream/resolver.js` (relative source paths) instead of `@bradygaster/squad-sdk/upstream` (package imports). Violates the test import migration decision.
 - **Minor:** Test uses `(org.castingPolicy as any)` — should use typed cast `as Record<string, unknown>` per strict-mode decision.
+### 📌 OTel Phase 4: Aspire command + Squad Observer file watcher (2026-02-22) — Fenster (Issues #265, #268)
+- **Issue #265 — `squad aspire` command** added at `packages/squad-cli/src/cli/commands/aspire.ts`:
+  - Launches the .NET Aspire dashboard for viewing Squad OTel telemetry.
+  - Auto-detects Docker vs dotnet Aspire workload; falls back to Docker.
+  - Sets `OTEL_EXPORTER_OTLP_ENDPOINT` env var so OTel providers auto-export.
+  - Flags: `--docker` (force Docker), `--port <number>` (custom OTLP port, default 18888).
+  - Wired into CLI entry point (`cli-entry.ts`) with help text.
+  - Subpath export: `@bradygaster/squad-cli/commands/aspire`.
+- **Issue #268 — SquadObserver file watcher** added at `packages/squad-sdk/src/runtime/squad-observer.ts`:
+  - Watches `.squad/` directory recursively via `fs.watch()` with debounce (200ms default).
+  - Classifies files into categories: agent, casting, config, decision, skill, unknown.
+  - Emits OTel spans (`squad.observer.start`, `squad.observer.stop`, `squad.observer.file_change`) with file.path, file.category, change.type attributes.
+  - Emits EventBus events (`agent:milestone` type) when an EventBus is provided.
+  - Full start/stop lifecycle with error handling and OTel error spans.
+  - Subpath export: `@bradygaster/squad-sdk/runtime/squad-observer`.
+  - Barrel export in SDK index.ts: `SquadObserver`, `classifyFile`, types.
+- **Tests:** 16 new tests (14 observer: classifyFile categories, start/stop, OTel spans, EventBus events, idempotency; 2 aspire: module exports). All 2024 tests passing.
+- **Pattern:** `classifyFile()` normalizes Windows backslashes before classification — cross-platform safe.
+- **Pattern:** Observer uses `fs.watch` with `{ recursive: true }` — works on Windows/macOS, may need inotify tuning on Linux.

@@ -1,19 +1,22 @@
 ---
-updated_at: 2026-02-22T11:05:00Z
-focus_area: OTel Phase 4 (Aspire, file watcher, event schemas) + Wave 1 fan-out
-active_prs: [307]
-active_agents: [Kujan, Hockney, Fortier, McManus, Keaton]
+updated_at: 2026-02-22T10:39:00Z
+focus_area: Full fan-out — OTel, REPL fix, CI/CD, docs
+active_issues: [265, 266, 267, 268, 303, 304, 305]
 ---
 
 # What We're Focused On
 
-OTel Phases 1-3 complete. PR #307 open for Phase 4 integration (Aspire command, file watcher port, event schemas, REPL coordinator).
+**Priority order (Brady directive):** OTel + Aspire → Fix REPL → CI/CD npm publishing → Docs/website.
 
-**Active Work (Wave 1 fan-out):**
-- **Kujan** (#266): OTel public API export
-- **Hockney** (#267): OTel integration tests
-- **Fortier** (#303): REPL coordinator wiring
-- **McManus** (#302): Upstream inheritance docs
-- **Keaton** (#306): Cleanup audit
+**⚠️ Repo: bradygaster/squad-pr ONLY — not bradygaster/squad.**
 
-All 5 agents running in parallel, background mode. No blocking.
+## Wave 1 (tonight)
+- OTel Phase 4: #265 (Aspire cmd), #266 (public API), #267 (integration tests), #268 (file watcher)
+- REPL fix: #303 — shell is placeholder, coordinator wiring missing
+- CI/CD: #305 — GitHub Actions for npm publish + releases
+- SquadOffice: #304 — telemetry integration with office visualization (C:\src\SquadOffice)
+
+## Context
+- OTel Phases 1-3 complete (#254-264 closed). 1940 tests passing.
+- SquadOffice expects colon-separated EventBus events (session:*, agent:milestone, coordinator:routing, pool:health)
+- Docs epic (#182) has 12 issues — last priority.

@@ -71,5 +71,6 @@
 
 ## Issue Source
 
-- **Repository:** bradygaster/squad
-- **Connected:** 2026-02-21
+- **Repository:** bradygaster/squad-pr
+- **Connected:** 2026-02-22
+- **⚠️ NOTE: This squad works on `bradygaster/squad-pr` ONLY — not `bradygaster/squad` — until further notice.**
