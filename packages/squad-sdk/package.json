@@ -113,6 +113,10 @@
     "./runtime/cost-tracker": {
       "types": "./dist/runtime/cost-tracker.d.ts",
       "import": "./dist/runtime/cost-tracker.js"
+    },
+    "./upstream": {
+      "types": "./dist/upstream/index.d.ts",
+      "import": "./dist/upstream/index.js"
     }
   },
   "files": [
