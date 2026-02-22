@@ -102,3 +102,6 @@ CharterCompiler.compile() delegates to existing parseCharterMarkdown() rather th
 - Wired `recordSessionCreated()`, `recordSessionClosed()`, `recordSessionError()` into `SquadClient.createSession()` and `deleteSession()` — success paths get created/closed, inner catch blocks get error
 - Barrel export (`src/index.ts` line 30) and package.json subpath export (`./runtime/otel-metrics`) already present — no changes needed
 - Build clean, 1886/1886 tests pass
+
+### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
+All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.

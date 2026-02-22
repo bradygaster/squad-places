@@ -92,3 +92,6 @@ Two EventBus APIs require different mocks: client bus uses on()/emit(), runtime 
 - Testing strategy: Mock `getMeter()` from otel provider to return spy-enabled meter with tracked instruments. Each `createCounter`/`createHistogram`/`createUpDownCounter`/`createGauge` call returns a spy with `.add()` and `.record()` mocks, allowing precise verification of metric names, values, and attributes.
 - Key findings: (1) StreamingPipeline has no constructor args — just `new StreamingPipeline()`, (2) session attach method is `attachToSession()` not `attachSession()`, (3) `_resetMetrics()` clears all four cached instrument categories independently, (4) all metric functions are safe no-ops when OTel is not configured.
 - Test count grew from 1901→1940 across 68 files — all passing.
+
+### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
+All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.

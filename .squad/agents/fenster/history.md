@@ -136,3 +136,6 @@ App component accepts `onReady` prop that fires on mount, delivering ShellApi ob
   - `AgentLifecycleManager` (agents/lifecycle.ts): `recordAgentSpawn` in spawnAgent(), `recordAgentDestroy` in destroyAgent(), `recordAgentError` in catch.
   - Duration computed from `createdAt` timestamp in destroy path.
 - **Build:** tsc clean (0 errors). **Tests:** All 1886 tests passing (65 files).
+
+### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
+All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.

@@ -814,3 +814,79 @@ NOT added (bundled via `sdk-node`):
 - `packages/squad-sdk/src/index.ts` — Barrel exports for both modules
 - `packages/squad-sdk/package.json` — Dependencies + subpath exports
 
+
+
+### Decision: StreamingPipeline.markMessageStart() as explicit latency tracking entry point
+
+**By:** Fortier (Node.js Runtime)
+**Date:** 2026-02-22
+**Issues:** #259, #264
+
+**What:** Latency metrics (TTFT, response duration, tokens/sec) in StreamingPipeline require an explicit `markMessageStart(sessionId)` call before sending a message. This opts callers into latency tracking rather than making it automatic.
+
+**Why:** The pipeline doesn't own the send call — it only sees events after they arrive. Without a start timestamp, TTFT and duration are meaningless. Making it explicit avoids hidden coupling between the pipeline and SquadClient.sendMessage(), and means callers who don't need latency metrics (e.g. tests, offline replay) pay zero overhead.
+
+**Pattern:** Call `pipeline.markMessageStart(sessionId)` → send message → pipeline records TTFT on first `message_delta` with `index === 0`, records duration + tokens/sec when `usage` event arrives. Tracking state auto-cleans after usage event or `clear()`.
+
+**Also:** SquadClient now exposes `sendMessage(session, options)` with `squad.session.message` + child `squad.session.stream` OTel spans, and `closeSession(sessionId)` as a traced alias for `deleteSession`.
+
+
+### 2026-02-22: Tool trace enhancements + agent metric wiring conventions
+
+**By:** Fenster
+**What:** Established patterns for OTel tool span attributes and agent metric wiring:
+
+1. **`sanitizeArgs()`** strips fields matching `/token|secret|password|key|auth/i` before recording as span attributes. Truncates to 1024 chars. Exported from `tools/index.ts` for reuse.
+2. **`defineTool` accepts optional `agentName`** in config — recorded as `agent.name` span attribute when present. Does not change the handler signature.
+3. **`result.length`** attribute added to `squad.tool.result` events — measures `textResultForLlm` length.
+4. **Agent metrics** (`recordAgentSpawn/Duration/Error/Destroy`) wired into both `AgentSessionManager` (index.ts) and `AgentLifecycleManager` (lifecycle.ts). Duration computed from `createdAt` in destroy path.
+5. **Parent span propagation** deferred (TODO comment in `defineTool`) — will wire when agent.work span lifecycle is complete.
+
+**Why:** Consistent instrumentation patterns prevent divergence between tool and agent telemetry. The sanitization approach is deliberately simple (field-name matching, not value inspection) to keep it fast and predictable. Agent metrics are wired at both abstraction levels (SessionManager + LifecycleManager) because they can be used independently.
+
+**References:** Issues #260, #262
+
+
+# Decision: OTel Metric Wiring Pattern (#261, #263)
+
+**Author:** Edie  
+**Date:** 2026-02-22  
+**Status:** Implemented  
+
+## Context
+
+Issues #261 and #263 required wiring pre-existing metric functions from `otel-metrics.ts` into the runtime (`StreamingPipeline`) and adapter (`SquadClient`).
+
+## Decision
+
+- **Token usage metrics** (`recordTokenUsage`) are recorded in `StreamingPipeline.processEvent()` AFTER dispatching to user-registered handlers. This ensures user handlers see the event before OTel instrumentation, and handler failures don't block metric recording.
+- **Session pool metrics** are recorded at the innermost success/error boundary in `SquadClient`:
+  - `recordSessionCreated()` after successful `client.createSession()` return
+  - `recordSessionClosed()` after successful `client.deleteSession()` return
+  - `recordSessionError()` at the top of inner catch blocks — recorded for EVERY failed attempt, including ones that trigger reconnection. This is intentional: a reconnect-eligible failure is still an error worth counting.
+- No new exports needed — barrel and subpath exports were already wired in the Phase 1 otel-metrics scaffold.
+
+## Rationale
+
+Metric calls are no-ops when OTel is not configured (the meter returns no-op instruments), so this adds zero overhead for users without OTel. Recording errors before reconnect checks gives accurate failure counts without double-counting successes (the recursive retry gets its own `recordSessionCreated()` on success).
+
+
+# Decision: OTel metrics test pattern — spy meter mock
+
+**By:** Hockney (Tester)
+**Date:** 2026-02-23
+**Status:** Implemented
+
+## What
+OTel metrics tests use a spy-meter pattern: mock `getMeter()` to return a fake meter where every `createCounter`/`createHistogram`/`createUpDownCounter`/`createGauge` returns a spy instrument with `.add()` and `.record()` mocks. This allows verifying exact metric names, values, and attributes without a real OTel SDK or collector.
+
+## Why
+- The otel-metrics module is a thin instrumentation layer — tests need to verify *what* gets recorded, not *how* OTel processes it.
+- Spy meter pattern avoids needing `InMemoryMetricExporter` (which has complex async flush semantics) and keeps tests synchronous and fast.
+- Pattern is consistent with existing otel-bridge tests (spy spans via InMemorySpanExporter) but adapted for the metrics API surface.
+
+## Applies to
+- `test/otel-metrics.test.ts` (34 tests)
+- `test/otel-metric-wiring.test.ts` (5 tests)
+- Future OTel metric tests should follow this same pattern.
+
