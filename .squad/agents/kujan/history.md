@@ -32,3 +32,12 @@
 - Build and all 1592 tests pass with npm `^0.1.25` reference — verified
 - SDK dist is ~150KB; the 296MB local install is due to `node_modules` in the sibling dir
 - Bundle config correctly marks `@github/copilot-sdk` as external (esbuild won't bundle it)
+
+### Barrel Files for SquadUI (issues #225, #226)
+- Created `src/parsers.ts` — re-exports all parser functions and result types from markdown-migration, routing, charter-compiler, and skill-loader
+- Created `src/types.ts` — pure `export type` re-exports with zero runtime code, covering parsed types, config types, routing types, adapter types
+- Both files use `export { ... } from './path.js'` ESM syntax, consistent with existing barrel patterns in `src/index.ts`
+- Build (tsc + workspaces) and all 1683 tests pass with the new files
+
+### 📌 Team update (2026-02-22T020714Z): Process.exit() refactor complete
+Kujan's error handling refactor makes all library functions throw SquadError instead of calling process.exit(). Only CLI entry point (src/cli-entry.ts) calls process.exit() now. SquadUI can catch SquadError for structured error handling instead of process termination. Pattern: library functions throw, CLI entry point catches. Decision merged to decisions.md. Issue #189 closed. 1683 tests passing.

@@ -48,3 +48,6 @@
 - All 13 tests pass — Fenster's normalizeEol() is already applied to all 5 parsers
 - Note: `npm run build` has a pre-existing TS error (VERSION export in cli-entry.ts) unrelated to this work
 - Pattern: test CRLF by wrapping existing happy-path markdown in withCRLF(), assert identical outputs with no \r contamination
+
+### 📌 Team update (2026-02-22T020714Z): CRLF test suite added
+Hockney added 13 CRLF-specific test cases covering Windows line ending handling. All passing. Validates that parsers are robust to CRLF input. Issue #228 closed. 1683 tests passing. Complements Fenster's normalize-eol.ts utility.

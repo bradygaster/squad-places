@@ -74,3 +74,19 @@ Recommend renaming `squad watch` to `squad triage` (40% better semantic accuracy
 - Pattern: role parsing from charter header is regex-based (`/^#\s+\w+\s+—\s+(.+)$/m`), falls back to "Agent" if no match
 - Foundation for #239 (stream bridge integration) and #241 (coordinator spawn orchestration)
 
+### 📌 #220/#221: CRLF normalization utility + parser hardening — implemented
+- Created `src/utils/normalize-eol.ts` with `normalizeEol()` — strips `\r\n` and lone `\r` to LF-only before any parsing logic runs.
+- Applied to all 8 markdown parsers: `parseTeamMarkdown`, `parseRoutingRulesMarkdown`, `parseDecisionsMarkdown` (markdown-migration.ts), `parseRoutingMarkdown` (routing.ts), `parseCharterMarkdown` (charter-compiler.ts), `parseFrontmatter` (skill-loader.ts), `parseAgentDoc` (agent-doc.ts), `buildCapabilitiesBlock` (doc-sync.ts).
+- Build clean (0 errors), all 1670 tests pass. Committed on `squad/181-squadui-p0`.
+- Pattern: normalize at the entry point of the parser function, before any `.split('\n')` or regex matching. This is a one-line defensive guard — no behavioral change for LF-only inputs.
+
+### 📌 #224: Re-export all CLI functions from main barrel — implemented
+- Added `runInit`, `runExport`, `runImport`, `runCopilot`, `type CopilotFlags`, and `scrubEmails` to `src/index.ts` public API surface.
+- These were already exported from `src/cli/index.ts` barrel but were missing from the top-level selective named export block in `src/index.ts`.
+- Single-line change pattern: expand the existing named import list from `./cli/index.js` — no new import statements needed.
+- Build clean (0 errors), all 1683 tests pass. Committed on `squad/181-squadui-p1`.
+- Pattern: when Edie split `main()` into `cli-entry.ts`, the barrel became selective. Any new CLI function must be explicitly added to the `src/index.ts` named export list to be part of the public API.
+
+
+### 📌 Team update (2026-02-22T020714Z): CRLF normalization complete and merged
+Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry points across 6 files. Pattern established: normalize at parser entry, not at file-read callsite. This ensures cross-platform line ending safety for all parsers (Windows CRLF, Unix LF, old Mac CR). Decision merged to decisions.md. Issue #220, #221 closed. All 1683 tests passing.

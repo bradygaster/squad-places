@@ -69,3 +69,6 @@
 **Process:** Read history.md and decisions.md for context; verified tone ceiling; no source changes — docs-only.
 
 
+
+### 📌 Team update (2026-02-22T020714Z): SquadUI integration docs complete
+McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integration.md. Documentation captures the SquadUI integration work (library-safe CLI, error handling patterns, cross-platform robustness). User directive decision merged: docs as you go during integration. Epic #181 archived.

@@ -389,3 +389,69 @@ The parser (`parseCoordinatorResponse()`) extracts a `RoutingDecision` from the 
 3. **Prompt composition from files:** team.md and routing.md are read at prompt-build time, not baked in. This means the coordinator adapts to team changes without code changes.
 
 **Impact:** Low. Additive module. No changes to existing shell behavior. Future work will wire this into the readline loop and SDK session.
+### 2026-02-21: CRLF normalization — single utility, applied at parser entry points
+**By:** Fenster (Core Dev)
+**Re:** #220, #221 (Epic #181)
+
+**What:**
+- Created `src/utils/normalize-eol.ts` exporting `normalizeEol(content: string): string` — replaces `\r\n` and `\r` with `\n`.
+- Applied as the first line of 8 parser functions across 6 files: markdown-migration.ts (3 parsers), routing.ts, charter-compiler.ts, skill-loader.ts, agent-doc.ts, doc-sync.ts.
+
+**Why:**
+On Windows with `core.autocrlf=true`, file reads return `\r\n` line endings. Every parser that calls `.split('\n')` would leave stray `\r` characters in parsed values — breaking regex matches, table parsing, and string comparisons. Normalizing at the parser entry point is the minimal defensive guard: one line per function, no behavioral change on LF-only systems.
+
+**Pattern:**
+Always normalize at the *entry* of the parsing function, not at the file-read callsite. This ensures parsers are self-contained and safe regardless of how content arrives (file read, API response, test fixture).
+
+**Impact:**
+Low. Additive-only. No test changes needed. Existing tests pass because test strings are already LF-only. The guard is transparent for LF inputs.
+
+### 2026-02-21: CLI entry point split — src/index.ts is a pure barrel
+**By:** Edie (TypeScript Engineer)
+**Re:** #187
+
+**What:**
+- `src/index.ts` is now a pure re-export barrel with ZERO side effects. No `main()`, no `process.exit()`, no argument parsing.
+- `src/cli-entry.ts` contains the full `main()` function and all CLI routing logic.
+- `VERSION` is exported from `index.ts` (public API constant); `cli-entry.ts` imports it.
+- `SquadError` is now explicitly exported from the barrel.
+
+**Why:**
+Anyone importing `@bradygaster/squad` as a library (e.g., SquadUI) was triggering CLI argument parsing and `process.exit()` on import. This poisoned the library entry point. The split makes `dist/index.js` safe for library consumption while `dist/cli-entry.js` remains the CLI binary.
+
+**Impact:**
+Low. Two files changed. Build passes (tsc strict), all 1683 tests pass. No changes to package.json `bin` or `main`.
+
+**Future:**
+When source migrates to `packages/squad-cli/`, the CLI entry point moves with it. The barrel (`packages/squad-sdk/src/index.ts`) stays side-effect-free.
+
+### 2026-02-21: Process.exit() refactor — library-safe CLI functions
+**By:** Kujan (SDK Expert)
+**Re:** #189
+
+**What:**
+- `fatal()` now throws `SquadError` instead of calling `process.exit(1)`.
+- `src/index.ts` is a pure barrel export with zero side effects (no `main()`, no `process.exit()`).
+- `src/cli-entry.ts` is the sole CLI entry point — it catches `SquadError` and calls `process.exit(1)`.
+- `runWatch()` resolves its Promise on SIGINT/SIGTERM instead of `process.exit(0)`.
+- `runShell()` closes readline on SIGINT instead of `process.exit(0)`.
+- `SquadError` class is exported from the public API.
+
+**Why:**
+SquadUI (VS Code extension) imports CLI functions as a library. `process.exit()` kills the entire VS Code extension host. All library-consumable functions must throw errors or return results, never call `process.exit()`. Only the CLI entry point (the thin presentation layer) may call `process.exit()`.
+
+**Pattern established:**
+- Library functions: throw `SquadError` or return result objects
+- CLI entry point: catches errors, formats output, calls `process.exit()`
+- Library consumers: catch `SquadError` for structured error handling
+
+**Impact:**
+Medium. Changes error handling contract for all functions that used `fatal()`. Backwards-compatible for CLI users (same behavior). Library consumers now get catchable errors instead of process termination.
+
+### 2026-02-21: User directive — docs as you go
+**By:** bradygaster (via Copilot)
+**What:** Doc and blog as you go during SquadUI integration work. Doesn't have to be perfect — a proper docs pass comes later — but keep docs updated incrementally.
+**Why:** User request — captured for team memory
+
+
+
