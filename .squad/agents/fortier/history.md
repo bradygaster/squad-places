@@ -54,3 +54,12 @@ runtime/event-bus.ts (colon-notation: session:created, subscribe() API, error is
 
 ### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
 All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.
+
+### Issue #303: REPL Shell Coordinator Wiring
+- **App.tsx** (`src/cli/shell/components/App.tsx`): Replaced placeholder stubs for `direct_agent` and `coordinator` routing paths with real `onDispatch` callback prop. The component is now purely UI — all SDK integration lives in the shell entry point. Graceful degradation: when no dispatch function is available, shows a clear error message instead of silent no-op.
+- **Shell entry point** (`src/cli/shell/index.ts`): Full coordinator wiring — creates `SquadClient`, manages per-agent `SquadSession` instances (lazy creation, reuse on subsequent messages), and a coordinator session for unaddressed messages. Streaming is event-driven: `session.on('message_delta')` feeds accumulated deltas to `shellApi.setStreamingContent()` for live rendering, with cleanup in `finally` blocks.
+- **Coordinator routing**: After coordinator session completes, `parseCoordinatorResponse()` classifies the response (DIRECT/ROUTE/MULTI). ROUTE decisions auto-dispatch to agent sessions. MULTI decisions dispatch in parallel via `Promise.allSettled()`.
+- **Lifecycle initialization**: `ShellLifecycle.initialize()` now runs on shell start to discover agents from `team.md` and populate the `SessionRegistry`, enabling `@Agent` direct addressing.
+- **Cleanup**: On shell exit, all SDK sessions are closed and client disconnected (best-effort, errors swallowed).
+- **TypeScript closure caveat**: TS control flow analysis can't track `coordinatorSession` mutation across async closures. Worked around with explicit `as SquadSession | null` assertion at cleanup point.
+- **PR**: #303
