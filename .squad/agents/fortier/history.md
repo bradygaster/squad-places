@@ -28,3 +28,10 @@
 - **Team manifest parsing**: `parseTeamManifest()` is a local function that extracts agent rows from the `## Members` markdown table. Handles emoji-prefixed status fields (e.g. "✅ Active" → "Active").
 - **State machine**: `initializing` → `ready` (on success) or `error` (on missing `.squad/` or `team.md`). Shutdown transitions back through `initializing` while clearing all state.
 - **PR**: #287
+
+### Coordinator + Ralph Runtime Stubs
+- **Coordinator** (`src/coordinator/index.ts`): Legacy Coordinator class fully implemented — constructor accepts optional `CoordinatorDeps` (client, eventBus, agentManager, hookPipeline, toolRegistry), `initialize()` subscribes to lifecycle events via RuntimeEventBus, `route()` classifies messages by tier (direct/standard/full), `execute()` emits `coordinator:routing` events, `shutdown()` unsubscribes and nulls references.
+- **RalphMonitor** (`src/ralph/index.ts`): Event-driven work monitor — `start()` subscribes to session lifecycle + milestone events, `handleEvent()` maintains per-agent work status map, `healthCheck()` flags stale sessions beyond configurable threshold (default 5min), `stop()` persists state to JSON file if `statePath` configured.
+- **EventBus import alignment**: Both Coordinator and Ralph switched from `client/event-bus.js` (dot-notation types, no error isolation) to `runtime/event-bus.js` (colon-notation types, `executeHandler()` with try/catch). This aligns with SquadCoordinator tests pattern.
+- **CastingRegistry.load()**: Implemented `registry.json` parsing — reads from `castingDir/registry.json`, populates entries map by role.
+- **Key pattern**: All EventBus subscriptions return unsubscribe functions stored in `unsubscribers[]` array. Shutdown iterates and calls them all — no dangling listeners.

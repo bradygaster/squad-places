@@ -113,3 +113,14 @@
 - **CLI function placement clarified:** runInit, runExport, runImport, scrubEmails correctly exported from `@bradygaster/squad-cli` (not SDK), reflecting intentional architecture separation.
 - **Pattern established:** Vitest resolves through compiled `dist/`, so barrel changes require `npm run build` in the package before tests see them.
 - **Decision merged to decisions.md.** Status: Test infrastructure aligned with workspace split, ready for Phase 3 runtime integration.
+
+### 📌 Ink shell wiring (2026-02-22) — Fenster
+- **Replaced readline loop with Ink render** in `packages/squad-cli/src/cli/shell/index.ts`. The `runShell()` function now uses `ink.render()` + `waitUntilExit()` instead of `readline.createInterface`.
+- **Created `App.tsx`** (`packages/squad-cli/src/cli/shell/components/App.tsx`) — main Ink component composing AgentPanel, MessageStream, InputPrompt. Manages messages, agents, streaming state via React hooks.
+- **ShellApi pattern:** App exposes an `onReady` callback prop that delivers a `ShellApi` object (`addMessage`, `setStreamingContent`, `refreshAgents`). This lets the host wire StreamBridge callbacks into React state without coupling the component to the bridge directly.
+- **StreamBridge wiring:** `runShell()` creates a StreamBridge with callbacks that accumulate content deltas in a local `streamBuffers` Map, then push accumulated content into the Ink component via ShellApi. The bridge is ready for coordinator integration — just call `_bridge.handleEvent(event)`.
+- **Router + command handler integration:** App's `handleSubmit` calls `parseInput()` for input classification and `executeCommand()` for slash commands. Direct agent and coordinator messages produce system placeholders until coordinator is wired.
+- **Exit handling:** `/quit`, `/exit` (via executeCommand), bare `exit` (via EXIT_WORDS set), and Ctrl+C (via `useInput` + `useApp().exit()` with `exitOnCtrlC: false`). Farewell message "👋 Squad out." printed after `waitUntilExit()`.
+- **index.ts uses `React.createElement`** instead of JSX to avoid renaming the file to .tsx. All existing exports preserved. New exports: `App`, `ShellApi`, `AppProps`.
+- **No test breakage:** All 60 previously-passing test files still pass (1813 tests). 5 pre-existing failures in agent-session-manager.test.ts are unrelated.
+- **Key file paths:** `components/App.tsx`, `components/index.ts`, `shell/index.ts`.

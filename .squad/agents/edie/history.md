@@ -77,3 +77,12 @@ Edie fixed root tsconfig (base config + project refs), SDK tsconfig (composite +
 - **Test import migration (Decision):** 56 test files successfully migrated from `../src/` to `@bradygaster/squad-sdk` / `@bradygaster/squad-cli` package paths. 26 SDK subpath exports + 16 CLI subpath exports. All 1727 tests passing. Vitest resolves through compiled `dist/`.
 - **Barrel file conventions (Decision):** `src/parsers.ts` and `src/types.ts` created as public API barrels — parsers re-export all functions + types, types exports ONLY types (zero runtime imports). Both follow ESM barrel pattern.
 - **All decisions merged to decisions.md.** Status: Production-ready, awaiting Phase 3 SDK session integration for final runtime wiring.
+
+### CharterCompiler + AgentSessionManager implementation (PRD 4)
+- `CharterCompiler.compile()` reads charter.md from disk, delegates markdown parsing to existing `parseCharterMarkdown()` from `charter-compiler.ts` — no duplicate parsing logic
+- `CharterCompiler.compileAll()` uses `readdir` with `withFileTypes` to enumerate `.squad/agents/*/charter.md`, skips `scribe` and `_alumni/` dirs
+- `AgentSessionManager` accepts optional `EventBus` from `../client/event-bus.js` — emits `session.created` and `session.destroyed` lifecycle events
+- `spawn()` uses `crypto.randomUUID()` for session IDs, `resume()` throws on unknown agent, `destroy()` emits event before removing from map
+- Key file: `packages/squad-sdk/src/agents/index.ts` — barrel re-exports from submodules remain intact, only class stubs replaced
+- EventBus event types: `session.created`, `session.destroyed` (from `SquadEventType` union in `client/event-bus.ts`)
+- All 1727 tests pass, build clean

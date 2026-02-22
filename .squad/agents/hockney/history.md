@@ -94,3 +94,13 @@ Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewri
 - **Test Patterns:** Good structure observed: pure functions (parsers, coordinators), simple classes (SessionRegistry, StreamBridge), callback-based async (shell lifecycle). Windows symlink tests skipped (elevated privileges).
 - **Flaky tests:** One pre-existing flake in export-import CLI tests (timing-sensitive fs operations on first run, passes on retry). Not blocking merges.
 - **Known Issues:** None blocking. Pre-existing TS error in cli-entry.ts VERSION export (mentioned in history). Test import migration deferred until root `src/` deletion.
+
+### Proactive runtime module tests (2026-02-22)
+- Created 4 new test files (105 tests) for runtime modules being built in parallel by Fenster, Edie, and Fortier.
+- **charter-compiler.test.ts** (34 tests): `parseCharterMarkdown` identity/section/edge cases, `compileCharterFull` metadata/overrides, `CharterCompiler` class compile/compileAll with real test-fixtures charters. Discovered CharterCompiler and AgentSessionManager are now fully implemented (not stubs).
+- **agent-session-manager.test.ts** (25 tests): spawn (state, sessionId, timestamps, modes, EventBus events), resume (reactivation, timestamp update, error cases), destroy (map removal, event emission, non-existent agent safety), getAgent/getAllAgents state management.
+- **coordinator-routing.test.ts** (27 tests): Coordinator.route() covering direct responses (status/help/show/list/who/what/how), @mention routing (fenster/verbal/hockney), "team" keyword fan-out, default-to-lead, priority ordering (@mention > team, direct > @mention), initialize/execute/shutdown lifecycle.
+- **ralph-monitor.test.ts** (19 tests): RalphMonitor start/stop lifecycle, healthCheck, getStatus, config options, edge cases (healthCheck after stop, multiple start/stop calls).
+- Test count grew from 1727 to 1832 across 61 files — all passing.
+- Key edge cases found: (1) @mention priority beats "team" keyword, (2) direct patterns beat @mentions, (3) AgentSessionManager.destroy() is safe on non-existent agents, (4) CharterCompiler.compileAll() silently skips invalid charters.
+- Pattern: EventBus mock for AgentSessionManager uses `on()` method (client EventBus pattern), not `subscribe()` (runtime EventBus pattern) — the two bus implementations have different APIs.
