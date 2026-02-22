@@ -212,3 +212,65 @@ function parseTeamManifest(content: string): DiscoveredAgent[] {
 
   return agents;
 }
+
+/** Role → emoji mapping for rich terminal display. */
+export function getRoleEmoji(role: string): string {
+  const normalized = role.toLowerCase();
+  const map: Record<string, string> = {
+    'lead': '🏗️',
+    'prompt engineer': '💬',
+    'core dev': '🔧',
+    'tester': '🧪',
+    'devrel': '📢',
+    'sdk expert': '📦',
+    'typescript engineer': '⌨️',
+    'git & release': '🏷️',
+    'node.js runtime': '⚡',
+    'distribution': '📤',
+    'security': '🔒',
+    'graphic designer': '🎨',
+    'vs code extension': '🧩',
+    'session logger': '📋',
+    'work monitor': '🔄',
+    'coordinator': '🎯',
+    'coding agent': '🤖',
+  };
+  return map[normalized] ?? '🔹';
+}
+
+export interface WelcomeData {
+  projectName: string;
+  description: string;
+  agents: Array<{ name: string; role: string; emoji: string }>;
+  focus: string | null;
+}
+
+/** Load welcome screen data from .squad/ directory. */
+export function loadWelcomeData(teamRoot: string): WelcomeData | null {
+  try {
+    const teamPath = path.join(teamRoot, '.squad', 'team.md');
+    if (!fs.existsSync(teamPath)) return null;
+    const content = fs.readFileSync(teamPath, 'utf-8');
+
+    const titleMatch = content.match(/^#\s+Squad Team\s+—\s+(.+)$/m);
+    const projectName = titleMatch?.[1] ?? 'Squad';
+    const descMatch = content.match(/^>\s+(.+)$/m);
+    const description = descMatch?.[1] ?? '';
+
+    const agents = parseTeamManifest(content)
+      .filter(a => a.status === 'Active')
+      .map(a => ({ name: a.name, role: a.role, emoji: getRoleEmoji(a.role) }));
+
+    let focus: string | null = null;
+    const nowPath = path.join(teamRoot, '.squad', 'identity', 'now.md');
+    if (fs.existsSync(nowPath)) {
+      const nowContent = fs.readFileSync(nowPath, 'utf-8');
+      const focusMatch = nowContent.match(/focus_area:\s*(.+)/);
+      focus = focusMatch?.[1]?.trim() ?? null;
+    }
+
+    return { projectName, description, agents, focus };
+  } catch {
+    return null;
+  }
+}

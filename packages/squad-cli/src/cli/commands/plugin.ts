@@ -8,7 +8,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { success, error, warn, info, dim, bold, DIM, BOLD, RESET } from '../core/output.js';
+import { TIMEOUTS } from '@bradygaster/squad-sdk';
+import { success, warn, info, dim, bold, DIM, BOLD, RESET } from '../core/output.js';
 import { fatal } from '../core/errors.js';
 import { detectSquadDir } from '../core/detect-squad-dir.js';
 import { ghAvailable, ghAuthenticated } from '../core/gh-cli.js';
@@ -152,7 +153,7 @@ export async function runPlugin(dest: string, args: string[]): Promise<void> {
       const { stdout } = await execFileAsync(
         'gh',
         ['api', `repos/${marketplace.source}/contents`, '--jq', '[.[] | select(.type == "dir") | .name]'],
-        { timeout: 15000 }
+        { timeout: TIMEOUTS.PLUGIN_FETCH_MS }
       );
       entries = JSON.parse(stdout.trim());
     } catch (err: any) {

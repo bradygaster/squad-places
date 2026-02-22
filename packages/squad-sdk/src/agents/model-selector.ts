@@ -2,6 +2,7 @@
  * Per-Agent Model Selection (M1-9) + Model Fallback (M3-5, Issue #145)
  */
 
+import { MODELS } from '../runtime/constants.js';
 import type { EventBus } from '../runtime/event-bus.js';
 
 /**
@@ -48,36 +49,6 @@ export interface ResolvedModel {
 }
 
 /**
- * Fallback chains by tier.
- */
-const FALLBACK_CHAINS: Record<ModelTier, string[]> = {
-  premium: [
-    'claude-opus-4.6',
-    'claude-opus-4.6-fast',
-    'claude-opus-4.5',
-    'claude-sonnet-4.5',
-  ],
-  standard: [
-    'claude-sonnet-4.5',
-    'gpt-5.2-codex',
-    'claude-sonnet-4',
-    'gpt-5.2',
-  ],
-  fast: [
-    'claude-haiku-4.5',
-    'gpt-5.1-codex-mini',
-    'gpt-4.1',
-    'gpt-5-mini',
-  ],
-};
-
-/**
- * Default model (cost-first).
- */
-const DEFAULT_MODEL = 'claude-haiku-4.5';
-const DEFAULT_TIER: ModelTier = 'fast';
-
-/**
  * Resolve the appropriate model using the 4-layer priority system.
  * 
  * @param options - Model resolution options
@@ -93,7 +64,7 @@ export function resolveModel(options: ModelResolutionOptions): ResolvedModel {
       model: userOverride,
       tier,
       source: 'user-override',
-      fallbackChain: FALLBACK_CHAINS[tier],
+      fallbackChain: [...MODELS.FALLBACK_CHAINS[tier]],
     };
   }
 
@@ -104,7 +75,7 @@ export function resolveModel(options: ModelResolutionOptions): ResolvedModel {
       model: charterPreference,
       tier,
       source: 'charter',
-      fallbackChain: FALLBACK_CHAINS[tier],
+      fallbackChain: [...MODELS.FALLBACK_CHAINS[tier]],
     };
   }
 
@@ -116,10 +87,10 @@ export function resolveModel(options: ModelResolutionOptions): ResolvedModel {
 
   // Layer 4: Default
   return {
-    model: DEFAULT_MODEL,
-    tier: DEFAULT_TIER,
+    model: MODELS.SELECTOR_DEFAULT,
+    tier: MODELS.SELECTOR_DEFAULT_TIER,
     source: 'default',
-    fallbackChain: FALLBACK_CHAINS[DEFAULT_TIER],
+    fallbackChain: [...MODELS.FALLBACK_CHAINS[MODELS.SELECTOR_DEFAULT_TIER]],
   };
 }
 
@@ -136,7 +107,7 @@ function selectModelForTask(taskType: TaskType): ResolvedModel | undefined {
         model: 'claude-sonnet-4.5',
         tier: 'standard',
         source: 'task-auto',
-        fallbackChain: FALLBACK_CHAINS.standard,
+        fallbackChain: [...MODELS.FALLBACK_CHAINS.standard],
       };
     
     case 'prompt':
@@ -144,7 +115,7 @@ function selectModelForTask(taskType: TaskType): ResolvedModel | undefined {
         model: 'claude-sonnet-4.5',
         tier: 'standard',
         source: 'task-auto',
-        fallbackChain: FALLBACK_CHAINS.standard,
+        fallbackChain: [...MODELS.FALLBACK_CHAINS.standard],
       };
     
     case 'visual':
@@ -152,7 +123,7 @@ function selectModelForTask(taskType: TaskType): ResolvedModel | undefined {
         model: 'claude-opus-4.5',
         tier: 'premium',
         source: 'task-auto',
-        fallbackChain: FALLBACK_CHAINS.premium,
+        fallbackChain: [...MODELS.FALLBACK_CHAINS.premium],
       };
     
     case 'docs':
@@ -162,7 +133,7 @@ function selectModelForTask(taskType: TaskType): ResolvedModel | undefined {
         model: 'claude-haiku-4.5',
         tier: 'fast',
         source: 'task-auto',
-        fallbackChain: FALLBACK_CHAINS.fast,
+        fallbackChain: [...MODELS.FALLBACK_CHAINS.fast],
       };
     
     default:

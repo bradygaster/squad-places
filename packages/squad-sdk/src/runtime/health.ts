@@ -6,6 +6,7 @@
  */
 
 import type { SquadClient } from '../adapter/client.js';
+import { TIMEOUTS } from './constants.js';
 
 export interface HealthCheckResult {
   /** Overall health status */
@@ -54,7 +55,7 @@ export class HealthMonitor {
   
   constructor(config: HealthMonitorConfig) {
     this.client = config.client;
-    this.timeout = config.timeout ?? 5000;
+    this.timeout = config.timeout ?? TIMEOUTS.HEALTH_CHECK_MS;
     this.logDiagnostics = config.logDiagnostics ?? true;
   }
   

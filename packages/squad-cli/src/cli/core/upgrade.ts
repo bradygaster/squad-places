@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { success, warn, info, dim, bold, error as errorMsg } from './output.js';
+import { success, warn, info, dim, bold } from './output.js';
 import { fatal } from './errors.js';
 import { detectSquadDir } from './detect-squad-dir.js';
 import { TEMPLATE_MANIFEST, getTemplatesDir } from './templates.js';

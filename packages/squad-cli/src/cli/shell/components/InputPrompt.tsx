@@ -61,8 +61,8 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   });
 
   return (
-    <Box>
-      <Text color="cyan">{prompt}</Text>
+    <Box marginTop={1}>
+      <Text color={disabled ? 'yellow' : 'cyan'} bold>{prompt}</Text>
       <Text>{value}</Text>
       {!disabled && <Text color="gray">▌</Text>}
     </Box>

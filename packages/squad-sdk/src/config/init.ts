@@ -10,6 +10,7 @@
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { MODELS } from '../runtime/constants.js';
 import type { SquadConfig, ModelSelectionConfig, RoutingConfig } from '../runtime/config.js';
 
 // ============================================================================
@@ -93,6 +94,13 @@ const AGENT_TEMPLATES: Record<string, { displayName: string; description: string
 // ============================================================================
 
 /**
+ * Format a readonly string array as a single-quoted TypeScript array literal.
+ */
+function formatModelArray(chain: readonly string[]): string {
+  return `[${chain.map(m => `'${m}'`).join(', ')}]`;
+}
+
+/**
  * Generate TypeScript config file content.
  */
 function generateTypeScriptConfig(options: InitOptions): string {
@@ -108,19 +116,19 @@ const config: SquadConfig = {
   version: '1.0.0',
   
   models: {
-    defaultModel: 'claude-sonnet-4.5',
+    defaultModel: '${MODELS.DEFAULT}',
     defaultTier: 'standard',
     fallbackChains: {
-      premium: ['claude-opus-4.6', 'claude-opus-4.5', 'gpt-5.2'],
-      standard: ['claude-sonnet-4.5', 'gpt-5.1-codex', 'claude-sonnet-4'],
-      fast: ['claude-haiku-4.5', 'gpt-5-mini', 'gpt-4.1']
+      premium: ${formatModelArray(MODELS.FALLBACK_CHAINS.premium)},
+      standard: ${formatModelArray(MODELS.FALLBACK_CHAINS.standard)},
+      fast: ${formatModelArray(MODELS.FALLBACK_CHAINS.fast)}
     },
     preferSameProvider: true,
     respectTierCeiling: true,
     nuclearFallback: {
       enabled: false,
-      model: 'claude-haiku-4.5',
-      maxRetriesBeforeNuclear: 3
+      model: '${MODELS.NUCLEAR_FALLBACK}',
+      maxRetriesBeforeNuclear: ${MODELS.NUCLEAR_MAX_RETRIES}
     }
   },
   
@@ -186,19 +194,19 @@ function generateJsonConfig(options: InitOptions): string {
   const config: SquadConfig = {
     version: '1.0.0',
     models: {
-      defaultModel: 'claude-sonnet-4.5',
+      defaultModel: MODELS.DEFAULT,
       defaultTier: 'standard',
       fallbackChains: {
-        premium: ['claude-opus-4.6', 'claude-opus-4.5', 'gpt-5.2'],
-        standard: ['claude-sonnet-4.5', 'gpt-5.1-codex', 'claude-sonnet-4'],
-        fast: ['claude-haiku-4.5', 'gpt-5-mini', 'gpt-4.1']
+        premium: [...MODELS.FALLBACK_CHAINS.premium],
+        standard: [...MODELS.FALLBACK_CHAINS.standard],
+        fast: [...MODELS.FALLBACK_CHAINS.fast]
       },
       preferSameProvider: true,
       respectTierCeiling: true,
       nuclearFallback: {
         enabled: false,
-        model: 'claude-haiku-4.5',
-        maxRetriesBeforeNuclear: 3
+        model: MODELS.NUCLEAR_FALLBACK,
+        maxRetriesBeforeNuclear: MODELS.NUCLEAR_MAX_RETRIES
       }
     },
     routing: {

@@ -12,9 +12,20 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
-import { success, warn, info, error as fatal } from '../core/output.js';
+import { execFileSync } from 'node:child_process';
+import { success, warn, info } from '../core/output.js';
+import { fatal } from '../core/errors.js';
 import { detectSquadDir } from '../core/detect-squad-dir.js';
+
+/** Validate a git ref (branch/tag) — reject shell metacharacters. */
+function isValidGitRef(ref: string): boolean {
+  return /^[a-zA-Z0-9._\-/]+$/.test(ref);
+}
+
+/** Validate an upstream name — alphanumeric, hyphens, underscores, dots. */
+function isValidUpstreamName(name: string): boolean {
+  return /^[a-zA-Z0-9._-]+$/.test(name);
+}
 import type { UpstreamConfig, UpstreamSource } from '@bradygaster/squad-sdk';
 
 function readUpstreams(upstreamFile: string): UpstreamConfig {
@@ -86,6 +97,9 @@ export async function upstreamCommand(args: string[]): Promise<void> {
     const type = detectSourceType(source);
     const nameIdx = args.indexOf('--name');
     const name = (nameIdx !== -1 && args[nameIdx + 1]) ? args[nameIdx + 1] : deriveName(source, type);
+    if (!isValidUpstreamName(name)) {
+      fatal(`Invalid upstream name "${name}". Use only alphanumeric characters, hyphens, underscores, and dots.`);
+    }
 
     const data = readUpstreams(upstreamFile);
     if (data.upstreams.some(u => u.name === name)) {
@@ -102,7 +116,11 @@ export async function upstreamCommand(args: string[]): Promise<void> {
     };
     if (type === 'git') {
       const refIdx = args.indexOf('--ref');
-      entry.ref = (refIdx !== -1 && args[refIdx + 1]) ? args[refIdx + 1] : 'main';
+      const ref = (refIdx !== -1 && args[refIdx + 1]) ? args[refIdx + 1] : 'main';
+      if (!isValidGitRef(ref)) {
+        fatal(`Invalid git ref "${ref}". Use only alphanumeric characters, hyphens, underscores, dots, and slashes.`);
+      }
+      entry.ref = ref;
     }
 
     data.upstreams.push(entry);
@@ -117,7 +135,7 @@ export async function upstreamCommand(args: string[]): Promise<void> {
 
       try {
         const ref = entry.ref || 'main';
-        execSync(`git clone --depth 1 --branch ${ref} --single-branch "${source}" "${cloneDir}"`, { stdio: 'pipe', timeout: 60000 });
+        execFileSync('git', ['clone', '--depth', '1', '--branch', ref, '--single-branch', source, cloneDir], { stdio: 'pipe', timeout: 60000 });
         entry.last_synced = new Date().toISOString();
         writeUpstreams(upstreamFile, data);
         success(`Cloned upstream repo to .squad/_upstream_repos/${name}`);
@@ -207,11 +225,11 @@ export async function upstreamCommand(args: string[]): Promise<void> {
 
         try {
           if (fs.existsSync(path.join(cloneDir, '.git'))) {
-            execSync(`git -C "${cloneDir}" pull --ff-only`, { stdio: 'pipe', timeout: 60000 });
+            execFileSync('git', ['-C', cloneDir, 'pull', '--ff-only'], { stdio: 'pipe', timeout: 60000 });
           } else {
             if (fs.existsSync(cloneDir)) fs.rmSync(cloneDir, { recursive: true, force: true });
             const ref = upstream.ref || 'main';
-            execSync(`git clone --depth 1 --branch ${ref} --single-branch "${upstream.source}" "${cloneDir}"`, { stdio: 'pipe', timeout: 60000 });
+            execFileSync('git', ['clone', '--depth', '1', '--branch', ref, '--single-branch', upstream.source, cloneDir], { stdio: 'pipe', timeout: 60000 });
           }
           upstream.last_synced = new Date().toISOString();
           synced++;

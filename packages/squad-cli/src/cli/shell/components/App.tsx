@@ -12,6 +12,8 @@ import { MessageStream } from './MessageStream.js';
 import { InputPrompt } from './InputPrompt.js';
 import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
+import { loadWelcomeData } from '../lifecycle.js';
+import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';
 import type { ShellMessage, AgentSession } from '../types.js';
@@ -40,10 +42,17 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
   const [streamingContent, setStreamingContent] = useState<{ agentName: string; content: string } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const messagesRef = useRef<ShellMessage[]>([]);
 
   // Keep ref in sync so command handlers see latest history
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Load welcome data from .squad/ directory on mount
+  useEffect(() => {
+    const data = loadWelcomeData(teamRoot);
+    if (data) setWelcome(data);
+  }, [teamRoot]);
 
   // Expose API for external callers (StreamBridge, coordinator)
   useEffect(() => {
@@ -118,16 +127,33 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     setAgents([...registry.getAll()]);
   }, [registry, renderer, teamRoot, exit, onDispatch]);
 
+  const rosterText = welcome?.agents
+    .map((a, i) => `${a.emoji} ${a.name}${i < (welcome?.agents.length ?? 0) - 1 ? ' · ' : ''}`)
+    .join('') ?? '';
+
   return (
     <Box flexDirection="column">
-      <Box borderStyle="single" borderColor="cyan" paddingX={1}>
-        <Text bold color="cyan">Squad v{version}</Text>
-        <Text dimColor>  Type /help for commands</Text>
+      <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
+        <Box gap={1}>
+          <Text bold color="cyan">◆ SQUAD</Text>
+          <Text dimColor>v{version}</Text>
+          {welcome?.description ? (
+            <>
+              <Text dimColor>—</Text>
+              <Text dimColor>{welcome.description}</Text>
+            </>
+          ) : null}
+        </Box>
+        <Text>{' '}</Text>
+        {rosterText ? <Text wrap="wrap">{rosterText}</Text> : null}
+        <Text>{' '}</Text>
+        {welcome?.focus ? <Text dimColor>📍 {welcome.focus}</Text> : null}
+        <Text dimColor>💡 @Agent to direct · /help for commands · exit to quit</Text>
       </Box>
 
-      <AgentPanel agents={agents} />
-      <MessageStream messages={messages} streamingContent={streamingContent} />
-      <InputPrompt onSubmit={handleSubmit} disabled={processing} prompt="squad> " />
+      <AgentPanel agents={agents} streamingContent={streamingContent} />
+      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} />
+      <InputPrompt onSubmit={handleSubmit} disabled={processing} prompt={processing ? 'squad (streaming)> ' : 'squad> '} />
     </Box>
   );
 };

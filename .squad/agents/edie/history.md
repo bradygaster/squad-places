@@ -105,3 +105,12 @@ CharterCompiler.compile() delegates to existing parseCharterMarkdown() rather th
 
 ### 📌 Team update (2026-02-22T093300Z): OTel Phase 2 complete — session traces, latency metrics, tool enhancements, agent metrics, token usage wiring, metrics tests — decided by Fortier, Fenster, Edie, Hockney
 All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/throughput metrics. Fenster established tool trace patterns and agent metric wiring conventions. Edie wired token usage and session pool metrics. Hockney created spy-meter test pattern (39 new tests). Total: 1940 tests passing, metrics ready for production telemetry.
+
+### Constants extraction — single source of truth for models, timeouts, roles
+- Created `packages/squad-sdk/src/runtime/constants.ts` with `MODELS`, `TIMEOUTS`, `AGENT_ROLES` (all `as const`)
+- Updated 6 consumer files: `model-selector.ts`, `config.ts`, `health.ts`, `init.ts`, `plugin.ts`, `index.ts`
+- Discovered drift: config.ts had 3-entry fallback chains vs model-selector's 4-entry chains. Consolidated to the complete 4-entry chains from model-selector (the runtime source of truth)
+- Used named exports `{ MODELS, TIMEOUTS, AGENT_ROLES }` in barrel to avoid `AgentRole` name collision with casting module's separate `AgentRole` type
+- Spread `[...MODELS.FALLBACK_CHAINS.tier]` pattern converts `readonly` tuples to mutable `string[]` for interface compat — avoids changing public interfaces
+- Environment variable overrides (`SQUAD_DEFAULT_MODEL`, `SQUAD_HEALTH_CHECK_MS`, `SQUAD_GIT_CLONE_MS`, `SQUAD_PLUGIN_FETCH_MS`) enable runtime config without code changes
+- Build clean, 2138 tests pass (3 failures pre-existing Docker/Aspire infra)

@@ -90,6 +90,13 @@
       "universe": "The Usual Suspects",
       "legacy_named": false,
       "status": "active"
+    },
+    "saul": {
+      "created_at": "2026-02-22T11:08:00Z",
+      "persistent_name": "Saul",
+      "universe": "The Usual Suspects",
+      "legacy_named": false,
+      "status": "active"
     }
   }
 }

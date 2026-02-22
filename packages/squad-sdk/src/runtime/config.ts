@@ -10,6 +10,8 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { pathToFileURL } from 'url';
+import { MODELS } from './constants.js';
+import type { AgentRole } from './constants.js';
 
 // ============================================================================
 // Configuration Types (from spike #72)
@@ -41,9 +43,9 @@ export type WorkType =
   | string; // Allow custom work types
 
 /**
- * Agent role for model selection.
+ * Agent role for model selection (re-exported from constants).
  */
-export type AgentRole = 'lead' | 'developer' | 'tester' | 'designer' | 'scribe' | 'coordinator';
+export type { AgentRole } from './constants.js';
 
 /**
  * Task output type for model selection.
@@ -316,19 +318,19 @@ export interface SquadConfig {
 export const DEFAULT_CONFIG: SquadConfig = {
   version: '1.0.0',
   models: {
-    defaultModel: 'claude-sonnet-4.5',
+    defaultModel: MODELS.DEFAULT,
     defaultTier: 'standard',
     fallbackChains: {
-      premium: ['claude-opus-4.6', 'claude-opus-4.5', 'gpt-5.2'],
-      standard: ['claude-sonnet-4.5', 'gpt-5.1-codex', 'claude-sonnet-4'],
-      fast: ['claude-haiku-4.5', 'gpt-5-mini', 'gpt-4.1']
+      premium: [...MODELS.FALLBACK_CHAINS.premium],
+      standard: [...MODELS.FALLBACK_CHAINS.standard],
+      fast: [...MODELS.FALLBACK_CHAINS.fast]
     },
     preferSameProvider: true,
     respectTierCeiling: true,
     nuclearFallback: {
       enabled: false,
-      model: 'claude-haiku-4.5',
-      maxRetriesBeforeNuclear: 3
+      model: MODELS.NUCLEAR_FALLBACK,
+      maxRetriesBeforeNuclear: MODELS.NUCLEAR_MAX_RETRIES
     }
   },
   routing: {

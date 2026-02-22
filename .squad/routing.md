@@ -16,6 +16,7 @@
 | Git & releases | Kobayashi 🚢 | Semantic versioning, GitHub Releases, CI/CD, branch protection |
 | Security & PII | Baer 🔒 | Hook design (file-write guards, PII filters), security review, compliance |
 | Visual identity | Redfoot 🎨 | Logo, icons, brand assets, design system |
+| Aspire & observability | Saul 🔭 | Aspire dashboard, OTLP integration, Playwright E2E, Docker telemetry |
 | VS Code integration | Strausz 🔌 | VS Code Extension API, runSubagent compatibility, editor integration |
 
 ## Module Ownership

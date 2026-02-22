@@ -204,3 +204,11 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 - **Tests:** 16 new tests (14 observer: classifyFile categories, start/stop, OTel spans, EventBus events, idempotency; 2 aspire: module exports). All 2024 tests passing.
 - **Pattern:** `classifyFile()` normalizes Windows backslashes before classification — cross-platform safe.
 - **Pattern:** Observer uses `fs.watch` with `{ recursive: true }` — works on Windows/macOS, may need inotify tuning on Linux.
+
+### 📌 Spawn wiring + error handling cleanup (2026-02-22) — Fenster
+- **spawn.ts wired to SquadClient:** `spawnAgent()` now accepts `client: SquadClient` via `SpawnOptions`. When provided, creates a real SDK session with the agent's charter as system prompt, sends the task, streams `message_delta` events, accumulates the response, closes the session, and returns the result in `SpawnResult`. Without a client, returns a backward-compatible stub.
+- **Pattern mirrors shell/index.ts `dispatchToAgent()`** but is self-contained — no dependency on Ink components, ShellApi, or StreamBridge. Can be used outside the shell (e.g., from coordinator, CLI commands, or programmatic API).
+- **Error handling audit:** Removed unused `error` import from `plugin.ts` (already correctly uses `fatal()` from `errors.ts`). Removed unused `error as errorMsg` import from `upgrade.ts` (same — already uses `fatal()`). `upstream.ts` has the `error as fatal` bug but is owned by Baer.
+- **TODO removed:** "Wire to CopilotClient session API" in spawn.ts — resolved by this change.
+- **TODO deferred:** "Parent span context propagation" in `tools/index.ts` — requires agent.work span lifecycle to be complete first. Left in place.
+- **Build:** tsc clean (0 errors). **Tests:** 47 shell tests passing.
