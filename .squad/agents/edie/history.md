@@ -51,3 +51,13 @@ Edie's refactor split src/index.ts into pure barrel (zero side effects) and src/
 - All dist artifacts confirmed after build: `.js` + `.d.ts` for each subpath
 - Build clean, 1719/1719 tests pass
 - Branch `squad/181-squadui-p2`, closes #227
+
+### Build system migration (monorepo tsconfig + package.json)
+- Converted root `tsconfig.json` to base config with `"files": []` and project references to both workspace packages
+- SDK `tsconfig.json`: extends root, `composite: true`, `declarationMap: true`, `include: ["src/**/*.ts"]` — no JSX
+- CLI `tsconfig.json`: extends root, `composite: true`, `jsx: "react-jsx"`, `jsxImportSource: "react"`, includes `*.tsx`, project reference to SDK
+- SDK `package.json`: 18 subpath exports (Keaton's plan), `@github/copilot-sdk` as dependency, `@types/node` + `typescript` as devDeps
+- CLI `package.json`: `bin.squad` → `./dist/cli-entry.js`, added `ink`, `react` deps, `@types/react`, `esbuild`, `ink-testing-library` devDeps, `templates/` in files array
+- Root `package.json`: stripped to workspace orchestrator — `private: true`, no `main`/`types`/`bin`, no runtime deps, only `typescript` + `vitest` in devDeps, build script delegates to `--workspaces`
+- `composite: true` required in both packages for TypeScript project references to work — without it, `tsc --build` cannot resolve cross-package references
+- Build clean: both `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` compile with zero errors

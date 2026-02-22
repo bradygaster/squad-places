@@ -60,3 +60,16 @@ Hockney added 13 CRLF-specific test cases covering Windows line ending handling.
 - **Side-effect-free import** (1 test): importing index.ts doesn't mutate process.argv or trigger CLI behavior — test completing without hanging proves clean separation
 - Dynamic `await import()` used throughout to keep tests independent and avoid module caching issues
 - All 6 tests pass on first run; validates the barrel file split (index.ts / parsers.ts / types.ts) works correctly for consumers
+
+### Post-restructure verification (2026-02-22)
+- **Build:** `npm run build` compiles both `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` cleanly via workspace scripts. Exit code 0.
+- **Tests:** All 1719 tests pass across 56 test files. `npm run build && npm test` exits clean.
+- **vitest.config.ts:** Works as-is — no path aliases needed while root `src/` still exists.
+- **Import state:** All 56 test files still import from root `../src/` (the old monolith barrel). Only `consumer-imports.test.ts` had 3 workspace package references but dynamically imports from `../src/index.js`.
+- **Import migration deferred:** Cannot blindly rewrite `../src/X.js` → `@bradygaster/squad-sdk/X` because:
+  1. Tests import deep internal modules (e.g., `../src/config/agent-doc.js`, `../src/casting/casting-engine.js`) that aren't exposed via the SDK package's `exports` map — only 18 subpath exports exist.
+  2. CLI test files import from `../src/cli/...` which lives in `@bradygaster/squad-cli`, but that package has no subpath exports at all.
+  3. Root `src/index.ts` (v0.7.0) still re-exports CLI functions (`runInit`, `runExport`, etc.) which SDK package (v0.8.0) correctly does not export — the `consumer-imports.test.ts` tests CLI exports that don't exist in the SDK barrel.
+  4. Migrating requires either expanding the `exports` maps in both packages or adding vitest `resolve.alias` config. Both are non-trivial.
+- **Recommendation:** Migration should happen as a dedicated task when root `src/` is actually removed. Attempting it now risks breaking 1719 passing tests for no immediate benefit.
+- **Flaky test observed:** One run showed 1 failure / 1718 pass in CLI export-import tests (timing-sensitive fs operations). Not reproducible on immediate re-run — pre-existing flake.
