@@ -4,7 +4,7 @@
  * CLI entry point lives in src/cli-entry.ts.
  */
 
-export const VERSION = '0.6.2';
+export const VERSION = '0.7.0';
 
 // Export public API
 export { resolveSquad, resolveGlobalSquadPath, ensureSquadPath } from './resolution.js';

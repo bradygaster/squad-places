@@ -72,3 +72,31 @@
 
 ### 📌 Team update (2026-02-22T020714Z): SquadUI integration docs complete
 McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integration.md. Documentation captures the SquadUI integration work (library-safe CLI, error handling patterns, cross-platform robustness). User directive decision merged: docs as you go during integration. Epic #181 archived.
+
+### 2026-02-22: Issue #231 — SquadUI v2 type mapping corrections
+**Status:** Complete.
+**Changes made:**
+1. **docs/squadui-type-corrections.md** — Created comprehensive type alignment document for SquadUI team:
+   - 4 type mapping errors clearly documented with before/after comparisons
+   - Error 1: `SkillDefinition` — proposal wrong on `description` (should be `content`), `requiredTools` (should be `agentRoles`), missing `id`, `domain`
+   - Error 2: `ParsedCharter` — proposal assumes flat object, actual is nested `identity: { name?, role?, expertise?, style? }`, no `voice` (use `collaboration`), no `owns` (use `ownership`)
+   - Error 3: `RoutingConfig` — missing `issueRouting`, `governance`, `copilotEvaluation`; `RoutingRule` uses `workType` not `pattern`
+   - Error 4: `parseDecisionsMarkdown()` returns `{ decisions, warnings }` not `ParsedDecision[]` directly
+   - 2 architectural clarifications: two routing parsers (parseRoutingRulesMarkdown vs parseRoutingMarkdown) and orchestration log parsing is out of scope
+   - Correct type shapes with exact interfaces from source
+   - Migration path table for each error
+2. **Commit on branch `squad/181-squadui-p2`** with closes #231 reference
+**Tone applied:** 
+- No hype — factual, error-driven ("Here's what's wrong and why")
+- Action-oriented table mapping proposal assumptions to correct reality
+- Citations to exact source files (line numbers not included per "tone ceiling" — readers can verify easily)
+- Closing with "Questions? Contact the SDK team" rather than "let us know" (professional, boundaried)
+**Process:** 
+- Read all type definitions from source (skills/skill-loader.ts, agents/charter-compiler.ts, runtime/config.ts, config/markdown-migration.ts, config/routing.ts)
+- Verified return types by examining function signatures and actual code
+- Cross-referenced parser locations to clarify "two routing parsers" architectural issue
+- No speculative content — every statement grounded in actual type inspection
+**Notes:**
+- Document serves as a blocker for SquadUI adapter development (prevents costly refactors)
+- Type corrections enable them to build adapters on correct assumptions from day one
+- Orchestration log parsing note prevents scope creep (that's SquadUI's responsibility)

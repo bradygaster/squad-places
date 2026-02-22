@@ -51,3 +51,12 @@
 
 ### 📌 Team update (2026-02-22T020714Z): CRLF test suite added
 Hockney added 13 CRLF-specific test cases covering Windows line ending handling. All passing. Validates that parsers are robust to CRLF input. Issue #228 closed. 1683 tests passing. Complements Fenster's normalize-eol.ts utility.
+
+### Issue #230: Consumer-perspective import tests (2026-02-22)
+- Created test/consumer-imports.test.ts with 6 tests validating package exports from a consumer's perspective
+- **Main barrel** (3 tests): key parser functions (parseTeamMarkdown, parseDecisionsMarkdown, parseRoutingMarkdown), CLI functions (runInit, runExport, runImport, scrubEmails), VERSION export as string
+- **Parsers barrel** (1 test): parseTeamMarkdown and parseCharterMarkdown importable from src/parsers.js
+- **Types barrel** (1 test): Object.keys(types).length === 0 confirms pure type re-exports produce no runtime values
+- **Side-effect-free import** (1 test): importing index.ts doesn't mutate process.argv or trigger CLI behavior — test completing without hanging proves clean separation
+- Dynamic `await import()` used throughout to keep tests independent and avoid module caching issues
+- All 6 tests pass on first run; validates the barrel file split (index.ts / parsers.ts / types.ts) works correctly for consumers
