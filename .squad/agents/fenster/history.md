@@ -114,3 +114,12 @@ App component accepts `onReady` prop that fires on mount, delivering ShellApi ob
 - **index.ts uses `React.createElement`** instead of JSX to avoid renaming the file to .tsx. All existing exports preserved. New exports: `App`, `ShellApi`, `AppProps`.
 - **No test breakage:** All 60 previously-passing test files still pass (1813 tests). 5 pre-existing failures in agent-session-manager.test.ts are unrelated.
 - **Key file paths:** `components/App.tsx`, `components/index.ts`, `shell/index.ts`.
+
+### 📌 OpenTelemetry tracing instrumentation (2026-02-22) — Fenster (Issues #257, #258)
+- **Added `@opentelemetry/api`** as a dependency in `packages/squad-sdk`. Imported `trace` and `SpanStatusCode` only — no SDK packages.
+- **Instrumented 4 files:** `agents/index.ts` (AgentSessionManager: spawn/resume/destroy), `agents/lifecycle.ts` (AgentLifecycleManager: spawnAgent/destroyAgent), `coordinator/index.ts` (Coordinator: initialize/route/execute/shutdown), `coordinator/coordinator.ts` (SquadCoordinator: handleMessage).
+- **Span naming convention:** `squad.{module}.{method}` — e.g. `squad.agent.spawn`, `squad.coordinator.route`.
+- **Error pattern:** catch block sets `SpanStatusCode.ERROR` + `recordException()`, then re-throws. `span.end()` always in `finally`.
+- **No-op by default:** Without a registered TracerProvider, all spans are no-ops. Zero overhead unless OTel is configured.
+- **Build:** 0 errors in instrumented files (2 pre-existing errors in Fortier's `otel.ts` — unrelated SDK type mismatch).
+- **Tests:** All 1828 passing tests unaffected. 23 pre-existing failures in `otel-provider.test.ts` are Fortier's parallel work.

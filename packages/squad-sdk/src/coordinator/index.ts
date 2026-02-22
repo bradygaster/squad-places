@@ -48,6 +48,9 @@ import type { EventBus } from '../runtime/event-bus.js';
 import type { AgentSessionManager, AgentCharter } from '../agents/index.js';
 import type { HookPipeline } from '../hooks/index.js';
 import type { ToolRegistry } from '../tools/index.js';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('squad-sdk');
 
 // --- Routing Types ---
 
@@ -106,92 +109,136 @@ export class Coordinator {
 
   /** Initialize the coordinator: wire up event subscriptions and mark ready */
   async initialize(): Promise<void> {
-    if (this.eventBus) {
-      this.unsubscribers.push(
-        this.eventBus.subscribe('session:created', (event) => {
-          console.log(`[Coordinator] Session created: ${event.sessionId ?? 'unknown'}`);
-        }),
-      );
-      this.unsubscribers.push(
-        this.eventBus.subscribe('session:error', (event) => {
-          console.log(`[Coordinator] Session error: ${event.sessionId ?? 'unknown'}`);
-        }),
-      );
-      this.unsubscribers.push(
-        this.eventBus.subscribe('session:destroyed', (event) => {
-          console.log(`[Coordinator] Session destroyed: ${event.sessionId ?? 'unknown'}`);
-        }),
-      );
+    const span = tracer.startSpan('squad.coordinator.initialize');
+    try {
+      if (this.eventBus) {
+        this.unsubscribers.push(
+          this.eventBus.subscribe('session:created', (event) => {
+            console.log(`[Coordinator] Session created: ${event.sessionId ?? 'unknown'}`);
+          }),
+        );
+        this.unsubscribers.push(
+          this.eventBus.subscribe('session:error', (event) => {
+            console.log(`[Coordinator] Session error: ${event.sessionId ?? 'unknown'}`);
+          }),
+        );
+        this.unsubscribers.push(
+          this.eventBus.subscribe('session:destroyed', (event) => {
+            console.log(`[Coordinator] Session destroyed: ${event.sessionId ?? 'unknown'}`);
+          }),
+        );
+      }
+      this.initialized = true;
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
-    this.initialized = true;
   }
 
   /** Route an incoming user message to the appropriate agent(s) */
   async route(message: string): Promise<RoutingDecision> {
-    const lower = message.toLowerCase().trim();
+    const span = tracer.startSpan('squad.coordinator.route');
+    span.setAttribute('message.length', message.length);
+    try {
+      const lower = message.toLowerCase().trim();
 
-    // Direct response: status queries, factual questions
-    if (/^(status|help|what is|who is|how many|show|list)\b/.test(lower)) {
-      return {
-        tier: 'direct',
-        agents: [],
-        parallel: false,
-        rationale: `Direct response for informational query: "${message}"`,
-      };
+      let decision: RoutingDecision;
+
+      // Direct response: status queries, factual questions
+      if (/^(status|help|what is|who is|how many|show|list)\b/.test(lower)) {
+        decision = {
+          tier: 'direct',
+          agents: [],
+          parallel: false,
+          rationale: `Direct response for informational query: "${message}"`,
+        };
+      } else {
+        // Agent name mention — route to that specific agent
+        const agentMention = lower.match(/@(\w+)/);
+        if (agentMention) {
+          decision = {
+            tier: 'standard',
+            agents: [agentMention[1]!],
+            parallel: false,
+            rationale: `Routed to mentioned agent: ${agentMention[1]!}`,
+          };
+        } else if (/\bteam\b/.test(lower)) {
+          // Team-wide task — fan-out to all agents
+          decision = {
+            tier: 'full',
+            agents: ['all'],
+            parallel: true,
+            rationale: 'Team-wide task detected — fan-out to all agents',
+          };
+        } else {
+          // Default: route to lead agent (Keaton)
+          decision = {
+            tier: 'standard',
+            agents: ['lead'],
+            parallel: false,
+            rationale: 'Default routing to lead agent (Keaton)',
+          };
+        }
+      }
+
+      span.setAttribute('routing.tier', decision.tier);
+      span.setAttribute('target.agents', decision.agents.join(','));
+      span.setAttribute('routing.reason', decision.rationale);
+      return decision;
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
-
-    // Agent name mention — route to that specific agent
-    const agentMention = lower.match(/@(\w+)/);
-    if (agentMention) {
-      return {
-        tier: 'standard',
-        agents: [agentMention[1]!],
-        parallel: false,
-        rationale: `Routed to mentioned agent: ${agentMention[1]!}`,
-      };
-    }
-
-    // Team-wide task — fan-out to all agents
-    if (/\bteam\b/.test(lower)) {
-      return {
-        tier: 'full',
-        agents: ['all'],
-        parallel: true,
-        rationale: 'Team-wide task detected — fan-out to all agents',
-      };
-    }
-
-    // Default: route to lead agent (Keaton)
-    return {
-      tier: 'standard',
-      agents: ['lead'],
-      parallel: false,
-      rationale: 'Default routing to lead agent (Keaton)',
-    };
   }
 
   /** Execute a routing decision: emit routing event on EventBus */
   async execute(decision: RoutingDecision, message: string): Promise<void> {
-    if (this.eventBus) {
-      await this.eventBus.emit({
-        type: 'coordinator:routing',
-        payload: { decision, message },
-        timestamp: new Date(),
-      });
+    const span = tracer.startSpan('squad.coordinator.execute');
+    span.setAttribute('routing.tier', decision.tier);
+    span.setAttribute('target.agents', decision.agents.join(','));
+    try {
+      if (this.eventBus) {
+        await this.eventBus.emit({
+          type: 'coordinator:routing',
+          payload: { decision, message },
+          timestamp: new Date(),
+        });
+      }
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
   }
 
   /** Graceful shutdown: unsubscribe from events and release references */
   async shutdown(): Promise<void> {
-    for (const unsub of this.unsubscribers) {
-      unsub();
+    const span = tracer.startSpan('squad.coordinator.shutdown');
+    try {
+      for (const unsub of this.unsubscribers) {
+        unsub();
+      }
+      this.unsubscribers = [];
+      this.initialized = false;
+      this.client = null;
+      this.eventBus = null;
+      this.agentManager = null;
+      this.hookPipeline = null;
+      this.toolRegistry = null;
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
-    this.unsubscribers = [];
-    this.initialized = false;
-    this.client = null;
-    this.eventBus = null;
-    this.agentManager = null;
-    this.hookPipeline = null;
-    this.toolRegistry = null;
   }
 }

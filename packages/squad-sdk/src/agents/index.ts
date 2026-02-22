@@ -11,6 +11,9 @@ import { join, dirname, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseCharterMarkdown } from './charter-compiler.js';
 import { EventBus } from '../client/event-bus.js';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('squad-sdk');
 
 // --- M1-8 Charter Compilation + M2-9 Config-driven ---
 export { 
@@ -175,41 +178,63 @@ export class AgentSessionManager {
 
   /** Spawn a new agent session from a charter */
   async spawn(charter: AgentCharter, mode: 'lightweight' | 'standard' | 'full' = 'standard'): Promise<AgentSessionInfo> {
-    const now = new Date();
-    const info: AgentSessionInfo = {
-      charter,
-      sessionId: randomUUID(),
-      state: 'active',
-      createdAt: now,
-      lastActiveAt: now,
-      responseMode: mode,
-    };
+    const span = tracer.startSpan('squad.agent.spawn');
+    span.setAttribute('agent.name', charter.name);
+    span.setAttribute('agent.role', charter.role);
+    span.setAttribute('spawn.mode', mode);
+    try {
+      const now = new Date();
+      const info: AgentSessionInfo = {
+        charter,
+        sessionId: randomUUID(),
+        state: 'active',
+        createdAt: now,
+        lastActiveAt: now,
+        responseMode: mode,
+      };
 
-    this.agents.set(charter.name, info);
+      this.agents.set(charter.name, info);
 
-    if (this.eventBus) {
-      await this.eventBus.emit({
-        type: 'session.created',
-        sessionId: info.sessionId ?? undefined,
-        agentName: charter.name,
-        payload: { mode },
-        timestamp: now,
-      });
+      if (this.eventBus) {
+        await this.eventBus.emit({
+          type: 'session.created',
+          sessionId: info.sessionId ?? undefined,
+          agentName: charter.name,
+          payload: { mode },
+          timestamp: now,
+        });
+      }
+
+      return info;
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
-
-    return info;
   }
 
   /** Resume an existing agent session */
   async resume(agentName: string): Promise<AgentSessionInfo> {
-    const agent = this.agents.get(agentName);
-    if (!agent) {
-      throw new Error(`Agent '${agentName}' not found`);
-    }
+    const span = tracer.startSpan('squad.agent.resume');
+    span.setAttribute('agent.name', agentName);
+    try {
+      const agent = this.agents.get(agentName);
+      if (!agent) {
+        throw new Error(`Agent '${agentName}' not found`);
+      }
 
-    agent.state = 'active';
-    agent.lastActiveAt = new Date();
-    return agent;
+      agent.state = 'active';
+      agent.lastActiveAt = new Date();
+      return agent;
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
+    }
   }
 
   /** Get info about a specific agent */
@@ -224,20 +249,30 @@ export class AgentSessionManager {
 
   /** Destroy an agent session */
   async destroy(agentName: string): Promise<void> {
-    const agent = this.agents.get(agentName);
-    if (!agent) return;
+    const span = tracer.startSpan('squad.agent.destroy');
+    span.setAttribute('agent.name', agentName);
+    try {
+      const agent = this.agents.get(agentName);
+      if (!agent) return;
 
-    if (this.eventBus) {
-      await this.eventBus.emit({
-        type: 'session.destroyed',
-        sessionId: agent.sessionId ?? undefined,
-        agentName,
-        payload: {},
-        timestamp: new Date(),
-      });
+      if (this.eventBus) {
+        await this.eventBus.emit({
+          type: 'session.destroyed',
+          sessionId: agent.sessionId ?? undefined,
+          agentName,
+          payload: {},
+          timestamp: new Date(),
+        });
+      }
+
+      agent.state = 'destroyed';
+      this.agents.delete(agentName);
+    } catch (err) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+      span.recordException(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    } finally {
+      span.end();
     }
-
-    agent.state = 'destroyed';
-    this.agents.delete(agentName);
   }
 }
