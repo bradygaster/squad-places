@@ -114,3 +114,21 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Spread `[...MODELS.FALLBACK_CHAINS.tier]` pattern converts `readonly` tuples to mutable `string[]` for interface compat — avoids changing public interfaces
 - Environment variable overrides (`SQUAD_DEFAULT_MODEL`, `SQUAD_HEALTH_CHECK_MS`, `SQUAD_GIT_CLONE_MS`, `SQUAD_PLUGIN_FETCH_MS`) enable runtime config without code changes
 - Build clean, 2138 tests pass (3 failures pre-existing Docker/Aspire infra)
+
+### squad doctor command (#312)
+- Created `packages/squad-cli/src/cli/commands/doctor.ts` — typed DoctorCheck interface with `'pass' | 'fail' | 'warn'` status union
+- Mode detection: local (default), remote (config.json teamRoot), hub (squad-hub.json)
+- 9 checks: .squad/ dir, config.json validity, team root resolution, team.md ## Members, routing.md, agents/ dir (with count), casting/registry.json, decisions.md, absolute path warning
+- Registered via lazy `import()` in cli-entry.ts — same pattern as export/aspire/plugin commands
+- Added subpath export `./commands/doctor` in CLI package.json (types-first condition)
+- Exit code always 0 — doctor is diagnostic, never a gate
+- 8 tests: healthy local, empty dir failures, remote mode detection, hub mode, local mode, absolute path warning, missing ## Members, invalid JSON
+- Build clean, all 8 doctor tests pass
+
+### ensureSquadPathDual() — dual-root write support (#314)
+- Added `ensureSquadPathDual(filePath, projectDir, teamDir)` to `packages/squad-sdk/src/resolution.ts` — validates that a write target is inside either root or the system temp directory
+- Added `ensureSquadPathResolved(filePath, paths)` convenience wrapper that takes a `ResolvedSquadPaths` object
+- Existing `ensureSquadPath()` unchanged — full backward compatibility
+- Both new functions exported from `src/index.ts` barrel
+- 13 tests in `test/ensure-squad-path-dual.test.ts`: local mode, remote mode (both roots), rejection, traversal attacks, subdirs, exact roots, temp dir, ResolvedSquadPaths wrapper
+- Build clean, 13 new tests + 21 existing resolution tests all pass

@@ -22,3 +22,10 @@
 - Removed unused `resolveSquad` import from the task spec — kept imports clean for strict mode
 - Exported all functions and types from `src/cli/shell/index.ts`
 - PR #286 → bradygaster/dev
+
+### #313: Remote Squad Mode — Coordinator Awareness
+- Updated `.github/agents/squad.agent.md` Worktree Awareness section with third resolution strategy: remote squad mode via `.squad/config.json` `teamRoot` field
+- Added `PROJECT_ROOT` variable to spawn template alongside `TEAM_ROOT`, with scope explanation (identity vs. project-local paths)
+- Updated "Passing the team root to agents" section to describe dual-path passing in remote vs. local mode
+- Added @copilot incompatibility note — remote mode is local-dev only
+- Kept changes minimal: three targeted sections modified, no structural changes to existing content
