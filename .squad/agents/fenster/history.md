@@ -223,3 +223,46 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
   - docs/README.md: Clarified repo column as `bradygaster/squad` (beta) vs `bradygaster/squad-pr` (v1 SDK).
   - Pattern: Intentionally preserved references to `bradygaster/squad` (the beta repo) where appropriate — it still exists and is referenced for context/comparison. Only updated URLs that should point to squad-pr (v1 SDK repo).
 - **Build:** No build changes needed. **Tests:** All docs-only changes, no test impact. Verified no breaking changes to code or configuration.
+
+### 📌 Dual-root path resolution (2026-02-23) — Fenster (Issue #311)
+- **Added `resolveSquadPaths()`** to `packages/squad-sdk/src/resolution.ts` — dual-root resolver for remote squad mode.
+- **New types:** `SquadDirConfig` (schema for `.squad/config.json` — version, teamRoot, projectKey) and `ResolvedSquadPaths` (mode, projectDir, teamDir, config, name, isLegacy). Named `SquadDirConfig` to avoid collision with existing `SquadConfig` in config/schema.ts and runtime/config.ts.
+- **Local mode:** No config.json or invalid config → projectDir === teamDir. **Remote mode:** config.json with valid `teamRoot` string → teamDir resolved via `path.resolve(projectRoot, config.teamRoot)` relative to the project root (parent of .squad/), not relative to .squad/ itself.
+- **Legacy fallback:** `resolveSquadPaths()` checks for both `.squad/` and `.ai-team/` (in priority order). Sets `isLegacy: true` and `name: '.ai-team'` for legacy repos.
+- **Graceful degradation:** Malformed JSON, missing teamRoot, or non-string teamRoot all fall back to local mode with `config: null`.
+- **Internal refactor:** Extracted `findSquadDir()` helper (walks up checking both dir names) and `loadDirConfig()` (reads/validates config.json). Original `resolveSquad()` untouched — backward compatible.
+- **Exports:** `resolveSquadPaths`, `ResolvedSquadPaths`, `SquadDirConfig` added to SDK barrel (`index.ts`). Available via `@bradygaster/squad-sdk` and `@bradygaster/squad-sdk/resolution`.
+- **Tests:** 12 new tests in `test/dual-root-resolver.test.ts` — local mode, remote mode, relative path resolution, malformed JSON fallback, missing teamRoot fallback, legacy .ai-team detection, .squad priority over .ai-team, walk-up behavior, projectKey null handling.
+- **Build:** tsc clean (0 errors). All 21 existing resolution tests still passing. **Pattern:** `resolveSquad()` is the simple path finder; `resolveSquadPaths()` is the full dual-root resolver for code that needs to distinguish project-local vs team identity directories.
+
+### 📌 Remote squad mode CLI — squad link + init --mode remote (2026-02-23) — Fenster (Issue #313)
+- **Created `squad link` command** at `packages/squad-cli/src/cli/commands/link.ts`:
+  - Accepts a path argument (relative or absolute) to a team repo.
+  - Validates target exists, is a directory, and contains `.squad/` or `.ai-team/`.
+  - Computes relative path via `path.relative()` — never stores absolute paths.
+  - Writes `.squad/config.json` with `{ version: 1, teamRoot: "<relative>", projectKey: null }`.
+  - Prints `✅ Linked to team root: <path>` on success.
+  - Uses `fatal()` from `errors.ts` for all error paths.
+- **Created `init --mode remote` support** at `packages/squad-cli/src/cli/commands/init-remote.ts`:
+  - `writeRemoteConfig(projectDir, teamRepoPath)` creates `.squad/config.json` before normal init scaffolding runs.
+  - Relative path computed from project root, same as `link`.
+- **Registered both commands** in `cli-entry.ts`:
+  - `squad init --mode remote <path>` writes config then runs normal init.
+  - `squad link <path>` is a standalone command for post-init linking.
+  - Help text updated for both.
+- **Subpath exports added:** `./commands/link`, `./commands/init-remote` in CLI package.json.
+- **Tests:** 9 new tests in `test/cli/remote-mode.test.ts` — link creates valid config, fails on missing target, fails on target without .squad/, relative-only paths, .ai-team legacy support, .squad/ auto-creation, round-trip with resolveSquadPaths.
+- **Build:** tsc clean (0 errors). All 12 dual-root resolver tests still passing.
+
+### 📌 CopilotSessionAdapter — P0 Codespaces fix (Issue #315) — Fenster
+- **Root cause:** `createSession()` and `resumeSession()` in `adapter/client.ts` used `as unknown as SquadSession` — a compile-time-only cast that silently skipped runtime method mapping. CopilotSession has `send()`, `on()` (returns unsubscribe fn), `destroy()`; SquadSession expects `sendMessage()`, `on()`/`off()`, `close()`. In GitHub Codespaces, calling `coordinatorSession.sendMessage()` threw "sendMessage is not a function".
+- **Fix:** Created `CopilotSessionAdapter` class in `adapter/client.ts` that wraps raw CopilotSession and implements SquadSession:
+  - `sendMessage(opts)` → delegates to `inner.send(opts)` (same shape: prompt, attachments, mode)
+  - `on(type, handler)` → calls `inner.on(type, handler)` and stores the unsubscribe function
+  - `off(type, handler)` → calls stored unsubscribe function (CopilotSession has no off())
+  - `close()` → delegates to `inner.destroy()` and clears tracked unsubscribers
+  - `sessionId` → reads `inner.sessionId`
+- **Updated `createSession()` and `resumeSession()`** to wrap with `new CopilotSessionAdapter(session)` instead of unsafe cast.
+- **Test mocks updated:** 4 test files (`adapter-client.test.ts`, `session-traces.test.ts`, `integration.test.ts`, `session-adapter.test.ts`) — mocks now return CopilotSession-shaped objects (`send`, `on` returning unsubscribe, `destroy`) instead of SquadSession-shaped.
+- **New tests:** 9 tests in `test/session-adapter.test.ts` — sessionId access, sendMessage→send delegation, attachments passthrough, on/off lifecycle, close→destroy delegation, unsubscriber cleanup.
+- **Build:** tsc clean (0 errors). **Tests:** 157 affected tests passing, 9 new tests.

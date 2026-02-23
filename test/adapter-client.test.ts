@@ -17,8 +17,18 @@ vi.mock('@github/copilot-sdk', () => {
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue([]),
         forceStop: vi.fn().mockResolvedValue(undefined),
-        createSession: vi.fn().mockResolvedValue({ id: 'session-1', status: 'active' }),
-        resumeSession: vi.fn().mockResolvedValue({ id: 'session-1', status: 'active' }),
+        createSession: vi.fn().mockResolvedValue({
+          sessionId: 'session-1',
+          send: vi.fn().mockResolvedValue('msg-1'),
+          on: vi.fn().mockReturnValue(() => {}),
+          destroy: vi.fn().mockResolvedValue(undefined),
+        }),
+        resumeSession: vi.fn().mockResolvedValue({
+          sessionId: 'session-1',
+          send: vi.fn().mockResolvedValue('msg-1'),
+          on: vi.fn().mockReturnValue(() => {}),
+          destroy: vi.fn().mockResolvedValue(undefined),
+        }),
         listSessions: vi.fn().mockResolvedValue([]),
         deleteSession: vi.fn().mockResolvedValue(undefined),
         getLastSessionId: vi.fn().mockResolvedValue(undefined),
@@ -143,12 +153,12 @@ describe('SquadClient — Auto-Reconnection', () => {
     // First call fails with ECONNREFUSED, second succeeds
     instance.createSession
       .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockResolvedValueOnce({ id: 'session-1', status: 'active' });
+      .mockResolvedValueOnce({ sessionId: 'session-1', send: vi.fn().mockResolvedValue('msg-1'), on: vi.fn().mockReturnValue(() => {}), destroy: vi.fn().mockResolvedValue(undefined) });
 
     const session = await client.createSession({ model: 'claude-sonnet-4.5' });
     
     expect(session).toBeDefined();
-    expect(session.id).toBe('session-1');
+    expect(session.sessionId).toBe('session-1');
     expect(instance.stop).toHaveBeenCalled();
     expect(instance.start).toHaveBeenCalledTimes(2); // initial + reconnect
   });
@@ -229,7 +239,7 @@ describe('SquadClient — Auto-Reconnection', () => {
     // Fail on first attempt, succeed on second
     instance.createSession
       .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockResolvedValueOnce({ id: 'session-1', status: 'active' });
+      .mockResolvedValueOnce({ sessionId: 'session-1', send: vi.fn().mockResolvedValue('msg-1'), on: vi.fn().mockReturnValue(() => {}), destroy: vi.fn().mockResolvedValue(undefined) });
 
     // First reconnect succeeds
     instance.stop.mockResolvedValue([]);
@@ -241,7 +251,7 @@ describe('SquadClient — Auto-Reconnection', () => {
 
     // First delay: 100ms minimum
     expect(elapsed).toBeGreaterThan(90);
-    expect(session.id).toBe('session-1');
+    expect(session.sessionId).toBe('session-1');
   });
 });
 
@@ -257,7 +267,7 @@ describe('SquadClient — Session CRUD', () => {
     const session = await client.createSession({ model: 'claude-sonnet-4.5' });
 
     expect(session).toBeDefined();
-    expect(session.id).toBe('session-1');
+    expect(session.sessionId).toBe('session-1');
   });
 
   it('should auto-connect when creating session with autoStart enabled', async () => {
@@ -267,7 +277,7 @@ describe('SquadClient — Session CRUD', () => {
     const session = await client.createSession({ model: 'claude-sonnet-4.5' });
 
     expect(client.isConnected()).toBe(true);
-    expect(session.id).toBe('session-1');
+    expect(session.sessionId).toBe('session-1');
   });
 
   it('should throw when creating session without connection and autoStart disabled', async () => {
@@ -283,7 +293,7 @@ describe('SquadClient — Session CRUD', () => {
     const session = await client.resumeSession('session-1', { model: 'claude-opus-4.6' });
 
     expect(session).toBeDefined();
-    expect(session.id).toBe('session-1');
+    expect(session.sessionId).toBe('session-1');
   });
 
   it('should list sessions', async () => {

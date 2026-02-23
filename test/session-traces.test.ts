@@ -26,12 +26,16 @@ vi.mock('@github/copilot-sdk', () => {
         forceStop: vi.fn().mockResolvedValue(undefined),
         createSession: vi.fn().mockResolvedValue({
           sessionId: 'session-1',
-          sendMessage: vi.fn().mockResolvedValue(undefined),
-          on: vi.fn(),
-          off: vi.fn(),
-          close: vi.fn().mockResolvedValue(undefined),
+          send: vi.fn().mockResolvedValue('msg-1'),
+          on: vi.fn().mockReturnValue(() => {}),
+          destroy: vi.fn().mockResolvedValue(undefined),
         }),
-        resumeSession: vi.fn().mockResolvedValue({ sessionId: 'session-1' }),
+        resumeSession: vi.fn().mockResolvedValue({
+          sessionId: 'session-1',
+          send: vi.fn().mockResolvedValue('msg-1'),
+          on: vi.fn().mockReturnValue(() => {}),
+          destroy: vi.fn().mockResolvedValue(undefined),
+        }),
         listSessions: vi.fn().mockResolvedValue([]),
         deleteSession: vi.fn().mockResolvedValue(undefined),
         getLastSessionId: vi.fn().mockResolvedValue(undefined),
@@ -76,17 +80,18 @@ describe('SquadClient.sendMessage() — squad.session.message span', () => {
     const client = new SquadClient();
     await client.connect();
     const session = await client.createSession();
+    const spy = vi.spyOn(session, 'sendMessage');
 
     await client.sendMessage(session, { prompt: 'hello world' });
 
-    expect(session.sendMessage).toHaveBeenCalledWith({ prompt: 'hello world' });
+    expect(spy).toHaveBeenCalledWith({ prompt: 'hello world' });
   });
 
   it('should propagate errors from session.sendMessage', async () => {
     const client = new SquadClient();
     await client.connect();
     const session = await client.createSession();
-    (session.sendMessage as any).mockRejectedValueOnce(new Error('stream failed'));
+    vi.spyOn(session, 'sendMessage').mockRejectedValueOnce(new Error('stream failed'));
 
     await expect(
       client.sendMessage(session, { prompt: 'will fail' })
@@ -97,23 +102,25 @@ describe('SquadClient.sendMessage() — squad.session.message span', () => {
     const client = new SquadClient();
     await client.connect();
     const session = await client.createSession();
+    const onSpy = vi.spyOn(session, 'on');
 
     await client.sendMessage(session, { prompt: 'test' });
 
     // on() should have been called for message_delta and usage listeners
-    expect(session.on).toHaveBeenCalledWith('message_delta', expect.any(Function));
-    expect(session.on).toHaveBeenCalledWith('usage', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('message_delta', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('usage', expect.any(Function));
   });
 
   it('should clean up event listeners after completion', async () => {
     const client = new SquadClient();
     await client.connect();
     const session = await client.createSession();
+    const offSpy = vi.spyOn(session, 'off');
 
     await client.sendMessage(session, { prompt: 'test' });
 
-    expect(session.off).toHaveBeenCalledWith('message_delta', expect.any(Function));
-    expect(session.off).toHaveBeenCalledWith('usage', expect.any(Function));
+    expect(offSpy).toHaveBeenCalledWith('message_delta', expect.any(Function));
+    expect(offSpy).toHaveBeenCalledWith('usage', expect.any(Function));
   });
 });
 

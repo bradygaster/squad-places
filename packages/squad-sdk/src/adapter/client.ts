@@ -26,6 +26,50 @@ import type {
 const tracer = trace.getTracer('squad-sdk');
 
 /**
+ * Adapts @github/copilot-sdk CopilotSession to our SquadSession interface.
+ * Maps sendMessage() → send(), off() via unsubscribe tracking, close() → destroy().
+ *
+ * Bug reported by @spboyer (Shayne Boyer) — Codespace environment exposed
+ * the unsafe `as unknown as` cast that skipped runtime method mapping.
+ */
+class CopilotSessionAdapter implements SquadSession {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly inner: any;
+  private readonly unsubscribers = new Map<SquadSessionEventHandler, () => void>();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(copilotSession: any) {
+    this.inner = copilotSession;
+  }
+
+  get sessionId(): string {
+    return this.inner.sessionId ?? 'unknown';
+  }
+
+  async sendMessage(options: SquadMessageOptions): Promise<void> {
+    await this.inner.send(options);
+  }
+
+  on(eventType: SquadSessionEventType, handler: SquadSessionEventHandler): void {
+    const unsubscribe = this.inner.on(eventType, handler);
+    this.unsubscribers.set(handler, unsubscribe);
+  }
+
+  off(eventType: SquadSessionEventType, handler: SquadSessionEventHandler): void {
+    const unsubscribe = this.unsubscribers.get(handler);
+    if (unsubscribe) {
+      unsubscribe();
+      this.unsubscribers.delete(handler);
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.inner.destroy();
+    this.unsubscribers.clear();
+  }
+}
+
+/**
  * Connection state for SquadClient.
  */
 export type SquadConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting" | "error";
@@ -338,9 +382,9 @@ export class SquadClient {
 
       try {
         const session = await this.client.createSession(config);
-        const result = session as unknown as SquadSession;
-        if (result && (result as any).sessionId) {
-          span.setAttribute('session.id', (result as any).sessionId);
+        const result = new CopilotSessionAdapter(session);
+        if (result.sessionId) {
+          span.setAttribute('session.id', result.sessionId);
         }
         recordSessionCreated();
         return result;
@@ -382,7 +426,7 @@ export class SquadClient {
 
       try {
         const session = await this.client.resumeSession(sessionId, config);
-        return session as unknown as SquadSession;
+        return new CopilotSessionAdapter(session);
       } catch (error) {
         if (this.shouldAttemptReconnect(error)) {
           await this.attemptReconnection();
