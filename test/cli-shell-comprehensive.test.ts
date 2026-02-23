@@ -111,12 +111,12 @@ describe('coordinator.ts — buildCoordinatorPrompt', () => {
 
   it('handles missing team.md gracefully', () => {
     const prompt = buildCoordinatorPrompt({ teamRoot: '/nonexistent' });
-    expect(prompt).toContain('(No team.md found)');
+    expect(prompt).toContain('No team.md found');
   });
 
   it('handles missing routing.md gracefully', () => {
     const prompt = buildCoordinatorPrompt({ teamRoot: '/nonexistent' });
-    expect(prompt).toContain('(No routing.md found)');
+    expect(prompt).toContain('No routing.md found');
   });
 
   it('includes all required prompt sections', () => {
@@ -336,7 +336,7 @@ describe('spawn.ts — loadAgentCharter', () => {
 
   it('throws descriptive error when charter not found', () => {
     expect(() => loadAgentCharter('nobody', FIXTURES)).toThrow(
-      /Charter not found for agent "nobody"/
+      /No charter found for "nobody"/
     );
   });
 
@@ -345,7 +345,7 @@ describe('spawn.ts — loadAgentCharter', () => {
     try {
       const tmpDir = makeTempDir('no-squad-');
       process.chdir(tmpDir);
-      expect(() => loadAgentCharter('test')).toThrow(/No .squad\/ directory found/);
+      expect(() => loadAgentCharter('test')).toThrow(/No team found/);
       cleanDir(tmpDir);
     } finally {
       process.chdir(originalCwd);
@@ -406,13 +406,13 @@ describe('lifecycle.ts — ShellLifecycle', () => {
 
   it('throws when .squad/ does not exist', async () => {
     const lc = makeLifecycle(tmpDir);
-    await expect(lc.initialize()).rejects.toThrow(/No .squad\/ directory found/);
+    await expect(lc.initialize()).rejects.toThrow(/No team found/);
   });
 
   it('throws when team.md is missing', async () => {
     fs.mkdirSync(join(tmpDir, '.squad'), { recursive: true });
     const lc = makeLifecycle(tmpDir);
-    await expect(lc.initialize()).rejects.toThrow(/No team.md found/);
+    await expect(lc.initialize()).rejects.toThrow(/No team manifest found/);
   });
 
   it('sets state to error on initialization failure', async () => {
@@ -1029,5 +1029,116 @@ describe('Error handling in shell operations', () => {
     mockSession.close.mockRejectedValue(new Error('Already closed'));
 
     await expect(mockSession.close()).rejects.toThrow('Already closed');
+  });
+});
+
+// ============================================================================
+// 14. Error hardening tests (Issue #334)
+// ============================================================================
+
+describe('Error hardening — user-friendly messages with remediation hints', () => {
+  // --- lifecycle.ts ---
+
+  it('lifecycle init error for missing .squad/ includes remediation hint', async () => {
+    const tmpDir = makeTempDir('no-squad-');
+    const lc = new ShellLifecycle({
+      teamRoot: tmpDir,
+      renderer: new ShellRenderer(),
+      registry: new SessionRegistry(),
+    });
+    try {
+      await lc.initialize();
+    } catch (err: unknown) {
+      expect((err as Error).message).toContain('squad init');
+      expect((err as Error).message).not.toContain('Error:');
+    }
+    cleanDir(tmpDir);
+  });
+
+  it('lifecycle init error for missing team.md includes remediation hint', async () => {
+    const tmpDir = makeTempDir('no-team-');
+    fs.mkdirSync(join(tmpDir, '.squad'), { recursive: true });
+    const lc = new ShellLifecycle({
+      teamRoot: tmpDir,
+      renderer: new ShellRenderer(),
+      registry: new SessionRegistry(),
+    });
+    try {
+      await lc.initialize();
+    } catch (err: unknown) {
+      expect((err as Error).message).toContain('squad init');
+      expect((err as Error).message).toContain('No team manifest found');
+    }
+    cleanDir(tmpDir);
+  });
+
+  // --- spawn.ts ---
+
+  it('loadAgentCharter error for missing charter includes agent name', () => {
+    try {
+      loadAgentCharter('nonexistent-agent', FIXTURES);
+    } catch (err: unknown) {
+      expect((err as Error).message).toContain('nonexistent-agent');
+      expect((err as Error).message).toContain('charter.md exists');
+    }
+  });
+
+  it('loadAgentCharter error for no .squad/ includes squad init hint', () => {
+    const tmpDir = makeTempDir('no-squad-spawn-');
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(tmpDir);
+      loadAgentCharter('test');
+    } catch (err: unknown) {
+      expect((err as Error).message).toContain('squad init');
+      expect((err as Error).message).not.toMatch(/^Error:/);
+    } finally {
+      process.chdir(originalCwd);
+      cleanDir(tmpDir);
+    }
+  });
+
+  // --- coordinator.ts ---
+
+  it('buildCoordinatorPrompt includes squad init hint in fallback text', () => {
+    const prompt = buildCoordinatorPrompt({ teamRoot: '/nonexistent' });
+    expect(prompt).toContain('squad init');
+  });
+
+  // --- commands.ts ---
+
+  it('unknown command returns helpful suggestion', () => {
+    const result = executeCommand('foobar', [], {
+      registry: new SessionRegistry(),
+      renderer: new ShellRenderer(),
+      messageHistory: [],
+      teamRoot: '/tmp',
+    });
+    expect(result.handled).toBe(false);
+    expect(result.output).toContain('/help');
+    expect(result.output).toContain('foobar');
+  });
+
+  // --- Error message sanitization ---
+
+  it('error messages do not expose raw stack traces', () => {
+    const rawError = new Error('Connection reset by peer');
+    rawError.stack = 'Error: Connection reset by peer\n    at Socket.emit (node:events:513:28)';
+    const errorMsg = rawError.message;
+    const friendly = errorMsg.replace(/^Error:\s*/i, '');
+    expect(friendly).not.toContain('at Socket.emit');
+    expect(friendly).toBe('Connection reset by peer');
+  });
+
+  it('Error: prefix is stripped from user-facing messages', () => {
+    const msg = 'Error: something broke';
+    const friendly = msg.replace(/^Error:\s*/i, '');
+    expect(friendly).toBe('something broke');
+  });
+
+  it('messages without Error: prefix pass through unchanged', () => {
+    const msg = 'Connection timed out';
+    const friendly = msg.replace(/^Error:\s*/i, '');
+    expect(friendly).toBe('Connection timed out');
   });
 });
