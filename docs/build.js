@@ -17,6 +17,7 @@ const SECTIONS = [
   { dir: 'sdk', title: 'SDK' },
   { dir: 'features', title: 'Features' },
   { dir: 'scenarios', title: 'Scenarios' },
+  { dir: 'blog', title: 'Blog' },
 ];
 
 // Parse optional YAML-style frontmatter (--- fenced)
@@ -60,10 +61,11 @@ function discoverDocs(docsDir) {
         const docTitle = meta.title || extractTitle(body) || titleFromFilename(f);
         return { name, dir, title: docTitle, href: `${dir}/${name}.html` };
       });
-    // index.md first, then alphabetical by title
+    // index.md first; blog sorts by filename (chronological); rest alphabetical
     items.sort((a, b) => {
       if (a.name === 'index') return -1;
       if (b.name === 'index') return 1;
+      if (dir === 'blog') return a.name.localeCompare(b.name);
       return a.title.localeCompare(b.title);
     });
     if (items.length > 0) {
