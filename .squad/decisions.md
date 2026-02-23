@@ -458,6 +458,38 @@ Medium. Changes error handling contract for all functions that used `fatal()`. B
 **Date:** 2026-02-23
 **Status:** COMPLETED
 
+### 2026-02-23: Make sendAndWait timeout configurable
+**Author:** Cheritto (TUI Engineer)
+**Date:** 2026-02-23
+**Status:** Implemented
+**Issue:** #325
+**PR:** #347
+
+Added `TIMEOUTS.SESSION_RESPONSE_MS` to `packages/squad-sdk/src/runtime/constants.ts` — default 600,000ms (10 minutes), overridable via `SQUAD_SESSION_TIMEOUT_MS` env var. Updated `packages/squad-cli/src/cli/shell/index.ts` to use the constant instead of hard-coded 120,000ms timeout. All 41 streaming tests pass. Users can now set `SQUAD_SESSION_TIMEOUT_MS=900000` for 15-minute timeouts.
+
+### 2026-02-23: E2E Test Coverage Expansion
+**By:** Breedan (E2E Test Engineer)
+**Date:** 2026-02-23
+**Status:** Accepted
+**PR:** #348 (closes #326)
+
+Added 14 new Gherkin scenarios across 6 new feature files, bringing total to 21 acceptance scenarios + 6 UX gate tests (27 total). New harness capabilities: `cwd` option on `spawnWithArgs()`, absolute path resolution, `mkdtempSync` temp dir creation, negative assertion step. Coverage areas: init-command, status-extended, doctor-extended, help-comprehensive, error-paths, exit-codes.
+
+### 2026-02-23: Hostile QA Bug Catalog — Issue #327
+**By:** Waingro
+**Date:** 2026-02-23
+**Status:** Reported — awaiting triage
+
+Found 2 P1/P2 bugs: (1) `--version` output omits "squad" prefix (P1, location: packages/squad-cli/src/cli-entry.ts:48), (2) Empty/whitespace args launch interactive shell in non-TTY (P2, location: packages/squad-cli/src/cli-entry.ts:102). Added 32 hostile QA Gherkin scenarios across 7 feature files and 80+ adversarial string corpus. All corrupt config scenarios handled gracefully; unicode edge cases pass cleanly.
+
+### 2026-02-23: Accessibility Audit — Squad CLI
+**By:** Nate (Accessibility Reviewer)
+**Date:** 2026-02-23
+**Issue:** #328 — Accessibility Audit
+**Verdict:** CONDITIONAL PASS
+
+Summary: 2 passes (Keyboard Navigation ✅, Help Text ✅), 2 failures (Color Contrast & NO_COLOR ❌, Error Guidance ❌). Priority fixes: (1) P1 — Respect `NO_COLOR` in terminal.ts and gate ANSI codes in output.ts. (2) P1 — Add remediation hints to missing team.md error (lifecycle.ts) and charter-not-found error (spawn.ts). Nice-to-have: P2 Wire Tab autocomplete, add remediation to SDK-not-connected errors; P3 Add Escape key, include keyboard shortcuts in /help output.
+
 **What:** Created `docs/scenarios/aspire-dashboard.md` — a single, focused scenario doc for using Squad with the Aspire dashboard. Covers what Aspire is, how to launch it via Docker, how to connect Squad SDK to it, what traces/metrics appear in the UI, troubleshooting, and pro tips. Updated `docs/build.js` to include the new scenario in the explicit ordering (added to SECTION_ORDER for scenarios).
 
 **Tone:** Action-oriented, welcoming, prompt-first — matches existing Squad docs (see `solo-dev.md` for reference style).
