@@ -56,18 +56,40 @@ function generateNav() {
 }
 
 function buildNavHtml(nav, activeFile) {
-  let html = '<nav class="sidebar">\n';
+  let html = '<nav class="sidebar" id="sidebar">\n';
+  html += '<div class="sidebar-header"><a href="index.html" class="logo"><img src="assets/squad-logo.png" alt="Squad" class="sidebar-logo-img"></a><button class="sidebar-close" onclick="toggleSidebar()">X</button></div>\n';
+  html += '<div class="sidebar-content">\n';
+  // Home link outside sections
+  const homeCls = activeFile === 'index' ? ' class="active"' : '';
+  html += `<a href="index.html"${homeCls}>Home</a>\n`;
   for (const group of nav) {
-    html += `<h4>${group.section}</h4>\n<ul>\n`;
+    html += '<details class="nav-section" open>\n';
+    html += `<summary>${group.section}</summary>\n`;
     for (const item of group.items) {
+      if (item.file === 'index') continue; // Home is already above
       const href = `${item.file}.html`;
       const cls = item.file === activeFile ? ' class="active"' : '';
-      html += `<li><a href="${href}"${cls}>${item.title}</a></li>\n`;
+      html += `<a href="${href}"${cls}>${item.title}</a>\n`;
     }
-    html += '</ul>\n';
+    html += '</details>\n';
   }
-  html += '</nav>';
+  html += '</div>\n</nav>';
   return html;
+}
+
+function buildSearchIndex(guideDir, mdInstance) {
+  const files = fs.readdirSync(guideDir).filter(f => f.endsWith('.md'));
+  const index = [];
+  for (const file of files) {
+    const name = file.replace('.md', '');
+    const raw = fs.readFileSync(path.join(guideDir, file), 'utf-8');
+    const { meta, body } = parseFrontmatter(raw);
+    const title = meta.title || extractTitle(body);
+    // Strip markdown syntax for preview text
+    const preview = body.replace(/^#+\s+.+$/gm, '').replace(/[`*_\[\]()#>|\\-]/g, '').replace(/\s+/g, ' ').trim().substring(0, 200);
+    index.push({ title, href: `${name}.html`, preview });
+  }
+  return index;
 }
 
 function copyDirSync(src, dest) {
@@ -101,6 +123,8 @@ async function build() {
 
   const template = fs.readFileSync(templatePath, 'utf-8');
   const nav = generateNav();
+  const searchIndex = buildSearchIndex(guideDir, md);
+  const searchIndexJson = JSON.stringify(searchIndex);
 
   // Get all markdown files
   const files = fs.readdirSync(guideDir)
@@ -121,7 +145,8 @@ async function build() {
     const html = template
       .replace('{{TITLE}}', title)
       .replace('{{CONTENT}}', content)
-      .replace('{{NAV}}', navHtml);
+      .replace('{{NAV}}', navHtml)
+      .replace('{{SEARCH_INDEX}}', searchIndexJson);
 
     fs.writeFileSync(htmlPath, html);
     console.log(`✓ Generated ${file}.html`);

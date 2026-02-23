@@ -1,34 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{TITLE}} — Squad</title>
-  <link rel="stylesheet" href="assets/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} - Squad Docs</title>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <div class="header-content">
-        <h1>📦 Squad</h1>
-        <p class="tagline">The programmable multi-agent runtime for GitHub Copilot</p>
-      </div>
-      <button class="menu-toggle" id="menuToggle">☰ Menu</button>
-    </header>
-
-    <div class="main-wrapper">
-      {{NAV}}
-      <main class="content">
-        {{CONTENT}}
-      </main>
-    </div>
-
-    <footer class="footer">
-      <p>&copy; 2026 Squad. Built with ❤️ for GitHub Copilot.</p>
-      <p><a href="https://github.com/bradygaster/squad-pr">View on GitHub</a></p>
-    </footer>
-  </div>
-
-  <script src="assets/app.js"></script>
+<div class="layout">
+{{NAV}}
+<div class="main">
+<div class="topbar">
+<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+<div class="search-box"><input type="text" id="search" placeholder="Search docs..." autocomplete="off"><div class="search-results" id="search-results"></div></div>
+<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn"></button>
+</div>
+<article class="content">
+{{CONTENT}}
+</article>
+</div>
+</div>
+<script>var searchIndex = {{SEARCH_INDEX}};</script>
+<script src="assets/script.js"></script>
 </body>
 </html>

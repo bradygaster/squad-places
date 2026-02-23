@@ -287,3 +287,39 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 - Blog serves DevRel goals (community, transparency, learnings) while docs serve product goals (installation, configuration, troubleshooting)
 - Separation of /docs/launch/ (internal only) from published blog allows historical record preservation without confusing new users
 - build.js script in old repo can guide static generation approach (reusable pattern for GitHub Pages)
+
+### 2026-02-22: Port beta docs site UI to squad-pr
+**Status:** Complete.
+**Changes made:**
+1. **docs/template.html** — Replaced with beta site template:
+   - New layout: `.layout` > `.sidebar` + `.main` (replaces `.container` > `.main-wrapper`)
+   - Dark mode support via `data-theme` attribute (auto/dark/light)
+   - Search box with `{{SEARCH_INDEX}}` placeholder for client-side search
+   - Theme toggle button, hamburger menu for mobile
+   - Uses `<article class="content">` instead of `<main class="content">`
+2. **docs/assets/style.css** — Replaced with beta site CSS:
+   - CSS custom properties for light/dark theming
+   - `prefers-color-scheme` media query + manual `[data-theme]` override
+   - Fixed sidebar navigation (position:fixed, full height)
+   - Sticky topbar with search and theme toggle
+   - Responsive: sidebar slides in/out on mobile (translateX transform)
+   - Print styles hide sidebar and topbar
+3. **docs/assets/script.js** — New file (replaces app.js):
+   - Theme persistence via localStorage (`squad-theme` key)
+   - `toggleTheme()`: cycles auto → dark → light → auto
+   - `updateThemeBtn()`: emoji indicator (☀️/🌙/💻)
+   - `toggleSidebar()`: mobile sidebar open/close
+   - Client-side search: filters `searchIndex` array, renders dropdown results
+4. **docs/assets/app.js** — Deleted (superseded by script.js)
+5. **docs/assets/squad-logo.png** — Downloaded from beta repo (bradygaster/squad)
+6. **docs/build.js** — Updated nav generation + search index:
+   - `buildNavHtml()`: generates `<nav class="sidebar" id="sidebar">` with logo header, close button, Home link, and `<details class="nav-section" open>` groups
+   - `buildSearchIndex()`: generates JSON array of `{title, href, preview}` for each page
+   - Build injects search index via `{{SEARCH_INDEX}}` placeholder
+7. **test/docs-build.test.ts** — Updated 2 tests for new template:
+   - `app.js` → `script.js` in asset check
+   - `<main>` → `<article>` in content area check
+**Build:** All 14 pages generate without errors.
+**Tests:** 30/30 passing.
+**Credits:** UI design ported from beta site. Hat tip to @spboyer (Shayne Boyer) for the original beta docs CSS/JS patterns.
+**Tone applied:** Surgical port — matched beta site exactly per Brady's request, no creative additions.

@@ -223,7 +223,7 @@ describe('Docs Build Script (markdown-it)', () => {
     expect(existsSync(distAssets), 'dist/assets/ should exist').toBe(true);
     const assetFiles = readdirSync(distAssets);
     expect(assetFiles).toContain('style.css');
-    expect(assetFiles).toContain('app.js');
+    expect(assetFiles).toContain('script.js');
   });
 
   // --- 5. index.html as homepage ---
@@ -335,11 +335,11 @@ describe('Docs Build Script (markdown-it)', () => {
     }
   });
 
-  it('HTML contains <main> content area from template', () => {
+  it('HTML contains <article> content area from template', () => {
     if (!requireBuild()) return;
     for (const guide of EXPECTED_GUIDES) {
       const html = readHtml(guide);
-      expect(html).toMatch(/<main[\s>]/);
+      expect(html).toMatch(/<article[\s>]/);
     }
   });
 });
