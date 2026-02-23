@@ -183,3 +183,19 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - **Template substitution** (5 tests): `{{CONTENT}}`, `{{NAV}}`, `{{TITLE}}` all replaced; no raw `{{PLACEHOLDER}}` patterns remain; HTML has DOCTYPE, `<main>`.
 - Design: `beforeAll` runs build once; `afterAll` cleans dist. Tests use `requireBuild()` guard for graceful skip if build.js isn't ready. Fenster's upgrade was already landed — all 30 tests pass against real markdown-it output.
 - Key discovery: Fenster already upgraded build.js to markdown-it with frontmatter parsing, asset copying, and full nav with all 14 guides before this test rewrite.
+
+### CLI shell comprehensive tests — Issue #(tbd) (2026-02-23)
+- Created `test/cli-shell-comprehensive.test.ts` with **110 tests** covering all shell modules requested by Brady.
+- **coordinator.ts** (26 tests): `buildCoordinatorPrompt()` with custom paths/missing files, `parseCoordinatorResponse()` for ROUTE/DIRECT/MULTI formats with all edge cases (empty routes, multiline content, mixed valid/invalid lines, fallback behavior), `formatConversationContext()` with maxMessages limit and empty arrays.
+- **spawn.ts** (8 tests): `loadAgentCharter()` with teamRoot/missing charter/case-insensitive resolution, `buildAgentPrompt()` with charter/systemContext/empty charter.
+- **lifecycle.ts** (6 tests): ShellLifecycle initialization with missing .squad/, missing team.md, error state, agent discovery, registry population, empty team handling.
+- **router.ts** (15 tests): `parseInput()` for slash commands (with args, case-insensitive, multiple args), @Agent direct addressing (comma syntax, case-insensitive, no message, unknown agents), coordinator routing (plain text, empty, whitespace), edge cases (leading/trailing whitespace, multiline content).
+- **sessions.ts** (10 tests): SessionRegistry operations (register, get, getAll, getActive, updateStatus, remove, clear, no-op on unknown).
+- **commands.ts** (13 tests): `executeCommand()` for all slash commands (/help, /status, /agents, /history with limits, /clear, /quit, /exit, unknown command).
+- **memory.ts** (12 tests): MemoryManager limits, `canCreateSession()`, `trackBuffer()` growth/rejection/multi-session, `trimMessages()`, `clearBuffer()`, `getStats()`.
+- **autocomplete.ts** (10 tests): `createCompleter()` for @agent completion (partial/bare @/case-insensitive), /command completion (partial/bare //case-insensitive), no completion for plain text.
+- **CRITICAL BUG TEST** (5 tests): Verifies `session.sendMessage()` exists after `createSession()`, handles missing method, validates before calling, handles rejection gracefully. This is the bug Brady hit — "sendMessage is not a function".
+- **Error handling** (4 tests): Session creation failure, sendMessage failure, session.close() safety, rejection handling.
+- All 110 tests pass. Test count grew from 2158 → 2268 across 81 files.
+- **Test patterns discovered**: Mock SquadSession with vi.fn() for sendMessage/on/off/close, mock SquadClient createSession, test the adapter boundary (mock what createSession returns, verify sendMessage called correctly), DO NOT mock coordinator/router parsing (test real logic), direct imports from `../packages/squad-cli/src/cli/shell/*.js` (memory.ts/autocomplete.ts not in package exports).
+- **Edge cases found**: Empty ROUTE: captures "TASK" as agent name (regex quirk), MULTI with extra whitespace requires clean formatting, parseInput handles comma syntax for direct addressing, formatConversationContext defaults to 20 messages, MemoryManager trackBuffer accumulates per session, SessionRegistry updateStatus is no-op for unknown session.

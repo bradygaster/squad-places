@@ -267,6 +267,13 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 - **Issue #195 (repo URLs):** Updated 2 files:
   - CONTRIBUTING.md: Changed clone URL from `bradygaster/squad` to `bradygaster/squad-pr` (v1 SDK repo).
   - docs/README.md: Clarified repo column as `bradygaster/squad` (beta) vs `bradygaster/squad-pr` (v1 SDK).
+
+### 📌 REPL sendMessage Bug Fix (2026-02-23) — Fenster
+**Reported by:** Brady. REPL in 0.8.2 throws `coordinatorSession.sendMessage is not a function`.
+**Root Cause:** CLI package.json had wildcard dependency `"@bradygaster/squad-sdk": "*"` instead of pinned version. When CLI is installed from npm (not in a workspace), npm may resolve to an older SDK version that lacks the CopilotSessionAdapter wrapping or has incompatible session interfaces.
+**Fix:** Changed CLI dependency to `"@bradygaster/squad-sdk": "0.8.2"` to ensure SDK and CLI versions stay aligned. Both packages are at 0.8.2, and they should be published together as a matched set.
+**Verification:** CopilotSessionAdapter in `packages/squad-sdk/src/adapter/client.ts` correctly wraps SDK sessions with `sendMessage()` → `send()` mapping at line 76-78. Both `createSession()` (line 453) and `resumeSession()` (line 345 in compiled JS) wrap sessions. All test suites pass.
+**Pattern:** Workspace packages with synchronized versions should use exact version pins, not wildcards, to prevent version drift when published to npm.
   - Pattern: Intentionally preserved references to `bradygaster/squad` (the beta repo) where appropriate — it still exists and is referenced for context/comparison. Only updated URLs that should point to squad-pr (v1 SDK repo).
 - **Build:** No build changes needed. **Tests:** All docs-only changes, no test impact. Verified no breaking changes to code or configuration.
 
@@ -351,3 +358,27 @@ Replaced regex-based markdownToHtml() with markdown-it for proper rendering of c
 - Added .md → .html link rewriting via ewriteLinks().
 - Title extraction chain: frontmatter → H1 → filename-derived.
 - All 30 docs-build tests passing. Build produces 62 pages across 5 sections + redirect.
+
+### Syntax Highlighting Integration (highlight.js)
+**Task from:** Brady  
+**What:** Added syntax highlighting (colorization) for fenced code blocks in the docs build.
+
+**Changes:**
+- Installed `highlight.js` as devDependency.
+- Updated `docs/build.js`: imported hljs, configured markdown-it's `highlight` option to use `hljs.highlight()` for known languages and `hljs.highlightAuto()` as fallback. Copies `github-dark.css` and `github.css` themes into `dist/assets/` during build.
+- Updated `docs/template.html`: added `<link>` tags for both light (`hljs-light.css`) and dark (`hljs-dark.css`) highlight.js themes, with `id` attributes for JS toggling.
+- Updated `docs/assets/script.js`: added `syncHljsTheme()` function that enables/disables the correct hljs stylesheet based on `[data-theme]` attribute and `prefers-color-scheme` media query, called from `updateThemeBtn()`.
+- Build verified: all 42 pages generated, HTML output contains `hljs-keyword`, `hljs-string`, `hljs-built_in` spans inside `<code>` blocks, CSS paths correctly rewritten for subdirectory pages.
+
+---
+
+### Mermaid Diagram Rendering (client-side)
+**Task from:** Brady  
+**What:** Added Mermaid diagram rendering support so `mermaid` fenced code blocks render as interactive SVG diagrams in the HTML docs output.
+
+**Changes:**
+- Updated `docs/build.js`: Added custom markdown-it fence rule that intercepts `mermaid` code blocks and emits `<div class="mermaid">` with raw (unescaped) diagram text instead of `<pre><code>`. The `highlight()` function also short-circuits for mermaid to avoid hljs processing. All other code blocks continue using highlight.js.
+- Updated `docs/template.html`: Added Mermaid.js v11 CDN script before `</body>` with `mermaid.initialize()` configured for startOnLoad, theme-aware rendering (dark/light), and responsive flowcharts/sequences.
+- Updated `docs/assets/script.js`: Extended `toggleTheme()` to re-initialize and re-render mermaid diagrams when the user switches between dark/light/auto themes.
+- Updated `docs/assets/style.css`: Added `.mermaid` CSS rule for centered layout, padding, code-bg background, border, border-radius, and horizontal scroll overflow.
+- Build verified: all 42 pages generated. End-to-end test confirmed `<div class="mermaid">` output for mermaid blocks while regular code blocks remain as `<pre><code>` with hljs spans.

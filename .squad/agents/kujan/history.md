@@ -51,3 +51,15 @@ Kujan's error handling refactor makes all library functions throw SquadError ins
 - Tree-shaking friendly: each layer is a separate module, named exports for bridge/init
 - `SquadTelemetryOptions` extends `OTelConfig` with optional `eventBus` and `installTransport` fields
 - Build passes with all changes
+
+### SDK Adapter Audit (Brady Issue: sendMessage is not a function)
+- **Root Cause:** Published 0.8.2 uses unsafe `as unknown as SquadSession` cast instead of runtime adapter
+- **Status:** Bug already fixed in commit 1f779e7 (CopilotSessionAdapter), but NOT published to npm
+- **Adapter Implementation (current):** Correctly maps sendMessage() → send(), close() → destroy(), event names
+- **SDK API:** @github/copilot-sdk CopilotSession has send(), not sendMessage(); destroy(), not close()
+- **Test Coverage:** 19 tests in session-adapter.test.ts all pass (but use mocks, don't catch published version issue)
+- **Version Timeline:** 0.8.2 tagged at db5d621, adapter fix committed at 1f779e7 (AFTER tag), event mapping fix at 8220aa6
+- **Event Mapping:** SDK emits dotted names (assistant.message_delta), Squad expects short names (message_delta) — normalizeEvent() flattens event.data
+- **Package Boundary:** CLI depends on SDK with wildcard "*", could pull stale version from cache
+- **Recommendation:** Publish 0.8.3 with both fixes (1f779e7 + 8220aa6), lock CLI dep to ^0.8.3, update CHANGELOG
+- **Pattern Learned:** Type casts hide runtime mismatches; mocked tests don't catch SDK API changes; publish AFTER fixes, not before

@@ -7,6 +7,26 @@
 
 ## Learnings
 
+### 2026-02-23: Blog posts 013–020 — v1 replatform blog coverage
+**Status:** Complete.
+**Changes made:**
+1. **docs/blog/013-the-replatform-begins.md** — The decision to rewrite from JS to TypeScript. SDK + CLI split. npm workspace. Wave-based development plan.
+2. **docs/blog/014-wave-1-otel-and-aspire.md** — Wave 1: 3-layer OTel API, SquadObserver file watcher, Aspire dashboard integration. Issues #254–#268, PRs #307–#308.
+3. **docs/blog/015-wave-2-the-repl-moment.md** — Wave 2: Interactive shell wow moment, CWE-78 security fix (execFileSync over execSync), config extraction to constants.ts, 119 new tests. PR #309.
+4. **docs/blog/016-wave-3-docs-that-teach.md** — Wave 3: Custom markdown-it site generator, 5 initial guides, scenario-first philosophy. PR #310, 11 issues closed.
+5. **docs/blog/017-version-alignment.md** — v0.8.2 version snap across root/SDK/CLI. npm publishing. CI build-order discovery.
+6. **docs/blog/018-the-adapter-chronicles.md** — P0 Codespace bug (#315), CopilotSessionAdapter, 7-issue adapter hardening sprint (#316–#322), zero `as any` remaining.
+7. **docs/blog/019-shaynes-remote-mode.md** — Port of @spboyer's PR #131: dual-root resolver, doctor command, squad link, init --mode remote. Full attribution to Shayne Boyer.
+8. **docs/blog/020-docs-reborn.md** — Docs restructure: 77 pages, 6 sections, beta UI port (dark mode, search, sidebar), GitHub Pages pipeline, tone pass on 62 docs.
+**Build:** 85 pages generated without errors (`node docs/build.js`).
+**Tone applied:** Beta blog voice — light, personal, story-driven. No corporate. No hype. Led with human story, grounded in specific issues/PRs/commits. Maintained tone ceiling throughout.
+**Notes:**
+- Posts numbered 013–020, continuing from beta blog's 001–012
+- Dates spread across Feb 20–23, 2026 (chronologically sensible with the git log)
+- @spboyer credited in #019 per CHANGELOG attribution
+- Frontmatter follows exact beta format: title, date, author, wave, tags, status, hero
+- Each post ends with standard McManus attribution footer pointing to squad-pr repo
+
 ### 2026-02-22: GitHub Actions workflow for docs publishing
 **Status:** Complete.
 **Changes made:**

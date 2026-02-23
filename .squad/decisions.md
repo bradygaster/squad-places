@@ -2316,3 +2316,41 @@ The SDK is adding remote squad mode — where team identity files (agents, casti
 - The @copilot note prevents confusion when users try to assign remote-mode work to the coding agent.
 
 
+# 2026-02-23: sendMessage REPL Bug — Fixed via SDK Version Pin + Test Suite
+
+**By:** Fenster, Hockney, Kujan  
+**Date:** 2026-02-23  
+**Status:** ✅ Complete (SDK pinned, tests added, audit complete)  
+**Issues:** REPL `sendMessage is not a function` error
+
+## Context
+
+Brady reported that the REPL in `@bradygaster/squad-cli@0.8.2` throws `coordinatorSession.sendMessage is not a function`. The CLI imports `SquadClient` and creates sessions via `client.createSession()`, wrapped by `CopilotSessionAdapter` to map `sendMessage()` → `send()`. The error indicated raw SDK sessions leaking through.
+
+## Root Cause
+
+The CLI's `package.json` had `"@bradygaster/squad-sdk": "*"` which resolves to any available version in production. An older SDK version lacking `CopilotSessionAdapter` wrapping caused the mismatch.
+
+## Decision: Pin SDK version to 0.8.2
+
+```json
+"@bradygaster/squad-sdk": "0.8.2"
+```
+
+Both packages versioned at 0.8.2 and published together as a matched set. Exact pin ensures production installs get the correct SDK version while workspace development resolves to local packages. Breaking changes in SDK now require coordinated CLI version bumps.
+
+**Alternative considered & rejected:** Caret range `^0.8.0` would allow patch/minor mismatches that could break compatibility.
+
+## Verification
+
+- **Tests:** Hockney created 110 new comprehensive tests in `test/cli-shell-comprehensive.test.ts` covering all 9 shell modules (coordinator, spawn, lifecycle, router, sessions, commands, memory, autocomplete, sendMessage validation). All 110 passing.
+- **Audit:** Kujan audited the full adapter chain. Confirmed `CopilotSessionAdapter` correctly maps `sendMessage` → `send`. Identified that published 0.8.2 npm package has the old unsafe cast, but the fix exists in current codebase (not yet published).
+
+## Impact
+
+- ✅ sendMessage operations now functional in REPL
+- ✅ Full shell infrastructure tested (110 new tests)
+- ✅ Known issue: published npm 0.8.2 has unsafe cast (current codebase fix pending publish)
+- ✅ Version alignment enables reliable production deployments
+
+

@@ -7,6 +7,21 @@
 
 ## Learnings
 
+### 2026-02-24: Documentation Restructure Plan (requested by Brady)
+- **Task:** Design a new documentation structure. Current 85 pages (62 non-blog) are overwhelming. Brady wants fewer, better docs that make Squad look simple and appealing.
+- **Analysis:** Read all key docs — guide/, features/ (25 files), scenarios/ (21 files), cli/, sdk/, reference/. Understood content depth, overlap, and gaps.
+- **Proposal delivered:** Cut 62 non-blog pages to 18 (71% reduction). Blog (23 posts) untouched. Total: 41 pages.
+- **Structure:** Home (pitch) → Get Started (install + first session hero) → Concepts (5 themed pages consolidating all 25 features) → Scenarios (6 curated from 21) → Reference (CLI + SDK, one page each) → Cookbook (advanced recipes + migration/troubleshooting)
+- **Key decisions:**
+  - All 25 feature docs merge into 5 concept pages: Your Team, Memory & Knowledge, Parallel Work & Models, GitHub Integration, Portability & Extensions
+  - 6 scenarios curated as standalone: existing-repo, solo-dev, issue-driven-dev, monorepo, ci-cd, team-of-humans
+  - 15 remaining scenarios become compact recipes in cookbook
+  - First Session is the hero doc — leads with the "wow moment"
+  - Home page is a pitch, not a table of contents
+- **Proposal location:** Session state file `docs-restructure-plan.md`
+- **Status:** Awaiting Brady's approval before execution
+- **Next step:** If approved, assign merge work to agents (5 concept pages are biggest effort, ~2-3 hours each)
+
 ### 2026-02-23: Docs Site Engine & Beta Content (#185, #188)
 - **Task:** Build a minimal static site generator for markdown documentation + landing page with navigation sidebar
 - **Solution delivered:**
