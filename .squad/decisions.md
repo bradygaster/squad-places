@@ -3214,3 +3214,77 @@ Used React's setState-during-render pattern in `useCompletionFlash` instead of `
 
 All animations use `dimColor` toggle (single re-render) or `useTypewriter` (~15fps interval). No continuous high-frequency animations.
 
+
+
+# Decision: P2 UX Polish — Text over Emoji, Simplicity over Fidget
+
+**Author:** Cheritto (TUI Engineer)
+**Date:** 2026-02-26
+**Issue:** #340
+**PR:** #364
+
+## Context
+
+Marquez's UX audit flagged 6 P2 items — all "polish" tier. The theme across all 6: reduce visual noise, prefer text+ANSI over emoji, and simplify where rotation/variety adds no value.
+
+## Decisions Made
+
+1. **Removed "you:" from user messages.** The `❯` chevron already signals "your input." Adding "you:" was redundant and cluttered the message stream. Every character in a TUI earns its place.
+
+2. **Unified all separators to `-` (ASCII hyphen).** Was using `─` (U+2500) in MessageStream and `┄` (U+2504) in AgentPanel. Inconsistency between two components that render inches apart on screen. ASCII `-` is the most portable choice and renders identically across all terminal emulators.
+
+3. **Killed the thinking phrase carousel.** 10 rotating phrases every 2.5s was a nice idea but in practice just added motion that competed with the actual content. Static "Thinking..." is clear, honest, and doesn't draw the eye away from streaming content. Activity hints still override when available — those are genuinely informative.
+
+4. **Text status labels in `/agents`.** Emoji circles (`🔵🟢🔴⚪`) are ambiguous and render inconsistently across terminals. `[WORK]`, `[STREAM]`, `[ERR]`, `[IDLE]` are instantly readable and grep-friendly.
+
+5. **Single-space indent for status lines.** Minor but compounds: 2-space indent pushed content right, especially on narrow terminals. 1-space keeps things tight.
+
+6. **Replaced all ornamental emoji with text.** `📋` → `▸`, `📍` → `Focus:`, `🔌` → removed. Emoji in TUI output is a crapshoot — different widths, different renderers, different moods. Text + ANSI color is reliable.
+
+## Principle
+
+> In a TUI, every glyph earns its pixel. Prefer text that works everywhere over emoji that works sometimes.
+
+## Risk
+
+Low. All changes are visual-only. No behavioral or architectural changes. Tests updated to match.
+
+
+# Decision: First-run wow moment architecture
+
+**Author:** Cheritto (TUI Engineer)
+**Date:** 2026-02-26
+**Issue:** #341
+**PR:** #362
+
+## Context
+
+The first `squad init` and `squad` launch needed to feel magical — the "wow moment" that makes users feel they just assembled an elite team.
+
+## Decision
+
+### Init ceremony (console-based, no Ink dependency)
+
+Chose simple `process.stdout.write` + `setTimeout` typewriter and staggered reveal instead of pulling Ink into the `core/` module. The `core/init.ts` is documented as "zero dependencies" and is used in the bundled `cli.js` standalone — adding React/Ink would break that contract.
+
+Animation parameters: 25ms/char typewriter for opener, 40ms/char for logo, 100ms stagger between landmark lines. These were tuned to feel quick but deliberate — ~500ms total for a 5-item reveal.
+
+### First-launch detection (file marker pattern)
+
+Used a `.squad/.first-run` marker file written by init and consumed (deleted) by the shell on first launch. Alternatives considered:
+- **Timestamp comparison** (team.md mtime vs. current time) — fragile across git clone/checkout
+- **Config file flag** — adds schema complexity for a one-time event
+- **In-memory only** — doesn't survive between `squad init` and `squad` processes
+
+The file marker is atomic, cross-platform, and self-cleaning. The shell deletes it on read, so the guided prompt appears exactly once.
+
+### NO_COLOR respect
+
+All animation gated on `isInitNoColor()` which checks `NO_COLOR`, `TERM=dumb`, and non-TTY. This is consistent with the shell's `isNoColor()` in `terminal.ts` but adds the TTY check since init runs as a standalone process, not inside Ink.
+
+## Alternatives Rejected
+
+- **Ink rendering in init**: Would require React setup for a 2-second ceremony. Overkill.
+- **ASCII art banner**: Too flashy, doesn't match the clean Ink aesthetic.
+- **Sound/bell**: Unreliable across terminals, often annoying.
+
