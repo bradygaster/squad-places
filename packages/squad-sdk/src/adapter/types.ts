@@ -774,6 +774,39 @@ export interface SquadSessionEvent {
  */
 export type SquadSessionEventHandler = (event: SquadSessionEvent) => void;
 
+// ============================================================================
+// Client-Level Event Types
+// ============================================================================
+
+/**
+ * Client-level lifecycle event types (distinct from session-level events).
+ * Emitted by CopilotClient when sessions are created, deleted, or change state.
+ */
+export type SquadClientEventType =
+  | 'session.created'
+  | 'session.deleted'
+  | 'session.updated'
+  | 'session.foreground'
+  | 'session.background';
+
+/**
+ * Client-level lifecycle event payload.
+ */
+export interface SquadClientEvent {
+  type: SquadClientEventType;
+  sessionId: string;
+  metadata?: {
+    startTime: string;
+    modifiedTime: string;
+    summary?: string;
+  };
+}
+
+/**
+ * Handler for client-level lifecycle events.
+ */
+export type SquadClientEventHandler = (event: SquadClientEvent) => void;
+
 /**
  * Options for sending a message to a session.
  */
@@ -825,6 +858,26 @@ export interface SquadSession {
    * @returns Promise that resolves when the message is processed
    */
   sendMessage(options: SquadMessageOptions): Promise<void>;
+
+  /**
+   * Send a message and wait for the session to become idle.
+   * @param options - Message content and delivery options
+   * @param timeout - Timeout in milliseconds (default: 60000)
+   * @returns Promise that resolves with the final assistant message, or undefined
+   */
+  sendAndWait?(options: SquadMessageOptions, timeout?: number): Promise<unknown>;
+
+  /**
+   * Abort the current in-flight agent work.
+   * @returns Promise that resolves when the abort is acknowledged
+   */
+  abort?(): Promise<void>;
+
+  /**
+   * Retrieve all messages from this session.
+   * @returns Promise that resolves with the session's message history
+   */
+  getMessages?(): Promise<unknown[]>;
 
   /**
    * Register an event handler for session events.

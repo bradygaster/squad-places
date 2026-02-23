@@ -132,3 +132,17 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Both new functions exported from `src/index.ts` barrel
 - 13 tests in `test/ensure-squad-path-dual.test.ts`: local mode, remote mode (both roots), rejection, traversal attacks, subdirs, exact roots, temp dir, ResolvedSquadPaths wrapper
 - Build clean, 13 new tests + 21 existing resolution tests all pass
+
+### Unsafe cast elimination in adapter layer (#318, #320, #321, #322)
+- Replaced `as unknown as SquadSessionMetadata[]` in `listSessions()` with explicit field-mapping — picks `sessionId`, `startTime`, `modifiedTime`, `summary`, `isRemote`, `context` from SDK result
+- Applied same field-mapping pattern to `getStatus()`, `getAuthStatus()`, `listModels()` — all now pick only the fields defined in our types instead of passing SDK objects through
+- Created `SquadClientEventType`, `SquadClientEvent`, `SquadClientEventHandler` in `adapter/types.ts` — client-level lifecycle events distinct from session-level events
+- `SquadClient.on()` now uses generic `<K extends SquadClientEventType>` overload matching the SDK's `SessionLifecycleEventType` — zero `as any` casts
+- `SquadClientWithPool.on()` typed with matching overloads, pool event bridge uses typed `Record<string, SquadEventType>` mapping instead of `as any`
+- Removed dead `_squadOnMessage` reference in `sendMessage()` — was reading a property never set on any session
+- Fixed `(event as any).inputTokens` / `outputTokens` with typed index access via `SquadSessionEvent`'s `[key: string]: unknown` signature
+- Added `sendAndWait()`, `abort()`, `getMessages()` as optional methods on `SquadSession` interface and implemented in `CopilotSessionAdapter`
+- Verified `resumeSession()` already wraps in `CopilotSessionAdapter` — no fix needed for #320
+- Updated test assertions: `listSessions` now checks `.sessionId` not `.id`, `getStatus` checks `.protocolVersion` not `.uptime`, `getAuthStatus` checks `.isAuthenticated`/`.login` not `.authenticated`/`.user`
+- 3 new tests for optional adapter methods (`sendAndWait`, `abort`, `getMessages`)
+- Build clean, 2219/2219 tests pass, zero `as any` or `as unknown as` remain in adapter layer

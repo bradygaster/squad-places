@@ -42,6 +42,13 @@ Migrated 56 test files (173 imports) from ../src/ to @bradygaster/squad-sdk/* an
 
 ---
 
+### 📌 Adapter Layer Audit (2026-02-22) — Fenster
+**Requested by:** Brady. Audit for unsafe casts and method mismatches post-#315.
+**Findings:** 7 total — 2 P0, 3 P1, 2 P2. Full report: `docs/audits/adapter-unsafe-casts-audit.md`
+**Critical:** Event name mismatch (`message_delta` vs SDK `assistant.message_delta`) and event data shape mismatch (`event.delta` vs SDK `event.data.deltaContent`) mean streaming listeners never fire through the adapter. `listSessions()` uses `as unknown as` cast. `SquadClient.on()` casts to `any`.
+
+---
+
 ### 📌 Runtime Implementation Assessment (2026-02-22T22:00Z) — Fenster
 **Status:** Phase 1-2 complete (SDK/CLI split, monorepo structure). Phase 3 (runtime integration) blocked.
 
@@ -266,3 +273,20 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 - **Test mocks updated:** 4 test files (`adapter-client.test.ts`, `session-traces.test.ts`, `integration.test.ts`, `session-adapter.test.ts`) — mocks now return CopilotSession-shaped objects (`send`, `on` returning unsubscribe, `destroy`) instead of SquadSession-shaped.
 - **New tests:** 9 tests in `test/session-adapter.test.ts` — sessionId access, sendMessage→send delegation, attachments passthrough, on/off lifecycle, close→destroy delegation, unsubscriber cleanup.
 - **Build:** tsc clean (0 errors). **Tests:** 157 affected tests passing, 9 new tests.
+
+---
+
+### 📌 Adapter Event Layer Fix (#316, #317, #319) — Fenster
+**Requested by:** Brady. Fix event name mapping and data normalization in CopilotSessionAdapter.
+**Investigation:** Inspected @github/copilot-sdk generated types at dist/generated/session-events.d.ts. SDK uses dotted-namespace event types (e.g., `assistant.message_delta`, `assistant.usage`, `session.idle`). Our adapter was passing short names (`message_delta`, `usage`) directly to CopilotSession.on(), which meant handlers silently never fired. SDK event payloads also wrap data in an `event.data` envelope (e.g., `event.data.inputTokens`), while our SquadSessionEvent expects flat access (`event.inputTokens`).
+
+**Changes:**
+- Added `EVENT_MAP` (10 entries) and `REVERSE_EVENT_MAP` to CopilotSessionAdapter — maps Squad short names → SDK dotted names and back
+- Rewrote `on()` to map event names and wrap handlers with `normalizeEvent()` — flattens `event.data` onto top-level and maps type back to Squad short name
+- Changed `unsubscribers` from `Map<handler, unsubscribe>` to `Map<handler, Map<eventType, unsubscribe>>` — fixes pre-existing bug where same handler on two event types caused one subscription to leak on `off()`
+- `off()` now removes only the specified event type for a handler, not all subscriptions
+- OTel `sendMessage()` telemetry now works automatically through the adapter: `message_delta` subscription fires `first_token`, `usage` subscription populates `tokens.input`/`tokens.output`
+
+**Tests:** 16 tests in `test/session-adapter.test.ts` (was 9): event name mapping (3), data normalization (2), off/unsubscribe correctness (3), OTel-relevant handlers (2), existing tests preserved (6). All 16 passing. Build clean (tsc 0 errors).
+
+**Key SDK event types discovered:** `session.start`, `session.resume`, `session.error`, `session.idle`, `session.usage_info`, `session.shutdown`, `user.message`, `assistant.message`, `assistant.message_delta`, `assistant.usage`, `assistant.reasoning`, `assistant.reasoning_delta`, `assistant.turn_start`, `assistant.turn_end`, `assistant.intent`, `tool.execution_start`, `tool.execution_complete`, `subagent.started`, `subagent.completed`, `hook.start`, `hook.end`, `system.message`.

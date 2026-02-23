@@ -303,15 +303,15 @@ describe('SquadClient — Session CRUD', () => {
     const MockedCopilotClient = CopilotClient as unknown as ReturnType<typeof vi.fn>;
     const instance = MockedCopilotClient.mock.results[0].value;
     instance.listSessions.mockResolvedValue([
-      { id: 'session-1', status: 'active' },
-      { id: 'session-2', status: 'idle' },
+      { sessionId: 'session-1', startTime: new Date(), modifiedTime: new Date(), isRemote: false },
+      { sessionId: 'session-2', startTime: new Date(), modifiedTime: new Date(), isRemote: false },
     ]);
 
     const sessions = await client.listSessions();
 
     expect(sessions).toHaveLength(2);
-    expect(sessions[0].id).toBe('session-1');
-    expect(sessions[1].id).toBe('session-2');
+    expect(sessions[0].sessionId).toBe('session-1');
+    expect(sessions[1].sessionId).toBe('session-2');
   });
 
   it('should delete session', async () => {
@@ -362,14 +362,13 @@ describe('SquadClient — Status Operations', () => {
     const instance = MockedCopilotClient.mock.results[0].value;
     instance.getStatus.mockResolvedValue({ 
       version: '1.0.0', 
-      uptime: 12345,
-      sessions: 3
+      protocolVersion: 2,
     });
 
     const status = await client.getStatus();
 
     expect(status.version).toBe('1.0.0');
-    expect(status.uptime).toBe(12345);
+    expect(status.protocolVersion).toBe(2);
   });
 
   it('should get auth status', async () => {
@@ -379,14 +378,14 @@ describe('SquadClient — Status Operations', () => {
     const MockedCopilotClient = CopilotClient as unknown as ReturnType<typeof vi.fn>;
     const instance = MockedCopilotClient.mock.results[0].value;
     instance.getAuthStatus.mockResolvedValue({ 
-      authenticated: true,
-      user: 'testuser'
+      isAuthenticated: true,
+      login: 'testuser'
     });
 
     const authStatus = await client.getAuthStatus();
 
-    expect(authStatus.authenticated).toBe(true);
-    expect(authStatus.user).toBe('testuser');
+    expect(authStatus.isAuthenticated).toBe(true);
+    expect(authStatus.login).toBe('testuser');
   });
 
   it('should list models', async () => {

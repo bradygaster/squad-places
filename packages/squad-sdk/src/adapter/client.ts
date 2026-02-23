@@ -21,6 +21,9 @@ import type {
   SquadGetStatusResponse,
   SquadModelInfo,
   SquadMessageOptions,
+  SquadClientEventType,
+  SquadClientEvent,
+  SquadClientEventHandler,
 } from "./types.js";
 
 const tracer = trace.getTracer('squad-sdk');
@@ -33,9 +36,33 @@ const tracer = trace.getTracer('squad-sdk');
  * the unsafe `as unknown as` cast that skipped runtime method mapping.
  */
 class CopilotSessionAdapter implements SquadSession {
+  /**
+   * Maps Squad short event names → @github/copilot-sdk dotted event names.
+   * SDK uses dotted-namespace prefixes (e.g., `assistant.message_delta`),
+   * while Squad uses short names (e.g., `message_delta`).
+   * Names already in dotted form pass through via the fallback.
+   */
+  private static readonly EVENT_MAP: Record<string, string> = {
+    'message_delta': 'assistant.message_delta',
+    'message': 'assistant.message',
+    'usage': 'assistant.usage',
+    'reasoning_delta': 'assistant.reasoning_delta',
+    'reasoning': 'assistant.reasoning',
+    'turn_start': 'assistant.turn_start',
+    'turn_end': 'assistant.turn_end',
+    'intent': 'assistant.intent',
+    'idle': 'session.idle',
+    'error': 'session.error',
+  };
+
+  /** Reverse map: SDK dotted names → Squad short names. */
+  private static readonly REVERSE_EVENT_MAP: Record<string, string> = Object.fromEntries(
+    Object.entries(CopilotSessionAdapter.EVENT_MAP).map(([k, v]) => [v, k])
+  );
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly inner: any;
-  private readonly unsubscribers = new Map<SquadSessionEventHandler, () => void>();
+  private readonly unsubscribers = new Map<SquadSessionEventHandler, Map<string, () => void>>();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(copilotSession: any) {
@@ -50,16 +77,57 @@ class CopilotSessionAdapter implements SquadSession {
     await this.inner.send(options);
   }
 
+  async sendAndWait(options: SquadMessageOptions, timeout?: number): Promise<unknown> {
+    return await this.inner.sendAndWait(options, timeout);
+  }
+
+  async abort(): Promise<void> {
+    await this.inner.abort();
+  }
+
+  async getMessages(): Promise<unknown[]> {
+    return await this.inner.getMessages();
+  }
+
+  /**
+   * Normalizes an SDK event into a SquadSessionEvent.
+   * Maps the dotted type back to the Squad short name and
+   * flattens `event.data` onto the top-level object so callers
+   * can access fields directly (e.g., `event.inputTokens`).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static normalizeEvent(sdkEvent: any): SquadSessionEvent {
+    const squadType = CopilotSessionAdapter.REVERSE_EVENT_MAP[sdkEvent.type] ?? sdkEvent.type;
+    return {
+      type: squadType,
+      ...(sdkEvent.data ?? {}),
+    };
+  }
+
   on(eventType: SquadSessionEventType, handler: SquadSessionEventHandler): void {
-    const unsubscribe = this.inner.on(eventType, handler);
-    this.unsubscribers.set(handler, unsubscribe);
+    const sdkType = CopilotSessionAdapter.EVENT_MAP[eventType] ?? eventType;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wrappedHandler = (sdkEvent: any) => {
+      handler(CopilotSessionAdapter.normalizeEvent(sdkEvent));
+    };
+    const unsubscribe = this.inner.on(sdkType, wrappedHandler);
+    if (!this.unsubscribers.has(handler)) {
+      this.unsubscribers.set(handler, new Map());
+    }
+    this.unsubscribers.get(handler)!.set(eventType, unsubscribe);
   }
 
   off(eventType: SquadSessionEventType, handler: SquadSessionEventHandler): void {
-    const unsubscribe = this.unsubscribers.get(handler);
-    if (unsubscribe) {
-      unsubscribe();
-      this.unsubscribers.delete(handler);
+    const handlerMap = this.unsubscribers.get(handler);
+    if (handlerMap) {
+      const unsubscribe = handlerMap.get(eventType);
+      if (unsubscribe) {
+        unsubscribe();
+        handlerMap.delete(eventType);
+      }
+      if (handlerMap.size === 0) {
+        this.unsubscribers.delete(handler);
+      }
     }
   }
 
@@ -455,7 +523,14 @@ export class SquadClient {
 
       try {
         const sessions = await this.client.listSessions();
-        const result = sessions as unknown as SquadSessionMetadata[];
+        const result = sessions.map((s): SquadSessionMetadata => ({
+          sessionId: s.sessionId,
+          startTime: s.startTime,
+          modifiedTime: s.modifiedTime,
+          summary: s.summary,
+          isRemote: s.isRemote,
+          context: s.context as Record<string, unknown> | undefined,
+        }));
         span.setAttribute('sessions.count', result.length);
         return result;
       } catch (error) {
@@ -552,7 +627,11 @@ export class SquadClient {
     }
 
     try {
-      return await this.client.getStatus();
+      const raw = await this.client.getStatus();
+      return {
+        version: raw.version,
+        protocolVersion: raw.protocolVersion,
+      };
     } catch (error) {
       if (this.shouldAttemptReconnect(error)) {
         await this.attemptReconnection();
@@ -571,7 +650,14 @@ export class SquadClient {
     }
 
     try {
-      return await this.client.getAuthStatus();
+      const raw = await this.client.getAuthStatus();
+      return {
+        isAuthenticated: raw.isAuthenticated,
+        authType: raw.authType,
+        host: raw.host,
+        login: raw.login,
+        statusMessage: raw.statusMessage,
+      };
     } catch (error) {
       if (this.shouldAttemptReconnect(error)) {
         await this.attemptReconnection();
@@ -590,7 +676,16 @@ export class SquadClient {
     }
 
     try {
-      return await this.client.listModels();
+      const models = await this.client.listModels();
+      return models.map((m): SquadModelInfo => ({
+        id: m.id,
+        name: m.name,
+        capabilities: m.capabilities,
+        policy: m.policy,
+        billing: m.billing,
+        supportedReasoningEfforts: m.supportedReasoningEfforts,
+        defaultReasoningEffort: m.defaultReasoningEffort,
+      }));
     } catch (error) {
       if (this.shouldAttemptReconnect(error)) {
         await this.attemptReconnection();
@@ -625,7 +720,6 @@ export class SquadClient {
     let outputTokens = 0;
     let inputTokens = 0;
 
-    const prevOnMessage = (session as any)._squadOnMessage;
     const origOn = session.on.bind(session);
 
     // Wire temporary event listener for stream tracking
@@ -635,8 +729,8 @@ export class SquadClient {
         streamSpan.addEvent('first_token');
       }
       if (event.type === 'usage') {
-        inputTokens = (event as any).inputTokens ?? 0;
-        outputTokens = (event as any).outputTokens ?? 0;
+        inputTokens = typeof event['inputTokens'] === 'number' ? event['inputTokens'] : 0;
+        outputTokens = typeof event['outputTokens'] === 'number' ? event['outputTokens'] : 0;
       }
     };
 
@@ -691,18 +785,18 @@ export class SquadClient {
   }
 
   /**
-   * Subscribe to session lifecycle events.
+   * Subscribe to client-level session lifecycle events.
    */
-  on(eventType: SquadSessionEventType, handler: SquadSessionEventHandler): () => void;
-  on(handler: SquadSessionEventHandler): () => void;
+  on<K extends SquadClientEventType>(eventType: K, handler: (event: SquadClientEvent & { type: K }) => void): () => void;
+  on(handler: SquadClientEventHandler): () => void;
   on(
-    eventTypeOrHandler: SquadSessionEventType | SquadSessionEventHandler,
-    handler?: SquadSessionEventHandler
+    eventTypeOrHandler: SquadClientEventType | SquadClientEventHandler,
+    handler?: (event: SquadClientEvent) => void
   ): () => void {
     if (typeof eventTypeOrHandler === "string" && handler) {
-      return this.client.on(eventTypeOrHandler as any, handler as any);
+      return this.client.on(eventTypeOrHandler, handler);
     } else {
-      return this.client.on(eventTypeOrHandler as any);
+      return this.client.on(eventTypeOrHandler as SquadClientEventHandler);
     }
   }
 

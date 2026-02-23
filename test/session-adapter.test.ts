@@ -36,6 +36,10 @@ function createMockCopilotSession(sessionId = 'test-session-42') {
     registerHooks: vi.fn(),
     // expose for test assertions
     _typedHandlers: typedHandlers,
+    /** Simulate the SDK dispatching an event to typed handlers */
+    _emit(eventType: string, event: any) {
+      typedHandlers.get(eventType)?.forEach((h) => h(event));
+    },
   };
 }
 
@@ -86,28 +90,102 @@ describe('CopilotSessionAdapter (via SquadClient)', () => {
     expect(mockSession.send).toHaveBeenCalledWith(opts);
   });
 
-  it('on() registers event handler via CopilotSession.on()', async () => {
+  // --- Event name mapping ---
+
+  it('on() maps Squad short names to SDK dotted names', async () => {
     const { session, mockSession } = await createAdaptedSession();
 
     const handler = vi.fn();
     session.on('message_delta', handler);
 
-    expect(mockSession.on).toHaveBeenCalledWith('message_delta', handler);
+    // The mock should receive the SDK dotted name, not the short name
+    expect(mockSession.on).toHaveBeenCalledWith('assistant.message_delta', expect.any(Function));
   });
 
-  it('off() calls the unsubscribe function returned by CopilotSession.on()', async () => {
+  it('on() passes through already-dotted SDK event names', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    const handler = vi.fn();
+    session.on('assistant.message', handler);
+
+    expect(mockSession.on).toHaveBeenCalledWith('assistant.message', expect.any(Function));
+  });
+
+  it('on() maps usage → assistant.usage', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    const handler = vi.fn();
+    session.on('usage', handler);
+
+    expect(mockSession.on).toHaveBeenCalledWith('assistant.usage', expect.any(Function));
+  });
+
+  // --- Event data normalization ---
+
+  it('normalizes SDK event data: flattens event.data and maps type back', async () => {
     const { session, mockSession } = await createAdaptedSession();
 
     const handler = vi.fn();
     session.on('message_delta', handler);
 
-    // Handler should be registered
-    expect(mockSession._typedHandlers.get('message_delta')?.has(handler)).toBe(true);
+    // Simulate the SDK dispatching an assistant.message_delta event
+    const sdkEvent = {
+      id: 'evt-1',
+      timestamp: '2026-02-22T10:00:00Z',
+      parentId: null,
+      ephemeral: true,
+      type: 'assistant.message_delta',
+      data: { messageId: 'msg-1', deltaContent: 'Hello' },
+    };
+    mockSession._emit('assistant.message_delta', sdkEvent);
+
+    expect(handler).toHaveBeenCalledOnce();
+    const received = handler.mock.calls[0][0];
+    // Type should be normalized back to Squad short name
+    expect(received.type).toBe('message_delta');
+    // Data fields should be flattened onto the event
+    expect(received.messageId).toBe('msg-1');
+    expect(received.deltaContent).toBe('Hello');
+  });
+
+  it('normalizes assistant.usage events with token counts', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    const handler = vi.fn();
+    session.on('usage', handler);
+
+    const sdkEvent = {
+      id: 'evt-2',
+      timestamp: '2026-02-22T10:00:01Z',
+      parentId: null,
+      ephemeral: true,
+      type: 'assistant.usage',
+      data: { model: 'gpt-4', inputTokens: 100, outputTokens: 50 },
+    };
+    mockSession._emit('assistant.usage', sdkEvent);
+
+    expect(handler).toHaveBeenCalledOnce();
+    const received = handler.mock.calls[0][0];
+    expect(received.type).toBe('usage');
+    expect(received.inputTokens).toBe(100);
+    expect(received.outputTokens).toBe(50);
+  });
+
+  // --- off() / unsubscribe ---
+
+  it('off() calls the unsubscribe function for the correct event type', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    const handler = vi.fn();
+    session.on('message_delta', handler);
+
+    // Wrapped handler should be registered under SDK dotted name
+    expect(mockSession._typedHandlers.get('assistant.message_delta')?.size).toBe(1);
 
     session.off('message_delta', handler);
 
-    // The unsubscribe should have removed it
-    expect(mockSession._typedHandlers.get('message_delta')?.has(handler)).toBe(false);
+    // Unsubscribe should have removed it
+    expect(mockSession._typedHandlers.get('assistant.message_delta')?.size).toBe(0);
   });
 
   it('off() is a no-op for unregistered handlers', async () => {
@@ -117,6 +195,25 @@ describe('CopilotSessionAdapter (via SquadClient)', () => {
     const unknownHandler = vi.fn();
     session.off('message_delta', unknownHandler);
   });
+
+  it('same handler on two event types: off() removes only the specified one', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    const handler = vi.fn();
+    session.on('message_delta', handler);
+    session.on('usage', handler);
+
+    expect(mockSession._typedHandlers.get('assistant.message_delta')?.size).toBe(1);
+    expect(mockSession._typedHandlers.get('assistant.usage')?.size).toBe(1);
+
+    session.off('message_delta', handler);
+
+    // message_delta unsubscribed, usage still active
+    expect(mockSession._typedHandlers.get('assistant.message_delta')?.size).toBe(0);
+    expect(mockSession._typedHandlers.get('assistant.usage')?.size).toBe(1);
+  });
+
+  // --- close() ---
 
   it('close() delegates to CopilotSession.destroy()', async () => {
     const { session, mockSession } = await createAdaptedSession();
@@ -137,6 +234,50 @@ describe('CopilotSessionAdapter (via SquadClient)', () => {
     // After close, off() should be a no-op (no throw)
     session.off('message_delta', handler);
   });
+
+  // --- OTel-relevant: message_delta and usage handlers fire with correct data ---
+
+  it('message_delta handler fires with normalized data (OTel first_token)', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    let firstTokenSeen = false;
+    const handler = (event: any) => {
+      if (event.type === 'message_delta') {
+        firstTokenSeen = true;
+      }
+    };
+    session.on('message_delta', handler);
+
+    mockSession._emit('assistant.message_delta', {
+      id: 'e1', timestamp: 'ts', parentId: null, ephemeral: true,
+      type: 'assistant.message_delta',
+      data: { messageId: 'm1', deltaContent: 'Hi' },
+    });
+
+    expect(firstTokenSeen).toBe(true);
+  });
+
+  it('usage handler populates inputTokens and outputTokens (OTel token tracking)', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    let captured: any = null;
+    const handler = (event: any) => {
+      if (event.type === 'usage') {
+        captured = event;
+      }
+    };
+    session.on('usage', handler);
+
+    mockSession._emit('assistant.usage', {
+      id: 'e2', timestamp: 'ts', parentId: null, ephemeral: true,
+      type: 'assistant.usage',
+      data: { model: 'gpt-4', inputTokens: 200, outputTokens: 80 },
+    });
+
+    expect(captured).not.toBeNull();
+    expect(captured.inputTokens).toBe(200);
+    expect(captured.outputTokens).toBe(80);
+  });
 });
 
 describe('CopilotSessionAdapter via resumeSession', () => {
@@ -152,5 +293,44 @@ describe('CopilotSessionAdapter via resumeSession', () => {
     expect(session.sessionId).toBe('resumed-session-99');
     await session.sendMessage({ prompt: 'resumed' });
     expect(mockSession.send).toHaveBeenCalledWith({ prompt: 'resumed' });
+  });
+});
+
+describe('CopilotSessionAdapter optional methods', () => {
+  async function createAdaptedSession() {
+    const client = new SquadClient({ autoStart: false });
+    (client as any).state = 'connected';
+    const mockSession = createMockCopilotSession();
+    (client as any).client.createSession = vi.fn().mockResolvedValue(mockSession);
+    const session = await client.createSession();
+    return { session, mockSession };
+  }
+
+  it('sendAndWait() delegates to CopilotSession.sendAndWait()', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+    mockSession.sendAndWait.mockResolvedValue({ type: 'assistant.message', data: { content: 'hello' } });
+
+    const result = await session.sendAndWait!({ prompt: 'test' }, 5000);
+
+    expect(mockSession.sendAndWait).toHaveBeenCalledWith({ prompt: 'test' }, 5000);
+    expect(result).toEqual({ type: 'assistant.message', data: { content: 'hello' } });
+  });
+
+  it('abort() delegates to CopilotSession.abort()', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+
+    await session.abort!();
+
+    expect(mockSession.abort).toHaveBeenCalledOnce();
+  });
+
+  it('getMessages() delegates to CopilotSession.getMessages()', async () => {
+    const { session, mockSession } = await createAdaptedSession();
+    mockSession.getMessages.mockResolvedValue([{ type: 'assistant.message' }]);
+
+    const messages = await session.getMessages!();
+
+    expect(mockSession.getMessages).toHaveBeenCalledOnce();
+    expect(messages).toHaveLength(1);
   });
 });

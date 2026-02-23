@@ -23,6 +23,9 @@ export type {
   SquadGetStatusResponse,
   SquadGetAuthStatusResponse,
   SquadModelInfo,
+  SquadClientEventType,
+  SquadClientEvent,
+  SquadClientEventHandler,
 } from '../adapter/types.js';
 
 // Session status type for pool management
@@ -35,9 +38,9 @@ export { EventBus, type SquadEvent, type SquadEventType } from './event-bus.js';
 // --- High-Level Client with Pool Management ---
 
 import { SquadClient as BaseSquadClient, type SquadClientOptions } from '../adapter/client.js';
-import type { SquadSession, SquadSessionConfig } from '../adapter/types.js';
+import type { SquadSession, SquadSessionConfig, SquadClientEventType, SquadClientEvent, SquadClientEventHandler } from '../adapter/types.js';
 import { SessionPool, type SessionPoolConfig } from './session-pool.js';
-import { EventBus } from './event-bus.js';
+import { EventBus, type SquadEventType } from './event-bus.js';
 
 export interface SquadClientWithPoolConfig extends SquadClientOptions {
   /** Session pool configuration */
@@ -81,14 +84,24 @@ export class SquadClientWithPool {
     this.pool = new SessionPool(config.pool);
     this.eventBus = new EventBus();
     
-    // Wire pool events to event bus
+    // Wire pool events to event bus via type mapping
+    const poolToSquadEvent: Record<string, SquadEventType> = {
+      'session.added': 'session.created',
+      'session.removed': 'session.destroyed',
+      'session.status_changed': 'session.status_changed',
+      'pool.at_capacity': 'pool.health',
+      'pool.health_check': 'pool.health',
+    };
     this.pool.on((event) => {
-      this.eventBus.emit({
-        type: event.type as any,
-        sessionId: event.sessionId,
-        payload: event,
-        timestamp: event.timestamp,
-      });
+      const mappedType = poolToSquadEvent[event.type];
+      if (mappedType) {
+        this.eventBus.emit({
+          type: mappedType,
+          sessionId: event.sessionId,
+          payload: event,
+          timestamp: event.timestamp,
+        });
+      }
     });
   }
   
@@ -205,9 +218,17 @@ export class SquadClientWithPool {
     return this.baseClient.listModels();
   }
   
-  /** Subscribe to session lifecycle events */
-  on(eventType: any, handler: any) {
-    return this.baseClient.on(eventType, handler);
+  /** Subscribe to client-level session lifecycle events */
+  on<K extends SquadClientEventType>(eventType: K, handler: (event: SquadClientEvent & { type: K }) => void): () => void;
+  on(handler: SquadClientEventHandler): () => void;
+  on(
+    eventTypeOrHandler: SquadClientEventType | SquadClientEventHandler,
+    handler?: (event: SquadClientEvent) => void
+  ): () => void {
+    if (typeof eventTypeOrHandler === "string" && handler) {
+      return this.baseClient.on(eventTypeOrHandler, handler);
+    }
+    return this.baseClient.on(eventTypeOrHandler as SquadClientEventHandler);
   }
   
   /**
