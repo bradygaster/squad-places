@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
-import { isNoColor } from '../terminal.js';
+import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { useCompletionFlash } from '../useAnimation.js';
 import type { AgentSession } from '../types.js';
 
 interface AgentPanelProps {
@@ -43,14 +44,8 @@ function formatElapsed(seconds: number): string {
 
 export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent }) => {
   const noColor = isNoColor();
-
-  if (agents.length === 0) {
-    return (
-      <Box flexDirection="column" paddingX={1} marginTop={1}>
-        <Text dimColor>No agents active. Send a message to start. /help for commands.</Text>
-      </Box>
-    );
-  }
+  const width = useTerminalWidth();
+  const compact = width <= 60;
 
   // Tick every second to update elapsed times
   const [, setTick] = useState(0);
@@ -61,7 +56,48 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
     return () => clearInterval(timer);
   }, [agents]);
 
+  // Completion flash: brief "✓ Done" when agent finishes work
+  const completionFlash = useCompletionFlash(agents);
+
+  if (agents.length === 0) {
+    return (
+      <Box flexDirection="column" paddingX={1} marginTop={1}>
+        <Text dimColor>No agents active. Send a message to start. /help for commands.</Text>
+      </Box>
+    );
+  }
+
   const activeAgents = agents.filter(a => a.status === 'streaming' || a.status === 'working');
+  const sepWidth = Math.min(width, 120) - 2;
+
+  // Compact layout (≤60 cols): single-line per agent, no detail
+  if (compact) {
+    return (
+      <Box flexDirection="column" paddingX={1} marginTop={1}>
+        {agents.map((agent) => {
+          const active = agent.status === 'streaming' || agent.status === 'working';
+          const errored = agent.status === 'error';
+          const statusLabel = active ? (agent.status === 'streaming' ? 'streaming' : 'working') : errored ? 'error' : '';
+          return (
+            <Box key={agent.name} gap={0}>
+              <Text
+                dimColor={!active && !errored}
+                bold={active}
+                color={noColor ? undefined : active ? 'green' : errored ? 'red' : undefined}
+              >
+                {getRoleEmoji(agent.role)} {agent.name}
+              </Text>
+              {active && <><Text> </Text><PulsingDot /><Text> {statusLabel}</Text></>}
+              {errored && <Text color={noColor ? undefined : 'red'}> ✖</Text>}
+            </Box>
+          );
+        })}
+        <Box marginTop={0}>
+          <Text dimColor>{'┄'.repeat(sepWidth)}</Text>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" paddingX={1} marginTop={1}>
@@ -93,6 +129,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
                   ? <Text bold> [Error] ✖</Text>
                   : <Text color="red"> ✖</Text>
               )}
+              {completionFlash.has(agent.name) && (
+                noColor
+                  ? <Text bold> ✓ Done</Text>
+                  : <Text color="green" bold> ✓ Done</Text>
+              )}
             </Box>
           );
         })}
@@ -106,9 +147,12 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
             const elapsed = formatElapsed(sec);
             const statusLabel = a.status === 'streaming' ? 'streaming' : 'working';
             const hint = a.activityHint;
+            // At ≥100 cols show full hint; otherwise truncate to fit
+            const maxHintLen = width >= 100 ? Infinity : width - 30;
+            const displayHint = hint && hint.length > maxHintLen ? hint.slice(0, maxHintLen - 1) + '…' : hint;
             return (
               <Text key={a.name} color={noColor ? undefined : 'yellow'}>
-                {'  '}{getRoleEmoji(a.role)} {a.name} ({statusLabel}{elapsed ? `, ${elapsed}` : ''}){hint ? ` — ${hint}` : ''}
+                {'  '}{getRoleEmoji(a.role)} {a.name} ({statusLabel}{elapsed ? `, ${elapsed}` : ''}){displayHint ? ` — ${displayHint}` : ''}
               </Text>
             );
           })}
@@ -119,7 +163,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
 
       {/* Separator between panel and message stream */}
       <Box marginTop={0}>
-        <Text dimColor>{'┄'.repeat(Math.min(process.stdout.columns ?? 80, 120) - 2)}</Text>
+        <Text dimColor>{'┄'.repeat(sepWidth)}</Text>
       </Box>
     </Box>
   );

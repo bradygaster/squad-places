@@ -71,3 +71,34 @@
 - 11 new tests in `test/repl-ux.test.ts` section 9 covering AgentPanel progress + MessageStream activity feed
 - 4 pre-existing test failures (2 empty panel, 2 idle→ready text mismatch from #338 copy polish)
 - PR #357 on branch `squad/335-progress-indicators`
+
+### 2026-02-26: Tasteful animations and transitions (#337)
+- Created `useAnimation.ts` with four reusable hooks: `useTypewriter`, `useFadeIn`, `useCompletionFlash`, `useMessageFade`
+- All hooks respect NO_COLOR via `isNoColor()` — animations disabled, static content returned immediately
+- Frame rate capped at ~15fps (67ms intervals) for GPU-friendly Ink rendering
+- Welcome animation (App.tsx): typewriter reveals "◆ SQUAD" title over 500ms, banner body fades in via `useFadeIn(300ms)`
+  - `bannerReady` gates all banner elements — nothing renders until title finishes typing
+  - When `welcome` is null (no `.squad/` dir), title renders statically
+- Message appearance (MessageStream.tsx): new messages start with `dimColor` for 200ms fade-in
+  - `useMessageFade` tracks total message count via ref, returns number of "fading" messages from end of visible list
+  - System messages always dimColor, so fade only applies to user and agent messages
+- Agent completion flash (AgentPanel.tsx): "✓ Done" badge appears for 1.5s when agent transitions working/streaming → idle
+  - `useCompletionFlash` uses React's setState-during-render pattern for synchronous detection
+  - Flash badge renders in both compact and full-width layouts
+  - Timer cleanup via `useEffect` watching `flashing` state + unmount cleanup
+- Hooks moved before early returns in AgentPanel to comply with Rules of Hooks
+- 9 new tests in `test/repl-ux.test.ts` section 10 covering message fade, completion flash, NO_COLOR suppression, hook exports
+- 4 pre-existing test failures (2 empty panel, 2 idle→ready text mismatch) — not related
+- PR on branch `squad/337-animations`
+
+### 2026-02-23: Terminal adaptivity 40→120 col range (#336)
+- Added `getTerminalWidth()` (pure, clamped ≥40) and `useTerminalWidth()` (React hook, resize-aware) to `terminal.ts`
+- Hook listens for `process.stdout` `resize` event, dynamically bumps `maxListeners` to avoid warnings in test
+- AgentPanel: 3 width tiers — compact (≤60 cols): single-line per agent, no hints/elapsed; standard (61–99): current layout with truncated hints; wide (≥100): full detail
+- App.tsx welcome banner: compact (≤60): header + agent count + "/help · Ctrl+C exit"; standard (60–99): adds roster + description; wide (≥100): adds focus line
+- InputPrompt: prompt shrinks from "◆ squad> " to "sq> " at <60; placeholder from "Type a message or @agent..." to "@agent..."
+- commands.ts `/help`: <80 cols → single-column compact list; ≥80 cols → padded 2-column table (existing)
+- MessageStream: separator uses `useTerminalWidth()` hook instead of raw `process.stdout.columns`
+- 66/70 tests pass (same 4 pre-existing failures: 2 empty-panel, 2 idle→ready text mismatch)
+- Pattern: `useTerminalWidth()` is the canonical hook for width-responsive Ink components; `getTerminalWidth()` for non-React code
+- PR #360 on branch `squad/336-terminal-adaptivity`
