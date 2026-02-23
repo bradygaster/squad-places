@@ -13,6 +13,13 @@ import { SessionRegistry } from './sessions.js';
 import { ShellRenderer } from './render.js';
 import type { ShellState, ShellMessage } from './types.js';
 
+/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
+function debugLog(...args: unknown[]): void {
+  if (process.env['SQUAD_DEBUG'] === '1') {
+    console.error('[SQUAD_DEBUG]', ...args);
+  }
+}
+
 export interface LifecycleOptions {
   teamRoot: string;
   renderer: ShellRenderer;
@@ -54,17 +61,21 @@ export class ShellLifecycle {
     const squadDir = path.resolve(this.options.teamRoot, '.squad');
     if (!fs.existsSync(squadDir) || !fs.statSync(squadDir).isDirectory()) {
       this.state.status = 'error';
-      throw new Error(
-        `No .squad/ directory found at "${squadDir}". Run "squad init" to create a team.`
+      const err = new Error(
+        `No team found. Run \`squad init\` to create one.`
       );
+      debugLog('initialize: .squad/ directory not found at', squadDir);
+      throw err;
     }
 
     const teamPath = path.join(squadDir, 'team.md');
     if (!fs.existsSync(teamPath)) {
       this.state.status = 'error';
-      throw new Error(
-        `No team.md found at "${teamPath}". The .squad/ directory exists but has no team manifest.`
+      const err = new Error(
+        `No team manifest found. The .squad/ directory exists but has no team.md. Run \`squad init\` to fix.`
       );
+      debugLog('initialize: team.md not found at', teamPath);
+      throw err;
     }
 
     const teamContent = fs.readFileSync(teamPath, 'utf-8');
@@ -270,7 +281,8 @@ export function loadWelcomeData(teamRoot: string): WelcomeData | null {
     }
 
     return { projectName, description, agents, focus };
-  } catch {
+  } catch (err) {
+    debugLog('loadWelcomeData failed:', err);
     return null;
   }
 }

@@ -2827,3 +2827,78 @@ When writing multi-phase epics:
 **What:** Squad should pump telemetry during BOTH modes of usage: (1) when running as the standalone Squad CLI, and (2) when running as an agent inside GitHub Copilot CLI. Brady wants to see telemetry from both surfaces.
 **Why:** User request — captured for team memory. Affects OTel integration architecture.
 
+# Decision: ThinkingIndicator two-layer architecture
+
+**Date:** 2026-02-24
+**By:** Cheritto (TUI Engineer)
+**Issue:** #331 — Engaging thinking feedback
+**PR:** #351
+
+## Decision
+
+Extracted the inline ThinkingIndicator from MessageStream.tsx into a standalone `ThinkingIndicator.tsx` component with a two-layer design:
+
+1. **Layer 1 (Claude-style):** 10 rotating thinking phrases cycled every 2.5s — "Analyzing...", "Considering...", etc.
+2. **Layer 2 (Copilot-style):** Activity hints from SDK `tool_call` events — "Reading file...", "Spawning specialist...", etc. Takes priority over Layer 1 when available.
+
+## Why
+
+- Standalone component is reusable (AgentPanel could use it too if needed)
+- Two-layer priority system means we always show *something* engaging (Layer 1) but upgrade to specific info when we have it (Layer 2)
+- `setActivityHint` on ShellApi lets the streaming pipeline push hints without coupling to React internals
+
+## Team impact
+
+- **Marquez:** May want to adjust phrase list or rotation timing — both are exported constants
+- **Kovash:** MessageStream interface now has optional `activityHint` prop
+- **Breedan:** 16 new tests in `test/repl-ux.test.ts` sections 7 + 8
+- **Foundation for 3.1 (rich progress):** ThinkingIndicator can be extended with progress bars, sub-task tracking
+
+# Decision: P0 Bug Fixes from Phase 1 Testing
+
+**By:** Hockney (Tester)
+**Date:** 2026-02-23
+**Issue:** #333
+**PR:** #351
+
+## Decisions Made
+
+### BUG-2: Empty/whitespace args behavior
+**Decision:** Empty string and whitespace-only CLI args show brief help text and exit 0.
+**Rationale:** Previously, `squad ""` launched the interactive shell in non-TTY mode (exit 1), and `squad "   "` hit the "Unknown command" error. Neither is useful. Showing help is the least-surprise behavior and matches how most CLI tools handle garbage input.
+**Implementation:** Trim `args[0]` early; if raw arg was provided but trims to empty, show help instead of routing to shell or command dispatch.
+
+### BUG-1: --version bare semver is correct
+**Decision:** No code change needed. Bare semver from `--version` is intentional per Cheritto's P0 UX fix (PR #349) and Marquez's audit.
+**Action:** Updated `version.feature` acceptance test which still asserted `output contains "squad"` — this conflicted with the `ux-gates.test.ts` gate that explicitly verifies no "squad" prefix.
+
+### version.feature was stale
+**Observation:** Acceptance tests can drift from UX decisions when multiple PRs change the same behavior. The version.feature file was written before the P0 UX decision to use bare semver, and nobody caught the conflict because the acceptance tests run separately from UX gate tests.
+**Recommendation:** Run both acceptance AND ux-gates tests in CI as a single quality gate to catch drift.
+
+## For Team Awareness
+- 3 pre-existing test failures in `repl-ux.test.ts` (AgentPanel empty-state rendering). Not introduced by this PR — Kovash's component changes made the old assertions stale. Someone should update those tests.
+
+# Decision: Dual-mode OTel telemetry (Issue #343)
+
+**By:** Saul
+**Date:** 2026-02-24
+**PR:** #352
+
+## What
+Added `squad.mode` resource attribute to OTel initialization and created `initAgentModeTelemetry()` convenience function for the Copilot agent-mode entry point.
+
+## Why
+Brady wants telemetry from both CLI and Copilot agent surfaces. The two modes need distinct `serviceName` and `squad.mode` attributes so they're distinguishable in Aspire dashboards and trace queries.
+
+## How
+- `OTelConfig.mode` → written as `squad.mode` resource attribute in `buildResource()`
+- `initAgentModeTelemetry()` in `otel-init.ts` → pre-configures `serviceName: 'squad-copilot-agent'`, `mode: 'copilot-agent'`
+- `runShell()` now passes `mode: 'cli'` to tag CLI telemetry
+- Exported from SDK barrel so consumers can `import { initAgentModeTelemetry } from '@bradygaster/squad-sdk'`
+
+## Team impact
+- **Any agent building the Copilot agent-mode entry point:** Call `initAgentModeTelemetry()` at startup and `handle.shutdown()` on exit. That's it.
+- **Existing CLI telemetry:** Now tagged with `squad.mode = 'cli'` — no breaking change.
+- **Dashboard queries:** Filter by `squad.mode` or `service.name` to isolate surfaces.
+

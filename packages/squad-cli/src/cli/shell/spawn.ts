@@ -11,6 +11,13 @@ import { SessionRegistry } from './sessions.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
+function debugLog(...args: unknown[]): void {
+  if (process.env['SQUAD_DEBUG'] === '1') {
+    console.error('[SQUAD_DEBUG]', ...args);
+  }
+}
+
 export interface SpawnOptions {
   /** Wait for completion (sync) or fire-and-track (background) */
   mode: 'sync' | 'background';
@@ -43,13 +50,15 @@ export interface SpawnResult {
 export function loadAgentCharter(agentName: string, teamRoot?: string): string {
   const squadDir = teamRoot ? join(teamRoot, '.squad') : resolveSquad();
   if (!squadDir) {
-    throw new Error('No .squad/ directory found. Run "squad init" first.');
+    debugLog('loadAgentCharter: no .squad/ directory found');
+    throw new Error('No team found. Run `squad init` to set up your project.');
   }
   const charterPath = join(squadDir, 'agents', agentName.toLowerCase(), 'charter.md');
   try {
     return readFileSync(charterPath, 'utf-8');
-  } catch {
-    throw new Error(`Charter not found for agent "${agentName}" at ${charterPath}`);
+  } catch (err) {
+    debugLog('loadAgentCharter: failed to read charter at', charterPath, err);
+    throw new Error(`No charter found for "${agentName}". Check that .squad/agents/${agentName.toLowerCase()}/charter.md exists.`);
   }
 }
 
@@ -116,10 +125,10 @@ export async function spawnAgent(
     try {
       await session.sendMessage({ prompt: task });
     } finally {
-      try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
+      try { session.off('message_delta', onDelta); } catch (err) { debugLog('spawnAgent: failed to remove delta listener:', err); }
     }
 
-    try { await session.close(); } catch { /* best-effort cleanup */ }
+    try { await session.close(); } catch (err) { debugLog('spawnAgent: failed to close session for', name, err); }
 
     registry.updateStatus(name, 'idle');
     return {
@@ -128,11 +137,13 @@ export async function spawnAgent(
       response: accumulated || undefined,
     };
   } catch (error) {
+    debugLog('spawnAgent: spawn failed for', name, error);
     registry.updateStatus(name, 'error');
+    const msg = error instanceof Error ? error.message : String(error);
     return {
       agentName: name,
       status: 'error',
-      error: error instanceof Error ? error.message : String(error),
+      error: `Failed to spawn ${name}: ${msg.replace(/^Error:\s*/i, '')}. Try again or run \`squad doctor\`.`,
     };
   }
 }

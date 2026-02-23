@@ -54,6 +54,53 @@ function debugLog(...args: unknown[]): void {
   }
 }
 
+/** Options for ghost response retry. */
+export interface GhostRetryOptions {
+  maxRetries?: number;
+  backoffMs?: readonly number[];
+  onRetry?: (attempt: number, maxRetries: number) => void;
+  onExhausted?: (maxRetries: number) => void;
+  debugLog?: (...args: unknown[]) => void;
+  promptPreview?: string;
+}
+
+/**
+ * Retry a send function when the response is empty (ghost response).
+ * Ghost responses occur when session.idle fires before assistant.message,
+ * causing sendAndWait() to return undefined or empty content.
+ */
+export async function withGhostRetry(
+  sendFn: () => Promise<string>,
+  options: GhostRetryOptions = {},
+): Promise<string> {
+  const maxRetries = options.maxRetries ?? 3;
+  const backoffMs = options.backoffMs ?? [1000, 2000, 4000];
+  const log = options.debugLog ?? (() => {});
+  const preview = options.promptPreview ?? '';
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      log('ghost response detected', {
+        timestamp: new Date().toISOString(),
+        attempt,
+        promptPreview: preview.slice(0, 80),
+      });
+      options.onRetry?.(attempt, maxRetries);
+      const delay = backoffMs[attempt - 1] ?? backoffMs[backoffMs.length - 1] ?? 4000;
+      await new Promise<void>(r => setTimeout(r, delay));
+    }
+    const result = await sendFn();
+    if (result) return result;
+  }
+
+  log('ghost response: all retries exhausted', {
+    timestamp: new Date().toISOString(),
+    promptPreview: preview.slice(0, 80),
+  });
+  options.onExhausted?.(maxRetries);
+  return '';
+}
+
 export async function runShell(): Promise<void> {
   const registry = new SessionRegistry();
   const renderer = new ShellRenderer();
@@ -69,7 +116,8 @@ export async function runShell(): Promise<void> {
   const lifecycle = new ShellLifecycle({ teamRoot, renderer, registry });
   try {
     await lifecycle.initialize();
-  } catch {
+  } catch (err) {
+    debugLog('lifecycle.initialize() failed:', err);
     // Non-fatal: shell works without discovered agents
   }
 
@@ -96,9 +144,11 @@ export async function runShell(): Promise<void> {
       shellApi?.refreshAgents();
     },
     onError: (agentName: string, error: Error) => {
+      debugLog(`StreamBridge error for ${agentName}:`, error);
+      const friendly = error.message.replace(/^Error:\s*/i, '');
       shellApi?.addMessage({
         role: 'system',
-        content: `❌ ${agentName}: ${error.message}`,
+        content: `❌ ${agentName} hit a problem: ${friendly}\n   Try again, or run \`squad doctor\` to check your setup.`,
         timestamp: new Date(),
       });
     },
@@ -145,6 +195,31 @@ export async function runShell(): Promise<void> {
       await done;
       return '';
     }
+  }
+
+  /** Convenience wrapper for withGhostRetry with shell UI integration. */
+  function ghostRetry(
+    sendFn: () => Promise<string>,
+    promptPreview: string,
+  ): Promise<string> {
+    return withGhostRetry(sendFn, {
+      debugLog,
+      promptPreview,
+      onRetry: (attempt, max) => {
+        shellApi?.addMessage({
+          role: 'system',
+          content: `⚠ No response received. Retrying (attempt ${attempt}/${max})...`,
+          timestamp: new Date(),
+        });
+      },
+      onExhausted: (max) => {
+        shellApi?.addMessage({
+          role: 'system',
+          content: `❌ Agent did not respond after ${max} attempts. Try again or run \`squad doctor\`.`,
+          timestamp: new Date(),
+        });
+      },
+    });
   }
 
   /** Send a message to an agent session and stream the response. */
@@ -202,11 +277,13 @@ export async function runShell(): Promise<void> {
     };
     try { session.on('tool_call', onToolCall); } catch { /* event may not exist */ }
     try {
-      const fallback = await awaitStreamedResponse(session, message);
-      debugLog('agent dispatch:', agentName, 'accumulated length', accumulated.length, 'fallback length', fallback.length);
-      if (!accumulated && fallback) {
-        accumulated = fallback;
-      }
+      accumulated = await ghostRetry(async () => {
+        accumulated = '';
+        const fallback = await awaitStreamedResponse(session, message);
+        debugLog('agent dispatch:', agentName, 'accumulated length', accumulated.length, 'fallback length', fallback.length);
+        if (!accumulated && fallback) accumulated = fallback;
+        return accumulated;
+      }, message);
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
       try { session.off('tool_call', onToolCall); } catch { /* ignore */ }
@@ -247,15 +324,18 @@ export async function runShell(): Promise<void> {
       shellApi?.setStreamingContent({ agentName: 'coordinator', content: accumulated });
     };
 
-    coordinatorSession.on('message_delta', onDelta);
+    const activeCoordSession = coordinatorSession;
+    activeCoordSession.on('message_delta', onDelta);
     try {
-      const fallback = await awaitStreamedResponse(coordinatorSession, message);
-      debugLog('coordinator dispatch: accumulated length', accumulated.length, 'fallback length', fallback.length);
-      if (!accumulated && fallback) {
-        accumulated = fallback;
-      }
+      accumulated = await ghostRetry(async () => {
+        accumulated = '';
+        const fallback = await awaitStreamedResponse(activeCoordSession, message);
+        debugLog('coordinator dispatch: accumulated length', accumulated.length, 'fallback length', fallback.length);
+        if (!accumulated && fallback) accumulated = fallback;
+        return accumulated;
+      }, message);
     } finally {
-      try { coordinatorSession.off('message_delta', onDelta); } catch { /* session may not support off */ }
+      try { activeCoordSession.off('message_delta', onDelta); } catch { /* session may not support off */ }
       shellApi?.setStreamingContent(null);
     }
 
@@ -305,11 +385,13 @@ export async function runShell(): Promise<void> {
         await dispatchToCoordinator(parsed.content ?? parsed.raw);
       }
     } catch (err) {
+      debugLog('handleDispatch error:', err);
       const errorMsg = err instanceof Error ? err.message : String(err);
+      const friendly = errorMsg.replace(/^Error:\s*/i, '');
       if (shellApi) {
         shellApi.addMessage({
           role: 'system',
-          content: `❌ ${errorMsg}`,
+          content: `❌ Something went wrong: ${friendly}\n   Try again, or check your connection. Run \`squad doctor\` for diagnostics.`,
           timestamp: new Date(),
         });
       }
@@ -331,18 +413,18 @@ export async function runShell(): Promise<void> {
   await waitUntilExit();
 
   // Cleanup: close all sessions and disconnect
-  for (const [, session] of agentSessions) {
-    try { await session.close(); } catch { /* best-effort cleanup */ }
+  for (const [name, session] of agentSessions) {
+    try { await session.close(); } catch (err) { debugLog(`Failed to close session for ${name}:`, err); }
   }
   // coordinatorSession is assigned inside dispatchToCoordinator closure;
   // TS control flow can't see the mutation, so assert the type.
   const coordSession = coordinatorSession as SquadSession | null;
   if (coordSession) {
-    try { await coordSession.close(); } catch { /* best-effort cleanup */ }
+    try { await coordSession.close(); } catch (err) { debugLog('Failed to close coordinator session:', err); }
   }
-  try { await client.disconnect(); } catch { /* best-effort cleanup */ }
-  try { await lifecycle.shutdown(); } catch { /* best-effort cleanup */ }
-  try { await telemetry.shutdown(); } catch { /* best-effort cleanup */ }
+  try { await client.disconnect(); } catch (err) { debugLog('Failed to disconnect client:', err); }
+  try { await lifecycle.shutdown(); } catch (err) { debugLog('Failed to shutdown lifecycle:', err); }
+  try { await telemetry.shutdown(); } catch (err) { debugLog('Failed to shutdown telemetry:', err); }
 
   console.log('👋 Squad out.');
 }

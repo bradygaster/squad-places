@@ -3,6 +3,13 @@ import { join } from 'node:path';
 
 import type { ShellMessage } from './types.js';
 
+/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
+function debugLog(...args: unknown[]): void {
+  if (process.env['SQUAD_DEBUG'] === '1') {
+    console.error('[SQUAD_DEBUG]', ...args);
+  }
+}
+
 export interface CoordinatorConfig {
   teamRoot: string;
   /** Path to routing.md */
@@ -23,8 +30,9 @@ export function buildCoordinatorPrompt(config: CoordinatorConfig): string {
   let teamContent = '';
   try {
     teamContent = readFileSync(teamPath, 'utf-8');
-  } catch {
-    teamContent = '(No team.md found)';
+  } catch (err) {
+    debugLog('buildCoordinatorPrompt: failed to read team.md at', teamPath, err);
+    teamContent = '(No team.md found — run `squad init` to create one)';
   }
 
   // Load routing.md for routing rules
@@ -32,8 +40,9 @@ export function buildCoordinatorPrompt(config: CoordinatorConfig): string {
   let routingContent = '';
   try {
     routingContent = readFileSync(routingPath, 'utf-8');
-  } catch {
-    routingContent = '(No routing.md found)';
+  } catch (err) {
+    debugLog('buildCoordinatorPrompt: failed to read routing.md at', routingPath, err);
+    routingContent = '(No routing.md found — run `squad init` to create one)';
   }
 
   return `You are the Squad Coordinator — you route work to the right agent.

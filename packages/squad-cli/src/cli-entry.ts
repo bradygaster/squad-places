@@ -37,6 +37,13 @@ import { runShell } from './cli/shell/index.js';
 // Keep VERSION in index.ts (public API); import it here via re-export
 import { VERSION } from '@bradygaster/squad-sdk';
 
+/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
+function debugLog(...args: unknown[]): void {
+  if (process.env['SQUAD_DEBUG'] === '1') {
+    console.error('[SQUAD_DEBUG]', ...args);
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const hasGlobal = args.includes('--global');
@@ -302,12 +309,14 @@ async function main(): Promise<void> {
 }
 
 main().catch(err => {
+  debugLog('Fatal CLI error:', err);
   if (err instanceof SquadError) {
     console.error(`${RED}✗${RESET} ${err.message}`);
   } else {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`${RED}✗${RESET} ${msg}`);
+    const friendly = msg.replace(/^Error:\s*/i, '');
+    console.error(`${RED}✗${RESET} ${friendly}`);
   }
-  console.error(`\n${DIM}Hint: Run 'squad doctor' to check your setup.${RESET}`);
+  console.error(`\n${DIM}Hint: Run 'squad doctor' to check your setup. Set SQUAD_DEBUG=1 for full diagnostics.${RESET}`);
   process.exit(1);
 });
