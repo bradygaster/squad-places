@@ -1,7 +1,5 @@
 # Marketplace Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #39 (M5-16)
 
 ---

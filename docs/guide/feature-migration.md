@@ -1,7 +1,5 @@
 # Feature Migration Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #37 (M3-14)
 
 ---

@@ -1,7 +1,5 @@
 # Custom Tools & Hooks Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #35 (M1-13)
 
 ---

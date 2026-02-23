@@ -1,7 +1,5 @@
 # Migration Guide: Beta to v1
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 Squad v1 is a replatform from the monolithic Agent framework to a programmable SDK with independent versioning. This guide walks you through migrating from beta (`@bradygaster/squad-sdk` v0.x) to v1.
 
 ## What Changed
@@ -101,7 +99,7 @@ Both still use markdown, but v1 enforces sections:
 
 **Beta:** GitHub-native only
 ```bash
-npx github:bradygaster/squad-sdk init
+squad-sdk init
 ```
 
 **v1:** npm-first with GitHub fallback
@@ -110,7 +108,7 @@ npm install -g @bradygaster/squad-cli
 squad init
 
 # Or legacy:
-npx github:bradygaster/squad init
+squad init
 ```
 
 **Recommendation:** Use npm for faster installs and better dependency management.

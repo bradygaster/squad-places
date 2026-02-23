@@ -336,3 +336,18 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 
 **docs/build.js rewritten with markdown-it:**
 Replaced regex-based markdownToHtml() with markdown-it for proper rendering of code blocks (with language classes), tables, nested lists, blockquotes, images, and links. Added frontmatter parser (--- fenced YAML), title extraction, asset copying (docs/assets/ -> dist/assets/), and updated nav to cover all 14 guide files across 4 sections (Getting Started, Guides, Reference, Migration). Template updated: asset paths fixed from `../assets/` to `assets/` for flat dist/ output, added {{TITLE}} placeholder, GitHub link updated to bradygaster/squad-pr. npm scripts added: `docs:build` and `docs:preview`. All 17 docs-build tests passing.
+
+---
+
+### 📌 Docs Build Multi-Directory Restructure (2026-02-23) — Fenster
+**Requested by:** Brady. Update docs/build.js to handle new multi-directory doc structure (guide/, cli/, sdk/, features/, scenarios/).
+
+**Changes to docs/build.js:**
+- Replaced flat guide/*.md discovery with section-based discovery across 5 configured directories (guide, cli, sdk, features, scenarios). Each section skips gracefully if the directory doesn't exist yet.
+- Nav generation now uses <details class="nav-section"> groups per section (Getting Started, CLI, SDK, Features, Scenarios) with dynamic discovery instead of hardcoded file lists.
+- Output mirrors source structure: docs/guide/index.md → docs/dist/guide/index.html. Root dist/index.html is a redirect to guide/index.html.
+- Asset paths computed via ssetsPrefix() helper — pages in subdirs get ../assets/ prefix. Template's href="assets/" and src="assets/" are rewritten per-page.
+- Search index now spans all sections (62 entries vs previous 14).
+- Added .md → .html link rewriting via ewriteLinks().
+- Title extraction chain: frontmatter → H1 → filename-derived.
+- All 30 docs-build tests passing. Build produces 62 pages across 5 sections + redirect.

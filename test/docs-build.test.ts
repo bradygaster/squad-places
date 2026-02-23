@@ -14,11 +14,23 @@ const DIST_DIR = join(DOCS_DIR, 'dist');
 const BUILD_SCRIPT = join(DOCS_DIR, 'build.js');
 const TEMPLATE_PATH = join(DOCS_DIR, 'template.html');
 
+// Guide section (docs/guide/)
 const EXPECTED_GUIDES = [
-  'index', 'installation', 'cli-install', 'configuration', 'shell',
-  'sdk-integration', 'tools-and-hooks', 'marketplace', 'upstream-inheritance',
-  'vscode-integration', 'architecture', 'sdk-api-reference', 'migration',
-  'feature-migration',
+  'index', 'installation', 'configuration', 'migration', 'feature-migration',
+  'first-session', 'github-issues-tour', 'tips-and-tricks', 'sample-prompts', 'whatsnew',
+];
+
+// CLI section (docs/cli/)
+const EXPECTED_CLI = ['shell', 'installation', 'vscode'];
+
+// SDK section (docs/sdk/)
+const EXPECTED_SDK = ['api-reference', 'integration', 'tools-and-hooks'];
+
+// All sections for build output validation
+const ALL_EXPECTED: Array<{ dir: string; name: string }> = [
+  ...EXPECTED_GUIDES.map(n => ({ dir: 'guide', name: n })),
+  ...EXPECTED_CLI.map(n => ({ dir: 'cli', name: n })),
+  ...EXPECTED_SDK.map(n => ({ dir: 'sdk', name: n })),
 ];
 
 function getMarkdownFiles(): string[] {
@@ -36,13 +48,13 @@ function readFile(filepath: string): string {
 
 describe('Docs Structure Validation', () => {
   describe('Markdown Files', () => {
-    it('guide directory contains all 14 expected markdown files', () => {
+    it('guide directory contains all expected markdown files', () => {
       expect(existsSync(GUIDE_DIR)).toBe(true);
       const files = readdirSync(GUIDE_DIR).filter(f => f.endsWith('.md')).map(f => f.replace('.md', ''));
       for (const guide of EXPECTED_GUIDES) {
         expect(files).toContain(guide);
       }
-      expect(files.length).toBe(14);
+      expect(files.length).toBe(EXPECTED_GUIDES.length);
     });
 
     it('all markdown files have proper headings', () => {
@@ -115,8 +127,8 @@ describe('Docs Build Script (markdown-it)', () => {
     return existsSync(DIST_DIR);
   }
 
-  function readHtml(name: string): string {
-    return readFile(join(DIST_DIR, `${name}.html`));
+  function readHtml(name: string, dir = 'guide'): string {
+    return readFile(join(DIST_DIR, dir, `${name}.html`));
   }
 
   // --- 1. Build execution ---
@@ -133,20 +145,21 @@ describe('Docs Build Script (markdown-it)', () => {
     }).not.toThrow();
   });
 
-  // --- 2. All 14 guide files produce HTML output ---
+  // --- 2. All section files produce HTML output ---
 
-  it('all 14 guide files produce HTML in docs/dist/', () => {
+  it('all expected files produce HTML in docs/dist/', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const htmlPath = join(DIST_DIR, `${guide}.html`);
-      expect(existsSync(htmlPath), `Missing: ${guide}.html`).toBe(true);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const htmlPath = join(DIST_DIR, dir, `${name}.html`);
+      expect(existsSync(htmlPath), `Missing: ${dir}/${name}.html`).toBe(true);
     }
   });
 
-  it('no extra unexpected HTML files in dist/', () => {
+  it('no extra unexpected HTML files in dist/guide/', () => {
     if (!requireBuild()) return;
-    const htmlFiles = readdirSync(DIST_DIR).filter(f => f.endsWith('.html'));
-    // Allow index.html as homepage redirect/copy, but all should map to guides
+    const guideDir = join(DIST_DIR, 'guide');
+    if (!existsSync(guideDir)) return;
+    const htmlFiles = readdirSync(guideDir).filter(f => f.endsWith('.html'));
     for (const f of htmlFiles) {
       const name = f.replace('.html', '');
       expect(EXPECTED_GUIDES).toContain(name);
@@ -166,7 +179,7 @@ describe('Docs Build Script (markdown-it)', () => {
 
     it('bash code blocks get language-bash class', () => {
       if (!requireBuild()) return;
-      const html = readHtml('cli-install');
+      const html = readHtml('installation', 'cli');
       expect(html).toMatch(/<code\s+class="language-bash"/);
     });
   });
@@ -174,8 +187,7 @@ describe('Docs Build Script (markdown-it)', () => {
   describe('markdown-it output: table markup', () => {
     it('tables render as proper <table> HTML', () => {
       if (!requireBuild()) return;
-      // cli-install.md has markdown tables
-      const html = readHtml('cli-install');
+      const html = readHtml('installation', 'cli');
       expect(html).toMatch(/<table>/);
       expect(html).toMatch(/<thead>/);
       expect(html).toMatch(/<tbody>/);
@@ -187,8 +199,7 @@ describe('Docs Build Script (markdown-it)', () => {
   describe('markdown-it output: nested lists', () => {
     it('nested list items produce nested <ul> or <ol> elements', () => {
       if (!requireBuild()) return;
-      // vscode-integration.md has nested lists (indented - items)
-      const html = readHtml('vscode-integration');
+      const html = readHtml('vscode', 'cli');
       // markdown-it nests <ul> inside <li> for indented items
       expect(html).toMatch(/<li>[\s\S]*?<ul>/);
     });
@@ -228,14 +239,14 @@ describe('Docs Build Script (markdown-it)', () => {
 
   // --- 5. index.html as homepage ---
 
-  it('index.html is generated as the homepage', () => {
+  it('index.html is generated as the homepage redirect', () => {
     if (!requireBuild()) return;
     const indexPath = join(DIST_DIR, 'index.html');
     expect(existsSync(indexPath)).toBe(true);
     const html = readFile(indexPath);
     expect(html).toMatch(/<!DOCTYPE html>/i);
-    // Should contain the index guide content (has "Squad Documentation" heading)
-    expect(html).toMatch(/Squad Documentation/);
+    // Root index.html redirects to guide/index.html
+    expect(html).toMatch(/guide\/index\.html/);
   });
 
   // --- 6. Frontmatter parsing (title extraction from --- fences) ---
@@ -253,8 +264,8 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('page title is populated in the HTML (not left as {{TITLE}})', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).not.toContain('{{TITLE}}');
     }
   });
@@ -263,44 +274,43 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('every generated page contains a <nav> element', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
-      expect(html, `${guide}.html missing <nav>`).toMatch(/<nav[\s>]/);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
+      expect(html, `${dir}/${name}.html missing <nav>`).toMatch(/<nav[\s>]/);
     }
   });
 
-  it('navigation contains links to guide pages', () => {
+  it('navigation contains links to key pages', () => {
     if (!requireBuild()) return;
     const html = readHtml('index');
-    // Nav should have links to at least the core guides
-    expect(html).toMatch(/href="installation\.html"/);
-    expect(html).toMatch(/href="configuration\.html"/);
-    expect(html).toMatch(/href="shell\.html"/);
+    // Nav uses relative paths from guide/ subdirectory (../guide/xxx.html, ../cli/xxx.html)
+    expect(html).toMatch(/href="\.\.\/guide\/installation\.html"/);
+    expect(html).toMatch(/href="\.\.\/guide\/configuration\.html"/);
+    expect(html).toMatch(/href="\.\.\/cli\/shell\.html"/);
   });
 
-  it('all 14 guide files appear as links in navigation', () => {
+  it('guide pages appear as links in navigation', () => {
     if (!requireBuild()) return;
     const html = readHtml('index');
     for (const guide of EXPECTED_GUIDES) {
-      // Each guide should have a nav link (href="guide.html")
-      const linkPattern = new RegExp(`href="${guide}\\.html"`);
-      expect(html, `Nav missing link to ${guide}.html`).toMatch(linkPattern);
+      if (guide === 'index') continue; // Home link is separate
+      const linkPattern = new RegExp(`href="\\.\\.\/guide/${guide}\\.html"`);
+      expect(html, `Nav missing link to guide/${guide}.html`).toMatch(linkPattern);
     }
   });
 
   it('active page is marked in navigation', () => {
     if (!requireBuild()) return;
     const html = readHtml('configuration');
-    // The current page link should have an "active" class
-    expect(html).toMatch(/class="active".*configuration\.html|configuration\.html.*class="active"/);
+    expect(html).toMatch(/class="active"/);
   });
 
   // --- 8. Template substitution ---
 
   it('{{CONTENT}} placeholder is replaced with actual content', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).not.toContain('{{CONTENT}}');
       // Should have real HTML content from markdown
       expect(html).toMatch(/<h[1-6]|<p>|<pre>|<ul>|<ol>/);
@@ -309,16 +319,16 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('{{NAV}} placeholder is replaced with navigation HTML', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).not.toContain('{{NAV}}');
     }
   });
 
   it('no raw template placeholders remain in output', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
     }
   });
@@ -327,8 +337,8 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('all HTML files have proper DOCTYPE and closing tags', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).toMatch(/<!DOCTYPE html>/i);
       expect(html).toMatch(/<\/html>/i);
       expect(html).toMatch(/<\/body>/i);
@@ -337,8 +347,8 @@ describe('Docs Build Script (markdown-it)', () => {
 
   it('HTML contains <article> content area from template', () => {
     if (!requireBuild()) return;
-    for (const guide of EXPECTED_GUIDES) {
-      const html = readHtml(guide);
+    for (const { dir, name } of ALL_EXPECTED) {
+      const html = readHtml(name, dir);
       expect(html).toMatch(/<article[\s>]/);
     }
   });

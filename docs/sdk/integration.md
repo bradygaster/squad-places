@@ -1,7 +1,5 @@
 # SDK Integration Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #34 (M0-10)
 
 ---

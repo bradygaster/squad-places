@@ -323,3 +323,34 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 **Tests:** 30/30 passing.
 **Credits:** UI design ported from beta site. Hat tip to @spboyer (Shayne Boyer) for the original beta docs CSS/JS patterns.
 **Tone applied:** Surgical port — matched beta site exactly per Brady's request, no creative additions.
+
+### 2026-02-22: Beta docs download and docs restructure
+**Status:** Complete.
+**Changes made:**
+1. **New directory structure:** Created `docs/scenarios/`, `docs/features/`, `docs/cli/`, `docs/sdk/`
+2. **Downloaded 21 scenario docs** from bradygaster/squad beta repo to `docs/scenarios/`
+3. **Downloaded 23 feature docs** from beta repo to `docs/features/` (includes worktrees.md)
+4. **Downloaded 5 top-level guides** from beta repo to `docs/guide/`: first-session.md, github-issues-tour.md, tips-and-tricks.md, sample-prompts.md, whatsnew.md
+5. **Restructured existing docs into CLI and SDK sections:**
+   - `docs/cli/`: shell.md, installation.md (from cli-install.md), vscode.md (from vscode-integration.md)
+   - `docs/sdk/`: api-reference.md (from sdk-api-reference.md), integration.md (from sdk-integration.md), tools-and-hooks.md
+6. **Moved feature docs out of guide/:** upstream-inheritance.md → features/, marketplace.md → features/
+7. **Removed architecture.md** from guide/ (internal implementation details)
+8. **Kept in guide/:** index.md, installation.md, configuration.md, migration.md, feature-migration.md (user-facing)
+9. **Tone pass on all 62 pages:**
+   - Removed "⚠️ INTERNAL ONLY" banners from downloaded and existing docs
+   - Updated `npx github:bradygaster/squad` → `squad` (v1 npm command)
+   - Updated `https://github.com/bradygaster/squad` → `https://github.com/bradygaster/squad-pr`
+10. **Updated `test/docs-build.test.ts`** to reflect new multi-directory structure:
+    - EXPECTED_GUIDES now lists 10 guide/ files (was 14)
+    - Added EXPECTED_CLI (3 files) and EXPECTED_SDK (3 files) lists
+    - Updated readHtml helper to support subdirectory paths
+    - Updated all nav link assertions for relative path format (../guide/, ../cli/)
+**Build:** 62 pages generated without errors.
+**Tests:** 2232/2232 passing (85 test files).
+**Credits:** Scenario, feature, and tour docs originally authored in beta by @spboyer and team.
+**Tone applied:** Light, prompt-first (beta tone preserved). No hype, no internal markers, CLI commands updated for v1 distribution.
+**Notes:**
+- docs/build.js already supported multi-directory sections — no build script changes needed
+- docs/launch/ left untouched (internal release notes, separate concern)
+- migration-github-to-npm.md at root left as-is (separate migration doc, not part of restructure)

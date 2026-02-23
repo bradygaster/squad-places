@@ -1,7 +1,5 @@
 # SDK API Reference
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 Complete reference for all public exports from `@bradygaster/squad-sdk`. Each section includes types, functions, and usage examples.
 
 ## Overview

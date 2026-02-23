@@ -1,7 +1,5 @@
 # Global CLI Installation Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 This guide explains how to install the Squad CLI globally, use it one-off with `npx`, set up a personal squad, and understand package resolution.
 
 ## Quick Start
@@ -36,8 +34,8 @@ npx @bradygaster/squad-cli status
 For development or testing, run directly from the GitHub repository:
 
 ```bash
-npx github:bradygaster/squad init
-npx github:bradygaster/squad status
+squad init
+squad status
 ```
 
 This clones the repo and runs `dist/cli-entry.js` without installing locally.
@@ -84,7 +82,7 @@ Same execution flow as global install, but no persistent disk footprint.
 ### GitHub Native (Development)
 
 ```
-$ npx github:bradygaster/squad init
+$ squad init
     ↓
 npx resolves github:bradygaster/squad → https://github.com/bradygaster/squad-pr.git#main
     ↓
@@ -206,7 +204,7 @@ All work with global or npx installations:
 - You need unreleased features
 - You're debugging a specific commit
 
-**Usage:** `npx github:bradygaster/squad init`
+**Usage:** `squad init`
 
 **Note:** Slower (clones and builds), requires build tools.
 

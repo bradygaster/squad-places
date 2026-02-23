@@ -1,7 +1,5 @@
 # Configuration Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #36 (M2-14)
 
 ---

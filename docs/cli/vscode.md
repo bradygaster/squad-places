@@ -1,7 +1,5 @@
 # SquadUI Integration Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 This guide explains how Squad works in VS Code (SquadUI), what extension developers need to know, and how the SDK adapts behavior based on the client context.
 
 ## How Squad Works in VS Code

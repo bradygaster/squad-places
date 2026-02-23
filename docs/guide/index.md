@@ -41,8 +41,8 @@ All with a simple, declarative configuration model and powerful Node.js SDK.
 
 ### Quick Links
 
-- 🔗 [GitHub Repository](https://github.com/bradygaster/squad)
+- 🔗 [GitHub Repository](https://github.com/bradygaster/squad-pr)
 - 📦 [NPM Package](https://www.npmjs.com/package/@bradygaster/squad-cli)
-- 💬 [Discussions & Support](https://github.com/bradygaster/squad/discussions)
+- 💬 [Discussions & Support](https://github.com/bradygaster/squad-pr/discussions)
 
 **Ready to build?** Start with [Installation](installation.html) or explore the [Architecture](../architecture/overview.html).

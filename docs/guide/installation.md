@@ -1,7 +1,5 @@
 # Installation & Distribution Guide
 
-> **⚠️ INTERNAL ONLY — DO NOT PUBLISH**
-
 **Issue:** #38 (M4-13)
 
 ---
