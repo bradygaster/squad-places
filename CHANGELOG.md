@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — Remote Squad Mode (ported from @spboyer's [bradygaster/squad#131](https://github.com/bradygaster/squad/pull/131))
+- `resolveSquadPaths()` dual-root resolver — project-local vs team identity directories (#311)
+- `squad doctor` command — 9-check setup validation with emoji output (#312)
+- `squad link <path>` command — link a project to a remote team root (#313)
+- `squad init --mode remote` — initialize with remote team root config (#313)
+- `ensureSquadPathDual()` / `ensureSquadPathResolved()` — dual-root write guards (#314)
+
+Thanks to **Shayne Boyer** ([@spboyer](https://github.com/spboyer)) for the original remote mode design.
+
 ## [0.6.0-alpha.0] - 2026-02-22
 
 ### Breaking Changes

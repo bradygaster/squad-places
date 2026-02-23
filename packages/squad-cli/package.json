@@ -84,9 +84,21 @@
       "types": "./dist/cli/commands/import.d.ts",
       "import": "./dist/cli/commands/import.js"
     },
+    "./commands/doctor": {
+      "types": "./dist/cli/commands/doctor.d.ts",
+      "import": "./dist/cli/commands/doctor.js"
+    },
     "./commands/aspire": {
       "types": "./dist/cli/commands/aspire.d.ts",
       "import": "./dist/cli/commands/aspire.js"
+    },
+    "./commands/link": {
+      "types": "./dist/cli/commands/link.d.ts",
+      "import": "./dist/cli/commands/link.js"
+    },
+    "./commands/init-remote": {
+      "types": "./dist/cli/commands/init-remote.d.ts",
+      "import": "./dist/cli/commands/init-remote.js"
     }
   },
   "files": [

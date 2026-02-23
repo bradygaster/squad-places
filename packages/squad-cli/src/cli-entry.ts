@@ -39,6 +39,7 @@ async function main(): Promise<void> {
     console.log(`             Flags: --global (init in personal squad directory)`);
     console.log(`  ${BOLD}init${RESET}       Initialize Squad (skip files that already exist)`);
     console.log(`             Flags: --global (init in personal squad directory)`);
+    console.log(`             --mode remote <path> (init linked to a remote team root)`);
     console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
     console.log(`             Overwrites: squad.agent.md, templates dir (.squad-templates/ or .ai-team-templates/)`);
     console.log(`             Never touches: .squad/ or .ai-team/ (your team state)`);
@@ -62,6 +63,9 @@ async function main(): Promise<void> {
     console.log(`             Usage: import <file> [--force]`);
     console.log(`  ${BOLD}scrub-emails${RESET}  Remove email addresses from Squad state files`);
     console.log(`             Usage: scrub-emails [directory] (default: .ai-team/)`);
+    console.log(`  ${BOLD}doctor${RESET}     Validate squad setup integrity (diagnostic)`);
+    console.log(`  ${BOLD}link${RESET}       Link project to a remote team root`);
+    console.log(`             Usage: link <team-repo-path>`);
     console.log(`  ${BOLD}aspire${RESET}     Launch Aspire dashboard for Squad observability`);
     console.log(`             Flags: --docker (force Docker), --port <number> (OTLP port)`);
     console.log(`  ${BOLD}help${RESET}       Show this help message`);
@@ -84,10 +88,31 @@ async function main(): Promise<void> {
 
   // Route subcommands
   if (cmd === 'init') {
+    const modeIdx = args.indexOf('--mode');
+    const mode = (modeIdx !== -1 && args[modeIdx + 1]) ? args[modeIdx + 1] : 'local';
     const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
-    runInit(dest).catch(err => {
-      fatal(err.message);
-    });
+
+    if (mode === 'remote') {
+      const { writeRemoteConfig } = await import('./cli/commands/init-remote.js');
+      // teamRoot can be provided as the next positional arg after --mode remote
+      const teamRootArg = args.find((a, i) => i > 0 && a !== '--mode' && a !== 'remote' && a !== '--global' && a !== 'init');
+      if (!teamRootArg) {
+        fatal('--mode remote requires a team root path. Usage: squad init --mode remote <team-root-path>');
+      }
+      writeRemoteConfig(dest, teamRootArg);
+    }
+
+    await runInit(dest);
+    return;
+  }
+
+  if (cmd === 'link') {
+    const { runLink } = await import('./cli/commands/link.js');
+    const linkTarget = args[1];
+    if (!linkTarget) {
+      fatal('Usage: squad link <team-repo-path>');
+    }
+    runLink(process.cwd(), linkTarget);
     return;
   }
 
@@ -200,6 +225,12 @@ async function main(): Promise<void> {
     const portIdx = args.indexOf('--port');
     const port = (portIdx !== -1 && args[portIdx + 1]) ? parseInt(args[portIdx + 1]!, 10) : undefined;
     await runAspire({ docker: useDocker, port });
+    return;
+  }
+
+  if (cmd === 'doctor') {
+    const { doctorCommand } = await import('./cli/commands/doctor.js');
+    await doctorCommand(process.cwd());
     return;
   }
 
