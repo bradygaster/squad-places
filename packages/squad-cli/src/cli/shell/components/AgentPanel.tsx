@@ -34,7 +34,13 @@ function agentElapsed(agent: AgentSession): string {
 }
 
 export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent }) => {
-  if (agents.length === 0) return null;
+  if (agents.length === 0) {
+    return (
+      <Box flexDirection="column" paddingX={1} marginTop={1}>
+        <Text dimColor>No agents active. Type a message to start, or run /help for commands.</Text>
+      </Box>
+    );
+  }
 
   // Tick every second to update elapsed times
   const [, setTick] = useState(0);

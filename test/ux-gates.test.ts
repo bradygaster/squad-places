@@ -23,13 +23,8 @@ describe('UX Gates', () => {
     const output = harness.captureFrame();
     const lines = output.split('\n');
     
-    const longLines = lines.filter((line) => line.length > 120);
-    expect(longLines.length).toBe(0);
-    
-    const veryLongLines = lines.filter((line) => line.length > 80);
-    if (veryLongLines.length > 0) {
-      console.log(`Info: ${veryLongLines.length} lines exceed 80 chars (ideal terminal width)`);
-    }
+    const longLines = lines.filter((line) => line.length > 80);
+    expect(longLines, `Lines exceeding 80 chars:\n${longLines.join('\n')}`).toHaveLength(0);
   });
 
   it('Error states include remediation hints', async () => {
@@ -40,9 +35,10 @@ describe('UX Gates', () => {
     
     expect(output).toMatch(/squad help/i);
     expect(output).toMatch(/Unknown command/i);
+    expect(output).toMatch(/squad doctor/i);
   });
 
-  it('Version output is clean (single line with version format)', async () => {
+  it('Version output is bare semver (no prefix)', async () => {
     harness = await TerminalHarness.spawnWithArgs(['--version']);
     await harness.waitForExit(5000);
     
@@ -50,7 +46,8 @@ describe('UX Gates', () => {
     const lines = output.split('\n').filter((line) => line.trim());
     
     expect(lines.length).toBe(1);
-    expect(lines[0]).toMatch(/^squad\s+\d+\.\d+\.\d+/);
+    expect(lines[0]).toMatch(/^\d+\.\d+\.\d+/);
+    expect(lines[0]).not.toMatch(/^squad/);
   });
 
   it('Help screen includes essential commands', async () => {
@@ -76,11 +73,13 @@ describe('UX Gates', () => {
     expect(output).toMatch(/Active squad/i);
   });
 
-  it('Doctor command exits cleanly', async () => {
-    harness = await TerminalHarness.spawnWithArgs(['doctor']);
+  it('Init --mode help text is well-formed', async () => {
+    harness = await TerminalHarness.spawnWithArgs(['--help']);
     await harness.waitForExit(5000);
     
-    const exitCode = harness.getExitCode();
-    expect(exitCode).toBe(0);
+    const output = harness.captureFrame();
+    
+    expect(output).toContain('--mode remote <path>');
+    expect(output).toContain('Init linked to a remote team root');
   });
 });
