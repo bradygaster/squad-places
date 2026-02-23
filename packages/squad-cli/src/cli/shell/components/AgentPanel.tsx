@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
 import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { useCompletionFlash } from '../useAnimation.js';
 import type { AgentSession } from '../types.js';
 
 interface AgentPanelProps {
@@ -46,14 +47,6 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
   const width = useTerminalWidth();
   const compact = width <= 60;
 
-  if (agents.length === 0) {
-    return (
-      <Box flexDirection="column" paddingX={1} marginTop={1}>
-        <Text dimColor>No agents active. Send a message to start. /help for commands.</Text>
-      </Box>
-    );
-  }
-
   // Tick every second to update elapsed times
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -62,6 +55,17 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
     const timer = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(timer);
   }, [agents]);
+
+  // Completion flash: brief "✓ Done" when agent finishes work
+  const completionFlash = useCompletionFlash(agents);
+
+  if (agents.length === 0) {
+    return (
+      <Box flexDirection="column" paddingX={1} marginTop={1}>
+        <Text dimColor>No agents active. Send a message to start. /help for commands.</Text>
+      </Box>
+    );
+  }
 
   const activeAgents = agents.filter(a => a.status === 'streaming' || a.status === 'working');
   const sepWidth = Math.min(width, 120) - 2;
@@ -124,6 +128,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
                 noColor
                   ? <Text bold> [Error] ✖</Text>
                   : <Text color="red"> ✖</Text>
+              )}
+              {completionFlash.has(agent.name) && (
+                noColor
+                  ? <Text bold> ✓ Done</Text>
+                  : <Text color="green" bold> ✓ Done</Text>
               )}
             </Box>
           );

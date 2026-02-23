@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
 import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { useMessageFade } from '../useAnimation.js';
 import { ThinkingIndicator } from './ThinkingIndicator.js';
 import type { ShellMessage, AgentSession } from '../types.js';
 
@@ -33,6 +34,9 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
 }) => {
   const visible = messages.slice(-maxVisible);
   const roleMap = new Map((agents ?? []).map(a => [a.name, a.role]));
+
+  // Message fade-in: new messages start dim for 200ms
+  const fadingCount = useMessageFade(messages.length);
 
   // Elapsed time tracking for the ThinkingIndicator
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -86,6 +90,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
         const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
         const emoji = agentRole ? getRoleEmoji(agentRole) : '';
         const duration = getResponseDuration(i);
+        const isFading = fadingCount > 0 && i >= visible.length - fadingCount;
 
         return (
           <React.Fragment key={i}>
@@ -93,8 +98,8 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
             <Box gap={1}>
               {msg.role === 'user' ? (
                 <>
-                  <Text color={noColor ? undefined : 'cyan'} bold>❯ you:</Text>
-                  <Text color={noColor ? undefined : 'cyan'} wrap="wrap">{msg.content}</Text>
+                  <Text color={noColor ? undefined : 'cyan'} bold dimColor={isFading}>❯ you:</Text>
+                  <Text color={noColor ? undefined : 'cyan'} wrap="wrap" dimColor={isFading}>{msg.content}</Text>
                 </>
               ) : msg.role === 'system' ? (
                 <>
@@ -103,8 +108,8 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
                 </>
               ) : (
                 <>
-                  <Text color={noColor ? undefined : 'green'} bold>{emoji ? `${emoji} ` : ''}{msg.agentName ?? 'agent'}:</Text>
-                  <Text wrap="wrap">{msg.content}</Text>
+                  <Text color={noColor ? undefined : 'green'} bold dimColor={isFading}>{emoji ? `${emoji} ` : ''}{msg.agentName ?? 'agent'}:</Text>
+                  <Text wrap="wrap" dimColor={isFading}>{msg.content}</Text>
                   {duration && <Text dimColor>({duration})</Text>}
                 </>
               )}

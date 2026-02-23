@@ -169,27 +169,27 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         <Box gap={1}>
           <Text bold color={noColor ? undefined : 'cyan'}>{welcome ? titleRevealed : '◆ SQUAD'}</Text>
           {bannerReady && <Text dimColor>v{version}</Text>}
-          {!compact && welcome?.description ? (
+          {bannerReady && !compact && welcome?.description ? (
             <>
               <Text dimColor>—</Text>
               <Text dimColor wrap="wrap">{welcome.description}</Text>
             </>
           ) : null}
         </Box>
-        {!compact && <Text>{' '}</Text>}
-        {!compact && rosterText ? (
+        {bannerReady && !compact && <Text>{' '}</Text>}
+        {bannerReady && !compact && rosterText ? (
           <>
-            <Text wrap="wrap">{rosterText}</Text>
+            <Text dimColor={bannerDim} wrap="wrap">{rosterText}</Text>
             <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready · {activeCount} active</Text>
           </>
-        ) : compact && agentCount > 0 ? (
+        ) : bannerReady && compact && agentCount > 0 ? (
           <Text dimColor>{agentCount} agent{agentCount !== 1 ? 's' : ''} · {activeCount} active</Text>
-        ) : !rosterText ? (
+        ) : bannerReady && !rosterText ? (
           <Text dimColor>{"  Run 'squad init' to get started"}</Text>
         ) : null}
-        {!compact && <Text>{' '}</Text>}
-        {wide && welcome?.focus ? <Text dimColor>📍 {welcome.focus}</Text> : null}
-        <Text dimColor>{compact ? '/help · Ctrl+C exit' : '↑↓ history · @Agent to direct · /help · Ctrl+C exit'}</Text>
+        {bannerReady && !compact && <Text>{' '}</Text>}
+        {bannerReady && wide && welcome?.focus ? <Text dimColor>📍 {welcome.focus}</Text> : null}
+        {bannerReady && <Text dimColor>{compact ? '/help · Ctrl+C exit' : '↑↓ history · @Agent to direct · /help · Ctrl+C exit'}</Text>}
       </Box>
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />

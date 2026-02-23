@@ -893,3 +893,122 @@ describe('Rich progress indicators', () => {
     expect(frame).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
   });
 });
+
+// ============================================================================
+// 10. Animations and transitions
+// ============================================================================
+
+describe('Animations and transitions', () => {
+  // -- Message fade-in --
+
+  it('new messages are rendered immediately (content always visible)', () => {
+    const msgs = [
+      makeMessage({ role: 'user', content: 'hello world' }),
+      makeMessage({ role: 'agent', content: 'response here', agentName: 'Keaton' }),
+    ];
+    const { lastFrame } = render(h(MessageStream, { messages: msgs }));
+    const frame = lastFrame()!;
+    expect(frame).toContain('hello world');
+    expect(frame).toContain('response here');
+  });
+
+  it('message content is visible even during fade-in period', () => {
+    const msgs = [makeMessage({ role: 'user', content: 'first message' })];
+    const { lastFrame, rerender } = render(h(MessageStream, { messages: msgs }));
+    // Add a new message
+    const updated = [...msgs, makeMessage({ role: 'agent', content: 'new reply', agentName: 'Keaton' })];
+    rerender(h(MessageStream, { messages: updated }));
+    const frame = lastFrame()!;
+    expect(frame).toContain('new reply');
+  });
+
+  // -- Completion flash --
+
+  it('agent shows "✓ Done" flash when transitioning from working to idle', () => {
+    const working = [makeAgent({ name: 'Keaton', status: 'working' })];
+    const { lastFrame, rerender } = render(h(AgentPanel, { agents: working }));
+    // Transition to idle
+    const idle = [makeAgent({ name: 'Keaton', status: 'idle' })];
+    rerender(h(AgentPanel, { agents: idle }));
+    const frame = lastFrame()!;
+    expect(frame).toContain('✓ Done');
+  });
+
+  it('agent shows "✓ Done" flash when transitioning from streaming to idle', () => {
+    const streaming = [makeAgent({ name: 'Keaton', status: 'streaming' })];
+    const { lastFrame, rerender } = render(h(AgentPanel, { agents: streaming }));
+    const idle = [makeAgent({ name: 'Keaton', status: 'idle' })];
+    rerender(h(AgentPanel, { agents: idle }));
+    const frame = lastFrame()!;
+    expect(frame).toContain('✓ Done');
+  });
+
+  it('no "✓ Done" flash for agents that were already idle', () => {
+    const idle = [makeAgent({ name: 'Keaton', status: 'idle' })];
+    const { lastFrame, rerender } = render(h(AgentPanel, { agents: idle }));
+    // Re-render with same idle status
+    rerender(h(AgentPanel, { agents: [makeAgent({ name: 'Keaton', status: 'idle' })] }));
+    const frame = lastFrame()!;
+    expect(frame).not.toContain('✓ Done');
+  });
+
+  it('completion flash works for multiple agents independently', () => {
+    const working = [
+      makeAgent({ name: 'Keaton', status: 'working' }),
+      makeAgent({ name: 'Hockney', status: 'working' }),
+    ];
+    const { lastFrame, rerender } = render(h(AgentPanel, { agents: working }));
+    // Only Keaton finishes
+    const mixed = [
+      makeAgent({ name: 'Keaton', status: 'idle' }),
+      makeAgent({ name: 'Hockney', status: 'working' }),
+    ];
+    rerender(h(AgentPanel, { agents: mixed }));
+    const frame = lastFrame()!;
+    expect(frame).toContain('Keaton');
+    expect(frame).toContain('✓ Done');
+    // Hockney still working
+    expect(frame).toContain('Hockney');
+    expect(frame).toContain('working');
+  });
+
+  // -- NO_COLOR respect --
+
+  it('NO_COLOR: completion flash is suppressed', () => {
+    const orig = process.env['NO_COLOR'];
+    process.env['NO_COLOR'] = '1';
+    try {
+      const working = [makeAgent({ name: 'Keaton', status: 'working' })];
+      const { lastFrame, rerender } = render(h(AgentPanel, { agents: working }));
+      rerender(h(AgentPanel, { agents: [makeAgent({ name: 'Keaton', status: 'idle' })] }));
+      const frame = lastFrame()!;
+      expect(frame).not.toContain('✓ Done');
+    } finally {
+      if (orig === undefined) delete process.env['NO_COLOR'];
+      else process.env['NO_COLOR'] = orig;
+    }
+  });
+
+  it('NO_COLOR: messages render without fade (content immediately visible)', () => {
+    const orig = process.env['NO_COLOR'];
+    process.env['NO_COLOR'] = '1';
+    try {
+      const msgs = [makeMessage({ role: 'user', content: 'static mode test' })];
+      const { lastFrame } = render(h(MessageStream, { messages: msgs }));
+      expect(lastFrame()!).toContain('static mode test');
+    } finally {
+      if (orig === undefined) delete process.env['NO_COLOR'];
+      else process.env['NO_COLOR'] = orig;
+    }
+  });
+
+  // -- Animation hooks export --
+
+  it('useAnimation hooks are importable', async () => {
+    const mod = await import('../packages/squad-cli/src/cli/shell/useAnimation.js');
+    expect(typeof mod.useTypewriter).toBe('function');
+    expect(typeof mod.useFadeIn).toBe('function');
+    expect(typeof mod.useCompletionFlash).toBe('function');
+    expect(typeof mod.useMessageFade).toBe('function');
+  });
+});
