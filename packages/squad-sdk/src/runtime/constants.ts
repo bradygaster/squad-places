@@ -61,6 +61,9 @@ export const TIMEOUTS = {
 
   /** Plugin/marketplace fetch timeout in milliseconds */
   PLUGIN_FETCH_MS: parseInt(process.env['SQUAD_PLUGIN_FETCH_MS'] ?? '15000', 10),
+
+  /** Session response timeout in milliseconds (env-overridable, default 10 min) */
+  SESSION_RESPONSE_MS: parseInt(process.env['SQUAD_SESSION_TIMEOUT_MS'] ?? '600000', 10),
 } as const;
 
 // ============================================================================

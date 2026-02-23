@@ -1,7 +1,7 @@
 /**
  * OpenTelemetry Provider Initialization (Issue #255)
  *
- * Configures TracerProvider and MeterProvider with OTLP HTTP exporters.
+ * Configures TracerProvider and MeterProvider with OTLP gRPC exporters.
  * Disabled by default — activates only when explicit config or
  * OTEL_EXPORTER_OTLP_ENDPOINT env var is present.
  *
@@ -10,8 +10,8 @@
 
 import { trace, metrics, type Tracer, type Meter, DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api';
 import { NodeSDK, resources, metrics as sdkMetrics } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { createRequire } from 'module';
 
 const { Resource } = resources;
@@ -23,7 +23,7 @@ const { PeriodicExportingMetricReader } = sdkMetrics;
 
 /** Configuration for OTel initialization. */
 export interface OTelConfig {
-  /** OTLP endpoint URL (e.g. http://localhost:4318) */
+  /** OTLP endpoint URL (e.g. http://localhost:4317) */
   endpoint?: string;
   /** Service name override (default: 'squad-sdk') */
   serviceName?: string;
@@ -69,22 +69,31 @@ function ensureSDK(config?: OTelConfig): void {
   const endpoint = resolveEndpoint(config);
   if (!endpoint) return;
 
-  if (config?.debug) {
-    diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+  const debugMode = config?.debug || process.env['SQUAD_DEBUG'] === '1';
+  if (debugMode) {
+    diag.setLogger(new DiagConsoleLogger(), config?.debug ? DiagLogLevel.DEBUG : DiagLogLevel.WARN);
   }
 
   const resource = buildResource(config);
 
   _sdk = new NodeSDK({
     resource,
-    traceExporter: new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
+    traceExporter: new OTLPTraceExporter({ url: endpoint }),
     metricReader: new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({ url: `${endpoint}/v1/metrics` }),
+      exporter: new OTLPMetricExporter({ url: endpoint }),
       exportIntervalMillis: 30_000,
     }),
   });
 
-  _sdk.start();
+  try {
+    _sdk.start();
+  } catch (err) {
+    _sdk = undefined;
+    if (debugMode) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[squad-otel] SDK start failed: ${msg}`);
+    }
+  }
 }
 
 // ============================================================================
@@ -92,7 +101,7 @@ function ensureSDK(config?: OTelConfig): void {
 // ============================================================================
 
 /**
- * Initialize the TracerProvider with an OTLP HTTP exporter.
+ * Initialize the TracerProvider with an OTLP gRPC exporter.
  * Returns `true` if a provider was registered, `false` if disabled.
  */
 export function initializeTracing(config?: OTelConfig): boolean {
@@ -105,7 +114,7 @@ export function initializeTracing(config?: OTelConfig): boolean {
 }
 
 /**
- * Initialize the MeterProvider with an OTLP HTTP exporter.
+ * Initialize the MeterProvider with an OTLP gRPC exporter.
  * Returns `true` if a provider was registered, `false` if disabled.
  */
 export function initializeMetrics(config?: OTelConfig): boolean {
@@ -134,7 +143,14 @@ export function initializeOTel(config?: OTelConfig): { tracing: boolean; metrics
  */
 export async function shutdownOTel(): Promise<void> {
   if (_sdk) {
-    await _sdk.shutdown();
+    try {
+      await _sdk.shutdown();
+    } catch (err) {
+      if (process.env['SQUAD_DEBUG'] === '1') {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[squad-otel] Shutdown/flush error: ${msg}`);
+      }
+    }
     _sdk = undefined;
   }
   _tracingActive = false;

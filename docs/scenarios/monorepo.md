@@ -1,13 +1,8 @@
 # Squad in Monorepos
 
-**Try this to set up domain specialists:**
+**Try this:**
 ```
 I'm building a microservices platform in a monorepo with 8 services — set up specialists for each domain
-```
-
-**Try this to add targeted expertise:**
-```
-Add a payments specialist who knows Stripe integration
 ```
 
 One squad per monorepo, not per service. Squad adds specialists per domain and routes work to the right agent based on which service is being modified.
@@ -268,9 +263,8 @@ If you had 8 separate squads, they'd diverge. One squad keeps the monorepo align
 
 ## Tips
 
-- **One squad per monorepo.** Add specialists per service, but keep them in one team.
-- **Routing rules are critical.** Route work to the right specialist so agents don't wander across services.
-- **Skills that span services are gold.** Logging, error handling, API conventions — document them once, use everywhere.
-- **Shared code needs careful handling.** Changes to `/shared` affect multiple services. Route those to the Lead.
-- **Agents become service owners.** After a few sessions, each specialist knows their service deeply.
-- **Cross-service features need coordination.** Use the Lead to decompose features that span services, then route to specialists.
+- **One squad per monorepo.** Add specialists per service, keep them in one team.
+- **Routing rules are critical.** Route work to the right specialist so agents don't wander.
+- **Skills that span services are gold.** Logging, error handling, API conventions — document once, use everywhere.
+- **Shared code needs careful handling.** Changes to `/shared` affect multiple services — route to the Lead.
+- **Cross-service features need coordination.** Use the Lead to decompose, then route to specialists.

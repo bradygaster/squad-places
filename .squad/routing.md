@@ -18,6 +18,12 @@
 | Visual identity | Redfoot 🎨 | Logo, icons, brand assets, design system |
 | Aspire & observability | Saul 🔭 | Aspire dashboard, OTLP integration, Playwright E2E, Docker telemetry |
 | VS Code integration | Strausz 🔌 | VS Code Extension API, runSubagent compatibility, editor integration |
+| REPL & shell | Kovash 🖥️ | Interactive shell, Ink components, session dispatch, streaming pipeline, event wiring |
+| CLI UX design | Marquez 🎨 | Interaction design, copy, spacing, affordances, UX gates, flow review |
+| TUI implementation | Cheritto 🖥️ | Ink components, layout, input handling, focus management, rendering perf |
+| Terminal E2E tests | Breedan 🧪 | node-pty harness, Gherkin features, frame snapshots, UX gate test suite |
+| Accessibility review | Nate ♿ | Keyboard nav, color contrast, error guidance, shortcut discoverability |
+| Hostile QA | Waingro 💥 | Adversarial testing, edge cases, regression scenarios, nasty input corpus |
 
 ## Module Ownership
 
@@ -38,6 +44,9 @@
 | `src/sharing/` | Fenster 🔧 | Rabin 📦 |
 | `src/skills/` | Verbal 🧠 | — |
 | `src/tools/` | Fenster 🔧 | Kujan 🕵️ |
+| `src/cli/shell/` | Kovash 🖥️ | Cheritto 🖥️ |
+| `src/cli/shell/components/` | Cheritto 🖥️ | Kovash 🖥️ |
+| `tests/acceptance/` | Breedan 🧪 | Waingro 💥 |
 | `src/index.ts` | Edie 👩‍💻 | Keaton 🏗️ |
 
 ## Routing Principles

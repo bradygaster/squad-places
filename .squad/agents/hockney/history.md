@@ -7,6 +7,14 @@
 
 ## Learnings
 
+### REPL UX visual test suite (2026-02-23)
+**Status:** Complete — 40 tests, all passing across 6 test categories.
+- Created `test/repl-ux.test.ts` using ink-testing-library v4 + Ink v6 components.
+- **Categories:** ThinkingIndicator visibility (5), AgentPanel status display (7), MessageStream formatting (8), InputPrompt behavior (8), Welcome experience (3), Never-feels-dead lifecycle (5).
+- **Key finding:** ink-testing-library v4 stdin.write() does NOT synchronously trigger Ink v6's useInput hook. Requires `await setTimeout(50)` after each write for React reconciler to flush. This is a compatibility gap that should be watched for in future ink-testing-library releases.
+- **Kovash conflict resolved:** Components were modified mid-task (InputPrompt now hardcodes `◆ squad>` prompt with spinner when disabled, AgentPanel now shows pulsing dot + "streaming"/"working" text instead of old "responding" label). Tests adapted to match current rendered output.
+- **Strategy:** Tests assert on TEXT content in rendered frames (what the user sees), not internal state. This makes them resilient to Kovash's implementation changes as long as the visual contract holds.
+
 ### 📌 Core Context: Test Foundation & Beta Learnings
 
 **From Beta (carried forward):**
@@ -43,6 +51,18 @@ Created test/consumer-imports.test.ts (6 tests): main barrel, parsers barrel, ty
 
 ### Post-restructure assessment (2026-02-22)
 **Build:** Clean (exit 0). **Tests:** 1719 passing across 56 files. **Import state:** Tests import from root ../src/ (old monolith). **Migration deferred:** Premature migration risks breaking tests. Expand exports maps or add vitest alias config when root src/ deleted. Exports map gap + CLI no exports + barrel divergence = high risk now.
+
+### 2026-02-23: Streaming regression test suite & root cause analysis
+**Status:** Complete (13 new tests added, 42 total, 41 passing + 1 todo)
+- Identified root cause: empty `sendAndWait()` result + zero `message_delta` events = empty accumulated = silent ghost response
+- Added `simulateDispatchWithFallback()` test helper (existing helper only exercised delta path)
+- Bug report filed: "Empty coordinator response — the silent swallow"
+- Recommendation for future: minimum-length validation on coordinator responses post-accumulation
+- Marked `it.todo()` for SQUAD_DEBUG diagnostic logging coverage (Kovash task)
+
+---
+
+📌 Team update (2026-02-23T09:25Z): Streaming diagnostics infrastructure complete — root cause identified, 13 regression tests added. Kovash added SQUAD_DEBUG logging infrastructure. Saul fixed OTel protocol to gRPC. Version bump to 0.8.5.1. — decided by Scribe
 
 ### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
 - Created test/consumer-imports.test.ts with 6 tests validating package exports from a consumer's perspective
@@ -212,3 +232,12 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - **Template placeholder test fix**: Changed from regex `/\{\{[A-Z_]+\}\}/` (too broad) to explicit checks for known template placeholders (`TITLE`, `CONTENT`, `NAV`). The docs contain `{{CARD_ID}}` and `{{BOARD_ID}}` as legitimate example content in features/mcp.md — these are not template variables, just documentation examples. Only check for actual build system placeholders.
 - **Key bug found**: features/mcp.html contained `{{CARD_ID}}` and `{{BOARD_ID}}` in example code — these are legitimate content, not template placeholders. The test was incorrectly flagging them. Fixed by checking only for known template vars instead of any uppercase pattern.
 - All 29 tests pass. Test count: 2268 (no change from removal of 1 brittle test). Build validates all 85 pages across 11 sections plus assets and root index.html.
+
+### Streaming dispatch deep tests (2026-02-23)
+- Added 13 tests (12 runnable + 1 todo) to test/repl-streaming.test.ts across two new describe blocks.
+- **dispatchToCoordinator flow** (7 tests): session config verification, delta accumulation with normalized events, sendAndWait fallback when deltas are empty, empty-both-paths regression test, parseCoordinatorResponse('') behavior, delta-priority-over-fallback test, SQUAD_DEBUG todo.
+- **CopilotSessionAdapter event normalization** (6 tests): normalizeEvent flattening, SDK→Squad type mapping, unknown event passthrough, missing data handling, on/off handler tracking, multiple handler independence.
+- **Key finding — simulateDispatch gap**: Existing test helper `simulateDispatch` did NOT replicate the `awaitStreamedResponse` fallback path (`result.data.content`). Real source code uses `if (!accumulated && fallback) { accumulated = fallback; }` but tests ignored the sendAndWait return value entirely. Created `simulateDispatchWithFallback` to cover this.
+- **Bug confirmed**: When sendAndWait returns undefined (no `data.content`) AND no deltas fire, accumulated is empty string. `parseCoordinatorResponse('')` returns `{ type: 'direct', directAnswer: '' }` — the empty coordinator response Brady sees. The pipeline silently swallows the failure.
+- **Missing feature**: SQUAD_DEBUG env var for diagnostic logging is not implemented anywhere in the dispatch pipeline. Marked as it.todo().
+- Test count: 29→42 (41 pass, 1 todo). All green.

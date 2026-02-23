@@ -7,6 +7,24 @@
 
 ## Learnings
 
+### 2026-02-24: Testing Epic PRD (3-Phase Quality & UX)
+- **Task:** Write comprehensive PRD for testing epic covering P0 timeout bug, UX audit implementation, and breathtaking polish.
+- **Context:** Brady's CLI died after 2 minutes (hard-coded timeout at shell/index.ts:123). New agents joined (Cheritto TUI, Breedan E2E, Waingro QA, Nate accessibility, Marquez UX). Marquez delivered 21-item UX audit (P0/P1/P2), Breedan designed E2E harness (child_process + Gherkin), Kovash shipped REPL UX overhaul (ThinkingIndicator, AgentPanel, MessageStream), Hockney has 40 REPL UX tests.
+- **Structure:** 3 phases over 21 items:
+  - **Phase 1 (Testing Wave):** Fix timeout (1.1), dogfood 4 repos (1.2), expand E2E tests (1.3), hostile QA (1.4), accessibility audit (1.5), fix P0 UX blockers (1.6)
+  - **Phase 2 (Improvement):** Implement P1 UX (2.1), engaging thinking feedback (2.2), ghost response handling (2.3), fix P0 bugs from Phase 1 (2.4), harden errors (2.5)
+  - **Phase 3 (Breathtaking):** Rich progress (3.1), terminal adaptivity 40–120 cols (3.2), animations (3.3), copy polish (3.4), accessibility hardening (3.5), P2 UX (3.6), magical init (3.7)
+- **Key decisions:**
+  - Timeout must be configurable via env var (SQUAD_SESSION_TIMEOUT_MS), default 10 minutes
+  - Thinking feedback: Claude-style phrases + Copilot-style action display
+  - Terminal adaptivity: beautiful at 120-col, functional at 80-col, graceful at 40-col
+  - Copy polish: human, fun, action-oriented (not stuffy)
+  - Success gate: "Brady says it's breathtaking"
+- **Agent assignments:** Cheritto owns most TUI work (9 items across all phases), Breedan E2E expansion, Waingro hostile QA, Nate accessibility (audit + hardening), Marquez UX review + design, Hockney error tests, Kovash review, McManus tone review.
+- **Dependencies mapped:** Phase 1 → Phase 2 (P0 before P1, timeout before thinking feedback), Phase 2 → Phase 3 (foundation before polish).
+- **PRD location:** Session state file `prd-testing-epic.md` (to become GitHub epic issue)
+- **Next step:** Brady reviews PRD, then create epic + 21 sub-issues, assign agents, execute Phase 1.
+
 ### 2026-02-24: Documentation Restructure Plan (requested by Brady)
 - **Task:** Design a new documentation structure. Current 85 pages (62 non-blog) are overwhelming. Brady wants fewer, better docs that make Squad look simple and appealing.
 - **Analysis:** Read all key docs — guide/, features/ (25 files), scenarios/ (21 files), cli/, sdk/, reference/. Understood content depth, overlap, and gaps.

@@ -131,6 +131,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     .map((a, i) => `${a.emoji} ${a.name}${i < (welcome?.agents.length ?? 0) - 1 ? ' · ' : ''}`)
     .join('') ?? '';
 
+  const agentCount = welcome?.agents.length ?? 0;
+  const activeCount = agents.filter(a => a.status === 'streaming' || a.status === 'working').length;
+
   return (
     <Box flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
@@ -145,15 +148,22 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           ) : null}
         </Box>
         <Text>{' '}</Text>
-        {rosterText ? <Text wrap="wrap">{rosterText}</Text> : null}
+        {rosterText ? (
+          <>
+            <Text wrap="wrap">{rosterText}</Text>
+            <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready · {activeCount} active</Text>
+          </>
+        ) : (
+          <Text dimColor>{"  Run 'squad init' to set up your team"}</Text>
+        )}
         <Text>{' '}</Text>
         {welcome?.focus ? <Text dimColor>📍 {welcome.focus}</Text> : null}
-        <Text dimColor>💡 @Agent to direct · /help for commands · exit to quit</Text>
+        <Text dimColor>↑/↓ history · @Agent to direct · /help commands · Ctrl+C quit</Text>
       </Box>
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />
       <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} />
-      <InputPrompt onSubmit={handleSubmit} disabled={processing} prompt={processing ? 'squad (streaming)> ' : 'squad> '} />
+      <InputPrompt onSubmit={handleSubmit} disabled={processing} />
     </Box>
   );
 };

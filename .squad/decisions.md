@@ -453,6 +453,30 @@ Medium. Changes error handling contract for all functions that used `fatal()`. B
 **What:** Doc and blog as you go during SquadUI integration work. Doesn't have to be perfect — a proper docs pass comes later — but keep docs updated incrementally.
 **Why:** User request — captured for team memory
 
+### 2026-02-23: Aspire Dashboard Scenario Documentation
+**By:** Saul (Aspire & Observability)
+**Date:** 2026-02-23
+**Status:** COMPLETED
+
+**What:** Created `docs/scenarios/aspire-dashboard.md` — a single, focused scenario doc for using Squad with the Aspire dashboard. Covers what Aspire is, how to launch it via Docker, how to connect Squad SDK to it, what traces/metrics appear in the UI, troubleshooting, and pro tips. Updated `docs/build.js` to include the new scenario in the explicit ordering (added to SECTION_ORDER for scenarios).
+
+**Tone:** Action-oriented, welcoming, prompt-first — matches existing Squad docs (see `solo-dev.md` for reference style).
+
+**Key Sections:**
+1. What Is Aspire (standalone OTel dashboard, not .NET-specific)
+2. Launch the container (docker run command + squad aspire convenience)
+3. Connect Squad to Aspire (CLI env var + SDK programmatic)
+4. Dashboard content (traces, metrics, resources with concrete examples)
+5. Example workflow (start, run, observe)
+6. Troubleshooting (no traces, slow dashboard, connection refused)
+7. Pro tips (metric export frequency, custom service names, batch sizing)
+
+**Implementation Details:** Reviewed `packages/squad-sdk/src/runtime/otel-*.ts` and `test/aspire-integration.test.ts` for accurate coverage of OTel integration. Aspire ports (18888 UI, 4317 OTLP gRPC), UNSECURED_ALLOW_ANONYMOUS mode, and gRPC-only protocol constraints all documented accurately.
+
+**Verification:** Docs build verified — `npm run docs:build` generates 39 pages with `aspire-dashboard.html` correctly included in scenarios nav. Navigation in all scenario pages (e.g., solo-dev.html) correctly links to the new scenario.
+
+**Why:** Brady requested a "try it now" guide for Aspire integration — single doc that covers launch AND connection, written for immediate action. This replaces scattered documentation and provides a clean entry point for developers wanting to observe Squad telemetry in real time.
+
 ### 2026-02-22T035939Z: Repository scope directive
 **By:** Brady (via Copilot)
 **What:** Do NOT change anything in bradygaster/squad repo. This working copy is bradygaster/squad-pr — changes are permitted here. The two repos are distinct.
@@ -2374,4 +2398,400 @@ Both packages versioned at 0.8.2 and published together as a matched set. Exact 
 
 User request — captured for team memory. Brady wants docs that feel like original beta content, not enterprise documentation. Publication freeze prevents premature rollout while redesign is underway.
 
+### 2026-02-23: Use sendAndWait for streaming dispatch
+**By:** Kovash (REPL Expert)
+**Date:** 2026-02-23
+**Scope:** Shell dispatch pipeline (`packages/squad-cli/src/cli/shell/index.ts`)
+
+## What
+
+Both `dispatchToAgent()` and `dispatchToCoordinator()` now use `sendAndWait()` instead of `sendMessage()` to wait for the full streamed response before proceeding. A fallback path listens for `turn_end`/`idle` events if `sendAndWait` is unavailable.
+
+## Why
+
+`sendMessage()` wraps the SDK's `send()` which is fire-and-forget — it resolves immediately, before any streaming deltas arrive. This caused the coordinator prompt to be parsed against an empty `accumulated` string, producing "coordinator:" with no content.
+
+## Pattern
+
+```typescript
+async function awaitStreamedResponse(session, prompt) {
+  if (session.sendAndWait) {
+    await session.sendAndWait({ prompt }, 120_000);
+  } else {
+    // fallback: wait for turn_end or idle event
+  }
+}
+```
+
+The `message_delta` listener is kept for progressive UI updates; `awaitStreamedResponse` only gates when we proceed to parse.
+
+## Impact
+
+All agents must use `awaitStreamedResponse` (or equivalent) when they need the full response text. Never parse `accumulated` after a bare `sendMessage()`.
+
+## Tested
+
+Created `test/repl-streaming.test.ts` (13 tests). All 2351 tests pass.
+
+
+
+
+# Decision: SQUAD_DEBUG Diagnostic Logging for REPL Streaming
+
+**Date:** 2026-02-23
+**Author:** Kovash (REPL & Interactive Shell)
+**Status:** Implemented
+
+## Context
+
+Brady reported the REPL is still broken after the `deltaContent` fix — empty coordinator responses, no streaming content visible. The compiled output was verified correct. Without runtime visibility, we cannot determine if: (a) delta events never fire, (b) `sendAndWait` returns `undefined`, (c) handler errors are silently swallowed by the SDK, or (d) the session isn't actually in streaming mode.
+
+## Decision
+
+Added `SQUAD_DEBUG=1` environment variable gating for diagnostic `console.error()` calls at every critical point in the streaming pipeline. Logs go to stderr to avoid interfering with Ink rendering.
+
+### Logging points:
+- `dispatchToCoordinator` entry (message being sent)
+- `dispatchToAgent` entry (agent name + message)
+- `onDelta` fire (event type)
+- `extractDelta` (event keys, whether `deltaContent` exists, extracted value)
+- `awaitStreamedResponse` (sendAndWait result type, keys, has data)
+- Accumulated vs fallback lengths after sendAndWait resolves
+- `parseCoordinatorResponse` decision type
+
+### Infrastructure:
+- `.env` file at repo root with `SQUAD_DEBUG=1`
+- Lightweight `.env` parser in `cli-entry.ts` (no `dotenv` dependency)
+- VS Code launch.json `envFile` property for both REPL configurations
+
+## Key SDK Findings
+
+The `@github/copilot-sdk` `_dispatchEvent` method wraps every handler call in `try/catch` with empty catch blocks. If our `normalizeEvent` or delta handler throws, the error is silently swallowed. The SQUAD_DEBUG logging will expose whether handlers are being called at all.
+
+## Next Steps
+
+Brady should run with `SQUAD_DEBUG=1` and share the stderr output. The logs will tell us exactly where the pipeline breaks down.
+
+
+# Streaming Bug Report — Hockney
+
+**Filed by:** Hockney (Tester)
+**Date:** 2026-02-22
+
+## Bug 1: Empty coordinator response — the "silent swallow"
+
+**Symptom:** Brady sees empty coordinator responses in REPL.
+
+**Root cause chain:**
+1. `awaitStreamedResponse()` calls `session.sendAndWait()` which may return `undefined` (no `data.content` fallback)
+2. If the SDK also emits zero `message_delta` events (network issue, timeout, model quirk), `accumulated` stays empty
+3. `dispatchToCoordinator` hits `if (!accumulated && fallback)` — but fallback is also empty string
+4. `parseCoordinatorResponse('')` returns `{ type: 'direct', directAnswer: '' }` — empty direct answer
+5. The shell shows this empty string as the coordinator's response with no error, no warning, no retry
+
+**Why this is bad:** The pipeline treats "got nothing" the same as "answered with nothing." There's no distinction between a successful empty response and a total failure to get any response.
+
+**Fix recommendation:**
+- After `awaitStreamedResponse`, if accumulated is empty string AND fallback is empty, throw or warn — don't silently proceed
+- Or: add a minimum-length check on coordinator responses before parsing
+- Related: the `extractDelta` fix was necessary but not sufficient — the fallback path also needs to actually produce content
+
+## Bug 2: Test helper `simulateDispatch` didn't replicate fallback
+
+**What:** The existing `simulateDispatch()` test helper ignores the return value of `sendAndWait()`. The real `awaitStreamedResponse()` extracts `result.data.content` as a fallback. This means tests were only exercising the delta path, never the fallback path. Added `simulateDispatchWithFallback` to cover this gap.
+
+## Gap: No SQUAD_DEBUG diagnostic logging
+
+**What:** There is no `SQUAD_DEBUG` env var or any diagnostic logging in the dispatch pipeline. When streaming silently fails, there's zero visibility into what happened. Marked as `it.todo()` in tests. Recommend implementing debug logging on the dispatch path to help diagnose future streaming issues.
+
+
+# Decision: extractDelta field priority — deltaContent first
+
+**Author:** Kovash (REPL & Interactive Shell Expert)
+**Date:** 2026-02-23
+**Status:** Implemented
+
+## Context
+
+The `@github/copilot-sdk` `assistant.message_delta` event uses `deltaContent` as the field name for streamed text chunks. After `normalizeEvent()` spreads `sdkEvent.data` onto the top-level event object, the field name is `deltaContent` — not `delta` or `content`.
+
+The old `extractDelta()` checked only `delta` and `content`, silently returning `''` for every delta event, causing blank "coordinator:" responses in the shell.
+
+## Decision
+
+1. **extractDelta priority:** `deltaContent` > `delta` > `content` — matches SDK actual format while preserving backward compat.
+2. **awaitStreamedResponse returns fallback:** The `sendAndWait` return value (`result.data.content`) is now captured and returned as a fallback string. Both dispatch functions use it if delta accumulation is empty.
+3. **Tests updated:** All mock sessions and `simulateDispatch` now use `deltaContent`. Added legacy `delta` key test for backward compat coverage.
+
+## Impact
+
+- Fixes blank coordinator/agent responses in the REPL shell.
+- All 29 streaming tests pass. Full suite (2362 tests) unaffected.
+- Team members working on SDK event handling should use `deltaContent` as the canonical field name.
+
+
+# Decision: Wire OpenTelemetry into the REPL shell startup
+
+**Author:** Kovash (Copilot SDK Expert / Backend Dev)
+**Date:** 2026-02-23
+**Status:** Implemented
+
+## Context
+
+Brady has the Aspire dashboard running in Docker (port 4317 reachable), but the REPL launched via `squad` produced no telemetry. Root cause: `runShell()` never called `initSquadTelemetry()` even though the SDK had everything ready.
+
+## Decision
+
+1. **`runShell()` now initializes OTel** — calls `initSquadTelemetry({ serviceName: 'squad-cli' })` early in the function, before lifecycle init. Telemetry handle is shut down in the cleanup block alongside sessions and lifecycle.
+
+2. **Telemetry status message uses `console.error`** — not `renderer.info()` (which doesn't exist on ShellRenderer) and not `console.log` (which would interfere with Ink rendering). The `🔭 Telemetry active` message goes to stderr.
+
+3. **VS Code launch configs get the env var** — `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` added to "Squad REPL" and "Squad REPL (rebuild first)" in `.vscode/launch.json`. Not added to npm scripts to avoid polluting all terminal sessions.
+
+4. **Resilience hardened** — `_sdk.start()` in `otel.ts` wrapped in try/catch so gRPC connection failures are non-fatal. The SDK's gRPC exporters already silently retry on connection refused, but this guards against synchronous startup exceptions.
+
+## Consequences
+
+- When `OTEL_EXPORTER_OTLP_ENDPOINT` is set and Aspire is running, traces and metrics flow automatically.
+- When the env var is unset or the endpoint is unreachable, everything remains a no-op — zero impact on normal REPL usage.
+- F5 debugging in VS Code automatically targets the local Aspire dashboard.
+
+
+# Decision: Switch OTel exporters from HTTP to gRPC
+
+**Author:** Saul (Aspire & Observability)  
+**Date:** 2026-02-XX  
+**Status:** Implemented  
+
+## Context
+
+Brady reported that no telemetry appeared in the Aspire dashboard despite the container running and `OTEL_EXPORTER_OTLP_ENDPOINT` being set.
+
+## Root Cause
+
+Three compounding bugs:
+
+1. **Protocol mismatch** — `otel.ts` used `@opentelemetry/exporter-trace-otlp-http` (OTLP/HTTP), but Aspire only accepts OTLP/gRPC on port 18889. HTTP exports to a gRPC port fail silently.
+2. **Wrong endpoint constant** — `aspire.ts` set `OTEL_EXPORTER_OTLP_ENDPOINT` to `http://localhost:18888` (the dashboard UI), not `http://localhost:4317` (host-mapped OTLP gRPC port).
+3. **OTLP auth mode = ApiKey** — Docker launched Aspire with `DASHBOARD__OTLP__AUTHMODE=ApiKey` but the SDK never sent an API key. Connections were rejected.
+
+## Decision
+
+- Switch SDK exporters to gRPC (`exporter-trace-otlp-grpc`, `exporter-metrics-otlp-grpc`). The gRPC packages were already in the dependency tree transitively via `@opentelemetry/sdk-node`.
+- Fix the `ASPIRE_OTLP_ENDPOINT` constant to `http://localhost:4317`.
+- Set OTLP auth mode to `Unsecured` for local dev Docker launches.
+- Update docs with correct env vars and a Quick Debug Checklist.
+
+## Impact
+
+- All OTel telemetry (traces + metrics) will now reach the Aspire dashboard when `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` is set.
+- No breaking change for SDK consumers who don't use OTel (everything remains opt-in/no-op).
+- The gRPC dependency is already present; no new packages added to the tree.
+
+
+# Decision: Personal Squad Tutorial Added to Guide Section
+
+**Date:** 2026-02-23
+**Author:** McManus (DevRel)
+**Requested by:** Brady
+
+## What
+
+Created `docs/guide/personal-squad.md` — a flagship end-to-end tutorial on setting up and using a personal squad. Added to the Guide section in docs/build.js SECTION_ORDER.
+
+## Why
+
+Brady's directive: write the tutorial on personal squads. This is the first user-facing documentation for `squad init --global` and the remote mode resolution system. The feature existed in code (resolution.ts, cli-entry.ts) but had no dedicated tutorial.
+
+## Decisions Made
+
+1. **Tone:** Matched existing docs exactly (first-session.md as gold standard). No hype. "It's still very new" energy throughout.
+2. **Behind the scenes depth:** Explained the config.json teamRoot pointer, local vs. remote mode split, and resolution algorithm — enough to understand what's happening, not enough to be a reference doc.
+3. **Use cases:** Five practical scenarios (side projects, cross-repo review, new codebases, growing skills, workflow automation) — all plausible today, no future-state fiction.
+4. **Honesty section:** Explicitly called out limitations (no sync between machines, project keys unused, no conflict handling, no UI).
+5. **Nav placement:** Third in Guide section after tips-and-tricks and sample-prompts.
+
+## Impact
+
+- New page in published docs site (guide/personal-squad.html)
+- Guide nav updated with new entry
+- No breaking changes to existing pages
+
+
+
+
+### 2026-02-23: E2E Test Harness Design
+**By:** Breedan
+**Summary:** Implemented child_process-based terminal harness for CLI acceptance testing instead of node-pty, providing cross-platform compatibility and CI-friendly execution without native compilation.
+**Details:** See orchestration log for full context.
+
+### 2026-02-23: REPL UX Test Suite Patterns
+**By:** Hockney
+**Summary:** Created 40-test suite using ink-testing-library to validate visual REPL behavior across 6 categories (thinking indicator, agent panel, message stream, input prompt, welcome, never-dead requirement).
+**Details:** See orchestration log for full context.
+
+### 2026-02-24: REPL UX Overhaul
+**By:** Kovash
+**Summary:** Implemented visual improvements including elapsed-time tracking, pulsing agent indicators, response timestamps, and animated spinners to ensure the interface never appears dead during processing.
+**Details:** See orchestration log for full context.
+
+### 2026-02-23: Initial CLI UX Audit
+**By:** Marquez
+**Summary:** Comprehensive audit of Squad CLI identified 21 issues ranging from P0 blockers (80-char violations, unclear errors) to P2 polish opportunities, with 6 UX gates defined for quality enforcement.
+**Details:** See orchestration log for full context.
+
+### 2026-02-23: SQUAD_DEBUG auto-enables OTel diagnostics
+**By:** Saul
+**Summary:** OTel SDK now auto-enables DiagConsoleLogger at WARN level when SQUAD_DEBUG=1 is set, surfacing gRPC transport errors that were previously invisible to operators.
+**Details:** See orchestration log for full context.
+# Decision: Testing Epic PRD Structure
+
+**Author:** Keaton (Lead)  
+**Date:** 2026-02-24  
+**Status:** Awaiting Brady Approval  
+
+## Context
+
+Brady's CLI died after 2 minutes due to hard-coded timeout in `packages/squad-cli/src/cli/shell/index.ts:123`. He wants the CLI to be "take-your-breath-away-good" with engaging feedback during long waits, Claude-style thinking words, Copilot-style action display, and never feel dead.
+
+New agents joined: Cheritto (TUI), Breedan (E2E tests), Waingro (hostile QA), Nate (accessibility), Marquez (UX design). Marquez delivered 21-item UX audit, Breedan designed E2E harness, Kovash shipped REPL UX overhaul, Hockney has 40 REPL UX tests.
+
+## Decision
+
+Created 3-phase epic PRD with 21 numbered items:
+
+### Phase 1: Testing Wave (6 items)
+- Fix 2-minute timeout → configurable via env var, 10-minute default
+- Dogfood CLI with 4 repo types (fresh init, existing squad, monorepo, solo)
+- Expand E2E test coverage (10+ new Gherkin scenarios)
+- Hostile QA (Waingro breaks it in 7+ conditions: tiny terminals, no config, rapid Ctrl+C, etc.)
+- Accessibility audit (Nate reviews keyboard nav, color contrast, error guidance)
+- Fix P0 UX blockers from Marquez (5 items: help text overflow, version format, error remediation, empty states, init flags)
+
+### Phase 2: Improvement Phase (5 items)
+- Implement P1 UX polish from Marquez (8 items: verb consistency, focus indicator, keyboard hints, etc.)
+- Engaging thinking feedback (Claude-style phrases + Copilot-style action display)
+- Ghost response detection + retry logic (3 attempts, user feedback)
+- Fix all P0 bugs from Phase 1 testing
+- Harden error handling (actionable messages, remediation hints, no stack traces to users)
+
+### Phase 3: Make It Breathtaking (7 items)
+- Rich progress indicators (which agent, what they're doing, pulsing dots, elapsed time)
+- Terminal adaptivity (beautiful at 120-col, functional at 80-col, graceful at 40-col)
+- Animations & transitions (spinners, pulsing dots, color transitions, smooth status changes)
+- Copy polish (human, fun, action-oriented — not stuffy)
+- Accessibility hardening (keyboard-first, NO_COLOR mode, focus indicators, guidelines doc)
+- P2 nice-to-haves from Marquez (6 items: remove "you:" prefix, separator consistency, etc.)
+- The "wow moment" — first `squad init` feels magical
+
+## Key Architectural Decisions
+
+### Timeout Configuration
+- Environment variable: `SQUAD_SESSION_TIMEOUT_MS`
+- Default: 600_000ms (10 minutes, not 2 minutes)
+- Keep-alive feedback: elapsed time updates every second, ThinkingIndicator color cycles (cyan < 3s, yellow 3–8s, magenta > 8s)
+- Test validation: 15-minute conversation must complete without timeout
+
+### Thinking Feedback Design
+- **Claude-style:** Rotate through 5–7 thinking phrases every 2–3 seconds ("Analyzing...", "Considering...", "Synthesizing...")
+- **Copilot-style:** Stream agent actions in real time ("Reading file src/index.ts...", "Spawning specialist...", "Analyzing dependencies...")
+- Must work during 10+ minute conversations (blocks on timeout fix in Phase 1)
+
+### Terminal Adaptivity Approach
+- **120-col:** Full layout with separators, full help text
+- **80-col:** Standard layout (current target, existing implementation)
+- **40-col:** Compact layout (single-column, abbreviated labels)
+- Separators must respect terminal width: `Math.min(terminal.columns, 80)`
+- E2E tests must pass at all three widths
+
+### Copy Guidelines
+- Human, fun, action-oriented (not stuffy)
+- Active voice, imperative verbs
+- Every error includes remediation hint
+- Example transformation:
+  - Before: "No squad directory found in repository tree or global path"
+  - After: "No team found. Run 'squad init' to create one."
+
+## Agent Assignment Strategy
+
+**Cheritto (TUI)** owns the most work (9 items across all phases):
+- Phase 1: 1.1 (timeout), 1.6 (P0 UX)
+- Phase 2: 2.1 (P1 UX), 2.2 (thinking), 2.3 (ghost), 2.5 (errors)
+- Phase 3: 3.1 (progress), 3.2 (adaptivity), 3.3 (animations), 3.6 (P2 UX), 3.7 (wow)
+
+**Testing specialists:**
+- Breedan: 1.3 (E2E expansion)
+- Waingro: 1.2 (dogfood), 1.4 (hostile QA)
+- Hockney: 2.5 (error tests)
+
+**UX specialists:**
+- Marquez: 1.6, 2.1, 3.1, 3.4, 3.6, 3.7 (review/design)
+- Nate: 1.5 (audit), 3.2 (review), 3.5 (hardening)
+- Kovash: 2.2 (review), 3.3 (review)
+
+**Tone review:**
+- McManus: 3.4 (copy polish tone review)
+
+## Dependencies Mapped
+
+### Phase 1 → Phase 2
+- 1.6 (P0 UX) → 2.1 (P1 UX) — blockers before polish
+- 1.1 (timeout) → 2.2 (thinking) — working timeout before long-wait feedback
+- 1.2, 1.4 (bug catalog) → 2.4 (fix P0 bugs) — bugs found before fixing
+
+### Phase 2 → Phase 3
+- 2.1 (P1 UX) → 3.2 (adaptivity) — foundation before adaptivity
+- 2.1 (P1 UX) → 3.6 (P2 UX) — P1 before P2
+- 2.2 (thinking) → 3.1 (progress) — thinking feedback is foundation for rich progress
+
+### Within Phase 3
+- 3.3 (animations) → 3.7 (wow moment) — animations needed for magical init
+
+## Success Gates
+
+**Phase 1:** Timeout fixed, CLI tested (4 repos), E2E expanded (10+ scenarios), hostile QA (7+ conditions), accessibility audit, P0 UX fixed, bugs cataloged
+
+**Phase 2:** P1 UX fixed, thinking feedback engaging (Brady approves), ghost handling, P0 bugs fixed, errors actionable
+
+**Phase 3:** Rich progress, terminal adaptivity (40–120 cols), animations smooth, copy polished, accessibility hardened, P2 UX, **Brady says "breathtaking"**
+
+## Next Steps
+
+1. Brady reviews PRD (session state file: `prd-testing-epic.md`)
+2. Create GitHub epic issue (copy PRD as issue body)
+3. Create 21 sub-issues (one per item, numbered 1.1–3.7)
+4. Assign agents per assignment table
+5. Schedule Phase 1 kickoff (all agents read PRD, ask questions)
+6. Execute Phase 1
+7. Phase 1 retrospective, adjust Phase 2 scope if needed
+8. Repeat for Phases 2 & 3
+
+## Why This Structure
+
+**3 phases, not 1 monolith:** Each phase has distinct objective (test, fix, polish). Allows for retrospectives and scope adjustments between phases.
+
+**21 numbered items, not open-ended:** Clear scope, clear ownership, clear dependencies. Each item can become a GitHub sub-issue with its own acceptance criteria.
+
+**Agent assignments upfront:** Cheritto is load-balanced (9 items but spread across all phases). Specialists are focused (Breedan E2E, Waingro QA, Nate accessibility). Avoids "who's doing what?" confusion.
+
+**Dependencies explicit:** No item starts before its dependencies are done. Prevents rework (e.g., P0 UX must be fixed before P1 UX, timeout must work before testing long-wait feedback).
+
+**Success gates concrete:** Not "improve UX" but "all P0 items fixed + Marquez approves + UX gates pass". Not "make it better" but "Brady says breathtaking".
+
+## Pattern for Future Epics
+
+When writing multi-phase epics:
+1. Number all items (phase.item format: 1.1, 1.2, 2.1, etc.)
+2. Assign agents upfront (with item counts to balance load)
+3. Map dependencies explicitly (which items block which)
+4. Define success criteria per phase (concrete, testable, or approval-gated)
+5. Include risks & mitigations section
+6. Provide next steps (how to execute, not just what to build)
+
+
+
+### 2026-02-23T19:27Z: Telemetry in both CLI and agent modes
+**By:** Brady (via Copilot)
+**What:** Squad should pump telemetry during BOTH modes of usage: (1) when running as the standalone Squad CLI, and (2) when running as an agent inside GitHub Copilot CLI. Brady wants to see telemetry from both surfaces.
+**Why:** User request — captured for team memory. Affects OTel integration architecture.
 

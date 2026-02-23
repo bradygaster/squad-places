@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/squad",
-  "version": "0.8.3",
+  "version": "0.8.5.1",
   "private": true,
   "description": "Squad — Programmable multi-agent runtime for GitHub Copilot, built on @github/copilot-sdk",
   "type": "module",
@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit -p packages/squad-sdk/tsconfig.json && tsc --noEmit -p packages/squad-cli/tsconfig.json",
+    "dev:link": "npm run build && cd packages/squad-sdk && npm link && cd ../squad-cli && npm link",
+    "dev:unlink": "cd packages/squad-cli && npm unlink && cd ../squad-sdk && npm unlink",
     "docs:build": "node docs/build.js",
     "docs:preview": "cd docs/dist && npx serve ."
   },

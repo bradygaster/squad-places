@@ -7,6 +7,25 @@
 
 ## Learnings
 
+### 2026-02-23: Personal Squad tutorial — docs/guide/personal-squad.md
+**Status:** Complete.
+**Changes made:**
+1. **docs/guide/personal-squad.md** — End-to-end tutorial (201 lines) covering:
+   - What a personal squad is and why it matters
+   - Step-by-step setup: global CLI install, `squad init --global`, connecting projects
+   - Behind the scenes: `~/.squad/` structure, config.json teamRoot pointer, local vs. remote mode, resolution system
+   - 5 use cases: side projects sharing a team, cross-repo code review, learning new codebases, skills that grow across projects, personal workflow automation
+   - Honest "where it's headed" section acknowledging limitations (no sync, no conflict handling, project keys unused)
+   - Practical tips section
+2. **docs/build.js** — Added 'personal-squad' to SECTION_ORDER for 'guide' section
+**Build:** 40 pages generated without errors (`node docs/build.js`). Page appears in Guide nav as "Your Personal Squad".
+**Tone applied:** Matched existing Squad docs exactly — `**Try this:**` opener, `---` dividers, `## N. Title` numbered sections, casual/direct/action-oriented, terminal output examples, no hype. Followed "it's still very new" energy per Brady's direction.
+**Notes:**
+- Technical details grounded in actual source: resolution.ts (resolveSquadPaths, remote mode, SquadDirConfig), cli-entry.ts (--global flag)
+- Use cases show cross-project value without overpromising — each is plausible today
+- "Where It's Headed" section is honest about rough edges (no sync, local-only, no UI)
+- Length target 200-300 hit at 201 lines
+
 ### 2026-02-23: Blog posts 013–020 — v1 replatform blog coverage
 **Status:** Complete.
 **Changes made:**
@@ -26,6 +45,10 @@
 - @spboyer credited in #019 per CHANGELOG attribution
 - Frontmatter follows exact beta format: title, date, author, wave, tags, status, hero
 - Each post ends with standard McManus attribution footer pointing to squad-pr repo
+
+---
+
+📌 Team update (2026-02-23T09:25Z): Personal Squad tutorial (docs/guide/personal-squad.md) + blog coverage complete. Streaming diagnostics infrastructure finished. Kovash added SQUAD_DEBUG logging. Hockney identified root cause. Kobayashi bumped version to 0.8.5.1. — decided by Scribe
 
 ### 2026-02-22: GitHub Actions workflow for docs publishing
 **Status:** Complete.

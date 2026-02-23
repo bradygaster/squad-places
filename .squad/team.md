@@ -26,6 +26,12 @@
 | Redfoot | Graphic Designer | `.squad/agents/redfoot/charter.md` | ✅ Active |
 | Strausz | VS Code Extension | `.squad/agents/strausz/charter.md` | ✅ Active |
 | Saul | Aspire & Observability | `.squad/agents/saul/charter.md` | ✅ Active |
+| Kovash | REPL & Interactive Shell | `.squad/agents/kovash/charter.md` | ✅ Active |
+| Marquez | CLI UX Designer | `.squad/agents/marquez/charter.md` | ✅ Active |
+| Cheritto | TUI Engineer | `.squad/agents/cheritto/charter.md` | ✅ Active |
+| Breedan | E2E Test Engineer | `.squad/agents/breedan/charter.md` | ✅ Active |
+| Nate | Accessibility Reviewer | `.squad/agents/nate/charter.md` | ✅ Active |
+| Waingro | Product Dogfooder | `.squad/agents/waingro/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 

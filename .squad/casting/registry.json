@@ -97,6 +97,48 @@
       "universe": "The Usual Suspects",
       "legacy_named": false,
       "status": "active"
+    },
+    "kovash": {
+      "created_at": "2026-02-23T07:51:00Z",
+      "persistent_name": "Kovash",
+      "universe": "The Usual Suspects",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "marquez": {
+      "created_at": "2026-02-23T17:54:00Z",
+      "persistent_name": "Marquez",
+      "universe": "The Usual Suspects",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "cheritto": {
+      "created_at": "2026-02-23T17:54:00Z",
+      "persistent_name": "Cheritto",
+      "universe": "Heat",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "breedan": {
+      "created_at": "2026-02-23T17:54:00Z",
+      "persistent_name": "Breedan",
+      "universe": "Heat",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "nate": {
+      "created_at": "2026-02-23T17:54:00Z",
+      "persistent_name": "Nate",
+      "universe": "Heat",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "waingro": {
+      "created_at": "2026-02-23T17:54:00Z",
+      "persistent_name": "Waingro",
+      "universe": "Heat",
+      "legacy_named": false,
+      "status": "active"
     }
   }
 }

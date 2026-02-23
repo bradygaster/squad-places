@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 interface InputPromptProps {
@@ -6,6 +6,8 @@ interface InputPromptProps {
   prompt?: string;
   disabled?: boolean;
 }
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 export const InputPrompt: React.FC<InputPromptProps> = ({ 
   onSubmit, 
@@ -15,6 +17,16 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const [value, setValue] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [spinFrame, setSpinFrame] = useState(0);
+
+  // Animate spinner when disabled (processing)
+  useEffect(() => {
+    if (!disabled) return;
+    const timer = setInterval(() => {
+      setSpinFrame(f => (f + 1) % SPINNER_FRAMES.length);
+    }, 80);
+    return () => clearInterval(timer);
+  }, [disabled]);
 
   useInput((input, key) => {
     if (disabled) return;
@@ -60,11 +72,24 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     }
   });
 
+  if (disabled) {
+    return (
+      <Box marginTop={1}>
+        <Text color="yellow" bold>◆ squad </Text>
+        <Text color="yellow">{SPINNER_FRAMES[spinFrame]}</Text>
+        <Text color="yellow" bold>{'> '}</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box marginTop={1}>
-      <Text color={disabled ? 'yellow' : 'cyan'} bold>{prompt}</Text>
+      <Text color="cyan" bold>◆ squad{'> '}</Text>
       <Text>{value}</Text>
-      {!disabled && <Text color="gray">▌</Text>}
+      <Text color="cyan">▌</Text>
+      {!value && (
+        <Text dimColor> type a message or /help</Text>
+      )}
     </Box>
   );
 };

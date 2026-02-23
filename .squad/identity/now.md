@@ -1,34 +1,34 @@
 ---
-updated_at: 2026-02-22T11:45:00Z
-focus_area: Wave 3 — Docs migration, guides, site engine
-active_issues: [185, 188, 191, 192, 195, 196, 199, 201, 203, 206, 207]
-wave: 3
+updated_at: 2026-02-23T18:34:00Z
+focus_area: Epic #323 — CLI Quality & UX (Testing Wave → Improvement → Breathtaking)
+active_issues: [323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341]
+wave: testing
 ---
 
 # What We're Focused On
 
-**Status:** Wave 3 launched (PR #309 merged; Wave 2 complete)
+**Status:** PRD complete. 19 issues created (1 epic + 18 sub-issues). Ready to execute Phase 1.
 
 **⚠️ Repo: bradygaster/squad-pr ONLY — not bradygaster/squad.**
 
-## Wave 3 (now)
-**Agent assignments:**
-- Fenster → Mechanical doc updates (#191, #192, #195)
-- McManus → 5 Documentation Guides (#206, #203, #201, #199, #196)
-- Keaton (LEAD) → Docs site engine + content (#185, #188)
-- Hockney → Verify docs build (#207)
+## Epic #323: CLI Quality & UX
 
-## Completed (Wave 2)
-- REPL Polish: #307, #308 ✓
-- Security: CWE-78 fix upstream.ts ✓
-- Config Extraction: 6 files centralized ✓
-- Shell Integration: 114 new tests ✓
-- Spawn wiring: CopilotClient integration ✓
-- Aspire E2E: Playwright tests (5 tests) ✓
-- Epics: #253 (OTel), #232 (Shell) closed ✓
+### Phase 1: Testing Wave (ready to start)
+- #325 Cheritto → Fix 2-minute timeout (P0 blocker)
+- #324 Keaton + Waingro → Dogfood CLI with real repos
+- #326 Breedan → Expand E2E test coverage
+- #327 Waingro → Hostile QA: break everything
+- #328 Nate → Accessibility audit
+- #329 Cheritto → P0 UX blockers from Marquez audit
 
-## Context
-- 2141 tests passing (79 files, +119 tests)
-- New agent: Saul (Aspire & Observability)
-- Docs migration: internal-only → public-facing
-- Wave 3 scope: Zero code changes, docs-only
+### Phase 2: Improvement (blocked on Phase 1)
+- #330–#334: P1 UX polish, thinking feedback, ghost response, bug fixes, error hardening
+
+### Phase 3: Breathtaking (blocked on Phase 2)
+- #335–#341: Progress indicators, terminal adaptivity, animations, copy polish, accessibility, P2 UX, wow moment
+
+## Critical Bug
+Hard-coded `120_000ms` timeout in `sendAndWait` at `packages/squad-cli/src/cli/shell/index.ts:123`. Must fix first (#325).
+
+## New Agents
+Cheritto (TUI), Breedan (E2E), Waingro (hostile QA), Nate (accessibility), Marquez (UX design) — all chartered and ready.

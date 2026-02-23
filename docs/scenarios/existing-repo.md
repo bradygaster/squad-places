@@ -1,18 +1,8 @@
 # Adding Squad to an Existing Repo
 
-**Try this to initialize Squad on your project:**
+**Try this:**
 ```
 This is a SaaS app with React frontend, Node.js API, and PostgreSQL — set up Squad
-```
-
-**Try this to get an architecture overview:**
-```
-Team, review the codebase and tell me what you find
-```
-
-**Try this to establish coding standards:**
-```
-We always use Zod for API validation and Prisma for database queries
 ```
 
 Squad discovers your existing project — stack, patterns, conventions — and proposes a team that fits. Agents explore the codebase first, then start working with full context.
@@ -20,8 +10,6 @@ Squad discovers your existing project — stack, patterns, conventions — and p
 ---
 
 ## 1. Install Squad
-
-You have a project with code, conventions, and history. Squad discovers what's already there.
 
 Navigate to your existing repo and run:
 
@@ -122,7 +110,7 @@ Results come back labeled by agent:
    Test fixtures in /server/test/fixtures/.
 ```
 
-These findings are written to each agent's `history.md`. From now on, agents know your project structure, patterns, and conventions.
+These findings land in each agent's `history.md`. From now on, agents know your project.
 
 ---
 
@@ -179,8 +167,8 @@ git commit -m "Add Squad team"
 
 ## Tips
 
-- **Explore first, build second.** On an existing repo, the initial codebase review pays for itself immediately. Agents make fewer mistakes when they know what's already there.
-- **Share your conventions.** Agents can discover file structure from code, but they can't discover your team norms. Tell them: naming conventions, banned patterns, areas of tech debt.
-- **Mention fragile areas.** If a module is known to be brittle, say so. Agents will be more cautious and add extra test coverage around it.
-- **Existing `.gitattributes` is safe.** Squad only appends `merge=union` rules. Your existing rules are preserved.
-- **History accumulates fast.** After the exploration task, agents already have useful context. After 2–3 real tasks, they're significantly better than cold-start agents.
+- **Explore first, build second.** The initial codebase review pays for itself immediately.
+- **Share your conventions.** Agents can't discover team norms from code alone. Tell them.
+- **Mention fragile areas.** Agents will be more cautious and add extra test coverage.
+- **Existing `.gitattributes` is safe.** Squad only appends `merge=union` rules.
+- **History accumulates fast.** After 2–3 real tasks, agents are significantly better than cold-start.

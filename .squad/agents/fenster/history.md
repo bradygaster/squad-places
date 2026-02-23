@@ -49,7 +49,10 @@ Migrated 56 test files (173 imports) from ../src/ to @bradygaster/squad-sdk/* an
 
 ---
 
-### 📌 GitHub Pages Build Tooling Assessment (2026-02-22T23:30Z) — Fenster
+### 📌 Team update (2026-02-23T08:00:00Z): REPL streaming bug fixed via sendAndWait pattern — decided by Kovash
+All shell dispatch calls must use awaitStreamedResponse() to wait for full streamed response before parsing. Pattern includes fallback to turn_end/idle listeners. Critical fix for coordinator prompt parsing. Test coverage: 13 new tests in repl-streaming.test.ts. All 2351 tests passing.
+
+
 **Requested by:** Brady. Understand current build capability, identify gaps for GitHub Pages deployment.
 
 **Build System Status:**

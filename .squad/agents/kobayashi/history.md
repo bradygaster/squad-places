@@ -48,6 +48,16 @@
 - **Decision:** Bump both packages from 0.7.0 (npm stubs) to 0.8.0 (real, publishable code)
 - **Rationale:** Clear break from placeholders. 0.8.0 signals functional code arrival while preserving pre-1.0 alpha status.
 - **Changes:**
+
+### 2026-02-23: Version bump to 0.8.5.1
+**Status:** Complete
+- Updated 4 version references: package.json, package-lock.json, CHANGELOG.md, CLI version constant
+- Bumped from 0.8.5-debug → 0.8.5.1
+- Build clean, all tests pass
+
+---
+
+📌 Team update (2026-02-23T09:25Z): Version 0.8.5.1 release complete. Streaming diagnostics infrastructure finished. Hockney added 13 regression tests, identified root cause. Kovash added SQUAD_DEBUG logging & OTel REPL wiring. Saul fixed OTel gRPC protocol. — decided by Scribe
   - `packages/squad-sdk/package.json` → version `0.8.0`, VERSION export updated in `src/index.ts`
   - `packages/squad-cli/package.json` → version `0.8.0`, dependency on sdk locked to `0.8.0`
   - `package.json` (root) → added `"private": true` (safety guard against accidental publish)
@@ -157,3 +167,46 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
   - Two targeted fixes: docs section build completeness + SDK version pinning in CLI + 110 shell tests
   - Package versions: @bradygaster/squad-sdk@0.8.3, @bradygaster/squad-cli@0.8.3
 - **Outcome:** Release v0.8.3 is live at https://github.com/bradygaster/squad-pr/releases/tag/v0.8.3. Both workspace packages at 0.8.3. squad-publish.yml v* tag trigger now active for this release.
+
+### 2026-02-22T23:52Z: Version Bump to 0.8.4 & NPM Publish — Brady requested
+**Status:** EXECUTED — Both packages published to npm.
+- **Version bumps:**
+  - `package.json` (root): 0.8.3 → 0.8.4
+  - `packages/squad-sdk/package.json`: 0.8.3 → 0.8.4
+  - `packages/squad-cli/package.json`: 0.8.3 → 0.8.4, CLI dependency on SDK pinned to exact version "0.8.4"
+  - `package-lock.json`: Updated via `npm install --package-lock-only`
+- **Build & Test:** Both packages built successfully (TypeScript compilation), all tests passed (2346 passed, 5 skipped)
+- **NPM Publish:** 
+  - ✅ `@bradygaster/squad-sdk@0.8.4` published to npm with public access
+  - ✅ `@bradygaster/squad-cli@0.8.4` published to npm with public access
+- **Git Commit:** `3fd970b` on branch `bradygaster/dev` — "chore: bump to v0.8.4 for npm publish"
+- **Push:** Committed to origin/bradygaster/dev
+- **Outcome:** Both npm packages live and resolvable at version 0.8.4. CLI dependency correctly pinned to SDK 0.8.4.
+
+### 2026-02-24: Version Bump to 0.8.5 & Partial NPM Publish — Brady requested
+**Status:** EXECUTED — SDK published to npm; CLI build completed; version changes committed and pushed.
+- **Version bumps:**
+   - `package.json` (root): 0.8.4 → 0.8.5
+   - `packages/squad-sdk/package.json`: 0.8.4 → 0.8.5
+   - `packages/squad-cli/package.json`: 0.8.4 → 0.8.5, CLI dependency on SDK pinned to exact version "0.8.5"
+- **Build:** Both packages built successfully with TypeScript (exit code 0)
+- **NPM Publish:** 
+   - ✅ `@bradygaster/squad-sdk@0.8.5` published to npm with public access (285.5 kB tarball)
+   - ⚠️ `@bradygaster/squad-cli@0.8.5` build completed; publish initiated but stalled on browser-based npm auth (not user-attended)
+- **Git Commit:** `cc490b4` on branch `bradygaster/dev` — "chore: bump to v0.8.5 — REPL streaming fix, Aspire telemetry, personal squad docs"
+- **Push:** Committed and pushed to origin/bradygaster/dev
+- **Changes included:**
+   - REPL streaming fix (deltaContent support)
+   - Aspire telemetry fixes
+   - Personal squad docs updates
+- **Outcome:** SDK @0.8.5 live on npm. CLI build passes; CLI publish requires manual auth completion (npm registry authentication flow). All version strings aligned to 0.8.5. CLI dependency correctly pinned to SDK 0.8.5.
+
+### 2026-02-24: Version Bump to 0.8.5.1 — Brady requested
+**Status:** EXECUTED — Four-part version structure (x.x.x.x) implemented.
+- **Version bumps:** "0.8.5-debug" → "0.8.5.1" (four-part semver)
+  - `package.json` (root): 0.8.5-debug → 0.8.5.1
+  - `packages/squad-sdk/package.json`: 0.8.5-debug → 0.8.5.1
+  - `packages/squad-cli/package.json`: 0.8.5-debug → 0.8.5.1, CLI dependency on SDK pinned to "0.8.5.1"
+- **All 4 version references verified:** Root, SDK, CLI package versions + CLI SDK dependency
+- **Learning:** Brady uses four-part versioning (x.x.x.x) with a patch level as the fourth component. Enables finer-grained version control while maintaining semantic boundaries.
+- **Outcome:** All version references updated from debug state to production version 0.8.5.1. CLI SDK dependency correctly pinned.

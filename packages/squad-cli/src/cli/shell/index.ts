@@ -16,6 +16,7 @@ import { StreamBridge } from './stream-bridge.js';
 import { ShellLifecycle } from './lifecycle.js';
 import { SquadClient } from '@bradygaster/squad-sdk/client';
 import type { SquadSession } from '@bradygaster/squad-sdk/client';
+import { initSquadTelemetry, TIMEOUTS } from '@bradygaster/squad-sdk';
 import { buildCoordinatorPrompt, parseCoordinatorResponse } from './coordinator.js';
 import { loadAgentCharter, buildAgentPrompt } from './spawn.js';
 import type { ParsedInput } from './router.js';
@@ -46,10 +47,23 @@ export type { ShellApi, AppProps } from './components/App.js';
 const require = createRequire(import.meta.url);
 const pkg = require('../../../package.json') as { version: string };
 
+/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
+function debugLog(...args: unknown[]): void {
+  if (process.env['SQUAD_DEBUG'] === '1') {
+    console.error('[SQUAD_DEBUG]', ...args);
+  }
+}
+
 export async function runShell(): Promise<void> {
   const registry = new SessionRegistry();
   const renderer = new ShellRenderer();
   const teamRoot = process.cwd();
+
+  // Initialize OpenTelemetry if endpoint is configured (e.g. Aspire dashboard)
+  const telemetry = initSquadTelemetry({ serviceName: 'squad-cli' });
+  if (telemetry.tracing || telemetry.metrics) {
+    console.error('🔭 Telemetry active — exporting to ' + process.env['OTEL_EXPORTER_OTLP_ENDPOINT']);
+  }
 
   // Initialize lifecycle — discover team agents
   const lifecycle = new ShellLifecycle({ teamRoot, renderer, registry });
@@ -92,12 +106,50 @@ export async function runShell(): Promise<void> {
 
   /** Extract text delta from an SDK session event. */
   function extractDelta(event: { type: string; [key: string]: unknown }): string {
-    const val = event['delta'] ?? event['content'];
-    return typeof val === 'string' ? val : '';
+    const val = event['deltaContent'] ?? event['delta'] ?? event['content'];
+    const result = typeof val === 'string' ? val : '';
+    debugLog('extractDelta', { type: event['type'], keys: Object.keys(event), hasDeltaContent: 'deltaContent' in event, result: result.slice(0, 80) });
+    return result;
+  }
+
+  /**
+   * Send a prompt and wait for the full streamed response.
+   * Prefers sendAndWait (blocks until idle); falls back to sendMessage + turn_end event.
+   * Returns the full response content from sendAndWait as a fallback string.
+   */
+  async function awaitStreamedResponse(session: SquadSession, prompt: string): Promise<string> {
+    if (session.sendAndWait) {
+      debugLog('awaitStreamedResponse: using sendAndWait');
+      const result = await session.sendAndWait({ prompt }, TIMEOUTS.SESSION_RESPONSE_MS);
+      debugLog('awaitStreamedResponse: sendAndWait returned', {
+        type: typeof result,
+        keys: result ? Object.keys(result as Record<string, unknown>) : [],
+        hasData: !!(result as Record<string, unknown> | undefined)?.['data'],
+      });
+      // Return full response content as fallback for when deltas weren't captured
+      const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+      const content = typeof data?.['content'] === 'string' ? data['content'] as string : '';
+      debugLog('awaitStreamedResponse: fallback content length', content.length);
+      return content;
+    } else {
+      const done = new Promise<void>((resolve) => {
+        const onEnd = (): void => {
+          try { session.off('turn_end', onEnd); } catch { /* ignore */ }
+          try { session.off('idle', onEnd); } catch { /* ignore */ }
+          resolve();
+        };
+        session.on('turn_end', onEnd);
+        session.on('idle', onEnd);
+      });
+      await session.sendMessage({ prompt });
+      await done;
+      return '';
+    }
   }
 
   /** Send a message to an agent session and stream the response. */
   async function dispatchToAgent(agentName: string, message: string): Promise<void> {
+    debugLog('dispatchToAgent:', agentName, message.slice(0, 120));
     let session = agentSessions.get(agentName);
     if (!session) {
       const charter = loadAgentCharter(agentName, teamRoot);
@@ -121,6 +173,7 @@ export async function runShell(): Promise<void> {
 
     let accumulated = '';
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
+      debugLog('agent onDelta fired', agentName, { eventType: event['type'] });
       const delta = extractDelta(event);
       if (!delta) return;
       accumulated += delta;
@@ -129,7 +182,11 @@ export async function runShell(): Promise<void> {
 
     session.on('message_delta', onDelta);
     try {
-      await session.sendMessage({ prompt: message });
+      const fallback = await awaitStreamedResponse(session, message);
+      debugLog('agent dispatch:', agentName, 'accumulated length', accumulated.length, 'fallback length', fallback.length);
+      if (!accumulated && fallback) {
+        accumulated = fallback;
+      }
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
       shellApi?.setStreamingContent(null);
@@ -148,6 +205,7 @@ export async function runShell(): Promise<void> {
 
   /** Send a message through the coordinator and route based on response. */
   async function dispatchToCoordinator(message: string): Promise<void> {
+    debugLog('dispatchToCoordinator: sending message', message.slice(0, 120));
     if (!coordinatorSession) {
       const systemPrompt = buildCoordinatorPrompt({ teamRoot });
       coordinatorSession = await client.createSession({
@@ -159,6 +217,7 @@ export async function runShell(): Promise<void> {
 
     let accumulated = '';
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
+      debugLog('coordinator onDelta fired', { eventType: event['type'] });
       const delta = extractDelta(event);
       if (!delta) return;
       accumulated += delta;
@@ -167,14 +226,20 @@ export async function runShell(): Promise<void> {
 
     coordinatorSession.on('message_delta', onDelta);
     try {
-      await coordinatorSession.sendMessage({ prompt: message });
+      const fallback = await awaitStreamedResponse(coordinatorSession, message);
+      debugLog('coordinator dispatch: accumulated length', accumulated.length, 'fallback length', fallback.length);
+      if (!accumulated && fallback) {
+        accumulated = fallback;
+      }
     } finally {
       try { coordinatorSession.off('message_delta', onDelta); } catch { /* session may not support off */ }
       shellApi?.setStreamingContent(null);
     }
 
     // Parse routing decision from coordinator response
+    debugLog('coordinator accumulated (first 200 chars)', accumulated.slice(0, 200));
     const decision = parseCoordinatorResponse(accumulated);
+    debugLog('coordinator decision', { type: decision.type, hasRoutes: !!(decision.routes?.length), hasDirectAnswer: !!decision.directAnswer });
 
     if (decision.type === 'route' && decision.routes?.length) {
       for (const route of decision.routes) {
@@ -254,6 +319,7 @@ export async function runShell(): Promise<void> {
   }
   try { await client.disconnect(); } catch { /* best-effort cleanup */ }
   try { await lifecycle.shutdown(); } catch { /* best-effort cleanup */ }
+  try { await telemetry.shutdown(); } catch { /* best-effort cleanup */ }
 
   console.log('👋 Squad out.');
 }

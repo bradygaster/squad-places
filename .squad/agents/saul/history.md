@@ -28,3 +28,31 @@
   - Dashboard needs ~3s after flush to index traces, ~5s for metrics
   - Test auto-skips when `SKIP_DOCKER_TESTS=1` or Docker is unavailable
   - 2141 tests passing across 79 files (post Aspire integration test)
+- Wave 3 work (2026-02-23):
+  - Created `docs/scenarios/aspire-dashboard.md` — scenario-style guide for using Squad with Aspire
+  - Updated `docs/build.js` SECTION_ORDER to include aspire-dashboard in scenarios ordering
+  - Doc covers: what Aspire is, Docker launch, SDK integration, dashboard features (traces, metrics, resources), troubleshooting, pro tips
+  - Tone: action-oriented, welcoming, prompt-first (matching existing Squad docs)
+  - Referenced `packages/squad-sdk/src/runtime/otel-*.ts` and `test/aspire-integration.test.ts` for implementation details
+  - Docs build verified — 39 pages generated, aspire-dashboard.html confirmed in dist
+- **Critical bug fix (2026-02-XX): Telemetry not appearing in Aspire dashboard.** Root cause analysis:
+  1. **Protocol mismatch** — SDK was using OTLP/HTTP exporters (`exporter-trace-otlp-http`), Aspire only accepts OTLP/gRPC on port 18889. Switched to `exporter-trace-otlp-grpc` / `exporter-metrics-otlp-grpc`.
+  2. **Wrong endpoint in `squad aspire`** — `ASPIRE_OTLP_ENDPOINT` was `http://localhost:18888` (the dashboard UI port). Fixed to `http://localhost:4317` (host-mapped gRPC port).
+  3. **OTLP auth mode was `ApiKey`** — Docker command set `DASHBOARD__OTLP__AUTHMODE=ApiKey` but SDK sent no API key header. Changed to `Unsecured` for local dev.
+  4. **Docs used stale env var** — `ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true` replaced with `DASHBOARD__FRONTEND__AUTHMODE=Unsecured`.
+  5. Added "Quick Debug Checklist" to `docs/scenarios/aspire-dashboard.md` for future troubleshooting.
+  - gRPC packages (`@opentelemetry/exporter-trace-otlp-grpc`, `@grpc/grpc-js`) were already in node_modules transitively via `@opentelemetry/sdk-node`.
+  - All 84 OTel/Aspire tests pass after fix.
+- **OTEL pipeline silent failure diagnosis (2026-02-XX):** Brady reported "telemetry pump not working" — REPL printed telemetry-active message but nothing appeared in Aspire.
+  - **Root cause:** Aspire container started without `DASHBOARD__OTLP__AUTHMODE=Unsecured`, gRPC exporter got `16 UNAUTHENTICATED (HTTP 401)` on every export attempt. Error was completely invisible — swallowed by OTel's internal error handling.
+  - **Fix 1:** `ensureSDK()` in `otel.ts` now auto-enables OTel `DiagConsoleLogger` at WARN level when `SQUAD_DEBUG=1` is set. This surfaces gRPC transport errors (401, ECONNREFUSED, etc.) to stderr. When `debug: true` is passed explicitly, full DEBUG level is enabled.
+  - **Fix 2:** `ensureSDK()` now resets `_sdk = undefined` if `start()` throws, preventing the "initialized but broken" state where the SDK thinks it's running but providers were never registered.
+  - **Fix 3:** `shutdownOTel()` catches and logs shutdown/flush errors when `SQUAD_DEBUG=1` instead of propagating them to callers. Previously, a flush error (e.g. 401) would throw from `shutdownOTel()` potentially breaking cleanup chains.
+  - **Fix 4:** Added `test/otel-export.test.ts` — 5 tests validating the SDK's internal span pipeline with in-memory exporter (span capture, multi-span, multi-tracer, error recording, clean shutdown).
+  - **Key diagnostic technique:** Standalone `tmp-otel-diag.mjs` script creating a single span + flush immediately revealed the 401. This should be the first step whenever "telemetry not appearing" is reported.
+  - Code review of `client.ts` span instrumentation: all spans properly `.end()`'d in `finally` blocks; tracer proxy pattern works correctly (module-level `trace.getTracer()` delegates to whatever provider is registered later by `NodeSDK.start()`).
+  - 2424 tests passing across 89 files after fix.
+
+---
+
+📌 Team update (2026-02-23T09:25Z): OTel gRPC protocol fix completed, Aspire dashboard working. Streaming diagnostics infrastructure finished by Kovash (SQUAD_DEBUG logging), 13 regression tests added by Hockney. Version bump to 0.8.5.1. — decided by Scribe

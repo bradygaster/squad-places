@@ -13,8 +13,8 @@ import { BOLD, RESET, DIM, GREEN, RED, YELLOW } from '../core/output.js';
 // Constants
 // ============================================================================
 
-/** Default OTLP endpoint the Aspire dashboard listens on. */
-const ASPIRE_OTLP_ENDPOINT = 'http://localhost:18888';
+/** Default OTLP endpoint the Aspire dashboard listens on (host-mapped gRPC port). */
+const ASPIRE_OTLP_ENDPOINT = 'http://localhost:4317';
 
 /** Default Aspire dashboard UI port. */
 const ASPIRE_DASHBOARD_PORT = 18888;
@@ -67,8 +67,7 @@ function launchWithDocker(): ChildProcess {
     '-p', `${ASPIRE_DASHBOARD_PORT}:18888`,
     '-p', '4317:18889',
     '-e', 'DASHBOARD__FRONTEND__AUTHMODE=Unsecured',
-    '-e', 'DASHBOARD__OTLP__AUTHMODE=ApiKey',
-    '-e', 'DASHBOARD__OTLP__PRIMARYAPIKEY=squad-dev-key',
+    '-e', 'DASHBOARD__OTLP__AUTHMODE=Unsecured',
     ASPIRE_DOCKER_IMAGE,
   ], {
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -106,13 +105,13 @@ export interface AspireOptions {
  */
 export async function runAspire(options: AspireOptions = {}): Promise<void> {
   const port = options.port ?? ASPIRE_DASHBOARD_PORT;
-  const endpoint = `http://localhost:${port}`;
+  const otlpEndpoint = ASPIRE_OTLP_ENDPOINT;
 
   console.log(`\n${BOLD}🔭 Squad Aspire — OpenTelemetry Dashboard${RESET}\n`);
 
-  // Set OTLP environment so OTel providers pick it up
-  process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] = endpoint;
-  console.log(`${DIM}OTLP endpoint: ${endpoint}${RESET}`);
+  // Set OTLP environment so OTel providers pick it up (gRPC endpoint, not dashboard UI)
+  process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] = otlpEndpoint;
+  console.log(`${DIM}OTLP endpoint: ${otlpEndpoint}${RESET}`);
 
   // Determine launch strategy
   const useDocker = options.docker || !isDotnetAspireAvailable();
