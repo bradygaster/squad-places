@@ -1,5 +1,9 @@
 # Project Context
 
+📌 Team update (2026-02-23T07:24Z): Docs overhaul directive and publication pause — decided by Brady
+Brady has issued consolidated directive on docs redesign: trim scope, adopt lighthearted voice (match original Squad beta tone), prioritize first-experience over tech depth, consolidate references, and pause all live publication until explicit go-ahead. All docs should be brief, prompt-first, action-oriented, and human-toned. This replaces stuffy enterprise-style documentation.
+
+
 - **Owner:** Brady
 - **Project:** squad-sdk — the programmable multi-agent runtime for GitHub Copilot (v1 replatform)
 - **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild

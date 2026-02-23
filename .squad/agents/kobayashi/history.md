@@ -145,3 +145,15 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Tag:** v0.8.2 created and pushed to origin
 - **GitHub Release:** Created with changelog notes describing the alignment (CLI 0.8.1→0.8.2, SDK 0.8.0→0.8.2, root 0.6.0-alpha.0→0.8.2)
 - **Decision:** Explicit version synchronization across workspace as a deliberate release milestone. All packages now at 0.8.2. Unblocks squad-publish.yml v* tag workflows.
+
+### 2026-02-22T23:47Z: Release v0.8.3 — Brady requested
+**Status:** EXECUTED — Tag v0.8.3 created, GitHub Release published.
+- **Commits pushed:** 2 unpushed commits on bradygaster/dev (695fcde, b18558d) → pushed to origin
+  - 695fcde: fix: include all 11 docs sections in build + update tests
+  - b18558d: fix: pin SDK version in CLI package.json + add 110 CLI shell tests
+- **Tag:** v0.8.3 created at HEAD (695fcde) and pushed to origin
+- **GitHub Release:** Created with comprehensive notes covering:
+  - Remote Squad Mode features (resolveSquadPaths, squad doctor, squad link, squad init --mode remote, dual-root guards) ported from @spboyer's design
+  - Two targeted fixes: docs section build completeness + SDK version pinning in CLI + 110 shell tests
+  - Package versions: @bradygaster/squad-sdk@0.8.3, @bradygaster/squad-cli@0.8.3
+- **Outcome:** Release v0.8.3 is live at https://github.com/bradygaster/squad-pr/releases/tag/v0.8.3. Both workspace packages at 0.8.3. squad-publish.yml v* tag trigger now active for this release.

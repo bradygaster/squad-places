@@ -2353,4 +2353,25 @@ Both packages versioned at 0.8.2 and published together as a matched set. Exact 
 - ✅ Known issue: published npm 0.8.2 has unsafe cast (current codebase fix pending publish)
 - ✅ Version alignment enables reliable production deployments
 
+# 2026-02-23: User Directive — Docs Overhaul & Publication Pause (consolidated)
+
+**By:** Brady (via Copilot)  
+**Date:** 2026-02-23  
+**Status:** Active — awaiting Brady sign-off before docs publication
+
+## What
+
+1. **Pause docs publication:** Do not publish docs live until Brady explicitly gives go-ahead. Build locally only.
+2. **Docs redesign directives:**
+   - Trim down — remove old beta-era folder references
+   - Tone: lighthearted, welcoming, fun (NOT stuffy; match original Squad voice)
+   - First doc should be "first experience" with squad CLI (NOT deep tech dive)
+   - Reference docs (CLI, SDK, config) in single TOC section
+   - All docs: brief, prompt-first, action-oriented, fun
+   - Human tone throughout
+
+## Why
+
+User request — captured for team memory. Brady wants docs that feel like original beta content, not enterprise documentation. Publication freeze prevents premature rollout while redesign is underway.
+
 
