@@ -170,3 +170,16 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - **Docs build script** (5 tests): Conditional tests that verify docs/build.js execution when it exists (created by parallel agents), produces HTML output in docs/dist/, HTML files have proper DOCTYPE/closing tags, contain nav/menu elements, contain main/article/section content areas, have proper internal links.
 - Test design: Markdown validation always active (guides exist now). Build script tests are conditional — they skip gracefully if docs/build.js doesn't exist yet (other agents still creating). Tests use regex patterns for HTML structure validation (flexible, not brittle). All 17 tests pass.
 - Test count grew from 2141 → 2158 across 80 files — all passing.
+
+### Docs build tests upgraded for markdown-it (2026-02-23)
+- Rewrote `test/docs-build.test.ts` from 17 → 30 tests for the markdown-it upgrade of docs/build.js.
+- **Source markdown validation** (6 tests): Verifies all 14 expected guide files exist, have headings, properly fenced code blocks, non-empty content, bash examples valid.
+- **Build execution** (4 tests): build.js exists, runs exit 0, all 14 guides produce HTML in docs/dist/, no unexpected extra files.
+- **markdown-it output quality** (7 tests): Code blocks have `language-*` class on `<code>` elements (typescript, bash), tables render as `<table>/<thead>/<tbody>/<th>/<td>`, nested lists produce nested `<ul>` inside `<li>`, bold/links/inline code rendered correctly.
+- **Assets** (1 test): style.css and app.js copied to dist/assets/.
+- **Homepage** (1 test): index.html generated with DOCTYPE and "Squad Documentation" content.
+- **Frontmatter/title** (2 tests): Title extracted from h1 (not raw ---), no `{{TITLE}}` placeholders left in output.
+- **Navigation** (4 tests): Every page has `<nav>`, links to core guides, all 14 guides appear in nav, active page marked.
+- **Template substitution** (5 tests): `{{CONTENT}}`, `{{NAV}}`, `{{TITLE}}` all replaced; no raw `{{PLACEHOLDER}}` patterns remain; HTML has DOCTYPE, `<main>`.
+- Design: `beforeAll` runs build once; `afterAll` cleans dist. Tests use `requireBuild()` guard for graceful skip if build.js isn't ready. Fenster's upgrade was already landed — all 30 tests pass against real markdown-it output.
+- Key discovery: Fenster already upgraded build.js to markdown-it with frontmatter parsing, asset copying, and full nav with all 14 guides before this test rewrite.

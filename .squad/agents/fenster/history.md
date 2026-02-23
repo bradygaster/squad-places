@@ -329,3 +329,10 @@ Fenster's src/utils/normalize-eol.ts utility is now applied to 8 parser entry po
 **Tests:** 16 tests in `test/session-adapter.test.ts` (was 9): event name mapping (3), data normalization (2), off/unsubscribe correctness (3), OTel-relevant handlers (2), existing tests preserved (6). All 16 passing. Build clean (tsc 0 errors).
 
 **Key SDK event types discovered:** `session.start`, `session.resume`, `session.error`, `session.idle`, `session.usage_info`, `session.shutdown`, `user.message`, `assistant.message`, `assistant.message_delta`, `assistant.usage`, `assistant.reasoning`, `assistant.reasoning_delta`, `assistant.turn_start`, `assistant.turn_end`, `assistant.intent`, `tool.execution_start`, `tool.execution_complete`, `subagent.started`, `subagent.completed`, `hook.start`, `hook.end`, `system.message`.
+
+---
+
+### $([char]0x1f4cc) Docs Build Upgrade (2026-02-22)
+
+**docs/build.js rewritten with markdown-it:**
+Replaced regex-based markdownToHtml() with markdown-it for proper rendering of code blocks (with language classes), tables, nested lists, blockquotes, images, and links. Added frontmatter parser (--- fenced YAML), title extraction, asset copying (docs/assets/ -> dist/assets/), and updated nav to cover all 14 guide files across 4 sections (Getting Started, Guides, Reference, Migration). Template updated: asset paths fixed from `../assets/` to `assets/` for flat dist/ output, added {{TITLE}} placeholder, GitHub link updated to bradygaster/squad-pr. npm scripts added: `docs:build` and `docs:preview`. All 17 docs-build tests passing.

@@ -3,118 +3,123 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import MarkdownIt from 'markdown-it';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Simple markdown to HTML converter
-function markdownToHtml(markdown) {
-  let html = markdown;
+const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
-  // Headers
-  html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-
-  // Code blocks
-  html = html.replace(/```[\s\S]*?```/g, (match) => {
-    const code = match.replace(/```/g, '').trim();
-    const escaped = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    return `<pre><code>${escaped}</code></pre>`;
-  });
-
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-  // Bold
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-  // Italic
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-
-  // Line breaks
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = `<p>${html}</p>`;
-
-  // Lists
-  html = html.replace(/<p>- (.*?)<\/p>/g, '<li>$1</li>');
-  html = html.replace(/(<li>.*?<\/li>)/s, (match) => `<ul>${match}</ul>`);
-
-  return html;
+// Parse optional YAML-style frontmatter (--- fenced)
+function parseFrontmatter(raw) {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) return { meta: {}, body: raw };
+  const meta = {};
+  for (const line of match[1].split('\n')) {
+    const idx = line.indexOf(':');
+    if (idx > 0) meta[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+  }
+  return { meta, body: match[2] };
 }
 
-function generateNav(files) {
-  const nav = {
-    'Getting Started': [
+// Extract first H1 as fallback title
+function extractTitle(markdown) {
+  const m = markdown.match(/^#\s+(.+)$/m);
+  return m ? m[1] : 'Squad Documentation';
+}
+
+function generateNav() {
+  return [
+    { section: 'Getting Started', items: [
+      { title: 'Home', file: 'index' },
       { title: 'Installation', file: 'installation' },
+      { title: 'CLI Install', file: 'cli-install' },
       { title: 'Configuration', file: 'configuration' },
-      { title: 'CLI Shell', file: 'shell' }
-    ],
-    'Guides': [
+      { title: 'CLI Shell', file: 'shell' },
+    ]},
+    { section: 'Guides', items: [
       { title: 'SDK Integration', file: 'sdk-integration' },
       { title: 'Tools & Hooks', file: 'tools-and-hooks' },
       { title: 'Marketplace', file: 'marketplace' },
       { title: 'Upstream Inheritance', file: 'upstream-inheritance' },
-      { title: 'Feature Migration', file: 'feature-migration' }
-    ],
-    'Reference': [
-      { title: 'Architecture Overview', file: '../architecture/overview' },
-      { title: 'API Reference', file: '../api/quick-reference' }
-    ]
-  };
-  return nav;
+      { title: 'VS Code Integration', file: 'vscode-integration' },
+    ]},
+    { section: 'Reference', items: [
+      { title: 'Architecture', file: 'architecture' },
+      { title: 'SDK API Reference', file: 'sdk-api-reference' },
+    ]},
+    { section: 'Migration', items: [
+      { title: 'Migration Guide', file: 'migration' },
+      { title: 'Feature Migration', file: 'feature-migration' },
+    ]},
+  ];
+}
+
+function buildNavHtml(nav, activeFile) {
+  let html = '<nav class="sidebar">\n';
+  for (const group of nav) {
+    html += `<h4>${group.section}</h4>\n<ul>\n`;
+    for (const item of group.items) {
+      const href = `${item.file}.html`;
+      const cls = item.file === activeFile ? ' class="active"' : '';
+      html += `<li><a href="${href}"${cls}>${item.title}</a></li>\n`;
+    }
+    html += '</ul>\n';
+  }
+  html += '</nav>';
+  return html;
+}
+
+function copyDirSync(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
 async function build() {
   const guideDir = path.join(__dirname, 'guide');
   const distDir = path.join(__dirname, 'dist');
   const templatePath = path.join(__dirname, 'template.html');
+  const assetsDir = path.join(__dirname, 'assets');
 
   // Create dist directory
   if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
   }
 
-  // Read template
-  let template = fs.readFileSync(templatePath, 'utf-8');
+  // Copy assets into dist/
+  if (fs.existsSync(assetsDir)) {
+    copyDirSync(assetsDir, path.join(distDir, 'assets'));
+  }
+
+  const template = fs.readFileSync(templatePath, 'utf-8');
+  const nav = generateNav();
 
   // Get all markdown files
   const files = fs.readdirSync(guideDir)
     .filter(f => f.endsWith('.md'))
     .map(f => f.replace('.md', ''));
 
-  const nav = generateNav(files);
-
-  // Process each markdown file
   for (const file of files) {
     const mdPath = path.join(guideDir, `${file}.md`);
     const htmlPath = path.join(distDir, `${file}.html`);
 
-    const markdown = fs.readFileSync(mdPath, 'utf-8');
-    const content = markdownToHtml(markdown);
+    const raw = fs.readFileSync(mdPath, 'utf-8');
+    const { meta, body } = parseFrontmatter(raw);
+    const title = meta.title || extractTitle(body);
+    const content = md.render(body);
 
-    // Build navigation HTML
-    let navHtml = '<nav class="sidebar">\n';
-    for (const [section, items] of Object.entries(nav)) {
-      navHtml += `<h4>${section}</h4>\n<ul>\n`;
-      for (const item of items) {
-        const href = item.file.startsWith('../') 
-          ? item.file + '.html' 
-          : item.file + '.html';
-        const isActive = item.file === file ? ' class="active"' : '';
-        navHtml += `<li><a href="${href}"${isActive}>${item.title}</a></li>\n`;
-      }
-      navHtml += '</ul>\n';
-    }
-    navHtml += '</nav>';
+    const navHtml = buildNavHtml(nav, file);
 
     const html = template
+      .replace('{{TITLE}}', title)
       .replace('{{CONTENT}}', content)
       .replace('{{NAV}}', navHtml);
 

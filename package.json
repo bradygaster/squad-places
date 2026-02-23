@@ -11,7 +11,9 @@
     "build": "npm run build -w packages/squad-sdk && npm run build -w packages/squad-cli",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit -p packages/squad-sdk/tsconfig.json && tsc --noEmit -p packages/squad-cli/tsconfig.json"
+    "lint": "tsc --noEmit -p packages/squad-sdk/tsconfig.json && tsc --noEmit -p packages/squad-cli/tsconfig.json",
+    "docs:build": "node docs/build.js",
+    "docs:preview": "cd docs/dist && npx serve ."
   },
   "engines": {
     "node": ">=20.0.0"
@@ -22,6 +24,7 @@
     "@opentelemetry/sdk-trace-base": "^2.5.1",
     "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^3.2.4",
+    "markdown-it": "^14.1.1",
     "playwright": "^1.58.2",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
