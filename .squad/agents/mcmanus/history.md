@@ -7,6 +7,25 @@
 
 ## Learnings
 
+### 2026-02-22: GitHub Actions workflow for docs publishing
+**Status:** Complete.
+**Changes made:**
+1. **`.github/workflows/squad-docs.yml`** — Updated to deploy from main branch:
+   - Changed trigger branch from `preview` to `main`
+   - Simplified build steps: use `npm ci` + `npm run docs:build` instead of manual markdown-it install
+   - Changed artifact path from `_site` to `docs/dist` (matches build output)
+   - Updated Node.js version to 20
+   - Fixed concurrency setting: `cancel-in-progress: false` to prevent interrupting ongoing deployments
+   - Reordered deploy job steps to match Brady's specification
+2. **`docs/template.html`** — Updated footer GitHub link:
+   - Changed from `https://github.com/bradygaster/squad` to `https://github.com/bradygaster/squad-pr`
+   - Maintains link consistency with current repository
+**Tone applied:** Clean, operational. Docs publishing is infrastructure — focus on what changed and why (repository URL accuracy).
+**Notes:** 
+- Workflow now targets main branch deployments, aligning with standard GitHub Pages practices
+- Build script (`npm run docs:build`) must exist in package.json to avoid workflow failures
+- Documentation template footer now correctly points to the active squad-pr repository
+
 ### From Beta (carried forward)
 - Tone ceiling enforcement: ALWAYS — no hype, no hand-waving, no unsubstantiated claims
 - Celebration blog structure: wave:null, parallel narrative format
@@ -228,3 +247,43 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 - OTel reference emphasizes 3-layer structure matching Issue #266 decision
 - No screenshots or videos (text-only for internal review)
 - Troubleshooting sections in migration, CLI, and SquadUI guides address real failure modes from beta feedback
+
+### 2026-02-22: GitHub Pages content research — docs + blog structure
+**Status:** Research complete. Recommendations documented.
+**Findings:**
+1. **Current v1 docs inventory** (14 guide files + 2 launch files + 1 audit):
+   - Core guides span installation, config, SDK API, architecture, tools, marketplace, shell, VS Code integration, upstream inheritance, feature migration, migration pathways
+   - Release notes and migration guides in /docs/launch/
+   - One technical audit (adapter safety)
+   - docs/guide/index.md already functions perfectly as a homepage/landing page with navigation, Getting Started, Core Guides, Reference sections
+2. **Old repo (bradygaster/squad) blog structure:**
+   - 12+ posts spanning beta releases (v0.2.0–v0.4.0) and milestones (wave-0, team formation, community highlights, trending on GitHub)
+   - Naming convention: NNN-slug.md (sequential numbering) with YAML front matter (title, date, author, tags, status)
+   - Blog posts were narrative + technical, mixing release announcements, team stories, and feature deep-dives
+   - /docs/blog/ existed and was actively populated during beta
+3. **Old repo navigation pattern:**
+   - Single guide.md as main reference, sectioned with README anchors
+   - Separate blog folder tracked momentum and community stories
+   - Release notes and feature specs lived in parallel directories (migration/, scenarios/, features/)
+   - build.js script suggests GitHub Pages static generation
+4. **Old repo findings on structure and patterns:**
+   - Blog posts were numbered sequentially (001, 001a, 002, etc.) — wave/series tracking
+   - Authorship tracked (wave-0 post shows "McManus (DevRel)" as author)
+   - Tags used for categorization (team-formation, releases, features, learnings)
+   - Posts ranged 2.5KB–9.8KB (narrative-focused, not exhaustive specs)
+**Recommendations (5 items):**
+- **Homepage:** Use docs/guide/index.md as-is — already has navigation, Getting Started, Core Guides sections. No changes needed.
+- **Docs organization:** Keep /docs/guide/ structure (14 guides). /docs/launch/ stays in repo but not published (release notes → CHANGELOG.md at root). /docs/audits/ publishes as-is (transparency/compliance value). Root-level asymmetry (internal launch/ stays internal) acceptable per v1 decision.
+- **Blog folder (recreate):** Establish /docs/blog/ with fresh v1 content. Old beta blog (12 posts tracking v0.2–v0.4) provides pattern inspiration but not content. New blog should tell v1 story: why replatform, what stability means, team integration experiences, community wins. Dating convention: YYYY-MM-DD-slug.md (searchable, SEO-friendly vs. old NNN numbering).
+- **Navigation:** Docs (sidebar tree: Installation→Getting Started→Guides→Reference→Troubleshooting) + Blog (main nav, latest first, tagged) + Quick Links footer (GitHub, NPM, Discussions, Issues, Status).
+- **URL patterns:** /docs/guide/installation, /docs/getting-started, /blog/2026-02-21-v1-launch, / → homepage. Avoid old /docs/launch/ in published nav (keep in repo for internal historical record).
+**Why fresh blog for v1:**
+- Old blog authentically tracks beta (valuable historical artifact). Mixing into v1 site confuses new users ("which version is this for?").
+- v1 replatform is significant enough to warrant new origin story (why we moved, what changed, what's more stable).
+- Team maturity arc is different: beta was "building Squad while Squad builds itself"; v1 is "production runtime proven, adding team/integration layers."
+- Fresh blog positions v1 as its own milestone, not a continuation of beta momentum.
+**Notes:**
+- Tone ceiling applies: all blog posts follow "no hype, no unsubstantiated claims" decision from decisions.md
+- Blog serves DevRel goals (community, transparency, learnings) while docs serve product goals (installation, configuration, troubleshooting)
+- Separation of /docs/launch/ (internal only) from published blog allows historical record preservation without confusing new users
+- build.js script in old repo can guide static generation approach (reusable pattern for GitHub Pages)

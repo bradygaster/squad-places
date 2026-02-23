@@ -49,6 +49,45 @@ Migrated 56 test files (173 imports) from ../src/ to @bradygaster/squad-sdk/* an
 
 ---
 
+### 📌 GitHub Pages Build Tooling Assessment (2026-02-22T23:30Z) — Fenster
+**Requested by:** Brady. Understand current build capability, identify gaps for GitHub Pages deployment.
+
+**Build System Status:**
+- ✅ **Custom markdown → HTML converter** (`docs/build.js`): Regex-based, converts headers (h1-h3), code blocks, inline code, bold, italic, links, lists, paragraphs. Inputs from `docs/guide/*.md`, outputs to `docs/dist/`.
+- ✅ **Template system ready** (`docs/template.html`): Standard HTML structure with `{{NAV}}` and `{{CONTENT}}` placeholders. Includes header (branding), sidebar (nav), main content area, footer.
+- ✅ **Styling complete** (`docs/assets/style.css`): Modern theme, sidebar navigation, responsive design (mobile menu toggle), CSS variables for theming (primary: #0969da, secondary: #1f6feb).
+- ✅ **Client-side JS** (`docs/assets/app.js`): Mobile menu toggle, sidebar hide/show, active nav highlighting based on current path.
+- ✅ **Content authored** (`docs/guide/`): 14 markdown files covering installation, configuration, SDK integration, tools, marketplace, upstream inheritance, feature migration, architecture, CLI, vscode integration.
+- ❌ **No GitHub Actions workflow** in squad-pr repo for Pages deployment.
+- ❌ **No npm script** for docs build in `package.json`.
+- ❌ **No output directory** — build.js creates `docs/dist/` but no CI/CD artifact strategy.
+
+**What the Old Repo Does (bradygaster/squad):**
+- Uses `markdown-it` + `markdown-it-anchor` npm deps (better markdown processing, auto-anchor IDs for headers).
+- GitHub Actions workflow (`.github/workflows/squad-docs.yml`):
+  - Triggers: manual `workflow_dispatch` or push to `preview` branch with `docs/**` or workflow changes.
+  - Runs: `npm install markdown-it markdown-it-anchor` → `node docs/build.js --out _site --base /squad`.
+  - Deploys: Artifacts from `_site/` via `upload-pages-artifact@v3` → `deploy-pages@v4`.
+  - Permissions: `contents: read`, `pages: write`, `id-token: write`.
+  - Concurrency: Pages group with cancel-in-progress.
+
+**Gap Analysis:**
+1. **Markdown library upgrade needed:** Current build.js lacks syntax highlighting, table support, anchor auto-generation. Old repo added `markdown-it` to handle these.
+2. **No GitHub Actions workflow:** Need `.github/workflows/pages-deploy.yml` to automate build + artifact upload + GitHub Pages deployment.
+3. **No npm script:** Add `"docs": "node docs/build.js --out dist/docs"` to root `package.json` for CI consistency.
+4. **Output path decision:** Old repo uses `_site/`. We should use `dist/docs/` (aligns with monorepo build conventions: dist/ is .gitignored artifact dir).
+5. **Base path unclear:** Old repo uses `--base /squad` (matches repo name). New repo URL TBD — may need `--base /squad-pr` or custom base. Affects relative asset paths in HTML.
+6. **No Git branch strategy:** Old repo deploys from `preview` branch. New repo should clarify: deploy from `main` on PR merge, or from a `docs-preview` branch for staging?
+
+**Recommendation for Brady:**
+- Upgrade `docs/build.js` to use `markdown-it` (1-line: `npm install markdown-it markdown-it-anchor --save-dev`, 10-line refactor).
+- Create `.github/workflows/pages-deploy.yml` (copy old workflow, adapt base path + branch trigger).
+- Add `"docs": "node docs/build.js --out dist/docs"` to `package.json`.
+- Configure repo Settings → Pages → Deployment → GitHub Actions as source.
+- Test on feature branch before merging to main.
+
+---
+
 ### 📌 Runtime Implementation Assessment (2026-02-22T22:00Z) — Fenster
 **Status:** Phase 1-2 complete (SDK/CLI split, monorepo structure). Phase 3 (runtime integration) blocked.
 

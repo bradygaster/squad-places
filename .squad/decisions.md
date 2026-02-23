@@ -2016,3 +2016,303 @@ Independent versioning via changesets remains correct between releases. CLI and 
 
 Earlier decision (2026-02-21, Kobayashi) stated that SDK 0.8.0 and CLI 0.8.1 skew was "intentional and appropriate for pre-1.0 development." That decision is superseded by this explicit release checkpoint decision. The skew served its purpose during development; now the workspace synchronizes for v0.8.2 release.
 
+
+### 2026-02-23T02:01:23Z: User directive
+**By:** Brady (via Copilot)
+**What:** Never use / or \ as code fences in GitHub issues, PRs, or comments. Only use backticks to format code. Slashes break GitHub markdown rendering.
+**Why:** User request — captured for team memory
+
+# Decision: squad doctor command — diagnostic conventions
+
+**Date:** 2026-02-22
+**By:** Edie
+**Issue:** #312
+**Status:** Implemented
+
+## What
+
+`squad doctor` is a diagnostic CLI command that validates .squad/ setup integrity. It always exits 0 — it reports problems, never gates on them.
+
+## Key conventions
+
+1. **DoctorCheck interface** — `{ name, status: 'pass' | 'fail' | 'warn', message }` — the typed contract for every check result.
+2. **Mode detection order** — config.json `teamRoot` → remote; `squad-hub.json` → hub; else → local.
+3. **Exit code always 0** — doctor is informational. `fatal()` is never used for check failures.
+4. **Lazy import in cli-entry.ts** — follows the established pattern (`await import('./cli/commands/doctor.js')`).
+5. **Subpath export** — `./commands/doctor` in CLI package.json with types-first condition ordering.
+
+## Why
+
+Inspired by Shayne Boyer's PR #131. Teams need a quick way to validate their .squad/ directory without running a full session. The diagnostic-not-gate pattern means CI can call it without risk.
+
+# Decision: Dual-root ensureSquadPath write validation (#314)
+
+**Date:** 2026-02-23  
+**Author:** Edie  
+**Issue:** #314  
+**Depends on:** #311 (dual-root resolver)  
+**Status:** Implemented
+
+## Context
+
+`ensureSquadPath()` validates that file writes stay inside a single `.squad/` root. In remote mode (introduced by #311), there are two valid write roots: `projectDir` (decisions, logs) and `teamDir` (agents, casting, skills). Writes to `teamDir` throw because it's outside the single `squadRoot`.
+
+## Decision
+
+Added two new functions in `packages/squad-sdk/src/resolution.ts` alongside the existing `ensureSquadPath()`:
+
+- **`ensureSquadPathDual(filePath, projectDir, teamDir)`** — validates against both roots plus the system temp directory. Same `path.resolve` + `path.sep` prefix-checking pattern as the original.
+- **`ensureSquadPathResolved(filePath, paths)`** — convenience wrapper that destructures a `ResolvedSquadPaths` object (from #311's `resolveSquadPaths()`).
+
+### Backward compatibility
+
+- `ensureSquadPath()` is **unchanged** — no modifications to existing callers.
+- New functions are additive exports only.
+
+### Error messages
+
+Changed from "outside the .squad/ directory" to "outside both squad roots" so callers see both paths in the error.
+
+## Tests
+
+13 tests in `test/ensure-squad-path-dual.test.ts`:
+- Local mode (single root), remote mode (both roots), rejection, path traversal, subdirectories, exact roots, temp dir, `ResolvedSquadPaths` wrapper.
+
+# Decision: Eliminate unsafe casts in adapter layer
+
+**By:** Edie
+**Date:** 2026-02-23
+**Closes:** #318, #320, #321, #322
+
+## Context
+
+The adapter layer (`packages/squad-sdk/src/adapter/client.ts`) had multiple type-safety gaps:
+
+1. `listSessions()` used `as unknown as SquadSessionMetadata[]` — passing SDK data through without runtime mapping
+2. `getStatus()`, `getAuthStatus()`, `listModels()` returned SDK results directly, relying on implicit `any`-to-typed coercion
+3. `SquadClient.on()` used `as any` casts to bridge SDK and Squad event handler types
+4. `SquadClientWithPool.on()` was fully untyped `(any, any)`
+5. Dead `_squadOnMessage` reference in `sendMessage()` — never set, never used
+6. `CopilotSessionAdapter` lacked `sendAndWait()`, `abort()`, `getMessages()` — SDK methods with no adapter surface
+
+## Decision
+
+### Field-mapping over unsafe casts (#318)
+
+All SDK-to-Squad data boundaries now use explicit field-picking:
+
+```typescript
+const sessions = await this.client.listSessions();
+return sessions.map((s): SquadSessionMetadata => ({
+  sessionId: s.sessionId,
+  startTime: s.startTime,
+  ...
+}));
+```
+
+This catches SDK type drift at compile time. Applied to `listSessions()`, `getStatus()`, `getAuthStatus()`, `listModels()`.
+
+### Client event types (#321)
+
+Created `SquadClientEventType`, `SquadClientEvent`, `SquadClientEventHandler` in `adapter/types.ts` — distinct from session-level event types. These mirror the SDK's `SessionLifecycleEventType` union (`session.created | session.deleted | session.updated | session.foreground | session.background`). Structural compatibility with the SDK means zero `as any` casts at the boundary.
+
+Pool events in `SquadClientWithPool` now use a typed mapping (`poolToSquadEvent`) instead of `as any`.
+
+### Adapter completeness (#322)
+
+Added `sendAndWait()`, `abort()`, `getMessages()` as optional methods on `SquadSession` interface and implemented them in `CopilotSessionAdapter`. Removed dead `_squadOnMessage` reference. Fixed `(event as any).inputTokens` with typed index access via `SquadSessionEvent`'s `[key: string]: unknown` signature.
+
+### resumeSession() already correct (#320)
+
+Verified: `resumeSession()` already wraps in `CopilotSessionAdapter`. No change needed.
+
+## Result
+
+- Zero `as any` or `as unknown as` casts remain in `adapter/client.ts` and `client/index.ts`
+- 2219 tests pass, zero regressions
+- Build clean under `strict: true`
+
+# Decision: Dual-root path resolution (projectDir / teamDir)
+
+**Date:** 2026-02-23  
+**Author:** Fenster  
+**Issue:** #311  
+**Status:** Implemented
+
+## Context
+
+Remote squad mode requires separating project-local state (decisions, logs) from team identity assets (agents, casting, skills). A project's `.squad/config.json` can now point to an external team directory via a relative `teamRoot` path.
+
+## Decision
+
+Added `resolveSquadPaths()` alongside the existing `resolveSquad()` in `packages/squad-sdk/src/resolution.ts`.
+
+### Types
+
+- **`SquadDirConfig`** — schema for `.squad/config.json` (`version: number`, `teamRoot: string`, `projectKey: string | null`). Named `SquadDirConfig` to avoid collision with the existing `SquadConfig` type in `config/schema.ts` and `runtime/config.ts`.
+- **`ResolvedSquadPaths`** — `{ mode, projectDir, teamDir, config, name, isLegacy }`.
+
+### Resolution rules
+
+1. Walk up from startDir checking `.squad/` then `.ai-team/` (legacy fallback).
+2. If `.squad/config.json` exists with a valid `teamRoot` string → **remote mode**: `teamDir = path.resolve(projectRoot, config.teamRoot)` where projectRoot is the parent of the `.squad/` directory.
+3. Otherwise → **local mode**: `projectDir === teamDir`.
+4. Malformed JSON or missing/invalid `teamRoot` → graceful fallback to local mode.
+
+### Backward compatibility
+
+- `resolveSquad()` is unchanged — returns `string | null` as before.
+- `resolveSquadPaths()` is a new, additive export.
+- No existing tests or callers affected.
+
+## Constraints
+
+- ESM-only, strict TypeScript.
+- Uses `node:fs` and `node:path` — no string concatenation for path building.
+- No symlinks — config.json with relative paths only.
+- `teamRoot` resolved relative to the project root, not relative to `.squad/`.
+
+# Decision: Adapter Event Name Mapping and Data Normalization
+
+**Date:** 2026-02-22  
+**By:** Fenster (Core Dev)  
+**Issues:** #316, #317, #319  
+**Status:** Implemented
+
+## Context
+
+The `CopilotSessionAdapter` in `packages/squad-sdk/src/adapter/client.ts` mapped methods (`sendMessage` → `send`, `close` → `destroy`) but did NOT map event names or event data shapes. The `@github/copilot-sdk` uses dotted-namespace event types (e.g., `assistant.message_delta`, `assistant.usage`) and wraps payloads in an `event.data` envelope. Our adapter passed short names like `message_delta` and `usage` directly through, causing handlers to silently never fire. The OTel telemetry in `sendMessage()` was therefore dead code — `first_token` never recorded, `tokens.input`/`tokens.output` never populated.
+
+## Decision
+
+1. **Event name mapping via `EVENT_MAP`**: A static `Record<string, string>` maps 10 Squad short names to SDK dotted names. The reverse map is computed automatically. Unknown names pass through unchanged, so callers CAN use the full SDK name directly if they prefer.
+
+2. **Event data normalization via `normalizeEvent()`**: The adapter wraps every handler to flatten `event.data` onto the top-level `SquadSessionEvent` and maps the type back to the Squad short name. This means callers access `event.inputTokens` (not `event.data.inputTokens`) and check `event.type === 'usage'` (not `event.type === 'assistant.usage'`).
+
+3. **Per-event-type unsubscribe tracking**: Changed `unsubscribers` from `Map<handler, unsubscribe>` to `Map<handler, Map<eventType, unsubscribe>>` so the same handler function can be subscribed to multiple event types without the second `on()` overwriting the first's unsubscribe function.
+
+## Alternatives Considered
+
+- **No mapping layer (callers use SDK names directly):** Rejected — breaks the adapter's purpose of decoupling Squad from SDK internals. Also requires changing all callers (violates constraint).
+- **Transform at dispatch instead of subscribe:** Would require intercepting `_dispatchEvent` on the inner session, which is fragile and relies on SDK internals.
+
+## Impact
+
+- Zero changes to callers — the adapter normalizes everything transparently
+- Zero changes to `SquadSession` interface or `SquadSessionEventType`
+- OTel stream tracking now works end-to-end through the adapter
+- Future SDK event name changes only require updating `EVENT_MAP`
+
+
+### 2026-02-23: GitHub Pages publishing architecture (consolidated)
+**By:** Keaton (Lead), Fenster (Core Dev), McManus (DevRel)
+**Date:** 2026-02-23  
+**Status:** Ready for implementation
+**Related:** Keaton analysis (architecture), Fenster plan (build tooling), McManus recommendation (content structure)
+
+## What
+
+Establish GitHub Pages publishing for squad-pr documentation and blog, building on team research into the old repo (bradygaster/squad) and current squad-pr infrastructure.
+
+### Three complementary decisions:
+
+1. **Architecture (Keaton):** Ship with current setup — no changes needed. Squad-PR's docs infrastructure is production-ready and lighter than the old repo.
+   - Use existing .github/workflows/squad-docs.yml (identical to old repo, already configured)
+   - Use docs/build.js (lightweight, ESM-native, zero npm deps)
+   - Use docs/guide/ markdown files (8 guides ready to publish, plus 1 audit document)
+   - Defer blog support to future wave
+
+2. **Build & Deploy (Fenster):** Upgrade markdown library and establish deployment workflow.
+   - Add markdown-it + markdown-it-anchor as devDependencies (better HTML output, syntax highlighting, auto-generated anchor IDs)
+   - Refactor docs/build.js (~10-15 lines) to use markdown-it
+   - Add npm script: "docs": "node docs/build.js --out dist/docs"
+   - Create .github/workflows/pages-deploy.yml (trigger: push to main with paths filter on docs/**, plus workflow_dispatch)
+   - Add --base CLI argument support for subpath deployment (recommend --base /squad-pr)
+   - Configure GitHub Pages in repo settings (deployment source: GitHub Actions)
+
+3. **Content (McManus):** Publish existing guides + audits; recreate blog with fresh v1 content.
+   - Publish /docs/guide/ (14 guides, all sections: Getting Started, Core, Reference, Troubleshooting) — Ready as-is
+   - Publish /docs/audits/ (technical transparency builds trust)
+   - Keep /docs/launch/ internal only (release notes canonical in CHANGELOG.md per v1 internal-only docs decision)
+   - Recreate /docs/blog/ with new v1-specific content (fresh origin story, team integration guides, community wins, feature launches)
+   - Do NOT reuse old beta blog posts (different narrative arc: beta "building while building" vs. v1 "proven runtime, production integrations")
+   - Blog naming: YYYY-MM-DD-slug.md (searchable, SEO-friendly)
+   - Blog YAML frontmatter: title, date, author, tags (releases, features, learnings, community), status
+
+## Why
+
+**Architecture:** Squad-PR's build.js is proven, self-contained, and aligns with ESM-only constraint. Old repo's markdown-it approach adds overhead for features not yet needed. Lightweight approach is maintainable.
+
+**Build & Deploy:** Markdown-it upgrade improves output quality (syntax highlighting, tables, anchor links). npm script + workflow = standardized dev workflow + CI/CD integration. Base path support enables subpath hosting.
+
+**Content:** Three-part strategy respects both product decisions (internal-only docs) and DevRel goals (community, transparency, ownership of v1 milestone). Fresh blog avoids confusing new users about version boundaries. Keeps old beta blog as authentic historical artifact.
+
+## How
+
+1. **Immediate (Keaton validation):**
+   - Test local build: 
+ode docs/build.js
+   - Verify output in docs/dist/
+   - Enable GitHub Pages in repo settings (if not already done)
+   - Verify deployment to https://bradygaster.github.io/squad-pr/
+
+2. **Build phase (Fenster implementation):**
+   - Add markdown-it + markdown-it-anchor to package.json devDeps
+   - Refactor docs/build.js to use markdown-it converter
+   - Add npm script "docs"
+   - Create pages-deploy.yml workflow
+   - Add --base CLI argument support
+   - Test locally with 
+pm run docs
+   - Test workflow with push to feature branch
+
+3. **Content phase (McManus guidance):**
+   - Determine v1 blog cadence (start with v1.0.0 launch or earlier?)
+   - Draft first blog posts (origin story, team integration guide)
+   - Set up navigation structure per McManus recommendation
+   - Review SEO requirements (if any)
+
+## Timeline
+
+- **Now:** Research complete. Decisions ready for team alignment.
+- **Week 1:** Fenster implements build tooling + workflow
+- **Week 2:** McManus drafts first blog posts
+- **Week 3:** Full site tested, Pages deployed live
+
+## Impact
+
+- Zero breaking changes to existing codebase
+- Docs publishing operational end-to-end
+- Blog infrastructure ready for v1 narrative
+- Team has clear content ownership (McManus) and technical ownership (Fenster)
+
+## Notes
+
+- If markdown-it needs additional plugins (tables, admonitions) in future, it's a simple addition to build.js
+- Old repo's workflow pattern (squad-docs.yml) is proven; pages-deploy.yml follows same pattern
+- Blog support can iterate independently of docs — no dependency between phases
+- Relative asset paths in HTML ensure both local and GitHub Pages deployments work without reconfiguration
+
+# Decision: Remote Squad Mode Awareness in Coordinator Prompt
+
+**Date:** 2025-07-18
+**Author:** Verbal
+**Related:** #313
+
+## Context
+
+The SDK is adding remote squad mode — where team identity files (agents, casting, skills) live in an external repository and project-scoped files (decisions, logs) stay local. The coordinator prompt (`squad.agent.md`) needed to know about this third resolution strategy so it can correctly resolve paths and pass them to spawned agents.
+
+## Decision
+
+1. Added remote squad mode as a third strategy in the Worktree Awareness section, after worktree-local and main-checkout.
+2. Introduced `PROJECT_ROOT` as a second variable in spawn templates. `TEAM_ROOT` points to team identity; `PROJECT_ROOT` points to project-local `.squad/`. In local mode they're identical.
+3. Added @copilot incompatibility note — remote mode requires filesystem traversal that the GitHub Copilot coding agent cannot perform.
+
+## Rationale
+
+- The coordinator is the single point of path resolution. If it doesn't know about remote mode, no spawned agent will get correct paths.
+- Two variables (`TEAM_ROOT` + `PROJECT_ROOT`) keep the split explicit rather than requiring agents to parse config.json themselves.
+- The @copilot note prevents confusion when users try to assign remote-mode work to the coding agent.
+
+

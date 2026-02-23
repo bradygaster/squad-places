@@ -118,3 +118,28 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 - **Non-blocking concerns:** No coordinator integration wired yet (dead library code without it), live local upstreams create silent coupling (asymmetric with git sync), `export` upstream type relationship with sharing module's `ExportBundle` is unclear.
 - **Pattern learned:** External contributors may not know about proposal-first workflow — add to CONTRIBUTING.md or PR template.
 - **Decision file:** `.squad/decisions/inbox/keaton-upstream-review.md`
+
+### 2026-02-24: GitHub Pages Publishing Architecture (requested by Brady)
+- **Research scope:** Compare old repo (bradygaster/squad) GH Pages setup with current squad-pr, identify simplest path forward.
+- **Old repo findings:** 
+  - `squad-docs.yml` workflow on `preview` branch, runs on push to docs/** or workflow_dispatch.
+  - Uses `markdown-it` + `markdown-it-anchor` npm deps (8-10KB footprint).
+  - Calls `node docs/build.js --out _site --base /squad` (old repo deployed to subpath).
+  - Uses standard GH Pages Actions: `upload-pages-artifact` + `deploy-pages`.
+  - Docs structure: Root markdown files (guide.md, whatsnew.md, insider-program.md) + subdirs (blog/, features/, scenarios/, specs/, migration/).
+  - Has blog support with frontmatter parsing (title, date extraction).
+- **Current repo status:**
+  - **Already has:** `squad-docs.yml` workflow (identical to old repo).
+  - **Already has:** `docs/build.js` — ESM version, simpler markdown-to-HTML regex-based converter (no npm deps).
+  - **Already has:** `docs/template.html`, `docs/assets/style.css`, `docs/assets/app.js`.
+  - **Already has:** `docs/guide/` with 8 markdown guides (installation, configuration, shell, sdk-integration, tools-and-hooks, marketplace, upstream-inheritance, feature-migration).
+  - **Content vs. structure mismatch:** Current build.js doesn't support subdirectories (blog/, features/) like old repo does — it's single-layer navigation.
+- **Recommendation (TL;DR):**
+  1. **Keep the existing workflow.** `squad-docs.yml` is already correct for GH Pages (GitHub Actions native, no third-party tools).
+  2. **Use our own build.js — it's perfect.** No npm deps, lightweight, ESM-native (matches project constraint), already tested, generates relative-path HTML.
+  3. **Ship docs immediately:** Current setup is production-ready. Run `node docs/build.js` locally, output goes to `docs/dist/` (gitignored), workflow pushes to GH Pages.
+  4. **Blog support (future wave):** Old repo uses `markdown-it` for features like frontmatter + anchors. If blog posts needed, either: (a) extend our build.js with frontmatter parsing (15 lines), or (b) add markdown-it as optional dep.
+  5. **Deployment target:** Squad should publish to `https://bradygaster.github.io/squad-pr/` (subpath /squad-pr). Update `--base /squad-pr` in workflow if needed.
+  6. **Why not adopt old approach verbatim:** Old repo's markdown-it is heavier, pulls npm deps into docs build. Our regex-based converter is lean and sufficient for guides. Only adopt markdown-it if frontmatter/fancy features are required.
+- **Next steps (Brady):** (1) Verify .gitignore has `docs/dist/`, (2) Test `node docs/build.js` locally, (3) Push to preview branch, (4) Enable GH Pages in repo settings (deploy from Actions), (5) Post-launch: Plan blog support if needed.
+- **Decision file:** `.squad/decisions/inbox/keaton-gh-pages.md`
