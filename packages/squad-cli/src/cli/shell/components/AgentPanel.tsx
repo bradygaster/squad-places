@@ -91,6 +91,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
               </Text>
               {active && <><Text> </Text><PulsingDot /><Text bold> {statusLabel}</Text></>}
               {errored && <Text color={noColor ? undefined : 'red'} bold> {statusLabel}</Text>}
+              {completionFlash.has(agent.name) && <Text color={noColor ? undefined : 'green'} bold> ✓</Text>}
               {!active && !errored && <Text dimColor> {statusLabel}</Text>}
             </Box>
           );

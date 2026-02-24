@@ -195,7 +195,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           <>
             <Box flexWrap="wrap" columnGap={1}>
               {rosterAgents.map((a, i) => (
-                <Text key={a.name} dimColor={bannerDim}>{a.name}{i < rosterAgents.length - 1 ? ' -' : ''}</Text>
+                <Box key={a.name}><Text dimColor={bannerDim}>{a.name}{i < rosterAgents.length - 1 ? ' -' : ''}</Text></Box>
               ))}
             </Box>
             <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready - {activeCount} active</Text>
