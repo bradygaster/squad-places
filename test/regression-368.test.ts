@@ -209,13 +209,13 @@ describe('ThinkingIndicator — animation sequencing', () => {
     expect(frame.length).toBeGreaterThan(0);
   });
 
-  it('shows Thinking label by default', () => {
+  it('shows default routing label by default', () => {
     process.env.NO_COLOR = '1';
     const { lastFrame } = render(
       h(ThinkingIndicator, { isThinking: true, elapsedMs: 0 })
     );
     const frame = lastFrame()!;
-    expect(frame).toContain('Thinking...');
+    expect(frame).toContain('Routing to agent...');
     delete process.env.NO_COLOR;
   });
 
@@ -241,7 +241,7 @@ describe('ThinkingIndicator — animation sequencing', () => {
       h(ThinkingIndicator, { isThinking: true, elapsedMs: 500 })
     );
     const frame = lastFrame()!;
-    expect(frame).toContain('Thinking...');
+    expect(frame).toContain('Routing to agent...');
     expect(frame).not.toContain('0s');
     delete process.env.NO_COLOR;
   });
@@ -263,13 +263,13 @@ describe('ThinkingIndicator — animation sequencing', () => {
     );
     const frame = lastFrame()!;
     expect(frame).toContain('Running tests');
-    expect(frame).not.toContain('Thinking...');
+    expect(frame).not.toContain('Routing to agent...');
     delete process.env.NO_COLOR;
   });
 
   it('THINKING_PHRASES export is available for backward compat', () => {
     expect(THINKING_PHRASES).toBeDefined();
     expect(THINKING_PHRASES.length).toBeGreaterThan(0);
-    expect(THINKING_PHRASES[0]).toBe('Thinking');
+    expect(THINKING_PHRASES[0]).toBe('Routing to agent');
   });
 });

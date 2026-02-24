@@ -130,3 +130,12 @@
 - Pattern: `CommandResult.clear` flag for shell-level state resets (vs output strings)
 - 125/125 tests pass, build clean
 - PR #414 on branch `squad/cheritto-product-love`
+
+### 2026-02-26: Shell launch loading indicator (#427)
+- Fixed 2-4 second "dead air" when launching shell with `squad` (no args)
+- Added immediate `console.error('◆ Loading Squad shell...')` at start of `runShell()` — appears <100ms
+- Message clears via `process.stderr.write('\r\x1b[K')` after Ink `render()` call
+- Pattern: synchronous stderr logging before any async operations = instant user feedback
+- ANSI clear sequence: `\r` (carriage return) + `\x1b[K` (clear line from cursor to end)
+- File: `packages/squad-cli/src/cli/shell/index.ts` lines 108, 436
+- PR #435 on branch `fix/issue-427`

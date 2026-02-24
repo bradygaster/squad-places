@@ -180,6 +180,92 @@ These are both called "status" but show completely different things. Users will 
 
 ## Learnings
 
+### 2026-02-24: First 30 Seconds UX Audit — Critical Path Issues Filed
+
+**Task:** Brady directive — "The impatient user bails at second 7." Audit the first-time user experience from install to first "wow" moment. File GitHub issues for every un-delightful moment in the first 30 seconds.
+
+**Critical Paths Audited:**
+1. `squad --help` — information architecture and scannability
+2. `squad` with no args — default behavior clarity
+3. Cold SDK connection — wait state feedback
+4. Welcome screen animation — input blocking
+5. Processing spinner — activity context
+
+**Issues Filed (6 total):**
+
+- **#419: Help text is overwhelming — users scan, not read** (P0)
+  - 50-line flat list with no visual hierarchy
+  - Core commands buried alongside power-user utilities
+  - Solution: Group into GETTING STARTED / TEAM MANAGEMENT / ADVANCED sections
+  - Impact: First 7 seconds of user journey
+
+- **#420: Cold SDK connection — 5 seconds of silence feels like forever** (P0)
+  - No feedback during 3-5 second SDK initialization on first message
+  - User thinks: "Did it freeze?"
+  - Solution: Show "Connecting to GitHub Copilot..." and "Waking up [Agent]..." status
+  - Impact: #1 reason users think Squad is broken
+
+- **#421: squad --help buries the default behavior** (P0)
+  - Help text doesn't lead with "just run squad"
+  - `(default)` note hidden in 50-line command list
+  - Solution: Lead with primary usage pattern at top of help
+  - Impact: Users waste time looking for "start" command
+
+- **#422: Spinner with no context — what is it doing?** (P0)
+  - Processing spinner shows ⠋ with zero explanation
+  - User sees spinner but doesn't know: connecting? routing? working?
+  - Solution: Activity hints already exist, need to show during spinner
+  - Impact: 3-second silence creates "is it broken?" anxiety
+
+- **#423: Welcome screen typewriter blocks input for 800ms** (P1)
+  - Typewriter animation on "◆ SQUAD" delays prompt render
+  - 500ms title + 300ms fade-in = 800ms before user can type
+  - Solution: Skip animation on subsequent launches (first-run only), OR make non-blocking
+  - Impact: Every launch feels slow
+
+- **#426: Two different taglines — pick one and stick with it** (P1)
+  - "Add an AI agent team to any project" vs "Team of AI agents at your fingertips"
+  - Inconsistent brand voice across help vs empty-args output
+  - Solution: Choose one, apply everywhere (README, help, banner)
+  - Impact: Brand consistency, perceived polish
+
+**Key Insight: The First 30 Seconds**
+
+Brady's hypothesis is correct: The critical window is seconds 1-30, and we're losing users at second 7.
+
+**Timeline of a first-time user:**
+- **0:00** — User runs `squad --help`
+- **0:03** — Eyes glaze over at 50-line wall of text
+- **0:07** — Can't find "how to start", runs `squad` hoping for guidance
+- **0:10** — Shell launches, sees typewriter animation
+- **0:11** — Waits for animation to finish before typing (feels blocked)
+- **0:12** — Types first message, hits enter
+- **0:15** — Sees spinner with no context
+- **0:18** — Still spinning. No feedback. User wonders if it's broken.
+- **0:22** — Either bails (Ctrl+C) OR content finally streams
+
+**The impatient user bails at 0:18** — after 6 seconds of silence post-enter.
+
+**What needs to change:**
+1. Help text must be scannable in 3 seconds (grouped sections)
+2. Default behavior must be obvious (lead with "just run squad")
+3. SDK connection must show status ("Connecting...")
+4. Welcome animation should be instant after first run
+5. Spinner must explain what it's doing ("Keaton connecting...")
+
+All 6 issues address the 0-30 second window. Fixing these removes the bail-out moments.
+
+**Files Identified for Changes:**
+- `packages/squad-cli/src/cli-entry.ts` — help text structure, tagline consistency
+- `packages/squad-cli/src/cli/shell/components/App.tsx` — welcome animation gating
+- `packages/squad-cli/src/cli/shell/components/InputPrompt.tsx` — spinner context display
+- `packages/squad-cli/src/cli/shell/index.ts` — SDK connection status messages
+
+**Next Actions:**
+- Cheritto (TUI Engineer): Address #423 (welcome animation), #422 (spinner context)
+- Fenster/Edie (Core Dev): Address #419 (help structure), #421 (help intro), #426 (tagline)
+- Kujan (SDK Expert): Address #420 (SDK connection feedback)
+
 ### 2026-02-23: Initial CLI UX Audit Completed
 
 **Task:** Comprehensive UX audit of Squad CLI across all entry points and interactive shell components.
@@ -294,3 +380,41 @@ These are both called "status" but show completely different things. Users will 
 - InputPrompt — solid as-is. The cursor, placeholder, spinner all work.
 
 **Verification:** Build clean. All new test assertions pass. 3 pre-existing test failures (ThinkingIndicator isThinking=false, Tab autocomplete x2) confirmed unrelated.
+
+### 2026-02-24: Issue #422 — Spinner Context (Routing Label)
+
+**Task:** Brady issue — "The ThinkingIndicator shows a spinner but doesn't say WHAT it's doing. Add contextual text like 'Routing to agent...' or 'Agent thinking...'"
+
+**Branch:** `fix/issue-422`
+**PR:** #436
+
+**Root Cause:** ThinkingIndicator defaulted to "Thinking..." when no `activityHint` was provided. During the critical 3-5 second cold SDK connection, users saw a generic spinner with no explanation of what was happening — routing, connecting, or processing.
+
+**Solution:** Changed default label from "Thinking..." to "Routing to agent..." — matches what the system is actually doing during that phase (coordinator routing the request to an appropriate agent).
+
+**Files Changed:**
+- `packages/squad-cli/src/cli/shell/components/ThinkingIndicator.tsx` — Default label updated in both NO_COLOR and color branches
+- `test/regression-368.test.ts` — Updated 4 test assertions
+- `test/repl-ux.test.ts` — Updated 3 test assertions
+
+**Why "Routing to agent..." wins:**
+1. **Accurate:** That's literally what happens during cold SDK connection
+2. **Short:** 3 words, fits the 3-5 word guideline
+3. **Human:** No jargon, explains system state clearly
+4. **Covers the gap:** Activity hints already handle specific agent work ("Keaton thinking...", "Reading file...") — this fills the routing/connection phase
+
+**Activity hint priority preserved:** When SDK or MessageStream provides an explicit `activityHint`, it still overrides the default. The new label only shows when no specific context is available.
+
+**Impact:** Eliminates the "is it broken?" anxiety during first message send. Users now see clear feedback during every phase of request processing.
+
+**Tests:** All 127 tests pass (21 in regression-368, 106 in repl-ux).
+
+## Design Principles
+
+From the audits and fixes above, core UX principles for Squad CLI:
+
+1. **Never silent, never vague:** Every waiting state must explain WHAT is happening, not just THAT something is happening.
+2. **Default labels should match reality:** "Thinking..." is wrong during routing. Labels should describe system state accurately.
+3. **3-5 words max:** Feedback text must be scannable at a glance.
+4. **Specific beats generic:** Activity hints ("Keaton reading file...") always override defaults.
+5. **Test the first 30 seconds brutally:** The impatient user bails at second 7. Every moment from `squad --help` to first response must be clear, fast, and confidence-building.

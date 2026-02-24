@@ -246,3 +246,50 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 - Node.js startup overhead (~1.2s) is the floor for any subprocess-spawned test; adjusted thresholds accordingly
 
 **What I Fixed:** Nothing in production code this round — all issues are filed with specific line references and fixes. The speed gate tests are the deliverable: they prove where the time goes and will catch regressions.
+
+### 2026-02-24: Product Love Sprint — First 30 Seconds Hostile QA
+
+**Mission:** Test first-time user journey from `squad --help` to first interaction. File issues for every moment that makes users bail in the first 30 seconds.
+
+**Issues Filed (5):**
+1. **#417 (P1)** — Root cli.js is stale — runs init instead of shell when called with no args
+2. **#424 (P1)** — Help wall of text (44 lines, 16 commands) drowns impatient users
+3. **#427 (P1)** — Shell launch has 2-4 seconds of dead air with no loading indicator
+4. **#429 (P2)** — Version format inconsistent between cli.js (v0.6.0) and cli-entry.js (v0.8.5.1)
+5. **#431 (P2)** — Empty/whitespace args show help instead of error (edge case, current behavior is defensible)
+
+**Test Coverage:**
+- Root `cli.js` vs proper `packages/squad-cli/dist/cli-entry.js` behavior divergence
+- Help command: measured 44 lines, 1331ms render time (Node.js startup overhead)
+- Version command: bare number output (correct per CLI conventions)
+- Invalid command: friendly error with exit code 1 and remediation hint
+- Empty/whitespace args: shows abbreviated help (defensive behavior)
+- Status with no .squad directory: graceful "none" with hint to run init
+- Unicode handling: piped input with emoji/CJK/Hebrew works correctly
+
+**Key Findings:**
+- **Stale root bundle is the biggest footgun** — cli.js is v0.6.0-alpha.0, proper entry is v0.8.5.1
+- The first 30 seconds are the critical window: help → init → shell → first message
+- Dead air during shell launch (2-4s) creates "is this working?" anxiety
+- Help output respects user's time poorly — 44 lines to find 2 essential commands
+- Error messages are good — friendly, include remediation hints, proper exit codes
+- Edge case handling (empty args, unicode) is solid
+- The proper entry point (`packages/squad-cli/dist/cli-entry.js`) works well — root bundle is the problem
+
+**Known Open Issues (confirmed still exist):**
+- #387 — Init typewriter animations waste 2+ seconds
+- #395 — Help is overwhelming (now filed as #424 with exact line count)
+- #397 — Cold SDK connection causes 5-10s dead air on first message
+- #399 — Welcome banner typewriter blocks UI for 500ms
+- #401 — Input dropped during processing
+- #403 — Stub commands show fake progress (possibly fixed per prior notes)
+
+**What I Didn't Test (out of scope for first 30 seconds):**
+- Actual agent interaction (requires SDK connection, long-running)
+- Multi-agent concurrent dispatch
+- Memory leaks over 20-minute sessions
+- Race conditions with rapid input
+- SIGTERM handling
+- React ErrorBoundary render failures
+
+**Verdict:** The first 30 seconds have 3 P1 blockers (#417, #424, #427) that create bailout risk. Fix the stale root bundle, add loading feedback, and tier the help output.

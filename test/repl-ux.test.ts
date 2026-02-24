@@ -84,8 +84,8 @@ describe('ThinkingIndicator visibility', () => {
       })
     );
     const frame = lastFrame()!;
-    // Now shows static "Thinking..." instead of rotating phrases
-    expect(frame).toContain('Thinking');
+    // Default label: "Routing to agent..." gives users context
+    expect(frame).toContain('Routing to agent');
   });
 
   it('hides spinner when streaming content appears', () => {
@@ -636,12 +636,12 @@ describe('ThinkingIndicator component', () => {
     expect(frame).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
   });
 
-  it('shows "Thinking" label', () => {
+  it('shows default routing label', () => {
     const { lastFrame } = render(
       h(ThinkingIndicator, { isThinking: true, elapsedMs: 0 })
     );
     const frame = lastFrame()!;
-    expect(frame).toContain('Thinking');
+    expect(frame).toContain('Routing to agent');
   });
 
   it('shows elapsed time when > 0', () => {
@@ -696,7 +696,7 @@ describe('ThinkingIndicator component', () => {
 // ============================================================================
 
 describe('ThinkingIndicator integration with MessageStream', () => {
-  it('shows "Thinking" when processing with no @mention', () => {
+  it('shows default routing label when processing with no @mention', () => {
     const { lastFrame } = render(
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'fix the bug' })],
@@ -705,9 +705,9 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       })
     );
     const frame = lastFrame()!;
-    // Should show spinner and "Thinking"
+    // Should show spinner and "Routing to agent..."
     expect(frame).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
-    expect(frame).toContain('Thinking');
+    expect(frame).toContain('Routing to agent');
   });
 
   it('shows agent-specific hint when @mention present', () => {
@@ -1283,7 +1283,7 @@ describe('NO_COLOR mode rendering', () => {
         h(ThinkingIndicator, { isThinking: true, elapsedMs: 3000 })
       );
       const frame = lastFrame()!;
-      expect(frame).toContain('Thinking...');
+      expect(frame).toContain('Routing to agent...');
       expect(frame).toContain('3s');
     } finally {
       restoreNoColor();

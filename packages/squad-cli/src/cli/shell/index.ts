@@ -232,6 +232,10 @@ export async function runShell(): Promise<void> {
     debugLog('dispatchToAgent:', agentName, message.slice(0, 120));
     let session = agentSessions.get(agentName);
     if (!session) {
+      shellApi?.setActivityHint(`Connecting to ${agentName}...`);
+      shellApi?.setAgentActivity(agentName, 'connecting...');
+      // Give React a tick to render the connection hint before blocking on SDK
+      await new Promise(resolve => setImmediate(resolve));
       const charter = loadAgentCharter(agentName, teamRoot);
       const systemPrompt = buildAgentPrompt(charter);
 
@@ -250,8 +254,8 @@ export async function runShell(): Promise<void> {
 
     registry.updateStatus(agentName, 'streaming');
     shellApi?.refreshAgents();
-    shellApi?.setActivityHint(`${agentName} is connecting...`);
-    shellApi?.setAgentActivity(agentName, 'connecting...');
+    shellApi?.setActivityHint(`${agentName} is thinking...`);
+    shellApi?.setAgentActivity(agentName, 'thinking...');
 
     let accumulated = '';
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
@@ -320,8 +324,10 @@ export async function runShell(): Promise<void> {
   /** Send a message through the coordinator and route based on response. */
   async function dispatchToCoordinator(message: string): Promise<void> {
     debugLog('dispatchToCoordinator: sending message', message.slice(0, 120));
-    shellApi?.setActivityHint('Routing your request...');
     if (!coordinatorSession) {
+      shellApi?.setActivityHint('Connecting to SDK...');
+      // Give React a tick to render the connection hint before blocking on SDK
+      await new Promise(resolve => setImmediate(resolve));
       const systemPrompt = buildCoordinatorPrompt({ teamRoot });
       coordinatorSession = await client.createSession({
         streaming: true,
@@ -329,6 +335,7 @@ export async function runShell(): Promise<void> {
         workingDirectory: teamRoot,
       });
     }
+    shellApi?.setActivityHint('Routing your request...');
 
     let accumulated = '';
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
