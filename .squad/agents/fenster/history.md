@@ -385,3 +385,17 @@ Replaced regex-based markdownToHtml() with markdown-it for proper rendering of c
 - Updated `docs/assets/script.js`: Extended `toggleTheme()` to re-initialize and re-render mermaid diagrams when the user switches between dark/light/auto themes.
 - Updated `docs/assets/style.css`: Added `.mermaid` CSS rule for centered layout, padding, code-bg background, border, border-radius, and horizontal scroll overflow.
 - Build verified: all 42 pages generated. End-to-end test confirmed `<div class="mermaid">` output for mermaid blocks while regular code blocks remain as `<pre><code>` with hljs spans.
+
+---
+
+### CLI Entry-Point Fixes (#431, #429) — Fenster (2026-02-24)
+**Requested by:** Brady. Fix CLI entry-point issues — empty/whitespace args behavior and version format inconsistency.
+**PR:** #447 (branch: squad/cli-fixes-431-429)
+**Changes:**
+- #431: Confirmed empty/whitespace args defensive guard (shows abbreviated help, not error). Existing behavior was correct per P0 regression tests. No code change needed for this behavior.
+- #429: Unified version output to bare semver across all entry points:
+  - `cli-entry.ts`: Added `version` as recognized subcommand alongside `--version`/`-v` — all output bare semver.
+  - `cli.js` (deprecated bundle): Replaced hardcoded `0.6.0-alpha.0` with dynamic `getPackageVersion()`, changed format from `squad {ver}` to bare semver.
+  - Shell: Added `/version` slash command via `commands.ts` — passes `version` prop from `App.tsx` through `CommandContext`.
+- Canonical version format decision: bare semver (e.g., `0.8.5.1`), matching existing P0 regression test expectations. Display contexts (help text, shell banner) continue using `squad v{VERSION}` for branding.
+- All 148 tests passing (cli-shell-comprehensive, hostile-integration, cli-p0-regressions).
