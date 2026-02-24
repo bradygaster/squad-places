@@ -176,3 +176,19 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
   6. **Why not adopt old approach verbatim:** Old repo's markdown-it is heavier, pulls npm deps into docs build. Our regex-based converter is lean and sufficient for guides. Only adopt markdown-it if frontmatter/fancy features are required.
 - **Next steps (Brady):** (1) Verify .gitignore has `docs/dist/`, (2) Test `node docs/build.js` locally, (3) Push to preview branch, (4) Enable GH Pages in repo settings (deploy from Actions), (5) Post-launch: Plan blog support if needed.
 - **Decision file:** `.squad/decisions/inbox/keaton-gh-pages.md`
+
+### 2026-02-24: Wave D Readiness Assessment (requested by Brady)
+- **Task:** Assess CLI quality and define Wave D (Delight) readiness after Waves A, B, C completion.
+- **Findings:** 
+  - **Quality State:** Solid foundation. Waves A–C shipped 17 polish items, 8 PRs merged, 15 issues closed. All P0 tests green (1727+ passing). CLI is responsive, visually coherent, handles interactions gracefully.
+  - **Known Gaps:** 25 UX gaps cataloged (Marquez), 13 fragility risks cataloged (Waingro). 12 gaps already addressed in Wave A–C PRs. 13 remain for Wave D.
+  - **P0 Blocker:** #324 dogfood. Only open issue. Must test against real repos (not fixtures) before Wave D launch.
+  - **Wave D Opportunities:** Unified status display, adaptive keyboard hints, message history cap, per-agent streaming (fixes concurrent output jumble), error recovery guidance, /clear confirmation, exit session summary.
+  - **Wave D Tier Breakdown:**
+    - Tier 1 (High-Value Wins): Status unification, adaptive hints, dogfood closure, error guidance. ~12–15 hours, 1 week.
+    - Tier 2 (Precision): /clear confirmation, exit summary, placeholder hint. ~5–8 hours, 2 days.
+    - Tier 3 (Fragility): Message cap, per-agent streaming, connection-aware retry, stale cleanup. ~8–12 hours, can defer to Wave E.
+  - **Pattern Learned:** Full catalog review (UX + Fragility + Test Debt) + dogfood closure + tier breakdown = confidence for next wave planning. Marquez and Waingro catalogs are living documents — use them to prioritize across waves.
+- **Report Location:** `.squad/decisions/inbox/keaton-wave-d-assessment.md`
+- **Recommendation:** Close #324, pick Tier 1 for Wave D Batch 1, ship in 1 week. Quality gate before launch: P0 items addressed, memory safety verified, E2E passing on real codebases.
+- **Next Step:** Brady reviews assessment, decides which Wave D items to pursue.

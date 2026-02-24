@@ -728,22 +728,22 @@ describe('commands.ts — executeCommand', () => {
     it('shows status with no agents', () => {
       const result = executeCommand('status', [], context);
       expect(result.handled).toBe(true);
-      expect(result.output).toContain('Your Team:');
-      expect(result.output).toContain('Size: 0');
+      expect(result.output).toContain('Squad Status');
+      expect(result.output).toContain('Team:     0');
     });
 
     it('shows registered agents count', () => {
       registry.register('a', 'r1');
       registry.register('b', 'r2');
       const result = executeCommand('status', [], context);
-      expect(result.output).toContain('Size: 2');
+      expect(result.output).toContain('Team:     2 agents');
     });
 
     it('shows active agents details', () => {
       registry.register('worker', 'role');
       registry.updateStatus('worker', 'working');
       const result = executeCommand('status', [], context);
-      expect(result.output).toContain('Active now: 1');
+      expect(result.output).toContain('(1 active)');
       expect(result.output).toContain('worker');
     });
   });

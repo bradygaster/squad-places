@@ -170,10 +170,10 @@ describe('AgentPanel status display', () => {
     expect(lastFrame()!).toContain('●');
   });
 
-  it('error agents show error indicator ✖', () => {
+  it('error agents show error indicator [ERR]', () => {
     const agents = [makeAgent({ name: 'Kovash', status: 'error' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
-    expect(lastFrame()!).toContain('✖');
+    expect(lastFrame()!).toContain('[ERR]');
   });
 
   it('shows streaming status when streamingContent references agent', () => {
@@ -186,7 +186,7 @@ describe('AgentPanel status display', () => {
     );
     const frame = lastFrame()!;
     expect(frame).toContain('Kovash');
-    expect(frame).toContain('streaming');
+    expect(frame).toContain('[STREAM]');
   });
 
   it('mixed statuses render correctly together', () => {
@@ -201,7 +201,7 @@ describe('AgentPanel status display', () => {
     expect(frame).toContain('Kovash');
     expect(frame).toContain('Hockney');
     expect(frame).toContain('●');
-    expect(frame).toContain('✖');
+    expect(frame).toContain('[ERR]');
   });
 });
 
@@ -758,7 +758,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
     );
     const frame = lastFrame()!;
     expect(frame).toContain('Working on it...');
-    expect(frame).toContain('streaming');
+    expect(frame).toContain('Kovash streaming');
   });
 });
 
@@ -769,20 +769,20 @@ describe('ThinkingIndicator integration with MessageStream', () => {
 describe('Rich progress indicators', () => {
   // -- AgentPanel progress display --
 
-  it('working agent shows "(working)" in status line', () => {
+  it('working agent shows "[WORK]" in status line', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'working' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('working');
+    expect(frame).toContain('[WORK]');
   });
 
-  it('streaming agent shows "(streaming)" in status line', () => {
+  it('streaming agent shows "[STREAM]" in status line', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'streaming' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('streaming');
+    expect(frame).toContain('[STREAM]');
   });
 
   it('active agent shows pulsing dot in roster', () => {
@@ -798,12 +798,12 @@ describe('Rich progress indicators', () => {
     expect(frame).toContain('Reviewing architecture');
   });
 
-  it('agent status shows format: Name (working) — hint', () => {
+  it('agent status shows format: Name ([WORK]) — hint', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'working', activityHint: 'Reading file' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('(working');
+    expect(frame).toContain('[WORK]');
     expect(frame).toContain('Reading file');
   });
 
@@ -967,7 +967,7 @@ describe('Animations and transitions', () => {
     expect(frame).toContain('✓ Done');
     // Hockney still working
     expect(frame).toContain('Hockney');
-    expect(frame).toContain('working');
+    expect(frame).toContain('[WORK]');
   });
 
   // -- NO_COLOR respect --
@@ -1227,7 +1227,7 @@ describe('InputPrompt input buffering', () => {
     rerender(h(InputPrompt, { onSubmit, disabled: false }));
     const frame = lastFrame()!;
     // Should show placeholder, no buffered text
-    expect(frame).toContain('agent');
+    expect(frame).toContain('Type /help');
   });
 
   it('disabled state buffers keystrokes without submitting', () => {
@@ -1290,27 +1290,26 @@ describe('NO_COLOR mode rendering', () => {
     }
   });
 
-  it('AgentPanel renders [Active] text label in NO_COLOR', () => {
+  it('AgentPanel renders [WORK] text label in NO_COLOR', () => {
     setNoColor();
     try {
       const agents = [makeAgent({ name: 'Kovash', status: 'working' })];
       const { lastFrame } = render(h(AgentPanel, { agents }));
       const frame = lastFrame()!;
-      expect(frame).toContain('[Active]');
+      expect(frame).toContain('[WORK]');
       expect(frame).toContain('Kovash');
     } finally {
       restoreNoColor();
     }
   });
 
-  it('AgentPanel renders [Error] text label in NO_COLOR', () => {
+  it('AgentPanel renders [ERR] text label in NO_COLOR', () => {
     setNoColor();
     try {
       const agents = [makeAgent({ name: 'Kovash', status: 'error' })];
       const { lastFrame } = render(h(AgentPanel, { agents }));
       const frame = lastFrame()!;
-      expect(frame).toContain('[Error]');
-      expect(frame).toContain('✖');
+      expect(frame).toContain('[ERR]');
     } finally {
       restoreNoColor();
     }
