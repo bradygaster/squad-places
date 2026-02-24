@@ -107,6 +107,9 @@ export async function runShell(): Promise<void> {
   // Show immediate feedback — users need to see something within 100ms
   console.error('◆ Loading Squad shell...');
 
+  const sessionStart = Date.now();
+  let messageCount = 0;
+
   const registry = new SessionRegistry();
   const renderer = new ShellRenderer();
   const teamRoot = process.cwd();
@@ -473,6 +476,7 @@ export async function runShell(): Promise<void> {
 
   /** Handle dispatching parsed input to agents or coordinator. */
   async function handleDispatch(parsed: ParsedInput): Promise<void> {
+    messageCount++;
     try {
       if (parsed.type === 'direct_agent' && parsed.agentName) {
         await dispatchToAgent(parsed.agentName, parsed.content ?? parsed.raw);
@@ -526,7 +530,18 @@ export async function runShell(): Promise<void> {
   try { await lifecycle.shutdown(); } catch (err) { debugLog('Failed to shutdown lifecycle:', err); }
   try { await telemetry.shutdown(); } catch (err) { debugLog('Failed to shutdown telemetry:', err); }
 
-  // NO_COLOR-aware exit message with ANSI color
+  // NO_COLOR-aware exit message with session summary
   const nc = process.env['NO_COLOR'] != null && process.env['NO_COLOR'] !== '';
-  console.log(nc ? '-- Squad out.' : '\x1b[36m--\x1b[0m Squad out.');
+  const prefix = nc ? '-- ' : '\x1b[36m--\x1b[0m ';
+
+  if (messageCount > 0) {
+    const elapsedMs = Date.now() - sessionStart;
+    const mins = Math.round(elapsedMs / 60000);
+    const durationStr = mins >= 1 ? `${mins} min` : '<1 min';
+    const agentNames = [...agentSessions.keys()];
+    const agentStr = agentNames.length > 0 ? ` with ${agentNames.join(', ')}.` : '';
+    console.log(`${prefix}Squad out. ${durationStr}${agentStr} ${messageCount} message${messageCount === 1 ? '' : 's'}.`);
+  } else {
+    console.log(`${prefix}Squad out.`);
+  }
 }
