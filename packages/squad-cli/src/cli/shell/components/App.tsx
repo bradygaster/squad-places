@@ -198,15 +198,16 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         ) : null}
         {bannerReady && !compact && <Text>{' '}</Text>}
         {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
-        {bannerReady && <Text dimColor>{compact ? '/help · Ctrl+C exit' : 'Just type · @Agent to direct · /help · Ctrl+C exit'}</Text>}
+        {bannerReady && <Text dimColor>{compact ? '/help · Ctrl+C exit' : 'Just type what you need — Squad routes it · @Agent to direct · /help · Ctrl+C exit'}</Text>}
       </Box>
 
       {bannerReady && welcome?.isFirstRun ? (
         <Box flexDirection="column" paddingX={1} paddingY={1}>
           <Text color={noColor ? undefined : 'green'} bold>Your squad is assembled.</Text>
           <Text> </Text>
-          <Text>Try: <Text bold color={noColor ? undefined : 'cyan'}>@{leadAgent} what should we build first?</Text></Text>
-          <Text dimColor>Or just type naturally — your squad figures out the rest.</Text>
+          <Text>Try: <Text bold color={noColor ? undefined : 'cyan'}>What should we build first?</Text></Text>
+          <Text dimColor>Squad automatically routes your message to the best agent.</Text>
+          <Text dimColor>Or use <Text bold>@{leadAgent}</Text> to message an agent directly.</Text>
         </Box>
       ) : null}
 

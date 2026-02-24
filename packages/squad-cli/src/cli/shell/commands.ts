@@ -129,6 +129,10 @@ function handleHelp(args: string[]): CommandResult {
   return {
     handled: true,
     output: [
+      'How it works:',
+      '  Just type what you need — Squad routes your message to the right agent.',
+      '  @AgentName message — send directly to one agent.',
+      '',
       'Commands:',
       "  /status — Check your team    /history — Recent messages",
       "  /agents — List team           /quit — Exit",
