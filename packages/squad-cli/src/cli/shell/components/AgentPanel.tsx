@@ -93,7 +93,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
           );
         })}
         <Box marginTop={0}>
-          <Text dimColor>{'-'.repeat(sepWidth)}</Text>
+          <Text dimColor>{'─'.repeat(sepWidth)}</Text>
         </Box>
       </Box>
     );
@@ -163,7 +163,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
 
       {/* Separator between panel and message stream */}
       <Box marginTop={0}>
-        <Text dimColor>{'-'.repeat(sepWidth)}</Text>
+        <Text dimColor>{'─'.repeat(sepWidth)}</Text>
       </Box>
     </Box>
   );
