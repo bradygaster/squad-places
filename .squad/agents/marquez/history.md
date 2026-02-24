@@ -255,3 +255,42 @@ These are both called "status" but show completely different things. Users will 
 
 **Files Written:**
 - `.squad/decisions/inbox/marquez-ux-review-initial.md` — Full audit report with actionable diffs
+
+### 2026-02-23: Visual Polish Pass — "Make It Look Good"
+
+**Task:** Brady directive: "Put my name on it. Make it look good." Walk every component, file issues, fix them all.
+
+**Branch:** `squad/marquez-visual-love`
+**PR:** #413
+
+**Issues Filed (6):**
+- #391 — Separator characters use hyphens instead of box-drawing
+- #393 — /help output is unstyled plain text
+- #388 — /agents command uses ugly bracket notation
+- #392 — ThinkingIndicator default label nearly invisible
+- #389 — 'quit' bare word doesn't exit but '/quit' does
+- #390 — /status output is unstyled wall of text
+
+**Files Changed (7):**
+- `packages/squad-cli/src/cli/shell/components/AgentPanel.tsx` — `─` separators (both compact and normal)
+- `packages/squad-cli/src/cli/shell/components/MessageStream.tsx` — `─` turn separator
+- `packages/squad-cli/src/cli/shell/components/ThinkingIndicator.tsx` — Remove double-dim on "Thinking..."
+- `packages/squad-cli/src/cli/shell/components/App.tsx` — Add 'quit' to EXIT_WORDS
+- `packages/squad-cli/src/cli/shell/commands.ts` — Redesigned /help, /status, /agents with visual hierarchy
+- `test/cli-shell-comprehensive.test.ts` — Updated assertions for new output format
+- `test/repl-ux.test.ts` — Updated separator assertion
+
+**Design Decisions:**
+- Box-drawing `─` (U+2500) everywhere instead of ASCII `-` — one visual vocabulary
+- `/help` leads with "Talk to your team" (primary action) above meta commands
+- `/agents` uses same emoji + status language as AgentPanel (○ ready / ● active / ✖ error)
+- `/status` uses ◆ brand mark and clean aligned key-value layout
+- ThinkingIndicator: `italic` only, no `dimColor` — waiting feedback must be visible
+
+**What I didn't touch (and why):**
+- Init ceremony — already an A. Don't fix what works.
+- useAnimation.ts — clean hooks, 15fps cap is right, NO_COLOR handled properly.
+- Welcome banner layout — other agent (Cheritto) was actively improving the roster rendering.
+- InputPrompt — solid as-is. The cursor, placeholder, spinner all work.
+
+**Verification:** Build clean. All new test assertions pass. 3 pre-existing test failures (ThinkingIndicator isThinking=false, Tab autocomplete x2) confirmed unrelated.

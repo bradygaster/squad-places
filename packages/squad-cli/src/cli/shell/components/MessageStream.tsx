@@ -94,7 +94,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
 
         return (
           <React.Fragment key={i}>
-            {isNewTurn && <Text dimColor>{'-'.repeat(sepWidth)}</Text>}
+            {isNewTurn && <Text dimColor>{'─'.repeat(sepWidth)}</Text>}
             <Box gap={1}>
               {msg.role === 'user' ? (
                 <>

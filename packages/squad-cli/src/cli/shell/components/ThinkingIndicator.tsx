@@ -94,7 +94,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   return (
     <Box gap={1}>
       <Text color={color}>{spinnerChar}</Text>
-      <Text color={color} dimColor italic>Thinking...</Text>
+      <Text color={color} italic>Thinking...</Text>
       {elapsedStr ? <Text dimColor>({elapsedStr})</Text> : null}
     </Box>
   );

@@ -266,7 +266,7 @@ describe('MessageStream formatting', () => {
         ],
       })
     );
-    expect(lastFrame()!).toContain('-'.repeat(10));
+    expect(lastFrame()!).toContain('─'.repeat(10));
   });
 
   it('no horizontal rule before the first message', () => {
