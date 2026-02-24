@@ -192,3 +192,20 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 - **Report Location:** `.squad/decisions/inbox/keaton-wave-d-assessment.md`
 - **Recommendation:** Close #324, pick Tier 1 for Wave D Batch 1, ship in 1 week. Quality gate before launch: P0 items addressed, memory safety verified, E2E passing on real codebases.
 - **Next Step:** Brady reviews assessment, decides which Wave D items to pursue.
+
+### 2026-02-24: Wave D Batch 1 GitHub Issues Filed
+- **Task:** File 6 GitHub issues for Wave D Batch 1 items from readiness assessment.
+- **Issues Created:**
+   1. **#488** — Unified Status Display (P1, Cheritto) — Unify `/agents` and AgentPanel status display
+   2. **#489** — Adaptive Keyboard Hints (P1, Cheritto) — Progressive hint display by message count
+   3. **#490** — Error Recovery Guidance (P1, Kovash) — Better error messages for SDK disconnect and validation
+   4. **#491** — Message History Cap (P2, Fortier) — Add maxMessages limit and archive older messages
+   5. **#492** — Per-Agent Streaming Content (P2, Cheritto) — Change from single streamingContent to per-agent Map
+   6. **#493** — StreamBuffer Cleanup on Error (P2, Fortier) — Add streamBuffers.delete() in error paths
+- **Routing Logic Applied:**
+   - **P1 UX items** (#488, #489) → Cheritto (TUI implementation expert)
+   - **P1 Error Messages** (#490) → Kovash (shell/error handling)
+   - **P2 Memory/Streaming** (#491, #492, #493) → Fortier (runtime performance) & Cheritto (TUI)
+- **Total Effort Estimate:** ~20–25 hours, ~4–5 PRs, 1 week
+- **Quality Gate:** P0 tests passing, E2E coverage verified, memory safety audit signed off
+- **Next Step:** Brady reviews issues, assigns agents, executes Batch 1 workload

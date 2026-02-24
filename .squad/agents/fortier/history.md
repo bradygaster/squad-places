@@ -71,3 +71,8 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - **MessageStream** (`MessageStream.tsx`): Three-tier message styling — user messages are bold cyan (`❯ you:`), system messages are dimmed (`⚙ system:`), agent messages get role emoji prefix in green. Thin `─` separator lines between conversation turns. New `ThinkingIndicator` component: animated braille spinner (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏) at 80ms interval, shown when processing but no streaming content yet. Detects @Agent from last user message to show "Fenster is thinking..." or "Routing your request..." for coordinator paths.
 - **InputPrompt** (`InputPrompt.tsx`): Dynamic prompt — `squad>` when idle, `squad (streaming)>` when processing. Yellow color during processing, cyan when idle. Added `marginTop={1}` for visual breathing room.
 - **Design decisions**: Kept all data loading inside components (no index.ts changes). Welcome data loaded once in `useEffect` — synchronous filesystem reads are fine for one-time startup in a Node.js CLI. ThinkingIndicator uses `setInterval` at 80ms (~12 fps) — minimal event loop impact. Agent role-to-emoji mapping lives in lifecycle.ts alongside team manifest parsing, keeping all team-data concerns in one module.
+
+---
+
+📌 Team update (2026-02-24T07:20:00Z): Wave D Batch 1 work filed (#488–#493). Cheritto: #488–#490 (UX precision — status display, keyboard hints, error recovery). Kovash: #491–#492 (hardening — message history cap, per-agent streaming). Fortier: #493 (streamBuffer cleanup on error). See .squad/decisions.md for details. — decided by Keaton
+

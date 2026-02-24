@@ -157,3 +157,8 @@
 - Files changed: `App.tsx`, `index.ts`
 - 151/151 tests pass, build clean
 - PR #446 on branch `squad/tui-fixes-405-404-407`
+
+---
+
+📌 Team update (2026-02-24T07:20:00Z): Wave D Batch 1 work filed (#488–#493). Cheritto: #488–#490 (UX precision — status display, keyboard hints, error recovery). Kovash: #491–#492 (hardening — message history cap, per-agent streaming). Fortier: #493 (streamBuffer cleanup on error). See .squad/decisions.md for details. — decided by Keaton
+

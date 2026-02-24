@@ -254,3 +254,12 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 **Test results:** 7/7 new regression tests pass. 59/59 acceptance tests pass. 2485/2494 total (3 pre-existing repl-ux failures unrelated — AgentPanel empty-state rendering changed).
 
 **Key pattern:** When `process.argv.slice(2)[0]` is empty string, JS treats it as falsy — same code path as no-args. Must distinguish `undefined` (no args → shell) from `""` (empty arg → help). The `rawCmd !== undefined && !cmd` guard handles this.
+
+### Test vocabulary fix — Issue #410 (PR #487)
+**Session:** 2026-02-23 post-crash recovery. Test fixes from broken session committed and pushed.
+**Changes:**
+- **cli-shell-comprehensive.test.ts**: Updated /status command expectations to match styled output format (Squad Status, Team: N agents instead of old text variants)
+- **repl-ux.test.ts**: Updated AgentPanel status indicators to expect [ERR], [WORK], [STREAM] bracket labels instead of emoji/text variants
+- Bundled with Keaton's Wave D readiness assessment (team decision inbox file)
+**Verification:** All 240 tests in modified files pass (134 in cli-shell-comprehensive, 106 in repl-ux).
+**Result:** PR #487 created, branch squad/hockney-fix-test-vocab pushed. Closes #410.

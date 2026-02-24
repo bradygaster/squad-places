@@ -399,3 +399,12 @@ Replaced regex-based markdownToHtml() with markdown-it for proper rendering of c
   - Shell: Added `/version` slash command via `commands.ts` — passes `version` prop from `App.tsx` through `CommandContext`.
 - Canonical version format decision: bare semver (e.g., `0.8.5.1`), matching existing P0 regression test expectations. Display contexts (help text, shell banner) continue using `squad v{VERSION}` for branding.
 - All 148 tests passing (cli-shell-comprehensive, hostile-integration, cli-p0-regressions).
+
+---
+
+### Hostile Integration Test Timeout Fix (2026-02-24) — Fenster
+**Requested by:** Brady. Fix failing `test/hostile-integration.test.ts` test (renders all 67 hostile strings).
+**Branch:** squad/hockney-fix-test-vocab (Hockney's PR in progress)
+**Root Cause:** Test was timing out when run with full test suite due to 5s default timeout. Rendering 67 hostile strings (including three 1KB, 10KB, and 100KB strings) through Ink/React legitimately takes 4.3-4.7s, exceeding default timeout under resource contention.
+**Fix:** Added explicit 10s timeout to the slow test via third argument to `it()`: `it('renders all 67 hostile strings...', () => {...}, 10000)`. This is the standard Vitest pattern for long-running tests per their error message.
+**Verification:** All 2912 tests now pass, including the previously failing hostile integration test. No code changes to MessageStream component or hostile corpus needed — test expectation was correct, just needed more time.

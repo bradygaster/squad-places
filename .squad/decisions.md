@@ -3612,3 +3612,14 @@ The action tagline ("Add an AI agent team...") feels like feature description, n
 **Action:** Replace line 56 in cli-entry.ts with "Team of AI agents at your fingertips".
 
 
+
+
+---
+
+### 2026-02-24: Wave D Readiness & Batch 1 Prioritization
+**By:** Keaton
+**What:** Wave D (Delight) is ready to define. 13 P1–P2 gaps from Marquez UX and Waingro fragility catalogs, plus dogfood closure (#324) identified. Batch 1 prioritizes 3 P1 UX items (unified status display, adaptive keyboard hints, error recovery guidance) + 3 P2 hardening items (message history cap, per-agent streaming, streamBuffer cleanup). Batch 2 adds polish features. Batch 3 defers long-term hardening if timeline tight.
+**Why:** Solid foundation (Waves A–C complete). Wave D turns it into something users *love* through precision, certainty, and memory safety hardening.
+**Details:** See keaton-wave-d-assessment.md. Total effort: 20–25 hrs for Batch 1 (~4–5 PRs, 1 week). Dogfood testing closes last blocker before launch.
+**Closes:** #410 (via PR #487)
+
