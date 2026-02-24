@@ -392,7 +392,7 @@ export async function runShell(): Promise<void> {
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
       try { session.off('tool_call', onToolCall); } catch { /* ignore */ }
-      shellApi?.setStreamingContent(null);
+      shellApi?.clearAgentStream(agentName);
       shellApi?.setActivityHint(undefined);
       shellApi?.setAgentActivity(agentName, undefined);
       if (accumulated) {
@@ -479,7 +479,7 @@ export async function runShell(): Promise<void> {
         activeCoordSession.off('message_delta', onDelta); 
         debugLog('coordinator message_delta listener removed');
       } catch { /* session may not support off */ }
-      shellApi?.setStreamingContent(null);
+      shellApi?.clearAgentStream('coordinator');
     }
 
     // Parse routing decision from coordinator response

@@ -26,6 +26,7 @@ import type { ThinkingPhase } from './ThinkingIndicator.js';
 export interface ShellApi {
   addMessage: (msg: ShellMessage) => void;
   setStreamingContent: (content: { agentName: string; content: string } | null) => void;
+  clearAgentStream: (agentName: string) => void;
   setActivityHint: (hint: string | undefined) => void;
   setAgentActivity: (agentName: string, activity: string | undefined) => void;
   refreshAgents: () => void;
@@ -52,7 +53,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const [messages, setMessages] = useState<ShellMessage[]>([]);
   const [archivedMessages, setArchivedMessages] = useState<ShellMessage[]>([]);
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
-  const [streamingContent, setStreamingContent] = useState<{ agentName: string; content: string } | null>(null);
+  const [streamingContent, setStreamingContent] = useState<Map<string, string>>(new Map());
   const [processing, setProcessing] = useState(false);
   const [activityHint, setActivityHint] = useState<string | undefined>(undefined);
   const [agentActivities, setAgentActivities] = useState<Map<string, string>>(new Map());
@@ -87,10 +88,33 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     onReady?.({
       addMessage: (msg: ShellMessage) => {
         appendMessages(prev => [...prev, msg]);
-        setStreamingContent(null);
+        if (msg.agentName) {
+          setStreamingContent(prev => {
+            const next = new Map(prev);
+            next.delete(msg.agentName!);
+            return next;
+          });
+        }
         setActivityHint(undefined);
       },
-      setStreamingContent,
+      setStreamingContent: (content) => {
+        if (content === null) {
+          setStreamingContent(new Map());
+        } else {
+          setStreamingContent(prev => {
+            const next = new Map(prev);
+            next.set(content.agentName, content.content);
+            return next;
+          });
+        }
+      },
+      clearAgentStream: (agentName: string) => {
+        setStreamingContent(prev => {
+          const next = new Map(prev);
+          next.delete(agentName);
+          return next;
+        });
+      },
       setActivityHint,
       setAgentActivity: (agentName: string, activity: string | undefined) => {
         setAgentActivities(prev => {

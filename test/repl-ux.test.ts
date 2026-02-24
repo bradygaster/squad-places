@@ -54,7 +54,7 @@ describe('ThinkingIndicator visibility', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -67,7 +67,7 @@ describe('ThinkingIndicator visibility', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: '@Kovash fix the bug' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -80,7 +80,7 @@ describe('ThinkingIndicator visibility', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'fix the bug' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -93,7 +93,7 @@ describe('ThinkingIndicator visibility', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'Working on it...' },
+        streamingContent: new Map([['Kovash', 'Working on it...']]),
       })
     );
     const frame = lastFrame()!;
@@ -106,7 +106,7 @@ describe('ThinkingIndicator visibility', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     expect(lastFrame()!).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
@@ -118,7 +118,7 @@ describe('ThinkingIndicator visibility', () => {
           makeMessage({ role: 'agent', content: 'Done!', agentName: 'Kovash' }),
         ],
         processing: false,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -181,7 +181,7 @@ describe('AgentPanel status display', () => {
     const { lastFrame } = render(
       h(AgentPanel, {
         agents,
-        streamingContent: { agentName: 'Kovash', content: 'some response' },
+        streamingContent: new Map([['Kovash', 'some response']]),
       })
     );
     const frame = lastFrame()!;
@@ -284,7 +284,7 @@ describe('MessageStream formatting', () => {
     const { lastFrame } = render(
       h(MessageStream, {
         messages: [],
-        streamingContent: { agentName: 'Kovash', content: 'partial response' },
+        streamingContent: new Map([['Kovash', 'partial response']]),
       })
     );
     const frame = lastFrame()!;
@@ -296,7 +296,7 @@ describe('MessageStream formatting', () => {
     const { lastFrame } = render(
       h(MessageStream, {
         messages: [],
-        streamingContent: { agentName: 'Kovash', content: 'streaming text' },
+        streamingContent: new Map([['Kovash', 'streaming text']]),
         agents: [makeAgent({ name: 'Kovash', role: 'core dev' })],
       })
     );
@@ -516,7 +516,7 @@ describe('Never feels dead', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'do something' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -529,7 +529,7 @@ describe('Never feels dead', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'do something' })],
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'Working...' },
+        streamingContent: new Map([['Kovash', 'Working...']]),
       })
     );
     const frame = lastFrame()!;
@@ -543,7 +543,7 @@ describe('Never feels dead', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
 
@@ -555,7 +555,7 @@ describe('Never feels dead', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'Partial...' },
+        streamingContent: new Map([['Kovash', 'Partial...']]),
       })
     );
     expect(lastFrame()!).toContain('Partial...');
@@ -569,7 +569,7 @@ describe('Never feels dead', () => {
           makeMessage({ role: 'agent', content: 'Complete answer.', agentName: 'Kovash' }),
         ],
         processing: false,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const finalFrame = lastFrame()!;
@@ -606,29 +606,29 @@ describe('Never feels dead', () => {
   it('every lifecycle phase has visible content (no dead frames)', () => {
     type Phase = {
       processing: boolean;
-      streamingContent: { agentName: string; content: string } | null;
+      streamingContent: Map<string, string>;
       messages: ShellMessage[];
     };
 
     const phases: Phase[] = [
       {
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
         messages: [makeMessage({ role: 'user', content: 'question' })],
       },
       {
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'Starting...' },
+        streamingContent: new Map([['Kovash', 'Starting...']]),
         messages: [makeMessage({ role: 'user', content: 'question' })],
       },
       {
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'More content here...' },
+        streamingContent: new Map([['Kovash', 'More content here...']]),
         messages: [makeMessage({ role: 'user', content: 'question' })],
       },
       {
         processing: false,
-        streamingContent: null,
+        streamingContent: new Map(),
         messages: [
           makeMessage({ role: 'user', content: 'question' }),
           makeMessage({ role: 'agent', content: 'Full answer.', agentName: 'Kovash' }),
@@ -732,7 +732,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'fix the bug' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -746,7 +746,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: '@Kovash fix the bug' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
       })
     );
     const frame = lastFrame()!;
@@ -759,7 +759,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
         activityHint: 'Analyzing dependencies...',
       })
     );
@@ -771,7 +771,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: '@Kovash fix it' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
         activityHint: 'Reading file...',
       })
     );
@@ -784,7 +784,7 @@ describe('ThinkingIndicator integration with MessageStream', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'hello' })],
         processing: true,
-        streamingContent: { agentName: 'Kovash', content: 'Working on it...' },
+        streamingContent: new Map([['Kovash', 'Working on it...']]),
       })
     );
     const frame = lastFrame()!;
@@ -911,7 +911,7 @@ describe('Rich progress indicators', () => {
       h(MessageStream, {
         messages: [makeMessage({ role: 'user', content: 'find the bug' })],
         processing: true,
-        streamingContent: null,
+        streamingContent: new Map(),
         agentActivities: activities,
       })
     );

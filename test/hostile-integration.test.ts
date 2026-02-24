@@ -158,7 +158,7 @@ describe('Hostile corpus → MessageStream render()', () => {
         const { unmount } = render(
           h(MessageStream, {
             messages: [makeMessage('test', 'user')],
-            streamingContent: { agentName: 'TestAgent', content: input.value },
+            streamingContent: new Map([['TestAgent', input.value]]),
             processing: true,
           })
         );

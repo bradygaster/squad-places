@@ -8,7 +8,7 @@ import type { AgentSession } from '../types.js';
 
 interface AgentPanelProps {
   agents: AgentSession[];
-  streamingContent?: { agentName: string; content: string } | null;
+  streamingContent?: Map<string, string>;
 }
 
 const PULSE_FRAMES = ['●', '◉', '○', '◉'];

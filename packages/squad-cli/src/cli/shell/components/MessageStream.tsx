@@ -10,7 +10,7 @@ import type { ShellMessage, AgentSession } from '../types.js';
 interface MessageStreamProps {
   messages: ShellMessage[];
   agents?: AgentSession[];
-  streamingContent?: { agentName: string; content: string } | null;
+  streamingContent?: Map<string, string>;
   processing?: boolean;
   activityHint?: string;
   agentActivities?: Map<string, string>;
@@ -124,17 +124,23 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
       })}
 
       {/* Streaming content with live cursor */}
-      {streamingContent && streamingContent.content && (
-        <Box gap={1}>
-          <Text color={noColor ? undefined : 'green'} bold>
-            {roleMap.has(streamingContent.agentName)
-              ? `${getRoleEmoji(roleMap.get(streamingContent.agentName)!)} `
-              : ''}
-            {streamingContent.agentName}:
-          </Text>
-          <Text wrap="wrap">{streamingContent.content}</Text>
-          <Text color={noColor ? undefined : 'cyan'}>▌</Text>
-        </Box>
+      {streamingContent && streamingContent.size > 0 && (
+        <>
+          {Array.from(streamingContent.entries()).map(([agentName, content]) => (
+            content ? (
+              <Box key={agentName} gap={1}>
+                <Text color={noColor ? undefined : 'green'} bold>
+                  {roleMap.has(agentName)
+                    ? `${getRoleEmoji(roleMap.get(agentName)!)} `
+                    : ''}
+                  {agentName}:
+                </Text>
+                <Text wrap="wrap">{content}</Text>
+                <Text color={noColor ? undefined : 'cyan'}>▌</Text>
+              </Box>
+            ) : null
+          ))}
+        </>
       )}
 
       {/* Agent activity feed — real-time lines showing what agents are doing */}
@@ -147,7 +153,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
       )}
 
       {/* Thinking indicator — shown when processing but no content yet */}
-      {processing && !streamingContent?.content && (
+      {processing && (!streamingContent || streamingContent.size === 0) && (
         <ThinkingIndicator
           isThinking={true}
           elapsedMs={elapsedMs}
@@ -157,11 +163,11 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
       )}
 
       {/* Streaming status — shows elapsed while content flows */}
-      {processing && streamingContent?.content && (
+      {processing && streamingContent && streamingContent.size > 0 && (
         <ThinkingIndicator
           isThinking={true}
           elapsedMs={elapsedMs}
-          activityHint={`${streamingContent.agentName} streaming`}
+          activityHint={`${Array.from(streamingContent.keys()).join(', ')} streaming`}
         />
       )}
     </Box>
