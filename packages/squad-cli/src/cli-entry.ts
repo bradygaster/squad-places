@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     console.log(`             --migrate-directory`);
     console.log(`               Rename .ai-team/ → .squad/`);
     console.log(`  ${BOLD}status${RESET}     Show which squad is active`);
-    console.log(`  ${BOLD}triage${RESET}     Scan issues and categorize`);
+    console.log(`  ${BOLD}triage${RESET}     Watch issues and auto-triage to team`);
     console.log(`             [--interval <minutes>] (default: 10)`);
     console.log(`  ${BOLD}copilot${RESET}    Add/remove GitHub Copilot agent`);
     console.log(`             [--off] [--auto-assign]`);
