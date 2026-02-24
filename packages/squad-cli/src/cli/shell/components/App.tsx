@@ -5,7 +5,7 @@
  * StreamBridge events into React state.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import { AgentPanel } from './AgentPanel.js';
 import { MessageStream } from './MessageStream.js';
@@ -18,6 +18,7 @@ import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';
 import type { ShellMessage, AgentSession } from '../types.js';
+import { MemoryManager } from '../memory.js';
 import type { SessionData } from '../session-store.js';
 import type { ThinkingPhase } from './ThinkingIndicator.js';
 
@@ -35,6 +36,8 @@ export interface AppProps {
   renderer: ShellRenderer;
   teamRoot: string;
   version: string;
+  /** Max messages to keep in visible history (default: 200). Older messages are archived. */
+  maxMessages?: number;
   onReady?: (api: ShellApi) => void;
   onDispatch?: (parsed: ParsedInput) => Promise<void>;
   onCancel?: () => void;
@@ -43,9 +46,11 @@ export interface AppProps {
 
 const EXIT_WORDS = new Set(['exit', 'quit', 'q']);
 
-export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, onReady, onDispatch, onCancel, onRestoreSession }) => {
+export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, maxMessages, onReady, onDispatch, onCancel, onRestoreSession }) => {
   const { exit } = useApp();
+  const memoryManager = useMemo(() => new MemoryManager(maxMessages != null ? { maxMessages } : undefined), [maxMessages]);
   const [messages, setMessages] = useState<ShellMessage[]>([]);
+  const [archivedMessages, setArchivedMessages] = useState<ShellMessage[]>([]);
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
   const [streamingContent, setStreamingContent] = useState<{ agentName: string; content: string } | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -55,6 +60,18 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const messagesRef = useRef<ShellMessage[]>([]);
   const ctrlCRef = useRef(0);
   const ctrlCTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Append messages and enforce the history cap, archiving overflow
+  const appendMessages = useCallback((updater: (prev: ShellMessage[]) => ShellMessage[]) => {
+    setMessages(prev => {
+      const next = updater(prev);
+      const { kept, archived } = memoryManager.trimWithArchival(next);
+      if (archived.length > 0) {
+        setArchivedMessages(old => [...old, ...archived]);
+      }
+      return kept;
+    });
+  }, [memoryManager]);
 
   // Keep ref in sync so command handlers see latest history
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -69,7 +86,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   useEffect(() => {
     onReady?.({
       addMessage: (msg: ShellMessage) => {
-        setMessages(prev => [...prev, msg]);
+        appendMessages(prev => [...prev, msg]);
         setStreamingContent(null);
         setActivityHint(undefined);
       },
@@ -90,7 +107,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         setAgents([...registry.getAll()]);
       },
     });
-  }, [onReady, registry]);
+  }, [onReady, registry, appendMessages]);
 
   // Ctrl+C: cancel operation when processing, double-tap to exit when idle
   useInput((_input, key) => {
@@ -110,7 +127,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       // Single Ctrl+C when idle — show hint, reset after 1s
       ctrlCTimerRef.current = setTimeout(() => { ctrlCRef.current = 0; }, 1000);
       if (!processing) {
-        setMessages(prev => [...prev, {
+        appendMessages(prev => [...prev, {
           role: 'system' as const,
           content: 'Press Ctrl+C again to exit.',
           timestamp: new Date(),
@@ -127,7 +144,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     }
 
     const userMsg: ShellMessage = { role: 'user', content: input, timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
+    appendMessages(prev => [...prev, userMsg]);
 
     const knownAgents = registry.getAll().map(a => a.name);
     const parsed = parseInput(input, knownAgents);
@@ -153,7 +170,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       }
 
       if (result.output) {
-        setMessages(prev => [...prev, {
+        appendMessages(prev => [...prev, {
           role: 'system' as const,
           content: result.output!,
           timestamp: new Date(),
@@ -161,7 +178,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       }
     } else if (parsed.type === 'direct_agent' || parsed.type === 'coordinator') {
       if (!onDispatch) {
-        setMessages(prev => [...prev, {
+        appendMessages(prev => [...prev, {
           role: 'system' as const,
           content: 'SDK not connected. Try: (1) squad doctor to check setup, (2) check your internet connection, (3) restart the shell to reconnect.',
           timestamp: new Date(),
@@ -176,7 +193,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     }
 
     setAgents([...registry.getAll()]);
-  }, [registry, renderer, teamRoot, exit, onDispatch]);
+  }, [registry, renderer, teamRoot, exit, onDispatch, appendMessages]);
 
   const rosterAgents = welcome?.agents ?? [];
 
