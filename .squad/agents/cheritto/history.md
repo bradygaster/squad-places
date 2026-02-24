@@ -122,3 +122,6 @@
 
 📌 Team update (2026-02-24T08:12:21Z): Wave D Batch 1 COMPLETE — all 3 PRs merged to main, 2930 tests passing (+18 new). Cheritto: #498 shipped Adaptive Keyboard Hints. — decided by Scribe
 
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

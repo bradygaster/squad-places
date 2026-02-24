@@ -98,6 +98,77 @@ Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewri
 - Build passes cleanly. All 8 package-exports tests pass with coverage reporting.
 
 ### Test Health Assessment (2026-02-22T23:02Z)
+
+### Public Readiness Assessment (2026-02-24)
+
+**Context:** Brady asked whether SDK and CLI are ready to go public — source and all.
+
+**Test Suite Health:**
+- **Total tests:** 2930 passing + 1 skipped (todo) = 2931 total
+- **Test files:** 110 test files (100 in root test/, 10 in test/cli/)
+- **Duration:** 54.31s total runtime (transform 9.15s, collect 155.51s, tests 464.66s)
+- **Exit status:** Clean exit code 0 — zero test failures
+- **Skipped tests:** 4 files have .skip/.todo markers (aspire-integration, e2e-migration, migration, repl-streaming) — all are future-facing features or edge cases, not critical path blockers
+
+**Coverage Analysis:**
+- **Statement coverage:** 8.87% (1332/15013) — CRITICALLY LOW
+- **Branch coverage:** 90.68% (448/494) — EXCELLENT
+- **Function coverage:** 80.42% (189/235) — VERY GOOD
+- The statement coverage anomaly suggests vitest coverage config may not be capturing all source files correctly or tests focus on specific hot paths. Branch coverage at 90%+ indicates tested code paths are well-exercised.
+
+**Test Quality — The Good:**
+- **Comprehensive edge case testing:** hostile-integration.test.ts runs 95 nasty input strings through parseInput/executeCommand/MessageStream. None crash. Proves robustness.
+- **Journey tests:** 6 full human journey tests (first conversation, error handling, waiting anxious user, power user, specific agent, next day) — covers real user flows end-to-end
+- **Speed gates:** Performance assertions on help (< 5s, < 55 lines), init (< 3s), welcome (< 2s) — quantified UX requirements
+- **UX gates:** Terminal width checks (80 chars), error remediation hints, version format validation — enforces professional CLI experience
+- **Stress tests:** 500+ message rendering, rapid dispatch, concurrent operations, memory tracking — proves stability under load
+- **E2E shell tests:** Full ink-based App component driven via stdin like real users — integration confidence
+- **Acceptance tests:** 32 hostile environment tests (40x10 terminal, missing config, corrupt files, non-TTY pipe, UTF-8 edge cases) — 52+ seconds of real process spawning
+
+**Test Quality — The Gaps:**
+- **No SDK adapter tests with real Copilot CLI:** All tests mock CopilotClient. No live integration tests against actual @github/copilot-sdk talking to a real Copilot CLI server. If Copilot CLI changes its protocol, we won't know until users report it.
+- **No CI coverage for actual agent spawning:** Tests verify routing logic, session management, prompt building — but no test actually spawns a Copilot agent and validates the response parsing pipeline works end-to-end with real SDK streaming.
+- **CI config is BROKEN:** .github/workflows/squad-ci.yml runs `node --test test/*.test.js` — but tests are TypeScript (.test.ts) and use Vitest, not Node.js built-in test runner. CI is not running the actual test suite. This is a silent failure.
+- **No flaky test tracking:** Test suite is deterministic in local runs, but hostile.test.ts takes 52s+ with real process spawning — timing-dependent. No retry logic or flake tracking.
+
+**CI/CD Readiness:**
+- **squad-ci.yml:** BROKEN — runs `node --test test/*.test.js` instead of `npm test` (vitest). CI green is FALSE POSITIVE.
+- **squad-main-guard.yml:** Good — prevents .squad/ and team-docs/ from leaking into main/preview branches. Clear error messages with remediation.
+- **squad-preview.yml:** Good — validates version in CHANGELOG, runs tests (but WRONG test command), checks no .squad/ tracked.
+- **15 workflows total:** Comprehensive automation (triage, labels, heartbeat, publish, release, docs). But if CI doesn't run tests correctly, all downstream workflows are built on sand.
+
+**Critical Missing Test Areas:**
+1. **Copilot SDK protocol integration** — No tests with real CopilotClient. Protocol breakage = invisible until production.
+2. **Agent spawn with real streaming** — Coordinator routing tested, but not the full spawn → stream → parse → render pipeline with real SDK.
+3. **CLI entry point (cli.js)** — No tests of the actual Node.js entry point. Tests import modules directly.
+4. **Error state recovery** — Journey tests cover error handling UI, but not "what if SDK throws mid-stream and we need to gracefully recover a session?"
+5. **Windows-specific behavior** — Symlink tests skipped on Windows. CRLF tests exist but no tests for Windows-specific CLI behaviors (process spawning, path handling).
+
+**Verdict: 🟡 READY WITH CAVEATS**
+
+**Why not 🔴:**
+- 2930 tests passing with zero failures is a strong foundation
+- Hostile/stress/journey tests prove robustness and real-world usability
+- No TODOs/FIXMEs/HACKs in src/ — clean codebase
+- Test quality is genuine (not just smoke tests) — speed gates, UX gates, edge cases all covered
+
+**Why not 🟢:**
+- **CI is broken** — squad-ci.yml doesn't run vitest. This must be fixed BEFORE public launch. CI green means nothing right now.
+- **No real Copilot SDK integration tests** — mocking is good for unit tests, but zero tests with actual @github/copilot-sdk talking to Copilot CLI = blind spot. If GitHub changes the protocol, we're toast.
+- **8.87% statement coverage** — likely a config issue, but needs investigation. Branch coverage at 90%+ suggests tests are good, but missing files from coverage report is concerning.
+
+**Required before public launch:**
+1. **Fix CI immediately:** Change `node --test test/*.test.js` → `npm test` in squad-ci.yml. Verify it actually runs vitest.
+2. **Investigate coverage anomaly:** 90% branch coverage but 8.87% statement coverage doesn't add up. Likely vitest include paths are wrong.
+3. **Add 1 integration test with real Copilot CLI:** Spawn a local Copilot CLI server, start a session, send a message, verify streaming works. Can be skipped in CI if COPILOT_CLI_PATH not set, but proves the adapter works.
+
+**Recommended (not blocking):**
+- Add retry logic to hostile.test.ts (52s of process spawning is flake-prone)
+- Track skipped tests (4 files with .skip/.todo) in a TODO.md or issue tracker
+- Expand CLI entry point tests (test cli.js directly, not just imported modules)
+
+**Bottom line:**
+The test suite is skeptical-tester-approved for robustness and real-world coverage. But CI is broken (false green), and zero real Copilot SDK integration is a blind spot. Fix CI, verify coverage config, add 1 integration test → 🟢 ready.
 - **Test Results:** All 1727 tests passing across 57 files. Duration: 4.08s (transform 7.23s, setup 0ms, collect 21.44s, tests 16.15s, environment 12ms, prepare 16.17s).
 - **No skipped/pending tests:** Zero `.skip()` or `.only()` patterns found. All 57 test files active.
 - **Test file coverage:** Distributed across SDK (config, runtime, agents, casting, coordinator, marketplace, sharing, shell, adapter, tools) and CLI (init, upgrade, export-import, cli-global). Strong test-to-source-file ratio.
@@ -263,3 +334,6 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Bundled with Keaton's Wave D readiness assessment (team decision inbox file)
 **Verification:** All 240 tests in modified files pass (134 in cli-shell-comprehensive, 106 in repl-ux).
 **Result:** PR #487 created, branch squad/hockney-fix-test-vocab pushed. Closes #410.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

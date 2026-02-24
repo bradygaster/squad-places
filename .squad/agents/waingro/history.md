@@ -335,3 +335,6 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 ⚠️ **Root bundle is stale** — `node cli.js` runs v0.8.5.1 but doesn't have `doctor` command. The proper entry point `packages/squad-cli/dist/cli-entry.js` has it and works correctly. Users should use the built version, not root cli.js.
 
 **Verdict:** The CLI is healthy. No crashes, no malformed output, no errors in core commands. The 28 test failures are timing-related acceptance test harness issues on this machine, not CLI bugs. Brady's CLI is not crashing on basic operations—the 4 waves of work are solid.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

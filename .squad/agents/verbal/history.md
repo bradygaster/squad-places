@@ -29,3 +29,6 @@
 - Updated "Passing the team root to agents" section to describe dual-path passing in remote vs. local mode
 - Added @copilot incompatibility note — remote mode is local-dev only
 - Kept changes minimal: three targeted sections modified, no structural changes to existing content
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

@@ -40,3 +40,50 @@ Fix: Added `"squad-cli": "./dist/cli-entry.js"` as a second bin entry alongside 
 - **Workaround:** Manual publish required. Logged into npm interactively, published squad-sdk@0.8.2 first (prepublishOnly hook ran build), then squad-cli@0.8.2 (CLI depends on SDK).
 - **Verification:** Both packages confirmed published at 0.8.2 via `npm view`.
 - **CI fix needed:** Test job in CI workflow needs to run build step before tests to prevent future publish failures.
+
+### 📌 Public Readiness Assessment (2026-02-24): Distribution ready with caveats — 🟡
+**Requested by:** Brady — assessing whether SDK and CLI are ready to go public (source and all).
+
+**Package health (🟢):**
+- Both packages have complete metadata: name, version, description, keywords, license (MIT), repository with directory field
+- Engines correctly set to node >=20
+- SDK@0.8.5 (published 0.8.5), CLI@0.8.5.1 (published 0.8.5) — versions aligned
+- No `private: true` flags in published packages
+- Zero npm audit vulnerabilities
+
+**Files field correctness (🟢):**
+- SDK ships: dist + README (no test fixtures, no .squad, no src)
+- CLI ships: dist + templates + README (templates needed for `squad init`)
+- Both have `prepublishOnly: npm run build` — enforced build before publish
+- Verified via `npm pack --dry-run` — clean package contents
+
+**Install experience (🟢):**
+- `npx @bradygaster/squad-cli` works (both `squad` and `squad-cli` bin entries present)
+- Root cli.js has deprecation notice steering users to npm (correct)
+- CLI entry point clean: shebang, env loading, no orphaned placeholders
+- Zero-dependency CLI entry maintained
+
+**Missing metadata (🟡):**
+- No `homepage` field in either package (recommend: https://github.com/bradygaster/squad)
+- No `bugs` field (recommend: https://github.com/bradygaster/squad/issues)
+- No `author` field (optional, but nice for attribution)
+
+**Version readiness (🟡):**
+- Current: 0.8.5.x — still in pre-1.0 territory
+- For public source release, consider explicit stability signal:
+  - Stay 0.x.x with clear stability docs, OR
+  - Bump to 1.0.0 signaling production-ready
+- README already says "status: production" — version should match that confidence
+
+**Recommendation:** 🟡 **Ready with caveats**
+- ✅ Core distribution infrastructure is production-ready
+- ✅ Package contents clean, no leaks
+- ✅ Install paths work correctly
+- ⚠️ Add homepage/bugs fields for discoverability
+- ⚠️ Decide on version strategy: 0.9.0 → 1.0.0 or explicit "0.x = stable" docs
+- ⚠️ Consider adding CHANGELOG.md to published packages (currently only in root)
+
+**Verdict:** Green-light for public source release. Add homepage/bugs metadata in next patch. Version bump decision is strategic (marketing), not technical.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
