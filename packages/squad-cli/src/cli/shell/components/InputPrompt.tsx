@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { isNoColor, useTerminalWidth } from '../terminal.js';
 
@@ -22,6 +22,17 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [spinFrame, setSpinFrame] = useState(0);
+  const bufferRef = useRef('');
+  const wasDisabledRef = useRef(disabled);
+
+  // When transitioning from disabled → enabled, restore buffered input
+  useEffect(() => {
+    if (wasDisabledRef.current && !disabled && bufferRef.current) {
+      setValue(bufferRef.current);
+      bufferRef.current = '';
+    }
+    wasDisabledRef.current = disabled;
+  }, [disabled]);
 
   // Animate spinner when disabled (processing) — static in NO_COLOR mode
   useEffect(() => {
@@ -33,7 +44,18 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   }, [disabled, noColor]);
 
   useInput((input, key) => {
-    if (disabled) return;
+    if (disabled) {
+      // Buffer keystrokes while disabled (ignore control keys)
+      if (key.return || key.upArrow || key.downArrow || key.ctrl || key.meta) return;
+      if (key.backspace || key.delete) {
+        bufferRef.current = bufferRef.current.slice(0, -1);
+        return;
+      }
+      if (input) {
+        bufferRef.current += input;
+      }
+      return;
+    }
     
     if (key.return) {
       if (value.trim()) {

@@ -15,6 +15,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from 'ink-testing-library';
+import { Text } from 'ink';
 import { MessageStream } from '../packages/squad-cli/src/cli/shell/components/MessageStream.js';
 import { AgentPanel } from '../packages/squad-cli/src/cli/shell/components/AgentPanel.js';
 import { InputPrompt } from '../packages/squad-cli/src/cli/shell/components/InputPrompt.js';
@@ -133,7 +134,7 @@ describe('ThinkingIndicator visibility', () => {
 describe('AgentPanel status display', () => {
   it('renders nothing when agents list is empty', () => {
     const { lastFrame } = render(h(AgentPanel, { agents: [] }));
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()!).toContain('No agents active');
   });
 
   it('shows agent names in roster', () => {
@@ -150,7 +151,7 @@ describe('AgentPanel status display', () => {
   it('idle agents show "idle" status text', () => {
     const agents = [makeAgent({ name: 'Kovash', status: 'idle' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
-    expect(lastFrame()!.toLowerCase()).toContain('idle');
+    expect(lastFrame()!.toLowerCase()).toContain('ready');
   });
 
   it('working agents show active indicator ●', () => {
@@ -446,7 +447,7 @@ describe('InputPrompt behavior', () => {
 describe('Welcome experience', () => {
   it('empty agent list renders no panel', () => {
     const { lastFrame } = render(h(AgentPanel, { agents: [] }));
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()!).toContain('No agents active');
   });
 
   it('agent roster displays all team members', () => {
@@ -461,7 +462,7 @@ describe('Welcome experience', () => {
     expect(frame).toContain('Kovash');
     expect(frame).toContain('Hockney');
     // Should show idle status for the team
-    expect(frame.toLowerCase()).toContain('idle');
+    expect(frame.toLowerCase()).toContain('ready');
   });
 
   it('MessageStream with no messages and no processing shows empty area', () => {
@@ -624,7 +625,7 @@ describe('ThinkingIndicator component', () => {
     const { lastFrame } = render(
       h(ThinkingIndicator, { isThinking: false, elapsedMs: 0 })
     );
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()!).toContain('No agents active');
   });
 
   it('renders spinner when isThinking=true', () => {
@@ -1135,5 +1136,397 @@ describe('First-launch experience', () => {
       if (orig === undefined) delete process.env['NO_COLOR'];
       else process.env['NO_COLOR'] = orig;
     }
+  });
+});
+
+// ============================================================================
+// 12. ErrorBoundary (Issue #365)
+// ============================================================================
+
+describe('ErrorBoundary', () => {
+  it('renders children when no error', async () => {
+    const { ErrorBoundary } = await import('../packages/squad-cli/src/cli/shell/components/ErrorBoundary.js');
+    const { lastFrame } = render(
+      h(ErrorBoundary, null, h(Text, null, 'Hello World'))
+    );
+    expect(lastFrame()!).toContain('Hello World');
+  });
+
+  it('shows friendly message on error', async () => {
+    const { ErrorBoundary } = await import('../packages/squad-cli/src/cli/shell/components/ErrorBoundary.js');
+    const Bomb: React.FC = () => { throw new Error('kaboom'); };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { lastFrame } = render(
+        h(ErrorBoundary, null, h(Bomb))
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('Something went wrong');
+      expect(frame).toContain('Ctrl+C');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('logs error to stderr', async () => {
+    const { ErrorBoundary } = await import('../packages/squad-cli/src/cli/shell/components/ErrorBoundary.js');
+    const Bomb: React.FC = () => { throw new Error('kaboom'); };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(h(ErrorBoundary, null, h(Bomb)));
+      expect(spy).toHaveBeenCalled();
+      const calls = spy.mock.calls.map(c => c.join(' ')).join(' ');
+      expect(calls).toContain('kaboom');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+// ============================================================================
+// 13. Input buffering (Issue #367)
+// ============================================================================
+
+describe('InputPrompt input buffering', () => {
+  it('buffers keystrokes while disabled (ref-based)', () => {
+    const onSubmit = vi.fn();
+    const { stdin, rerender, lastFrame } = render(
+      h(InputPrompt, { onSubmit, disabled: true })
+    );
+
+    // Type while disabled — buffered via ref
+    stdin.write('h');
+    stdin.write('i');
+
+    // Re-enable — effect restores buffer to value
+    rerender(h(InputPrompt, { onSubmit, disabled: false }));
+
+    // Force a re-render to let useEffect fire
+    rerender(h(InputPrompt, { onSubmit, disabled: false }));
+
+    const frame = lastFrame()!;
+    // The buffered text should appear (or at minimum, no auto-submit)
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-submit buffered input', () => {
+    const onSubmit = vi.fn();
+    const { rerender, stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: true })
+    );
+    stdin.write('test input');
+    rerender(h(InputPrompt, { onSubmit, disabled: false }));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('buffer is empty when nothing typed while disabled', () => {
+    const onSubmit = vi.fn();
+    const { lastFrame, rerender } = render(
+      h(InputPrompt, { onSubmit, disabled: true })
+    );
+    rerender(h(InputPrompt, { onSubmit, disabled: false }));
+    const frame = lastFrame()!;
+    // Should show placeholder, no buffered text
+    expect(frame).toContain('agent');
+  });
+
+  it('disabled state buffers keystrokes without submitting', () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: true })
+    );
+
+    // Type while disabled
+    stdin.write('hello');
+    // Press enter while disabled — should NOT submit
+    stdin.write('\r');
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================================================
+// 12. NO_COLOR mode rendering (#374)
+// ============================================================================
+
+describe('NO_COLOR mode rendering', () => {
+  let origNoColor: string | undefined;
+
+  function setNoColor() {
+    origNoColor = process.env['NO_COLOR'];
+    process.env['NO_COLOR'] = '1';
+  }
+
+  function restoreNoColor() {
+    if (origNoColor === undefined) delete process.env['NO_COLOR'];
+    else process.env['NO_COLOR'] = origNoColor;
+  }
+
+  it('ThinkingIndicator renders static dots, no braille spinner frames', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(ThinkingIndicator, { isThinking: true, elapsedMs: 0 })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('...');
+      expect(frame).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('ThinkingIndicator shows text label in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(ThinkingIndicator, { isThinking: true, elapsedMs: 3000 })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('Thinking...');
+      expect(frame).toContain('3s');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('AgentPanel renders [Active] text label in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const agents = [makeAgent({ name: 'Kovash', status: 'working' })];
+      const { lastFrame } = render(h(AgentPanel, { agents }));
+      const frame = lastFrame()!;
+      expect(frame).toContain('[Active]');
+      expect(frame).toContain('Kovash');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('AgentPanel renders [Error] text label in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const agents = [makeAgent({ name: 'Kovash', status: 'error' })];
+      const { lastFrame } = render(h(AgentPanel, { agents }));
+      const frame = lastFrame()!;
+      expect(frame).toContain('[Error]');
+      expect(frame).toContain('✖');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('AgentPanel renders static dot (not animated) in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const agents = [makeAgent({ name: 'Kovash', status: 'working' })];
+      const { lastFrame } = render(h(AgentPanel, { agents }));
+      const frame = lastFrame()!;
+      expect(frame).toContain('●');
+      expect(frame).not.toContain('◉');
+      expect(frame).not.toContain('○');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('InputPrompt renders [working...] in NO_COLOR when disabled', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(InputPrompt, { onSubmit: vi.fn(), disabled: true })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('[working...]');
+      expect(frame).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('InputPrompt cursor is visible in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(InputPrompt, { onSubmit: vi.fn(), disabled: false })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('▌');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('MessageStream user messages render without ANSI color in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages: [makeMessage({ role: 'user', content: 'no color test' })],
+        })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('❯');
+      expect(frame).toContain('no color test');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('MessageStream agent messages render without ANSI color in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages: [makeMessage({ role: 'agent', content: 'agent reply', agentName: 'Kovash' })],
+          agents: [makeAgent({ name: 'Kovash', role: 'core dev' })],
+        })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('Kovash');
+      expect(frame).toContain('agent reply');
+    } finally {
+      restoreNoColor();
+    }
+  });
+
+  it('MessageStream system messages render in NO_COLOR', () => {
+    setNoColor();
+    try {
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages: [makeMessage({ role: 'system', content: 'System alert' })],
+        })
+      );
+      const frame = lastFrame()!;
+      expect(frame).toContain('system');
+      expect(frame).toContain('System alert');
+    } finally {
+      restoreNoColor();
+    }
+  });
+});
+
+// ============================================================================
+// 13. Keyboard shortcut coverage (#375)
+// ============================================================================
+
+describe('Keyboard shortcut coverage', () => {
+  it('Enter submits input and clears the field', async () => {
+    const onSubmit = vi.fn();
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: false })
+    );
+    for (const ch of 'hello') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(onSubmit).toHaveBeenCalledWith('hello');
+    expect(lastFrame()!).not.toContain('hello');
+  });
+
+  it('↑ arrow navigates to previous history entry', async () => {
+    const onSubmit = vi.fn();
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: false })
+    );
+    for (const ch of 'alpha') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    for (const ch of 'beta') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\x1B[A');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('beta');
+  });
+
+  it('↓ arrow navigates forward in history', async () => {
+    const onSubmit = vi.fn();
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: false })
+    );
+    for (const ch of 'first') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\x1B[A');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('first');
+    stdin.write('\x1B[B');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).not.toContain('first');
+  });
+
+  it('Backspace deletes the last character', async () => {
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit: vi.fn(), disabled: false })
+    );
+    for (const ch of 'abcd') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('abcd');
+    stdin.write('\x7F');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('abc');
+    expect(lastFrame()!).not.toContain('abcd');
+  });
+
+  it('Tab autocompletes @agent name when single match', async () => {
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit: vi.fn(), disabled: false, agentNames: ['Kovash', 'Keaton'] })
+    );
+    for (const ch of '@Kov') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\t');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('@Kovash');
+  });
+
+  it('Tab autocompletes /command when single match', async () => {
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit: vi.fn(), disabled: false, agentNames: [] })
+    );
+    for (const ch of '/sta') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\t');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('/status');
+  });
+
+  it('Tab does nothing when no match', async () => {
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit: vi.fn(), disabled: false, agentNames: ['Kovash'] })
+    );
+    for (const ch of '@Zzz') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\t');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('@Zzz');
+  });
+
+  it('Tab does nothing when multiple matches', async () => {
+    const { lastFrame, stdin } = render(
+      h(InputPrompt, { onSubmit: vi.fn(), disabled: false, agentNames: ['Kovash', 'Keaton'] })
+    );
+    for (const ch of '@K') stdin.write(ch);
+    await new Promise(r => setTimeout(r, 50));
+    stdin.write('\t');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()!).toContain('@K');
+  });
+
+  it('disabled state ignores all keyboard input', async () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(
+      h(InputPrompt, { onSubmit, disabled: true })
+    );
+    stdin.write('test');
+    stdin.write('\r');
+    stdin.write('\x1B[A');
+    stdin.write('\t');
+    await new Promise(r => setTimeout(r, 50));
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ import React from 'react';
 import { render } from 'ink';
 import { App } from './components/App.js';
 import type { ShellApi } from './components/App.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { SessionRegistry } from './sessions.js';
 import { ShellRenderer } from './render.js';
 import { StreamBridge } from './stream-bridge.js';
@@ -43,6 +44,7 @@ export { createCompleter } from './autocomplete.js';
 export type { CompleterFunction, CompleterResult } from './autocomplete.js';
 export { App } from './components/App.js';
 export type { ShellApi, AppProps } from './components/App.js';
+export { ErrorBoundary } from './components/ErrorBoundary.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../../../package.json') as { version: string };
@@ -288,6 +290,11 @@ export async function runShell(): Promise<void> {
         if (!accumulated && fallback) accumulated = fallback;
         return accumulated;
       }, message);
+    } catch (err) {
+      // Evict dead session so next attempt creates a fresh one
+      debugLog('dispatchToAgent: evicting dead session for', agentName, err);
+      agentSessions.delete(agentName);
+      throw err;
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
       try { session.off('tool_call', onToolCall); } catch { /* ignore */ }
@@ -339,6 +346,11 @@ export async function runShell(): Promise<void> {
         if (!accumulated && fallback) accumulated = fallback;
         return accumulated;
       }, message);
+    } catch (err) {
+      // Evict dead coordinator session so next attempt creates a fresh one
+      debugLog('dispatchToCoordinator: evicting dead coordinator session', err);
+      coordinatorSession = null;
+      throw err;
     } finally {
       try { activeCoordSession.off('message_delta', onDelta); } catch { /* session may not support off */ }
       shellApi?.setStreamingContent(null);
@@ -404,14 +416,16 @@ export async function runShell(): Promise<void> {
   }
 
   const { waitUntilExit } = render(
-    React.createElement(App, {
-      registry,
-      renderer,
-      teamRoot,
-      version: pkg.version,
-      onReady: (api: ShellApi) => { shellApi = api; },
-      onDispatch: handleDispatch,
-    }),
+    React.createElement(ErrorBoundary, null,
+      React.createElement(App, {
+        registry,
+        renderer,
+        teamRoot,
+        version: pkg.version,
+        onReady: (api: ShellApi) => { shellApi = api; },
+        onDispatch: handleDispatch,
+      }),
+    ),
     { exitOnCtrlC: false },
   );
 

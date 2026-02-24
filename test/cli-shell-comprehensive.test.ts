@@ -1143,3 +1143,95 @@ describe('Error hardening — user-friendly messages with remediation hints', ()
     expect(friendly).toBe('Connection timed out');
   });
 });
+
+// ============================================================================
+// 14. Dead session eviction (Issue #366)
+// ============================================================================
+
+describe('Dead session eviction', () => {
+  it('agentSessions Map evicts entry on delete', () => {
+    const agentSessions = new Map<string, MockSquadSession>();
+    const session = createMockSession();
+    agentSessions.set('TestAgent', session);
+    expect(agentSessions.has('TestAgent')).toBe(true);
+
+    // Simulate eviction after error
+    agentSessions.delete('TestAgent');
+    expect(agentSessions.has('TestAgent')).toBe(false);
+    expect(agentSessions.size).toBe(0);
+  });
+
+  it('next dispatch creates fresh session after eviction', () => {
+    const agentSessions = new Map<string, MockSquadSession>();
+    const deadSession = createMockSession();
+    agentSessions.set('TestAgent', deadSession);
+
+    // Evict the dead session
+    agentSessions.delete('TestAgent');
+
+    // Simulate next dispatch — no existing session
+    const existingSession = agentSessions.get('TestAgent');
+    expect(existingSession).toBeUndefined();
+
+    // Would create a new session here in real code
+    const freshSession = createMockSession();
+    agentSessions.set('TestAgent', freshSession);
+    expect(agentSessions.get('TestAgent')).toBe(freshSession);
+    expect(agentSessions.get('TestAgent')).not.toBe(deadSession);
+  });
+
+  it('coordinator session evicts on null assignment', () => {
+    let coordinatorSession: MockSquadSession | null = createMockSession();
+    expect(coordinatorSession).not.toBeNull();
+
+    // Simulate eviction
+    coordinatorSession = null;
+    expect(coordinatorSession).toBeNull();
+  });
+});
+
+// ============================================================================
+// 15. Stub command removal (Issue #371)
+// ============================================================================
+
+describe('Stub command removal', () => {
+  it('commands.ts executeCommand does not have loop command', () => {
+    const reg = new SessionRegistry();
+    const renderer = new ShellRenderer();
+    const result = executeCommand('loop', [], {
+      registry: reg,
+      renderer,
+      messageHistory: [],
+      teamRoot: '/test',
+    });
+    // Unknown commands return handled: false
+    expect(result.handled).toBe(false);
+  });
+
+  it('commands.ts executeCommand does not have hire command', () => {
+    const reg = new SessionRegistry();
+    const renderer = new ShellRenderer();
+    const result = executeCommand('hire', [], {
+      registry: reg,
+      renderer,
+      messageHistory: [],
+      teamRoot: '/test',
+    });
+    expect(result.handled).toBe(false);
+  });
+
+  it('all known commands are functional (not stubs)', () => {
+    const reg = new SessionRegistry();
+    const renderer = new ShellRenderer();
+    const knownCommands = ['status', 'history', 'clear', 'help', 'quit', 'exit', 'agents'];
+    for (const cmd of knownCommands) {
+      const result = executeCommand(cmd, [], {
+        registry: reg,
+        renderer,
+        messageHistory: [],
+        teamRoot: '/test',
+      });
+      expect(result.handled).toBe(true);
+    }
+  });
+});

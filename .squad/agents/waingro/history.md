@@ -168,3 +168,50 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 4. **Add SIGTERM handler** in `runShell()` that calls `exit()` on the Ink instance.
 5. **Buffer user input during processing** instead of dropping it.
 6. **Support per-agent streaming content** in App state (Map instead of single slot).
+
+### 2026-02-23: Hostile Test Coverage Sprint — Issues #376, #377, #378 → PR #380
+
+**Filed 3 GitHub issues and built all the tests. Tonight was the night.**
+
+#### Issues Filed
+- **#376** — Wire nasty-inputs corpus into actual test execution
+- **#377** — SDK failure scenario tests
+- **#378** — Stress and boundary tests
+
+#### Tests Built (62 tests, 3 files, all passing)
+
+**test/hostile-integration.test.ts** (16 tests)
+- Wired the 67-string nasty-inputs corpus (previously ZERO consumers) into parseInput(), executeCommand(), and MessageStream rendering
+- Every hostile string — control chars, ANSI escapes, injection attempts, 100KB strings, unicode ZWJ, RTL, CJK — run through all three paths
+- Full pipeline chain: parse → execute for slash-command-shaped hostile input
+- Corpus count sanity check to catch silent truncation
+
+**test/sdk-failure-scenarios.test.ts** (21 tests)
+- Ghost response: sendAndWait returns undefined/null → empty content, no crash
+- SDK throws: Error, TypeError, string, partial-stream-then-throw → error captured, partial content preserved
+- Timeout: sendAndWait hangs → times out cleanly with partial content preserved
+- Error events: session emits error mid-stream → no unhandled exception, content preserved
+- Malformed data: number/object/null/undefined deltas → filtered out, no crash
+- Coordinator parsing: garbage routing input → no throw, falls through gracefully
+- Session recovery: error → remove → re-register cycle works
+
+**test/stress.test.ts** (25 tests)
+- MessageStream: 500 and 1000 messages rendered without crash; maxVisible prop enforced
+- Rapid input: 1000 parseInput calls, alternating command types
+- Long strings: 10KB, 100KB, 1MB through parseInput; 10KB through executeCommand and MessageStream; 10000-line input
+- Concurrent: 5 parallel dispatches with content isolation verification (no cross-contamination)
+- Sequential: 10 rapid dispatches, each producing correct unique output
+- MemoryManager: trimMessages caps, trackBuffer enforces, clearBuffer resets, canCreateSession limits
+- SessionRegistry: 100 agents, 1000 status transitions, rapid activity hint updates
+
+#### Key Findings During Testing
+- Corpus has 67 strings, not 95 as previously stated (some entries were consolidated)
+- All parseInput/executeCommand paths handle hostile input without throwing — the parser is actually robust
+- MessageStream rendering of 67 hostile strings takes ~2.5s (Ink render overhead per unmount)
+- Concurrent dispatch isolation is clean — per-session listener maps prevent cross-contamination
+- MemoryManager works correctly but remains dead code in production (nobody calls it)
+
+#### Branch & PR
+- Branch: `squad/hostile-test-coverage`
+- PR: #380
+- Commit: `test: hostile input, SDK failure, and stress tests (closes #376, closes #377, closes #378)`
