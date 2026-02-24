@@ -1,6 +1,7 @@
 import { SessionRegistry } from './sessions.js';
 import { ShellRenderer } from './render.js';
 import { getTerminalWidth } from './terminal.js';
+import { BOLD, DIM, RESET } from '../core/output.js';
 import type { ShellMessage } from './types.js';
 
 export interface CommandContext {
@@ -52,16 +53,18 @@ function handleStatus(context: CommandContext): CommandResult {
   const agents = context.registry.getAll();
   const active = context.registry.getActive();
   const lines = [
-    `Your Team:`,
-    `  Root: ${context.teamRoot}`,
-    `  Size: ${agents.length}`,
-    `  Active now: ${active.length}`,
-    `  In conversation: ${context.messageHistory.length}`,
+    `${BOLD}Squad Status${RESET}`,
+    '-----------',
+    `Team:     ${agents.length} agent${agents.length !== 1 ? 's' : ''} (${active.length} active)`,
+    `Root:     ${DIM}${context.teamRoot}${RESET}`,
+    `Messages: ${context.messageHistory.length} this session`,
   ];
   if (active.length > 0) {
-    lines.push('', '  Working:');
+    lines.push('', 'Working:');
     for (const a of active) {
-      lines.push(`    ${a.name} (${a.role}) — ${a.status}`);
+      const tag = a.status === 'streaming' ? '[STREAM]' : '[WORK]';
+      const hint = a.activityHint ? ` - ${a.activityHint}` : '';
+      lines.push(`  ${tag} ${a.name} (${a.role})${hint}`);
     }
   }
   return { handled: true, output: lines.join('\n') };
