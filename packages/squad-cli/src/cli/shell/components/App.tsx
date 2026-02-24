@@ -161,10 +161,10 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const compact = width <= 60;
   const wide = width >= 100;
 
-  // Welcome animation: typewriter on title, fade-in on rest of banner
-  const titleRevealed = useTypewriter(welcome ? '◆ SQUAD' : '', 500);
-  const bannerReady = titleRevealed.length >= 7; // '◆ SQUAD'.length
-  const bannerDim = useFadeIn(bannerReady, 300);
+  // Welcome banner: instant display (no typewriter blocking)
+  const titleRevealed = welcome ? '◆ SQUAD' : '';
+  const bannerReady = true;
+  const bannerDim = false;
 
   // Pick a lead agent name for the first-run guided prompt
   const leadAgent = welcome?.agents[0]?.name ?? 'Keaton';
