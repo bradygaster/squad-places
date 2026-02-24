@@ -1,35 +1,46 @@
 ---
-updated_at: 2026-02-24T08:11:00Z
-focus_area: Wave D Batch 1 — COMPLETE
-prs_open: ["#487", "#494", "#495", "#496", "#497", "#498", "#499"]
-issues_wave_d: ["#488", "#489", "#490", "#491", "#492", "#493"]
+updated_at: 2026-02-24T18:42:00Z
+focus_area: Dogfood Testing — #324 OPEN (only blocking issue)
+issues_open: ["#324"]
+issues_closed_prd: 30
+tests_passing: 2930
 prd_location: .squad/identity/prd-next-waves.md
-current_phase: Waves A-D Batch 1 Complete — Ready for Testing
+current_phase: Waves A–D Complete — Awaiting Dogfood & Wave E Planning
 process: All work through PRs with squad member review before merge
 ---
 
 # What We're Focused On
 
-**Status:** Waves A-D Batch 1 ALL COMPLETE. 2930 tests passing. All 6 Wave D issues implemented and merged locally to main for testing.
+**Status:** Waves A–D are COMPLETE. All 30 PRD-referenced issues are closed. Only #324 (dogfood) remains open and blocking. 2930 tests passing.
 
-## Waves A-C — Complete
+## Waves A–D: COMPLETE
 
-All 32+ items shipped. CLI is polished, reliable, and well-tested.
+All 30 PRD-referenced issues are closed.
 
-## Wave D: Delight — Batch 1 COMPLETE
+### Wave A (13 closed)
+Polish & Consistency: #340, #341, #419–#423, #426, #405, #404, #407, #431, #429
 
-**Completed:** 2026-02-24T08:11:00Z
+### Wave B (7 closed)
+Reliability: #418, #425, #428, #430, #432, #433, #434
 
-| # | Title | Priority | Assigned | PR | Status |
-|---|-------|----------|----------|----|--------|
-| #488 | Unified Status Display | P1 | Cheritto | #495 | ✅ Merged locally |
-| #489 | Adaptive Keyboard Hints | P1 | Cheritto | #498 | ✅ Merged locally |
-| #490 | Error Recovery Guidance | P1 | Kovash | #497 | ✅ Merged locally |
-| #491 | Message History Cap | P2 | Kovash | #496 | ✅ Merged locally |
-| #492 | Per-Agent Streaming Content | P2 | Fortier | #499 | ✅ Merged locally |
-| #493 | StreamBuffer Cleanup on Error | P2 | Fortier | #494 | ✅ Merged locally |
+### Wave C (testing integration — merged into Wave A timeline)
+E2E + Integration: #326, #372, #373, #374, #375, #376, #377, #378, #410, #433
 
-**Also merged:** PR #487 (Hockney — test vocab fix, closes #410)
+### Wave D (6 closed)
+Delight — Batch 1: #488, #489, #490, #491, #492, #493
+
+## What Remains
+
+### Open Issue: #324 — Dogfood CLI with real repos (P0)
+- Status: OPEN — only blocker
+- Assignees: Keaton, Waingro
+- Acceptance criteria: Test against 4 repo types (fresh init, existing squadded, monorepo, solo project)
+- Impact: Blocks Wave E planning and public release confidence
+
+### Next Steps
+1. **Complete #324 dogfood** — Test against real repos, catalog findings
+2. **Plan Wave E** — TBD items based on dogfood insights (adaptive hints, per-agent streaming polish, etc.)
+3. **Prepare for public release** — Verify all P0 items covered, docs ready
 
 ## Process
 
@@ -37,9 +48,9 @@ All work flows through PRs with squad member review before merge.
 
 ---
 
-## Earlier Phase (Complete)
+## Archive: Earlier Phases
 
-Epic #323 — CLI Quality & UX (Phase 1: Testing Wave) — Complete
-- Quality review complete: 5 agents assessed CLI
-- 7 new P0/P1 issues identified and resolved
-- All Phase 1 blockers cleared (#365–#368)
+Epic #323 — CLI Quality & UX (Phases 1–3: Testing Wave → Improvement → Breathtaking)
+- Phase 1: 7 P0 blockers fixed (#365–#371)
+- Phase 2: 6 Wave D items shipped (#488–#493)
+- Phase 3: Wave A–C polish delivered (30 issues closed)

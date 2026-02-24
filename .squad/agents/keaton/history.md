@@ -7,6 +7,14 @@
 
 ## Learnings
 
+### 2026-02-24T18:42:00Z: Waves A–D Completion Assessment (Brady handoff catch-up)
+- **Task:** Brady's session crashed. Verify Wave A–D completion per PRD, check issue states, assess what remains.
+- **Findings:** All 30 PRD-referenced issues are CLOSED. Waves A (13 issues), B (7 issues), C (E2E + integration, merged into timeline), D Batch 1 (6 issues). Test count: 2930 passing. Repository clean — no open PRs. Only 1 open issue: #324 (dogfood testing, P0).
+- **Wave C insight:** E2E + integration testing was NOT a discrete sequential wave. Instead, it was merged into the continuous quality epic (#323) across all 3 phases. Issues #326, #372, #373 (coordination), #374–#378 (accessibility + boundary), #410, #433 all closed as part of Testing → Improvement → Breathtaking phases. Pattern: Testing got integrated continuously rather than sequential.
+- **Architecture pattern learned:** 3-phase epic structure (Testing → Improvement → Breathtaking) proved more effective than separate sequential waves. Phases overlapped and compounded. For Wave E planning, recommend continuing 3-phase rhythm: (1) Dogfood findings capture, (2) Priority bugs + high-value wins, (3) Polish + delight.
+- **Blocker:** #324 (dogfood CLI against 4 repo types: fresh init, existing squadded, monorepo, solo) is OPEN. Blocks Wave E planning and release confidence. Must be closed before Wave E.
+- **Next action:** Brady completes #324 dogfood (assign to Waingro + team member), then plan Wave E Batch 1 (3–5 items, 1 week, phase-based structure).
+
 ### 2026-02-24: Testing Epic PRD (3-Phase Quality & UX)
 - **Task:** Write comprehensive PRD for testing epic covering P0 timeout bug, UX audit implementation, and breathtaking polish.
 - **Context:** Brady's CLI died after 2 minutes (hard-coded timeout at shell/index.ts:123). New agents joined (Cheritto TUI, Breedan E2E, Waingro QA, Nate accessibility, Marquez UX). Marquez delivered 21-item UX audit (P0/P1/P2), Breedan designed E2E harness (child_process + Gherkin), Kovash shipped REPL UX overhaul (ThinkingIndicator, AgentPanel, MessageStream), Hockney has 40 REPL UX tests.
