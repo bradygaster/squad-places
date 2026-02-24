@@ -23,6 +23,7 @@ import { buildCoordinatorPrompt, parseCoordinatorResponse } from './coordinator.
 import { loadAgentCharter, buildAgentPrompt } from './spawn.js';
 import { createSession, saveSession, loadLatestSession, type SessionData } from './session-store.js';
 import { parseDispatchTargets, type ParsedInput } from './router.js';
+import { agentSessionGuidance, genericGuidance, formatGuidance } from './error-messages.js';
 
 export { SessionRegistry } from './sessions.js';
 export { StreamBridge } from './stream-bridge.js';
@@ -49,6 +50,14 @@ export type { SessionData, SessionSummary } from './session-store.js';
 export { App } from './components/App.js';
 export type { ShellApi, AppProps } from './components/App.js';
 export { ErrorBoundary } from './components/ErrorBoundary.js';
+export {
+  sdkDisconnectGuidance,
+  teamConfigGuidance,
+  agentSessionGuidance,
+  genericGuidance,
+  formatGuidance,
+} from './error-messages.js';
+export type { ErrorGuidance } from './error-messages.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../../../package.json') as { version: string };
@@ -187,9 +196,10 @@ export async function runShell(): Promise<void> {
       debugLog(`StreamBridge error for ${agentName}:`, error);
       streamBuffers.delete(agentName);
       const friendly = error.message.replace(/^Error:\s*/i, '');
+      const guidance = agentSessionGuidance(agentName, friendly);
       shellApi?.addMessage({
         role: 'system',
-        content: `❌ ${agentName} hit a problem: ${friendly}\n   Try again, or run \`squad doctor\` to check your setup.`,
+        content: formatGuidance(guidance),
         timestamp: new Date(),
       });
     },
@@ -580,9 +590,10 @@ export async function runShell(): Promise<void> {
       const errorMsg = err instanceof Error ? err.message : String(err);
       const friendly = errorMsg.replace(/^Error:\s*/i, '');
       if (shellApi) {
+        const guidance = genericGuidance(friendly);
         shellApi.addMessage({
           role: 'system',
-          content: `❌ Something went wrong: ${friendly}\n   Try again, or check your connection. Run \`squad doctor\` for diagnostics.`,
+          content: formatGuidance(guidance),
           timestamp: new Date(),
         });
       }

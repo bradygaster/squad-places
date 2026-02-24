@@ -64,6 +64,10 @@
       "types": "./dist/cli/shell/session-store.d.ts",
       "import": "./dist/cli/shell/session-store.js"
     },
+    "./shell/error-messages": {
+      "types": "./dist/cli/shell/error-messages.d.ts",
+      "import": "./dist/cli/shell/error-messages.js"
+    },
     "./core/init": {
       "types": "./dist/cli/core/init.d.ts",
       "import": "./dist/cli/core/init.js"
