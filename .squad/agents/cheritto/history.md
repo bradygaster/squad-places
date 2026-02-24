@@ -7,56 +7,14 @@
 - **CLI:** Ink-based interactive shell with AgentPanel, MessageStream, InputPrompt components
 - **Key files:** packages/squad-cli/src/cli/shell/components/*.tsx, packages/squad-cli/src/cli/shell/terminal.ts
 
+## Core Context
+
+**Wave A–C Archive (Feb 23–26):** Completed timeout hardening (#325), thinking feedback UI (#331), ghost response retry logic (#332), P1 UX polish (#330 — help verbs, focus labels, keyboard hints, system prefix, separators, input placeholder, prompt colors, command examples), progress indicators (#335 — activity hints in panel + stream), animations (#337 — typewriter/fade/flash/message-fade hooks with NO_COLOR support), terminal adaptivity (#336 — 40–120 col responsive layouts), P2 nice-to-haves (#340 — user message chevron cleanup, ASCII-only separators, thinking label simplification, /agents text status labels, activity feed indicator change), product love first-run UX (#414 — /clear fix, natural language routing hints, narrow terminal hint handling, exit emoji, roster wrapping), shell loading indicator (#427 — instant stderr feedback), welcome animation removal (#423), TUI final fixes (#405/#404/#407 — exit ASCII, compact-mode first-run, emoji-free roster, separator normalization). All components (App.tsx, AgentPanel, MessageStream, InputPrompt, ThinkingIndicator) updated. Shell responsive and fully tested (151–2744 tests passing).
+
 ## Learnings
 
-### 2026-02-23: Fix 2-minute timeout (#325)
-- Replaced hard-coded `120_000ms` in `sendAndWait()` with `TIMEOUTS.SESSION_RESPONSE_MS` (default 600_000ms / 10 min)
-- New constant added to `packages/squad-sdk/src/runtime/constants.ts` under `TIMEOUTS`
-- Configurable via `SQUAD_SESSION_TIMEOUT_MS` env var
-- Shell entry: `packages/squad-cli/src/cli/shell/index.ts` line 123 (`awaitStreamedResponse`)
-- Test file: `test/repl-streaming.test.ts` — 6 assertions updated to use constant
-- Pattern: all timeouts in this project live in `TIMEOUTS` object in constants.ts, env-overridable via `parseInt(process.env[...] ?? 'default', 10)`
-- PR #347 on branch `squad/325-fix-timeout`
 
-### 2026-02-24: Engaging thinking feedback (#331)
-- Created standalone `ThinkingIndicator.tsx` component in `packages/squad-cli/src/cli/shell/components/`
-- Two-layer design: Layer 1 rotates 10 thinking phrases every 2.5s (Claude-style), Layer 2 shows SDK activity hints (Copilot-style, takes priority)
-- Props: `isThinking`, `elapsedMs`, `activityHint` — elapsed tracked in MessageStream via `useEffect` + `setInterval`
-- Added `setActivityHint` to `ShellApi` interface in App.tsx for pipeline integration
-- Shell `index.ts` listens for `tool_call` SDK events and pushes activity hints (e.g., "Reading file...", "Spawning specialist...")
-- Hints clear automatically when content starts streaming (in `onDelta`)
-- Color shifts over time: cyan (<5s) → yellow (<15s) → magenta (15s+) — borrowed from original spinner
-- 16 new tests in `test/repl-ux.test.ts` sections 7 + 8
-- PR #351 on branch `squad/331-thinking-feedback`
-
-### 2026-02-25: Ghost response detection and retry logic (#332)
-- Created `withGhostRetry()` — exported, testable function with callback-based UI integration
-- Detects empty responses (both accumulated deltas and fallback content empty) from `awaitStreamedResponse()`
-- Retries up to 3 times with exponential backoff: 1s, 2s, 4s (configurable via `GhostRetryOptions`)
-- Shows user-facing retry status: "⚠ No response received. Retrying (attempt N/3)..."
-- Shows exhaustion message: "❌ Agent did not respond after 3 attempts. Try again or run `squad doctor`."
-- Logs ghost metadata via `debugLog`: timestamp, attempt number, prompt preview (truncated to 80 chars)
-- Wired into both `dispatchToAgent()` and `dispatchToCoordinator()` via `ghostRetry()` convenience wrapper
-- 14 new tests in `test/ghost-response.test.ts` covering unit + integration + backoff timing
-- Pattern: `withGhostRetry` is pure (no closure deps); `ghostRetry` is the shell-bound wrapper inside `runShell()`
-- PR on branch `squad/332-ghost-response`
-
-### 2026-02-25: P1 UX polish from Marquez audit (#330)
-- Fixed all 8 P1 items identified in Marquez's comprehensive UX audit
-- Files changed: `commands.ts`, `AgentPanel.tsx`, `InputPrompt.tsx`, `MessageStream.tsx`, `App.tsx`
-- Key changes:
-  - Help descriptions now use consistent imperative verbs (Check, Review, List, Clear, Show, Exit)
-  - Added `▶ Active` text label alongside pulsing dot for focus indicator clarity
-  - Keyboard hints split into two lines to avoid wrapping in narrow terminals
-  - System message prefix changed from `◇` to `▸` (small right triangle)
-  - Separators use `process.stdout.columns` (capped at 120) instead of hardcoded 50
-  - Input placeholder now reads "Type a message or @agent-name..." to reinforce @-addressing
-  - Disabled prompt stays cyan (was incorrectly turning yellow, breaking visual consistency)
-  - Every slash command in /help now includes an example usage line
-- 2 pre-existing test failures in `repl-ux.test.ts` (empty AgentPanel expects `''` but gets empty-state message) — not related to this PR
-- PR #356 on branch `squad/330-p1-ux-polish`
-
-### 2026-02-23: Rich progress indicators (#335)
+### 2026-02-26: Recent PR work — progress, animations, terminal, P2 polish, first-run UX, loading, animations, TUI fixes (#335–#446)
 - Added `activityHint?: string` to `AgentSession` type in `types.ts`
 - Added `updateActivityHint()` to `SessionRegistry` in `sessions.ts` — clears on idle/error
 - AgentPanel status line now shows: `Name (working, 12s) — Reviewing architecture`
