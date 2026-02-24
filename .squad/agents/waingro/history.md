@@ -215,3 +215,34 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 - Branch: `squad/hostile-test-coverage`
 - PR: #380
 - Commit: `test: hostile input, SDK failure, and stress tests (closes #376, closes #377, closes #378)`
+
+### 2025-07-25: Speed Gates — The Impatient User's Journey
+
+**Mission:** Walk the user journey from `squad --help` through first agent response. File issues for every wasted second. Build speed gate tests to enforce time budgets.
+
+**Issues Filed (6):**
+1. **#387** — `squad init` ceremony wastes 2+ seconds on typewriter animations
+2. **#395** — `squad --help` is 50 lines — impatient user drowns in a wall of text
+3. **#397** — First message after shell launch hits cold SDK connection — 5-10s dead air
+4. **#399** — Welcome banner typewriter blocks UI render for 500ms
+5. **#401** — Typed input silently dropped during agent processing — user retypes everything
+6. **#403** — Stub commands (triage/loop/hire) print fake progress then exit — deceptive
+
+**Speed Gate Tests Created:** `test/speed-gates.test.ts` — 18 tests enforcing time budgets:
+- Help output: < 5s, < 55 lines, scannable first 5 lines, shows init/default prominently
+- Init ceremony: non-TTY skips animations, completes < 3s
+- Welcome data: loads < 50ms (valid dir), < 10ms (missing dir)
+- Input parsing: @agent, coordinator, and slash commands all < 1ms per parse (averaged over 100 iterations)
+- Ghost retry: bounded to < 2s with short backoff, returns immediately on success, correct retry count
+- Error states: includes remediation hints, completes < 3s
+- Version: completes < 3s, exactly 1 line
+
+**Key Findings:**
+- The codebase has already evolved since my last audit: `loop` and `hire` stubs were removed, `triage` now delegates to real `runWatch` implementation
+- Non-TTY mode (CI, pipes) properly skips all animations — `isInitNoColor()` works correctly
+- Input parsing is blazing fast (sub-millisecond) — no speed concern there
+- Welcome data loading is I/O bound but fast (~1ms for file reads)
+- The real speed killers are: (a) cold SDK connection on first message, (b) typewriter animations in TTY, (c) 500ms banner animation blocking full UI render
+- Node.js startup overhead (~1.2s) is the floor for any subprocess-spawned test; adjusted thresholds accordingly
+
+**What I Fixed:** Nothing in production code this round — all issues are filed with specific line references and fixes. The speed gate tests are the deliverable: they prove where the time goes and will catch regressions.
