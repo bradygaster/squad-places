@@ -1,8 +1,9 @@
 /**
  * ThinkingIndicator — clean feedback during agent operations.
  *
- * Shows spinner + "Thinking..." (static) + elapsed time.
- * Activity hints from SDK events override the default label.
+ * Shows spinner + activity context + elapsed time.
+ * Default label: "Routing to agent..." (covers SDK connection, initial routing).
+ * Activity hints from SDK events or @Agent mentions override the default.
  *
  * Owned by Cheritto (TUI Engineer). Design approved by Marquez.
  */
@@ -17,8 +18,8 @@ export interface ThinkingIndicatorProps {
   activityHint?: string;
 }
 
-/** Thinking label — exported for backward compat with tests. */
-export const THINKING_PHRASES = ['Thinking'];
+/** Default thinking label — exported for backward compat with tests. */
+export const THINKING_PHRASES = ['Routing to agent'];
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -71,7 +72,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
     return (
       <Box gap={1}>
         <Text>{spinnerChar}</Text>
-        <Text>{activityHint ?? 'Thinking...'}</Text>
+        <Text>{activityHint ?? 'Routing to agent...'}</Text>
         {elapsedStr ? <Text>({elapsedStr})</Text> : null}
       </Box>
     );
@@ -90,11 +91,11 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
     );
   }
 
-  // Default: static "Thinking..." label
+  // Default: "Routing to agent..." label
   return (
     <Box gap={1}>
       <Text color={color}>{spinnerChar}</Text>
-      <Text color={color} italic>Thinking...</Text>
+      <Text color={color} italic>Routing to agent...</Text>
       {elapsedStr ? <Text dimColor>({elapsedStr})</Text> : null}
     </Box>
   );

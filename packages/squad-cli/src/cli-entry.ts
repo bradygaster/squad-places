@@ -69,10 +69,11 @@ async function main(): Promise<void> {
   if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
     console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
     console.log(`Team of AI agents at your fingertips\n`);
+    console.log(`${BOLD}Just type — squad routes your message to the right agent automatically${RESET}`);
+    console.log(`  squad                  Start interactive shell`);
+    console.log(`  squad --global         Use your personal squad\n`);
     console.log(`Usage: squad [command] [options]\n`);
     console.log(`Commands:`);
-    console.log(`  ${BOLD}(default)${RESET}  Launch interactive shell (no args)`);
-    console.log(`             --global  Use your personal squad`);
     console.log(`  ${BOLD}init${RESET}       Create .squad/ in this repo`);
     console.log(`             --global  Create personal squad directory`);
     console.log(`             --mode remote <path>`);

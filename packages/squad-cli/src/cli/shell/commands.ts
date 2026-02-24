@@ -34,7 +34,7 @@ export function executeCommand(
     case 'clear':
       return handleClear();
     case 'help':
-      return handleHelp();
+      return handleHelp(args);
     case 'quit':
     case 'exit':
       return { handled: true, exit: true };
@@ -82,38 +82,56 @@ function handleClear(): CommandResult {
   return { handled: true, clear: true };
 }
 
-function handleHelp(): CommandResult {
+function handleHelp(args: string[]): CommandResult {
+  const isFull = args[0] === 'full';
   const width = getTerminalWidth();
-  if (width < 80) {
-    // Single-column compact help for narrow terminals
+
+  if (isFull) {
+    // Full help output
+    if (width < 80) {
+      // Single-column compact help for narrow terminals
+      return {
+        handled: true,
+        output: [
+          'Commands:',
+          '/status — Check your team',
+          '/history — Recent messages',
+          '/agents — List team members',
+          '/clear — Clear screen',
+          '/quit — Exit',
+          '',
+          'Talk to your squad:',
+          '  Just type naturally — routes to the right agent.',
+          '  @Agent message — Send directly to one agent.',
+        ].join('\n'),
+      };
+    }
     return {
       handled: true,
       output: [
         'Commands:',
-        '/status — Check your team',
-        '/history — Recent messages',
-        '/agents — List team members',
-        '/clear — Clear screen',
-        '/quit — Exit',
+        "  /status   — Check your team & what's happening",
+        '  /history  — See recent messages',
+        '  /agents   — List all team members',
+        '  /clear    — Clear the screen',
+        '  /quit     — Exit',
         '',
-        'Just type — your squad routes it.',
-        '@Agent message — Direct to one agent.',
+        'Talk to your squad:',
+        '  Just type naturally — the coordinator routes it to the right agent.',
+        '  @AgentName message  — Send directly to one agent.',
       ].join('\n'),
     };
   }
+
+  // Default help — essentials only
   return {
     handled: true,
     output: [
       'Commands:',
-      "  /status   — Check your team & what's happening",
-      '  /history  — See recent messages',
-      '  /agents   — List all team members',
-      '  /clear    — Clear the screen',
-      '  /quit     — Exit',
+      "  /status — Check your team    /history — Recent messages",
+      "  /agents — List team           /quit — Exit",
       '',
-      'Talk to your squad:',
-      '  Just type naturally — the coordinator routes it to the right agent.',
-      '  @AgentName message  — Send directly to one agent.',
+      "Type /help full for complete docs.",
     ].join('\n'),
   };
 }
