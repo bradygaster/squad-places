@@ -25,6 +25,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [spinFrame, setSpinFrame] = useState(0);
+  const [bufferDisplay, setBufferDisplay] = useState('');
   const bufferRef = useRef('');
   const wasDisabledRef = useRef(disabled);
   const pendingInputRef = useRef<string[]>([]);
@@ -40,6 +41,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
       if (combined) {
         setValue(combined);
         bufferRef.current = '';
+        setBufferDisplay('');
       }
     }
     wasDisabledRef.current = disabled;
@@ -62,12 +64,14 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
       if (key.return || key.upArrow || key.downArrow || key.ctrl || key.meta) return;
       if (key.backspace || key.delete) {
         bufferRef.current = bufferRef.current.slice(0, -1);
+        setBufferDisplay(bufferRef.current);
         return;
       }
       if (input) {
         // Queue input to catch race during disabled→enabled transition
         pendingInputRef.current.push(input);
         bufferRef.current += input;
+        setBufferDisplay(bufferRef.current);
       }
       return;
     }
@@ -134,12 +138,14 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
           <>
             <Text bold>{narrow ? 'sq ' : '◆ squad '}</Text>
             <Text>[working...]</Text>
+            {bufferDisplay ? <Text> {bufferDisplay}</Text> : null}
           </>
         ) : (
           <>
             <Text color="cyan" bold>{narrow ? 'sq ' : '◆ squad '}</Text>
             <Text color="cyan">{SPINNER_FRAMES[spinFrame]}</Text>
             <Text color="cyan" bold>{'> '}</Text>
+            {bufferDisplay ? <Text dimColor>{bufferDisplay}</Text> : null}
           </>
         )}
       </Box>

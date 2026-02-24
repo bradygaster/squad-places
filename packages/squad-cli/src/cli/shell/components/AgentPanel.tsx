@@ -142,14 +142,18 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
       {/* Status line — rich progress for active agents */}
       {activeAgents.length > 0 ? (
         <Box flexDirection="column">
+          {activeAgents.length > 1 && (
+            <Text dimColor> {activeAgents.length} agents working in parallel</Text>
+          )}
           {activeAgents.map(a => {
             const sec = agentElapsedSec(a);
             const elapsed = formatElapsed(sec);
             const statusLabel = a.status === 'streaming' ? '[STREAM]' : '[WORK]';
             const hint = a.activityHint;
             // At ≥100 cols show full hint; otherwise truncate to fit
+            // Auto-clear stale hints after 30s
             const maxHintLen = width >= 100 ? Infinity : width - 30;
-            const displayHint = hint && hint.length > maxHintLen ? hint.slice(0, maxHintLen - 1) + '…' : hint;
+            const displayHint = hint && sec < 30 ? (hint.length > maxHintLen ? hint.slice(0, maxHintLen - 1) + '…' : hint) : undefined;
             return (
               <Text key={a.name} color={noColor ? undefined : 'yellow'}>
                 {' '}{getRoleEmoji(a.role)} {a.name} ({statusLabel}{elapsed ? `, ${elapsed}` : ''}){displayHint ? ` — ${displayHint}` : ''}
