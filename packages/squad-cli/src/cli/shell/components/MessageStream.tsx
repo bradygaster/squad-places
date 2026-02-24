@@ -4,6 +4,7 @@ import { getRoleEmoji } from '../lifecycle.js';
 import { isNoColor, useTerminalWidth, detectTerminal, boxChars } from '../terminal.js';
 import { useMessageFade } from '../useAnimation.js';
 import { ThinkingIndicator } from './ThinkingIndicator.js';
+import type { ThinkingPhase } from './ThinkingIndicator.js';
 import type { ShellMessage, AgentSession } from '../types.js';
 
 interface MessageStreamProps {
@@ -13,6 +14,7 @@ interface MessageStreamProps {
   processing?: boolean;
   activityHint?: string;
   agentActivities?: Map<string, string>;
+  thinkingPhase?: ThinkingPhase;
   maxVisible?: number;
 }
 
@@ -30,6 +32,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
   processing = false,
   activityHint,
   agentActivities,
+  thinkingPhase,
   maxVisible = 50,
 }) => {
   const visible = messages.slice(-maxVisible);
@@ -149,6 +152,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
           isThinking={true}
           elapsedMs={elapsedMs}
           activityHint={resolvedHint}
+          phase={thinkingPhase}
         />
       )}
 

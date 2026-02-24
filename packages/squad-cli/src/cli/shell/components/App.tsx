@@ -18,6 +18,7 @@ import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';
 import type { ShellMessage, AgentSession } from '../types.js';
+import type { ThinkingPhase } from './ThinkingIndicator.js';
 
 /** Methods exposed to the host so StreamBridge can push data into React state. */
 export interface ShellApi {
@@ -169,6 +170,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   // Pick a lead agent name for the first-run guided prompt
   const leadAgent = welcome?.agents[0]?.name ?? 'Keaton';
 
+  // Determine ThinkingIndicator phase based on SDK connection state
+  const thinkingPhase: ThinkingPhase = !onDispatch ? 'connecting' : 'routing';
+
   return (
     <Box flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
@@ -213,7 +217,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       ) : null}
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />
-      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} agentActivities={agentActivities} />
+      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
       <InputPrompt onSubmit={handleSubmit} disabled={processing} />
     </Box>
   );

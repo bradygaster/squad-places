@@ -12,14 +12,26 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { isNoColor } from '../terminal.js';
 
+export type ThinkingPhase = 'connecting' | 'routing' | 'thinking';
+
 export interface ThinkingIndicatorProps {
   isThinking: boolean;
   elapsedMs: number;
   activityHint?: string;
+  phase?: ThinkingPhase;
 }
 
 /** Default thinking label — exported for backward compat with tests. */
 export const THINKING_PHRASES = ['Routing to agent'];
+
+/** Map phase to its default label. */
+function phaseLabel(phase: ThinkingPhase): string {
+  switch (phase) {
+    case 'connecting': return 'Connecting to GitHub Copilot...';
+    case 'routing': return 'Routing to agent...';
+    case 'thinking': return 'Thinking...';
+  }
+}
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -43,6 +55,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   isThinking,
   elapsedMs,
   activityHint,
+  phase = 'routing',
 }) => {
   const noColor = isNoColor();
   const [frame, setFrame] = useState(0);
@@ -72,7 +85,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
     return (
       <Box gap={1}>
         <Text>{spinnerChar}</Text>
-        <Text>{activityHint ?? 'Routing to agent...'}</Text>
+        <Text>{activityHint ?? phaseLabel(phase)}</Text>
         {elapsedStr ? <Text>({elapsedStr})</Text> : null}
       </Box>
     );
@@ -91,11 +104,11 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
     );
   }
 
-  // Default: "Routing to agent..." label
+  // Default: phase-based label
   return (
     <Box gap={1}>
       <Text color={color}>{spinnerChar}</Text>
-      <Text color={color} italic>Routing to agent...</Text>
+      <Text color={color} italic>{phaseLabel(phase)}</Text>
       {elapsedStr ? <Text dimColor>({elapsedStr})</Text> : null}
     </Box>
   );

@@ -79,7 +79,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
         {agents.map((agent) => {
           const active = agent.status === 'streaming' || agent.status === 'working';
           const errored = agent.status === 'error';
-          const statusLabel = active ? (agent.status === 'streaming' ? 'streaming' : 'working') : errored ? 'error' : '';
+          const statusLabel = active ? (agent.status === 'streaming' ? '[STREAM]' : '[WORK]') : errored ? '[ERR]' : '[IDLE]';
           return (
             <Box key={agent.name} gap={0}>
               <Text
@@ -89,8 +89,9 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
               >
                 {getRoleEmoji(agent.role)} {agent.name}
               </Text>
-              {active && <><Text> </Text><PulsingDot /><Text> {statusLabel}</Text></>}
-              {errored && <Text color={noColor ? undefined : 'red'}> ✖</Text>}
+              {active && <><Text> </Text><PulsingDot /><Text bold> {statusLabel}</Text></>}
+              {errored && <Text color={noColor ? undefined : 'red'} bold> {statusLabel}</Text>}
+              {!active && !errored && <Text dimColor> {statusLabel}</Text>}
             </Box>
           );
         })}
@@ -121,15 +122,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
                 <Box marginLeft={0}>
                   <Text> </Text>
                   <PulsingDot />
-                  {noColor
-                    ? <Text bold> [Active]</Text>
-                    : <Text color="green" bold> ▶ Active</Text>}
+                  <Text color={noColor ? undefined : 'green'} bold> {agent.status === 'streaming' ? '[STREAM]' : '[WORK]'}</Text>
                 </Box>
               )}
               {errored && (
-                noColor
-                  ? <Text bold> [Error] ✖</Text>
-                  : <Text color="red"> ✖</Text>
+                <Text color={noColor ? undefined : 'red'} bold> [ERR]</Text>
               )}
               {completionFlash.has(agent.name) && (
                 noColor
@@ -147,7 +144,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
           {activeAgents.map(a => {
             const sec = agentElapsedSec(a);
             const elapsed = formatElapsed(sec);
-            const statusLabel = a.status === 'streaming' ? 'streaming' : 'working';
+            const statusLabel = a.status === 'streaming' ? '[STREAM]' : '[WORK]';
             const hint = a.activityHint;
             // At ≥100 cols show full hint; otherwise truncate to fit
             const maxHintLen = width >= 100 ? Infinity : width - 30;
