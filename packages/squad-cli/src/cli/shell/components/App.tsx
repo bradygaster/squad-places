@@ -14,7 +14,6 @@ import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
 import { loadWelcomeData } from '../lifecycle.js';
 import { isNoColor, useTerminalWidth } from '../terminal.js';
-import { useTypewriter, useFadeIn } from '../useAnimation.js';
 import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';

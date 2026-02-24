@@ -139,3 +139,12 @@
 - ANSI clear sequence: `\r` (carriage return) + `\x1b[K` (clear line from cursor to end)
 - File: `packages/squad-cli/src/cli/shell/index.ts` lines 108, 436
 - PR #435 on branch `fix/issue-427`
+### 2026-02-23: Welcome typewriter blocking input (#423, #399)
+- Fixed 500-800ms input blocking during shell launch caused by typewriter animation
+- Removed `useTypewriter()` and `useFadeIn()` calls from `App.tsx` welcome banner rendering (lines 165-167)
+- Welcome banner now displays instantly: `bannerReady = true`, `bannerDim = false`, `titleRevealed = '◆ SQUAD'`
+- Removed unused imports: `useTypewriter`, `useFadeIn` from `useAnimation.ts`
+- Pattern: instant feedback beats cosmetic delay — matches #427 shell loading indicator fix
+- File: `packages/squad-cli/src/cli/shell/components/App.tsx` lines 16, 164-166
+- Build succeeded, 2735/2744 tests pass (3 pre-existing failures unrelated to this change)
+- PR #439 on branch `fix/issue-423`
