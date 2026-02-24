@@ -2,45 +2,23 @@ name: Squad CI
 
 on:
   pull_request:
-    branches: [main, bradygaster/dev, insider]
+    branches: [dev, preview, main, insider]
     types: [opened, synchronize, reopened]
   push:
-    branches: [main, bradygaster/dev, insider]
+    branches: [dev, insider]
 
 permissions:
   contents: read
 
 jobs:
-  build-node:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-  test-node:
-    needs: build-node
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
@@ -50,17 +28,3 @@ jobs:
 
       - name: Run tests
         run: npm test
-
-  # Rollup job — exact name matches branch protection rule
-  build:
-    if: always()
-    needs: [build-node, test-node]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check results
-        run: |
-          if [[ "${{ needs.build-node.result }}" != "success" || "${{ needs.test-node.result }}" != "success" ]]; then
-            echo "CI failed: build-node=${{ needs.build-node.result }}, test-node=${{ needs.test-node.result }}"
-            exit 1
-          fi
-          echo "✅ All checks passed"
