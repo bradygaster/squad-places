@@ -3288,3 +3288,25 @@ All animation gated on `isInitNoColor()` which checks `NO_COLOR`, `TERM=dumb`, a
 - **ASCII art banner**: Too flashy, doesn't match the clean Ink aesthetic.
 - **Sound/bell**: Unreliable across terminals, often annoying.
 
+
+
+## Quality Assessment: UX Audit (2026-02-24)
+
+**Author:** Marquez (UX Auditor)  
+**Date:** 2026-02-24  
+**Grade:** B
+
+### What
+
+UX audit identified 11 improvement areas: 3 P0 (help text structure, stub command visibility, duplicate taglines), 4 P1 (status vocabulary, separator characters, /agents mismatch, roster wrapping), 4 P2 (scrub-emails default, /clear feedback, quit vs exit, session summary).
+
+**P0 blockers:**
+- Help text unstructured; commands grouped poorly
+- Stub commands (triage, loop, hire) show placeholder messages in help
+- Duplicate taglines (line 55 vs 71)
+
+**Strengths:** Multi-agent orchestration panel (novel), init ceremony (delightful), ghost retry, NO_COLOR accessibility.
+
+### Why
+
+UX consistency and user trust depend on clear, structured help and hidden unfinished features. The ~2-3 day polish window exists now; accumulated inconsistencies prevent reaching A-tier.
