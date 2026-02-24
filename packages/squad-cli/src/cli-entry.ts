@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   // Empty or whitespace-only args should show help, not launch shell
   if (rawCmd !== undefined && !cmd) {
     console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
-    console.log(`Add an AI agent team to any project\n`);
+    console.log(`Your AI agent team\n`);
     console.log(`Usage: squad [command] [options]`);
     console.log(`\nRun 'squad help' for full command list.\n`);
     return;
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
   // --help / -h / help
   if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
     console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
-    console.log(`Team of AI agents at your fingertips\n`);
+    console.log(`Your AI agent team\n`);
     console.log(`${BOLD}Just type — squad routes your message to the right agent automatically${RESET}`);
     console.log(`  squad                  Start interactive shell`);
     console.log(`  squad --global         Use your personal squad\n`);
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
     } else {
       // No squad found, show helpful message and suggest init
       console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
-      console.log(`Add an AI agent team to any project\n`);
+      console.log(`Your AI agent team\n`);
       console.log(`No squad found here. Get started with:`);
       console.log(`  ${BOLD}squad init${RESET}       Create .squad/ in this repo`);
       console.log(`  ${BOLD}squad init --global${RESET}  Create personal squad\n`);
