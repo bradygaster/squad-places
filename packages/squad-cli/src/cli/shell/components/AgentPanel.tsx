@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
 import { isNoColor, useTerminalWidth, detectTerminal, boxChars } from '../terminal.js';
 import { useCompletionFlash } from '../useAnimation.js';
+import { getStatusTag } from '../agent-status.js';
 import type { AgentSession } from '../types.js';
 
 interface AgentPanelProps {
@@ -79,7 +80,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
         {agents.map((agent) => {
           const active = agent.status === 'streaming' || agent.status === 'working';
           const errored = agent.status === 'error';
-          const statusLabel = active ? (agent.status === 'streaming' ? '[STREAM]' : '[WORK]') : errored ? '[ERR]' : '[IDLE]';
+          const statusLabel = getStatusTag(agent.status);
           return (
             <Box key={agent.name} gap={0}>
               <Text
@@ -123,7 +124,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
                 <Box marginLeft={0}>
                   <Text> </Text>
                   <PulsingDot />
-                  <Text color={noColor ? undefined : 'green'} bold> {agent.status === 'streaming' ? '[STREAM]' : '[WORK]'}</Text>
+                  <Text color={noColor ? undefined : 'green'} bold> {getStatusTag(agent.status)}</Text>
                 </Box>
               )}
               {errored && (
@@ -148,7 +149,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
           {activeAgents.map(a => {
             const sec = agentElapsedSec(a);
             const elapsed = formatElapsed(sec);
-            const statusLabel = a.status === 'streaming' ? '[STREAM]' : '[WORK]';
+            const statusLabel = getStatusTag(a.status);
             const hint = a.activityHint;
             // At ≥100 cols show full hint; otherwise truncate to fit
             // Auto-clear stale hints after 30s
