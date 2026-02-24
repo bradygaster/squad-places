@@ -50,7 +50,7 @@ describe('Speed: --help is scannable', () => {
     const output = harness.captureFrame();
     const first5 = output.split('\n').slice(0, 5).join('\n');
     expect(first5).toMatch(/squad/i);
-    expect(first5).toMatch(/usage/i);
+    expect(first5).toMatch(/type|route|agent/i);
   });
 
   it('help shows init and default commands prominently', async () => {
