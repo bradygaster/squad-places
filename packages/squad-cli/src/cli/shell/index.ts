@@ -104,6 +104,9 @@ export async function withGhostRetry(
 }
 
 export async function runShell(): Promise<void> {
+  // Show immediate feedback — users need to see something within 100ms
+  console.error('◆ Loading Squad shell...');
+
   const registry = new SessionRegistry();
   const renderer = new ShellRenderer();
   const teamRoot = process.cwd();
@@ -428,6 +431,9 @@ export async function runShell(): Promise<void> {
     ),
     { exitOnCtrlC: false },
   );
+
+  // Clear the loading message now that Ink is rendering
+  process.stderr.write('\r\x1b[K');
 
   await waitUntilExit();
 
