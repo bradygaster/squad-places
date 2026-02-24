@@ -148,3 +148,12 @@
 - File: `packages/squad-cli/src/cli/shell/components/App.tsx` lines 16, 164-166
 - Build succeeded, 2735/2744 tests pass (3 pre-existing failures unrelated to this change)
 - PR #439 on branch `fix/issue-423`
+
+### 2026-02-27: TUI fixes — exit emoji, first-run hint, welcome banner (#405, #404, #407)
+- **#405 Exit message:** Replaced `◆ Squad out.` with ANSI-colored ASCII `-- Squad out.` — respects NO_COLOR, removes non-ASCII from exit path
+- **#404 First-run hint:** Added compact mode (≤60 cols) — shorter suggestion text (`help me start` vs `what should we build first?`), removes padding and verbose description
+- **#407 Welcome roster:** Removed emoji from agent names in roster, replaced `·` separators with `-`, switched `gap` to `columnGap` for better wrapping
+- All separators in banner normalized to ASCII hyphens per P2 conventions
+- Files changed: `App.tsx`, `index.ts`
+- 151/151 tests pass, build clean
+- PR #446 on branch `squad/tui-fixes-405-404-407`
