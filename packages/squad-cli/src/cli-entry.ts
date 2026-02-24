@@ -85,11 +85,6 @@ async function main(): Promise<void> {
     console.log(`  ${BOLD}status${RESET}     Show which squad is active`);
     console.log(`  ${BOLD}triage${RESET}     Scan issues and categorize`);
     console.log(`             [--interval <minutes>] (default: 10)`);
-    console.log(`  ${BOLD}loop${RESET}       Non-stop work loop (Ralph mode)`);
-    console.log(`             [--filter <label>]`);
-    console.log(`             [--interval <minutes>] (default: 10)`);
-    console.log(`  ${BOLD}hire${RESET}       Build a new team`);
-    console.log(`             [--name <n>] [--role <r>]`);
     console.log(`  ${BOLD}copilot${RESET}    Add/remove GitHub Copilot agent`);
     console.log(`             [--off] [--auto-assign]`);
     console.log(`  ${BOLD}plugin${RESET}     Manage plugins`);
@@ -179,37 +174,12 @@ async function main(): Promise<void> {
   }
 
   if (cmd === 'triage' || cmd === 'watch') {
-    console.log('🕵️ Scanning issues and categorizing work... (full implementation pending)');
-    return;
-  }
-
-  if (cmd === 'loop') {
-    const filterIdx = args.indexOf('--filter');
-    const filter = (filterIdx !== -1 && args[filterIdx + 1]) ? args[filterIdx + 1] : undefined;
+    const { runWatch } = await import('./cli/commands/watch.js');
     const intervalIdx = args.indexOf('--interval');
     const intervalMinutes = (intervalIdx !== -1 && args[intervalIdx + 1])
       ? parseInt(args[intervalIdx + 1]!, 10)
       : 10;
-    console.log(`🔄 Starting work loop (Ralph mode)...`);
-    if (filter) {
-      console.log(`   Filter: ${filter}`);
-    }
-    console.log(`   Every ${intervalMinutes} minutes`);
-    return;
-  }
-
-  if (cmd === 'hire') {
-    const nameIdx = args.indexOf('--name');
-    const name = (nameIdx !== -1 && args[nameIdx + 1]) ? args[nameIdx + 1] : undefined;
-    const roleIdx = args.indexOf('--role');
-    const role = (roleIdx !== -1 && args[roleIdx + 1]) ? args[roleIdx + 1] : undefined;
-    console.log('👋 Building your team...');
-    if (name) {
-      console.log(`   Name: ${name}`);
-    }
-    if (role) {
-      console.log(`   Role: ${role}`);
-    }
+    await runWatch(process.cwd(), intervalMinutes);
     return;
   }
 

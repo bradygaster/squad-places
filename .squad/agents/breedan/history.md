@@ -129,3 +129,39 @@ What a real user would encounter that no test catches:
 - "The agent response came back garbled/empty" — mocks assume correct delta format
 - "I upgraded and my .squad config broke" — no upgrade path test
 - "Multi-agent routing sent my message to the wrong agent" — no integration routing test
+
+### E2E Integration Tests — REPL & Multi-Agent (2026-07-17)
+
+**Requested by:** Brady — build the tests for the biggest gap: interactive REPL has zero E2E coverage.
+
+**Issues filed:**
+- #372: E2E: Integration test for interactive REPL message flow
+- #373: E2E: Multi-agent coordination integration test
+
+**Tests added:** `test/e2e-integration.test.ts` — 15 tests, all passing.
+
+#### REPL Round-Trip Tests (6)
+1. Full pipeline: user input → parseInput → dispatch → mock response → MessageStream rendering
+2. @Agent direct message: `@Kovash refactor the parser` → dispatchToAgent with correct agent
+3. /help slash command: renders help output, no SDK dispatch triggered
+4. /status slash command: shows team info locally
+5. Error recovery: dispatch throws → shell stays alive, /help still works
+6. No-SDK-connected: shows "SDK not connected" message gracefully
+
+#### Multi-Agent Coordination Tests (6)
+1. Multi-agent registration: 3 agents tracked independently, all start idle
+2. Concurrent status tracking: working/streaming/idle tracked per-agent, getActive() correct
+3. Error cleanup: errored agent hint cleared, other agent hint preserved
+4. Session removal: remove one agent, others intact
+5. Fan-out dispatch: Promise.all to 3 agents, all responses collected
+6. Fan-out error isolation: one agent fails, other completes — Promise.allSettled
+
+#### Input Parsing Integration Tests (3)
+1. parseInput routes @Agent/slash/coordinator correctly with real agent list
+2. Case-insensitive @agent matching returns canonical name
+3. Unknown @name falls through to coordinator
+
+**Key pattern:** ink-testing-library stdin requires writing characters one-at-a-time then `\r` separately, with tick delays between, for React state to settle. Writing `text\r` in one call doesn't trigger submit because useInput processes them as a single event where key.return fires before setValue.
+
+**Branch:** `squad/e2e-integration-tests`
+**PR:** #379 (closes #372, closes #373)
