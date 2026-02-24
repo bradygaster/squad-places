@@ -81,6 +81,10 @@ export class ShellLifecycle {
     const teamContent = fs.readFileSync(teamPath, 'utf-8');
     this.discoveredAgents = parseTeamManifest(teamContent);
 
+    if (this.discoveredAgents.length === 0) {
+      console.warn('⚠ No agents found in team.md. Run `squad init` to set up your team, or `squad doctor` to diagnose.');
+    }
+
     // Register discovered agents in the session registry
     for (const agent of this.discoveredAgents) {
       if (agent.status === 'Active') {

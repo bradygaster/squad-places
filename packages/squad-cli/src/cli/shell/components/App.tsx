@@ -136,7 +136,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       if (!onDispatch) {
         setMessages(prev => [...prev, {
           role: 'system' as const,
-          content: 'SDK not connected. Check your setup.',
+          content: 'SDK not connected. Try: (1) squad doctor to check setup, (2) check your internet connection, (3) restart the shell to reconnect.',
           timestamp: new Date(),
         }]);
         return;
