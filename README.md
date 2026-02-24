@@ -657,9 +657,7 @@ npm run lint           # Type check (tsc --noEmit)
 
 ## Status
 
-🟢 **Production** — v0.6.0.
-
-Your team (`.squad/` folder) is always portable and safe. The orchestration runtime is what evolves.
+⚠️ **Experimental** — v0.8.x alpha. APIs and file formats may change between versions. We'd love your feedback — if you encounter issues, please [file a bug report](https://github.com/bradygaster/squad-pr/issues/new).
 
 **Conceived by** [@bradygaster](https://github.com/bradygaster).
 
@@ -667,7 +665,7 @@ Your team (`.squad/` folder) is always portable and safe. The orchestration runt
 
 ## Contributing
 
-See [CONTRIBUTORS.md](../CONTRIBUTORS.md) in the source repo.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 

@@ -3702,3 +3702,18 @@ oUncheckedIndexedAccess: true to tsconfig.json (Edie, M2)
 3. Tag release and announce publicly
 4. Post-publish: run npm audit fix, monitor #324 dogfood, gather external feedback
 5. Wave E planning: Address must-fixes from live feedback, ship improvements
+
+### 2026-02-24: User directive
+**By:** Brady (via Copilot)
+**What:** CLI docs should note that the project is experimental and ask users to file issues if they encounter problems.
+**Why:** User request — captured for team memory
+
+### 2026-02-24: Documentation readiness for public alpha release
+**By:** McManus (DevRel)
+**What:** Standardized documentation for public alpha release:
+1. Created MIT LICENSE file at repo root with Brady Gaster and contributors as copyright holders
+2. Added experimental/alpha warnings to all CLI docs (installation, shell, vscode) with consistent blockquote banner
+3. Fixed README Status contradiction: changed from "🟢 **Production** — v0.6.0" to "⚠️ **Experimental** — v0.8.x alpha"
+4. Fixed broken CONTRIBUTING link: corrected relative path from ../CONTRIBUTORS.md to CONTRIBUTING.md
+
+**Why:** Makes public documentation honest, helpful, consistent, and functional. Signals alpha status clearly while maintaining friendly tone and enabling user feedback channels.

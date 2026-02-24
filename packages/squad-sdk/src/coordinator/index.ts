@@ -114,17 +114,23 @@ export class Coordinator {
       if (this.eventBus) {
         this.unsubscribers.push(
           this.eventBus.subscribe('session:created', (event) => {
-            console.log(`[Coordinator] Session created: ${event.sessionId ?? 'unknown'}`);
+            const s = tracer.startSpan('squad.coordinator.session.created');
+            s.setAttribute('session.id', event.sessionId ?? 'unknown');
+            s.end();
           }),
         );
         this.unsubscribers.push(
           this.eventBus.subscribe('session:error', (event) => {
-            console.log(`[Coordinator] Session error: ${event.sessionId ?? 'unknown'}`);
+            const s = tracer.startSpan('squad.coordinator.session.error');
+            s.setAttribute('session.id', event.sessionId ?? 'unknown');
+            s.end();
           }),
         );
         this.unsubscribers.push(
           this.eventBus.subscribe('session:destroyed', (event) => {
-            console.log(`[Coordinator] Session destroyed: ${event.sessionId ?? 'unknown'}`);
+            const s = tracer.startSpan('squad.coordinator.session.destroyed');
+            s.setAttribute('session.id', event.sessionId ?? 'unknown');
+            s.end();
           }),
         );
       }
