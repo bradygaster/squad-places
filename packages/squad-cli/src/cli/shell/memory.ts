@@ -4,7 +4,7 @@
  */
 
 export interface MemoryLimits {
-  /** Max messages to keep in history (default: 1000) */
+  /** Max messages to keep in history (default: 200) */
   maxMessages: number;
   /** Max buffer size per stream in bytes (default: 1MB) */
   maxStreamBuffer: number;
@@ -15,7 +15,7 @@ export interface MemoryLimits {
 }
 
 export const DEFAULT_LIMITS: MemoryLimits = {
-  maxMessages: 1000,
+  maxMessages: 200,
   maxStreamBuffer: 1024 * 1024, // 1MB
   maxSessions: 10,
   sessionIdleTimeout: 5 * 60 * 1000, // 5 minutes
@@ -49,6 +49,18 @@ export class MemoryManager {
   trimMessages<T>(messages: T[]): T[] {
     if (messages.length <= this.limits.maxMessages) return messages;
     return messages.slice(-this.limits.maxMessages);
+  }
+
+  /** Trim messages and return both kept and archived portions */
+  trimWithArchival<T>(messages: T[]): { kept: T[]; archived: T[] } {
+    if (messages.length <= this.limits.maxMessages) {
+      return { kept: messages, archived: [] };
+    }
+    const cutoff = messages.length - this.limits.maxMessages;
+    return {
+      kept: messages.slice(cutoff),
+      archived: messages.slice(0, cutoff),
+    };
   }
 
   /** Clear buffer tracking for a session */

@@ -377,7 +377,7 @@ describe('Stress: MemoryManager enforcement', () => {
   });
 
   it('DEFAULT_LIMITS has sane values', () => {
-    expect(DEFAULT_LIMITS.maxMessages).toBe(1000);
+    expect(DEFAULT_LIMITS.maxMessages).toBe(200);
     expect(DEFAULT_LIMITS.maxStreamBuffer).toBe(1024 * 1024);
     expect(DEFAULT_LIMITS.maxSessions).toBe(10);
     expect(DEFAULT_LIMITS.sessionIdleTimeout).toBe(5 * 60 * 1000);
