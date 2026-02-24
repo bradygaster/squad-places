@@ -30,7 +30,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 /** Typewriter effect — falls back to instant print when animations disabled. */
-export async function typewrite(text: string, charMs: number = 30): Promise<void> {
+export async function typewrite(text: string, charMs: number = 8): Promise<void> {
   if (isInitNoColor()) {
     process.stdout.write(text + '\n');
     return;
@@ -43,7 +43,7 @@ export async function typewrite(text: string, charMs: number = 30): Promise<void
 }
 
 /** Staggered list reveal — each line appears with a short delay. */
-async function revealLines(lines: string[], delayMs: number = 100): Promise<void> {
+async function revealLines(lines: string[], delayMs: number = 30): Promise<void> {
   for (const line of lines) {
     if (!isInitNoColor()) await sleep(delayMs);
     console.log(line);
@@ -108,7 +108,7 @@ export async function runInit(dest: string): Promise<void> {
   const version = getPackageVersion();
 
   console.log();
-  await typewrite(`${DIM}Let's build your team.${RESET}`, 25);
+  await typewrite(`${DIM}Let's build your team.${RESET}`, 8);
   console.log();
 
   // Detect project type
@@ -350,16 +350,16 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
   // ── Celebration ceremony ──────────────────────────────────────────
   console.log();
-  await typewrite(`${CYAN}${BOLD}◆ SQUAD${RESET}`, 40);
-  if (!isInitNoColor()) await sleep(200);
+  await typewrite(`${CYAN}${BOLD}◆ SQUAD${RESET}`, 10);
+  if (!isInitNoColor()) await sleep(50);
   console.log();
 
   await revealLines(
     INIT_LANDMARKS.map(l => `  ${l.emoji}  ${l.label}`),
-    100,
+    30,
   );
 
-  if (!isInitNoColor()) await sleep(300);
+  if (!isInitNoColor()) await sleep(80);
   console.log();
   console.log(`${GREEN}${BOLD}Your team is ready.${RESET} Run ${CYAN}${BOLD}squad${RESET} to start.`);
   console.log();

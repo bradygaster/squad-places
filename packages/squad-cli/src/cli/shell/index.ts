@@ -474,6 +474,30 @@ export async function runShell(): Promise<void> {
     }
   }
 
+  /** Cancel all active operations (called on Ctrl+C during processing). */
+  async function handleCancel(): Promise<void> {
+    debugLog('handleCancel: aborting active sessions');
+
+    // Abort coordinator session
+    if (coordinatorSession) {
+      try { await coordinatorSession.abort?.(); } catch (err) { debugLog('abort coordinator failed:', err); }
+    }
+
+    // Abort all agent sessions
+    for (const [name, session] of agentSessions) {
+      try { await session.abort?.(); debugLog(`aborted session: ${name}`); } catch (err) { debugLog(`abort ${name} failed:`, err); }
+    }
+
+    // Clear streaming state
+    shellApi?.setStreamingContent(null);
+    shellApi?.setActivityHint(undefined);
+    shellApi?.addMessage({
+      role: 'system',
+      content: 'Operation cancelled.',
+      timestamp: new Date(),
+    });
+  }
+
   /** Handle dispatching parsed input to agents or coordinator. */
   async function handleDispatch(parsed: ParsedInput): Promise<void> {
     messageCount++;
@@ -506,6 +530,7 @@ export async function runShell(): Promise<void> {
         version: pkg.version,
         onReady: (api: ShellApi) => { shellApi = api; },
         onDispatch: handleDispatch,
+        onCancel: handleCancel,
       }),
     ),
     { exitOnCtrlC: false },

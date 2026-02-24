@@ -36,11 +36,12 @@ export interface AppProps {
   version: string;
   onReady?: (api: ShellApi) => void;
   onDispatch?: (parsed: ParsedInput) => Promise<void>;
+  onCancel?: () => void;
 }
 
 const EXIT_WORDS = new Set(['exit', 'quit', 'q']);
 
-export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, onReady, onDispatch }) => {
+export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, onReady, onDispatch, onCancel }) => {
   const { exit } = useApp();
   const [messages, setMessages] = useState<ShellMessage[]>([]);
   const [agents, setAgents] = useState<AgentSession[]>(registry.getAll());
@@ -50,6 +51,8 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const [agentActivities, setAgentActivities] = useState<Map<string, string>>(new Map());
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const messagesRef = useRef<ShellMessage[]>([]);
+  const ctrlCRef = useRef(0);
+  const ctrlCTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep ref in sync so command handlers see latest history
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -87,10 +90,30 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     });
   }, [onReady, registry]);
 
-  // Graceful Ctrl+C
+  // Ctrl+C: cancel operation when processing, double-tap to exit when idle
   useInput((_input, key) => {
     if (key.ctrl && _input === 'c') {
-      exit();
+      if (processing && onCancel) {
+        // First Ctrl+C while processing → cancel operation
+        onCancel();
+        return;
+      }
+      // Not processing, or no cancel handler → increment double-tap counter
+      ctrlCRef.current++;
+      if (ctrlCTimerRef.current) clearTimeout(ctrlCTimerRef.current);
+      if (ctrlCRef.current >= 2) {
+        exit();
+        return;
+      }
+      // Single Ctrl+C when idle — show hint, reset after 1s
+      ctrlCTimerRef.current = setTimeout(() => { ctrlCRef.current = 0; }, 1000);
+      if (!processing) {
+        setMessages(prev => [...prev, {
+          role: 'system' as const,
+          content: 'Press Ctrl+C again to exit.',
+          timestamp: new Date(),
+        }]);
+      }
     }
   });
 
@@ -222,7 +245,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
       <AgentPanel agents={agents} streamingContent={streamingContent} />
       <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
-      <InputPrompt onSubmit={handleSubmit} disabled={processing} />
+      <InputPrompt onSubmit={handleSubmit} disabled={processing} agentNames={agents.map(a => a.name)} />
     </Box>
   );
 };

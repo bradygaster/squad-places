@@ -49,6 +49,11 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
 
   const completer = useMemo(() => createCompleter(agentNames), [agentNames]);
 
+  // Tab-cycling state
+  const tabMatchesRef = useRef<string[]>([]);
+  const tabIndexRef = useRef(0);
+  const tabPrefixRef = useRef('');
+
   // Animate spinner when disabled (processing) — static in NO_COLOR mode
   useEffect(() => {
     if (!disabled || noColor) return;
@@ -119,12 +124,26 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     }
     
     if (key.tab) {
-      const [matches] = completer(value);
-      if (matches.length === 1) {
-        setValue(matches[0]!);
+      if (tabPrefixRef.current !== value) {
+        // New prefix — compute matches
+        tabPrefixRef.current = value;
+        tabIndexRef.current = 0;
+        const [matches] = completer(value);
+        tabMatchesRef.current = matches;
+      } else {
+        // Same prefix — cycle to next match
+        if (tabMatchesRef.current.length > 0) {
+          tabIndexRef.current = (tabIndexRef.current + 1) % tabMatchesRef.current.length;
+        }
+      }
+      if (tabMatchesRef.current.length > 0) {
+        setValue(tabMatchesRef.current[tabIndexRef.current]!);
       }
       return;
     }
+    // Reset tab state on any other key
+    tabMatchesRef.current = [];
+    tabPrefixRef.current = '';
     
     if (input && !key.ctrl && !key.meta) {
       setValue(prev => prev + input);
