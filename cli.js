@@ -1917,12 +1917,12 @@ Reusable patterns and heuristics learned through work. NOT transcripts \u2014 ea
 }
 
 // dist/cli-entry.js
-var VERSION = "0.6.0-alpha.0";
+var VERSION = getPackageVersion();
 async function main() {
   const args = process.argv.slice(2);
   const cmd = args[0];
-  if (cmd === "--version" || cmd === "-v") {
-    console.log(`squad ${VERSION}`);
+  if (cmd === "--version" || cmd === "-v" || cmd === "version") {
+    console.log(VERSION);
     process.exit(0);
   }
   if (cmd === "--help" || cmd === "-h" || cmd === "help") {

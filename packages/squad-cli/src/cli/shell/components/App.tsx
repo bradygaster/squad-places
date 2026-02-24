@@ -112,6 +112,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         renderer,
         messageHistory: [...messagesRef.current, userMsg],
         teamRoot,
+        version,
       });
 
       if (result.exit) {
