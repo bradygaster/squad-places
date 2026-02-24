@@ -1,53 +1,41 @@
 ---
-updated_at: 2026-02-24T04:30:00Z
-focus_area: Next-Wave PRD (Wave A - Polish & Consistency, 17 items)
-prs_merged_session: ["#444", "#445", "#446", "#447"]
-issues_closed_session: ["#400", "#389", "#417", "#391", "#402", "#405", "#404", "#407", "#431", "#429"]
-issues_filed_session: ["#448", "#449", "#450", "#451", "#452", "#453", "#454", "#455", "#456", "#457", "#458", "#459"]
+updated_at: 2026-02-24T05:30:00Z
+focus_area: Wave A Complete → Wave B/C Next
+prs_merged_wave_a: ["#466", "#467", "#468", "#469", "#470", "#471", "#472", "#473"]
+issues_closed_wave_a: ["#403", "#426", "#448", "#450", "#451", "#453", "#390", "#449", "#452", "#454", "#455", "#363", "#456", "#457", "#458"]
 prd_location: .squad/identity/prd-next-waves.md
-next_phase: Execute Wave A (Polish & Consistency, 17 items)
+current_phase: Wave A Complete, Wave B (Reliability) + Wave C (Testing) Next
 process: All work through PRs with squad member review before merge
 ---
 
 # What We're Focused On
 
-**Status:** Next-wave PRD written. PRs #444–#447 merged this session. Issues #400, #389, #417, #391, #402, #405, #404, #407, #431, #429 closed. New issues #448–#459 filed.
+**Status:** Wave A (Polish & Consistency) COMPLETE. All 17 items shipped across 4 batches. PRs #466–#473 merged. 15 Wave A issues closed.
 
-**Location:** `.squad/identity/prd-next-waves.md` — 4-wave execution plan (A: Polish, B: Reliability, C: Testing, D: Delight)
+**Location:** `.squad/identity/prd-next-waves.md` — 4-wave execution plan (A: ✓Complete, B: Next, C: Next, D: Later)
 
-## Session Summary
+## Wave A — Complete
 
-### PRs Merged
-- #444
-- #445
-- #446
-- #447 (Fenster: Version format canonical standard)
+**Completion:** 2026-02-24T05:30:00Z
 
-### Issues Closed
-- #400
-- #389
-- #417 (Stale root bundle)
-- #391
-- #402
-- #405 (ASCII separators)
-- #404 (ASCII separators)
-- #407 (NO_COLOR exit message)
-- #431 (Version format)
-- #429 (Version format)
+All Polish & Consistency items delivered:
+- Styled /status output (#390)
+- Message prefixes + welcome hint (#449, #452)
+- Placeholder /help hint (#454)
+- Safe filenames cross-platform (#363)
+- Exit session summary (#455)
+- Narrow terminal polish (#456)
+- Input buffering feedback (#457)
+- Dispatch clarity + stale hints (#458)
 
-### Issues Filed
-- #448–#459 (Wave A Polish items)
+Plus 7 foundational polish items (Batch 1): #403, #426, #448, #450, #451, #453
 
 ## Next Phase
 
-**Execute Wave A: Polish & Consistency (17 items)**
+**Wave B: Reliability (3 items)** and **Wave C: Testing (7 items)**
 
-Focus areas:
-1. **Text-over-emoji convention** (#340) — remove emoji, use ASCII separators
-2. **First-run wow moment** (#341) — init ceremony + first-launch marker
-3. **First-30-second UX** (#419–#423, #426) — help structure, spinner feedback
-4. **ASCII-only separators** (#405, #404, #407) — consistency across all surfaces
-5. **Version format** (#431, #429) — bare semver canonical standard
+- Wave B: #434 (cancel ops), #397 (cold SDK), #342 (work division)
+- Wave C: #433, #384-386, #394, #396, #398, #409, #410
 
 ## Process
 
