@@ -625,7 +625,7 @@ describe('ThinkingIndicator component', () => {
     const { lastFrame } = render(
       h(ThinkingIndicator, { isThinking: false, elapsedMs: 0 })
     );
-    expect(lastFrame()!).toContain('No agents active');
+    expect(lastFrame()!).toBe('');
   });
 
   it('renders spinner when isThinking=true', () => {
