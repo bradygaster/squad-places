@@ -3,6 +3,7 @@ import { ShellRenderer } from './render.js';
 import { getTerminalWidth } from './terminal.js';
 import { BOLD, DIM, RESET } from '../core/output.js';
 import { listSessions, loadSessionById, type SessionData } from './session-store.js';
+import { formatAgentLine, getStatusTag } from './agent-status.js';
 import type { ShellMessage } from './types.js';
 
 export interface CommandContext {
@@ -69,9 +70,8 @@ function handleStatus(context: CommandContext): CommandResult {
   if (active.length > 0) {
     lines.push('', 'Working:');
     for (const a of active) {
-      const tag = a.status === 'streaming' ? '[STREAM]' : '[WORK]';
       const hint = a.activityHint ? ` - ${a.activityHint}` : '';
-      lines.push(`  ${tag} ${a.name} (${a.role})${hint}`);
+      lines.push(`${formatAgentLine(a)}${hint}`);
     }
   }
   return { handled: true, output: lines.join('\n') };
@@ -165,10 +165,7 @@ function handleAgents(context: CommandContext): CommandResult {
   if (agents.length === 0) {
     return { handled: true, output: 'No team members yet.' };
   }
-  const lines = agents.map(a => {
-    const icon = a.status === 'working' ? '[WORK]' : a.status === 'streaming' ? '[STREAM]' : a.status === 'error' ? '[ERR]' : '[IDLE]';
-    return `  ${icon} ${a.name} (${a.role}) — ${a.status}`;
-  });
+  const lines = agents.map(a => formatAgentLine(a));
   return { handled: true, output: `Team Members:\n${lines.join('\n')}` };
 }
 
