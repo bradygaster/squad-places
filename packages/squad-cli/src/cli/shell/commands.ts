@@ -8,6 +8,7 @@ export interface CommandContext {
   renderer: ShellRenderer;
   messageHistory: ShellMessage[];
   teamRoot: string;
+  version?: string;
 }
 
 export interface CommandResult {
@@ -40,6 +41,8 @@ export function executeCommand(
       return { handled: true, exit: true };
     case 'agents':
       return handleAgents(context);
+    case 'version':
+      return { handled: true, output: context.version ?? 'unknown' };
     default:
       return { handled: false, output: `Hmm, /${command}? Type /help for commands.` };
   }

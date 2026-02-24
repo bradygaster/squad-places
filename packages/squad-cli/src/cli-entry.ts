@@ -59,8 +59,8 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --version / -v
-  if (cmd === '--version' || cmd === '-v') {
+  // --version / -v / version — canonical format: bare semver
+  if (cmd === '--version' || cmd === '-v' || cmd === 'version') {
     console.log(VERSION);
     return;
   }
