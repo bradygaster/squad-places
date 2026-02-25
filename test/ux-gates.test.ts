@@ -73,13 +73,24 @@ describe('UX Gates', () => {
     expect(output).toMatch(/Here:/i);
   });
 
-  it('Init --mode help text is well-formed', async () => {
+  it('Help groups commands into categories', async () => {
     harness = await TerminalHarness.spawnWithArgs(['--help']);
     await harness.waitForExit(5000);
     
     const output = harness.captureFrame();
     
-    expect(output).toContain('--mode remote <path>');
-    expect(output).toContain('Link to a remote team root');
+    expect(output).toContain('Getting Started');
+    expect(output).toContain('Development');
+    expect(output).toContain('Team Management');
+    expect(output).toContain('Utilities');
+  });
+
+  it('Help footer directs to per-command help', async () => {
+    harness = await TerminalHarness.spawnWithArgs(['--help']);
+    await harness.waitForExit(5000);
+    
+    const output = harness.captureFrame();
+    
+    expect(output).toContain('squad <command> --help');
   });
 });

@@ -137,8 +137,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   useInput((_input, key) => {
     if (key.ctrl && _input === 'c') {
       if (processing && onCancel) {
-        // First Ctrl+C while processing → cancel operation
+        // First Ctrl+C while processing → cancel operation and return to prompt
         onCancel();
+        setProcessing(false);
         return;
       }
       // Not processing, or no cancel handler → increment double-tap counter

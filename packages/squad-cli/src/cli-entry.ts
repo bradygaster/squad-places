@@ -305,6 +305,12 @@ async function main(): Promise<void> {
   const rawCmd = args[0];
   const cmd = rawCmd?.trim() || undefined;
 
+  // --timeout <seconds> → set SQUAD_REPL_TIMEOUT env var for shell
+  const timeoutIdx = args.indexOf('--timeout');
+  if (timeoutIdx >= 0 && args[timeoutIdx + 1]) {
+    process.env['SQUAD_REPL_TIMEOUT'] = args[timeoutIdx + 1];
+  }
+
   // Empty or whitespace-only args should show help, not launch shell
   if (rawCmd !== undefined && !cmd) {
     console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
@@ -365,6 +371,7 @@ async function main(): Promise<void> {
     console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
     console.log(`  ${BOLD}--help, -h${RESET}     Show this help`);
     console.log(`  ${BOLD}--global${RESET}       Use personal squad path`);
+    console.log(`  ${BOLD}--timeout <s>${RESET}   Set REPL inactivity timeout (seconds, default: 600)`);
     console.log(`\nInstallation:`);
     console.log(`  npm i --save-dev @bradygaster/squad-cli`);
     console.log(`\nInsider channel:`);

@@ -120,6 +120,17 @@ export async function runShell(): Promise<void> {
   // Show immediate feedback — users need to see something within 100ms
   console.error('◆ Loading Squad shell...');
 
+  // Configurable REPL timeout: SQUAD_REPL_TIMEOUT (seconds) > TIMEOUTS.SESSION_RESPONSE_MS (ms)
+  const replTimeoutMs = (() => {
+    const envSeconds = process.env['SQUAD_REPL_TIMEOUT'];
+    if (envSeconds) {
+      const parsed = parseInt(envSeconds, 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed * 1000;
+    }
+    return TIMEOUTS.SESSION_RESPONSE_MS;
+  })();
+  debugLog('REPL timeout:', replTimeoutMs, 'ms');
+
   const sessionStart = Date.now();
   let messageCount = 0;
 
@@ -242,7 +253,7 @@ export async function runShell(): Promise<void> {
       }, 30000);
       
       try {
-        const result = await session.sendAndWait({ prompt }, TIMEOUTS.SESSION_RESPONSE_MS);
+        const result = await session.sendAndWait({ prompt }, replTimeoutMs);
         debugLog('awaitStreamedResponse: sendAndWait returned', {
           type: typeof result,
           keys: result ? Object.keys(result as Record<string, unknown>) : [],

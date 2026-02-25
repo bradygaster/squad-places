@@ -52,3 +52,5 @@
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+- **PR #538 (CTRL+C CANCEL + CONFIGURABLE TIMEOUT):** Fixed #500 and #502 together. Ctrl+C during streaming now sets `processing = false` immediately alongside `onCancel()`, so the InputPrompt re-enables instantly instead of staying locked. Added `SQUAD_REPL_TIMEOUT` env var (seconds) and `--timeout` CLI flag — computed as `replTimeoutMs` in `runShell()`, with precedence: env var → `TIMEOUTS.SESSION_RESPONSE_MS` → 600s default. The existing `handleCancel` in index.ts (session abort + stream buffer clear) was already correct; the missing piece was the UI state reset in App.tsx. Help text updated. All 2925 tests pass.
