@@ -2555,6 +2555,38 @@ The old `extractDelta()` checked only `delta` and `content`, silently returning 
 2. **awaitStreamedResponse returns fallback:** The `sendAndWait` return value (`result.data.content`) is now captured and returned as a fallback string. Both dispatch functions use it if delta accumulation is empty.
 3. **Tests updated:** All mock sessions and `simulateDispatch` now use `deltaContent`. Added legacy `delta` key test for backward compat coverage.
 
+### 2026-02-24: Ghost Command Aliasing Strategy
+**By:** Fenster (Core Dev)
+**Closes:** #501, #503, #504, #507, #509
+**What:** Five undocumented commands now wire as aliases: `hire` → `init`, `heartbeat` → `doctor`, `shell` → explicit `runShell()`, `loop` → `triage`, `run` → stub with "coming soon".
+**Why:** Minimal code change (1-2 lines per alias). All alias targets are existing implementations. `run` deferred pending session lifecycle changes. Backwards compatible.
+**Impact:** CLI help updated. Users can now use documented command names. `squad run` will need real implementation in future PR.
+
+### Per-command --help/-h: intercept-before-dispatch pattern
+**By:** Fenster (Core Dev)
+**Date:** 2026-02-14
+**PR:** #533
+**Closes:** #511, #512
+**What:** All CLI subcommands support `--help` and `-h` flags. Help is intercepted before command routing, preventing destructive commands from executing.
+**Why:** Safety issue — users expect `--help` to be non-destructive. Intercept-before-dispatch guarantees no side effects.
+**Convention:** New CLI commands MUST have a `getCommandHelp()` entry with usage, 1-2 sentence description, options, and 2+ examples.
+
+### 2026-02-25: REPL cancellation and configurable timeout
+**By:** Kovash (REPL & Interactive Shell Expert)
+**PR:** #538
+**Closes:** #500, #502
+**What:** (1) Ctrl+C immediately resets `processing` state so InputPrompt re-enables instantly. (2) Timeout config uses `SQUAD_REPL_TIMEOUT` env var (seconds); precedence: `SQUAD_REPL_TIMEOUT` → `SQUAD_SESSION_TIMEOUT_MS` (SDK-level, ms) → 600000ms default. CLI `--timeout` flag sets env var before shell launch.
+**Why:** Ctrl+C was leaving shell locked. Timeout was hardcoded and not user-configurable. Env var precedence allows flexible override.
+**Impact:** Shell components (InputPrompt, ThinkingIndicator) affected. CLI entry point gains `--timeout` flag. SDK unchanged (fallback preserved).
+
+### 2026-02-24: Shell Observability Metrics Design
+**By:** Saul (Aspire & Observability)
+**Closes:** #508, #520, #526, #530, #531
+**What:** Four new metrics under `squad.shell.*` namespace: `session_count` (counter), `session_duration_ms` (histogram), `agent_response_latency_ms` (histogram from first visible token), `error_count` (counter). All gated behind `SQUAD_TELEMETRY=1` (stronger privacy guarantee than SDK-level metrics).
+**Why:** User-facing shell metrics describe behavior patterns and require explicit consent. Separate gate stronger than just OTLP endpoint activation.
+**Architecture:** New module `packages/squad-cli/src/cli/shell/shell-metrics.ts` uses `getMeter('squad-shell')` from SDK, wired into `runShell()` lifecycle. No PII collected.
+**Impact:** 18 new tests. Zero impact when `SQUAD_TELEMETRY` unset. Compatible with Aspire dashboard.
+
 ## Impact
 
 - Fixes blank coordinator/agent responses in the REPL shell.
