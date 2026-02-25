@@ -1,35 +1,58 @@
 ---
-updated_at: 2026-02-24T08:11:00Z
-focus_area: Wave D Batch 1 — COMPLETE
-prs_open: ["#487", "#494", "#495", "#496", "#497", "#498", "#499"]
-issues_wave_d: ["#488", "#489", "#490", "#491", "#492", "#493"]
+updated_at: 2026-02-24T20:34:00Z
+focus_area: Public Release Preparation — Blockers Fixed, Ready for Alpha
+issues_open: ["#324"]
+issues_closed_prd: 30
+tests_passing: 2930
 prd_location: .squad/identity/prd-next-waves.md
-current_phase: Waves A-D Batch 1 Complete — Ready for Testing
+current_phase: Public Alpha Readiness — 3 Must-Fix Blockers Resolved
 process: All work through PRs with squad member review before merge
 ---
 
 # What We're Focused On
 
-**Status:** Waves A-D Batch 1 ALL COMPLETE. 2930 tests passing. All 6 Wave D issues implemented and merged locally to main for testing.
+**Status:** Public readiness assessment COMPLETE. 7/7 agents voted 🟡 Ready with Caveats. All 3 must-fix blockers resolved. 2930 tests passing. Ready to ship as experimental alpha.
 
-## Waves A-C — Complete
+## Public Readiness Assessment (2026-02-24)
 
-All 32+ items shipped. CLI is polished, reliable, and well-tested.
+Full team fan-out: Keaton, Fenster, Hockney, McManus, Rabin, Baer, Edie all assessed their domains.
 
-## Wave D: Delight — Batch 1 COMPLETE
+**Consensus: 🟡 READY WITH CAVEATS** — unanimous.
 
-**Completed:** 2026-02-24T08:11:00Z
+### Must-Fix Blockers (ALL RESOLVED ✅)
+1. ✅ **LICENSE file** — MIT LICENSE created at repo root
+2. ✅ **CI workflow broken** — Fixed `squad-ci.yml` to use `npm ci` → `npm run build` → `npm test` (vitest)
+3. ✅ **Debug console.logs** — 3 debug logs in coordinator/index.ts replaced with OTel spans
 
-| # | Title | Priority | Assigned | PR | Status |
-|---|-------|----------|----------|----|--------|
-| #488 | Unified Status Display | P1 | Cheritto | #495 | ✅ Merged locally |
-| #489 | Adaptive Keyboard Hints | P1 | Cheritto | #498 | ✅ Merged locally |
-| #490 | Error Recovery Guidance | P1 | Kovash | #497 | ✅ Merged locally |
-| #491 | Message History Cap | P2 | Kovash | #496 | ✅ Merged locally |
-| #492 | Per-Agent Streaming Content | P2 | Fortier | #499 | ✅ Merged locally |
-| #493 | StreamBuffer Cleanup on Error | P2 | Fortier | #494 | ✅ Merged locally |
+### Experimental Messaging (DONE ✅)
+- ⚠️ banners added to all CLI docs (installation.md, shell.md, vscode.md)
+- README Status section changed from "Production" to "Experimental alpha"
+- Broken CONTRIBUTING link fixed
 
-**Also merged:** PR #487 (Hockney — test vocab fix, closes #410)
+### Should-Fix (Post-Ship Polish)
+- Add `homepage` and `bugs` fields to package.json
+- Document alpha→v1.0 breaking change policy in README
+- Close #324 (dogfood testing)
+
+### Post-M1 Backlog
+- Add `noUncheckedIndexedAccess` to tsconfig
+- Tighten ~26 `any` types in SDK
+- Add architecture overview doc
+- One real Copilot SDK integration test
+- `npm audit fix` for dev-dependency ReDoS warnings
+
+## Waves A–D: COMPLETE
+
+All 30 PRD-referenced issues are closed.
+
+### Open Issue: #324 — Dogfood CLI with real repos (P0)
+- Status: OPEN — remaining blocker for full confidence
+- Assignees: Keaton, Waingro
+
+### Next Steps
+1. **Ship public alpha** — All blockers resolved, experimental messaging in place
+2. **Complete #324 dogfood** — Test against real repos
+3. **Plan Wave E** — Based on dogfood + public feedback
 
 ## Process
 
@@ -37,9 +60,9 @@ All work flows through PRs with squad member review before merge.
 
 ---
 
-## Earlier Phase (Complete)
+## Archive: Earlier Phases
 
-Epic #323 — CLI Quality & UX (Phase 1: Testing Wave) — Complete
-- Quality review complete: 5 agents assessed CLI
-- 7 new P0/P1 issues identified and resolved
-- All Phase 1 blockers cleared (#365–#368)
+Epic #323 — CLI Quality & UX (Phases 1–3: Testing Wave → Improvement → Breathtaking)
+- Phase 1: 7 P0 blockers fixed (#365–#371)
+- Phase 2: 6 Wave D items shipped (#488–#493)
+- Phase 3: Wave A–C polish delivered (30 issues closed)

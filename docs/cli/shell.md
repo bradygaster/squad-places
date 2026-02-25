@@ -1,5 +1,7 @@
 # Interactive Shell Guide
 
+> **⚠️ Experimental:** Squad CLI is under active development. APIs and file formats may change between versions. We'd love your feedback — if something isn't working as expected, please [file a bug report](https://github.com/bradygaster/squad-pr/issues/new).
+
 The Squad interactive shell gives you a persistent connection to your team. Instead of spawning short-lived CLI invocations, the shell maintains a real-time session where you can talk to agents, issue commands, and watch work happen.
 
 ---

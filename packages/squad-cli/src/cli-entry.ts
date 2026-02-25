@@ -44,6 +44,261 @@ function debugLog(...args: unknown[]): void {
   }
 }
 
+/** Check if --help or -h appears in args after the subcommand. */
+function hasHelpFlag(args: string[]): boolean {
+  return args.slice(1).includes('--help') || args.slice(1).includes('-h');
+}
+
+/** Per-command help text. Returns undefined for unknown commands. */
+function getCommandHelp(cmd: string): string | undefined {
+  const help: Record<string, string> = {
+    init: `
+${BOLD}squad init${RESET} — Initialize Squad
+
+${BOLD}USAGE${RESET}
+  squad init [--global] [--mode remote <path>]
+
+${BOLD}DESCRIPTION${RESET}
+  Creates the .squad/ directory structure in your project or personal directory.
+  Detects your project type and scaffolds appropriate workflows and templates.
+
+${BOLD}OPTIONS${RESET}
+  --global              Create personal squad at ~/.squad/
+  --mode remote <path>  Link to a remote team root (dual-root mode)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Initialize Squad in current repo${RESET}
+  squad init
+
+  ${DIM}# Create personal squad${RESET}
+  squad init --global
+
+  ${DIM}# Link to shared team in parent directory${RESET}
+  squad init --mode remote ../team-repo
+`,
+    upgrade: `
+${BOLD}squad upgrade${RESET} — Update Squad Files
+
+${BOLD}USAGE${RESET}
+  squad upgrade [--global] [--migrate-directory]
+
+${BOLD}DESCRIPTION${RESET}
+  Updates Squad-owned files to the latest version. Your team state
+  (team.md, decisions.md, agent history) is never modified.
+
+${BOLD}OPTIONS${RESET}
+  --global              Upgrade personal squad at ~/.squad/
+  --migrate-directory   Rename .ai-team/ to .squad/ (legacy migration)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Upgrade current repo's Squad files${RESET}
+  squad upgrade
+
+  ${DIM}# Upgrade personal squad${RESET}
+  squad upgrade --global
+
+  ${DIM}# Migrate from legacy .ai-team/ directory${RESET}
+  squad upgrade --migrate-directory
+`,
+    status: `
+${BOLD}squad status${RESET} — Show Active Squad
+
+${BOLD}USAGE${RESET}
+  squad status
+
+${BOLD}DESCRIPTION${RESET}
+  Displays which squad is currently active and where it's located.
+  Shows repo squad, personal squad path, and resolution order.
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Check active squad${RESET}
+  squad status
+`,
+    triage: `
+${BOLD}squad triage${RESET} — Auto-Triage Issues
+
+${BOLD}USAGE${RESET}
+  squad triage [--interval <minutes>]
+  squad watch [--interval <minutes>]    ${DIM}(alias)${RESET}
+
+${BOLD}DESCRIPTION${RESET}
+  Ralph's work monitor. Continuously polls GitHub issues and automatically
+  assigns them to the right team member based on content and expertise.
+
+${BOLD}OPTIONS${RESET}
+  --interval <minutes>    Polling frequency (default: 10)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Start triage with default 10-minute interval${RESET}
+  squad triage
+
+  ${DIM}# Poll every 5 minutes${RESET}
+  squad triage --interval 5
+`,
+    copilot: `
+${BOLD}squad copilot${RESET} — Manage Copilot Coding Agent
+
+${BOLD}USAGE${RESET}
+  squad copilot [--off] [--auto-assign]
+
+${BOLD}DESCRIPTION${RESET}
+  Add or remove the GitHub Copilot coding agent (@copilot) from your team.
+  When enabled, @copilot can pick up issues labeled 'squad:copilot'.
+
+${BOLD}OPTIONS${RESET}
+  --off            Remove @copilot from the team
+  --auto-assign    Enable automatic issue assignment for @copilot
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Add @copilot to the team${RESET}
+  squad copilot
+
+  ${DIM}# Add @copilot with auto-assignment enabled${RESET}
+  squad copilot --auto-assign
+
+  ${DIM}# Remove @copilot from the team${RESET}
+  squad copilot --off
+`,
+    plugin: `
+${BOLD}squad plugin${RESET} — Manage Plugin Marketplaces
+
+${BOLD}USAGE${RESET}
+  squad plugin marketplace add <owner/repo>
+  squad plugin marketplace remove <name>
+  squad plugin marketplace list
+  squad plugin marketplace browse <name>
+
+${BOLD}DESCRIPTION${RESET}
+  Manage plugin marketplaces — registries of Squad extensions, skills,
+  and agent templates.
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Add official Squad plugins marketplace${RESET}
+  squad plugin marketplace add bradygaster/squad-plugins
+
+  ${DIM}# List all registered marketplaces${RESET}
+  squad plugin marketplace list
+`,
+    export: `
+${BOLD}squad export${RESET} — Export Squad to JSON
+
+${BOLD}USAGE${RESET}
+  squad export [--out <path>]
+
+${BOLD}DESCRIPTION${RESET}
+  Creates a portable JSON snapshot of your entire squad — casting state,
+  agent charters, accumulated history, and skills.
+
+${BOLD}OPTIONS${RESET}
+  --out <path>    Custom output path (default: squad-export.json)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Export to default file${RESET}
+  squad export
+
+  ${DIM}# Export to custom location${RESET}
+  squad export --out ./backups/team-backup.json
+`,
+    import: `
+${BOLD}squad import${RESET} — Import Squad from JSON
+
+${BOLD}USAGE${RESET}
+  squad import <file> [--force]
+
+${BOLD}DESCRIPTION${RESET}
+  Restores a squad from a JSON export file. Creates .squad/ directory
+  and populates it with casting state, agents, skills, and history.
+
+${BOLD}OPTIONS${RESET}
+  --force    Overwrite existing squad (archives old .squad/ first)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Import into current directory${RESET}
+  squad import squad-export.json
+
+  ${DIM}# Import and overwrite existing squad${RESET}
+  squad import squad-export.json --force
+`,
+    'scrub-emails': `
+${BOLD}squad scrub-emails${RESET} — Remove Email Addresses
+
+${BOLD}USAGE${RESET}
+  squad scrub-emails [directory]
+
+${BOLD}DESCRIPTION${RESET}
+  Removes email addresses (PII) from Squad state files. Useful before
+  committing to public repos or sharing exports.
+
+${BOLD}OPTIONS${RESET}
+  [directory]    Target directory (default: .ai-team)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Scrub current squad${RESET}
+  squad scrub-emails .squad
+
+  ${DIM}# Scrub legacy .ai-team directory${RESET}
+  squad scrub-emails
+`,
+    doctor: `
+${BOLD}squad doctor${RESET} — Validate Squad Setup
+
+${BOLD}USAGE${RESET}
+  squad doctor
+
+${BOLD}DESCRIPTION${RESET}
+  Runs a 9-check diagnostic on your squad setup. Reports health of
+  expected files, conventions, and directory structure.
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Check current squad setup${RESET}
+  squad doctor
+`,
+    link: `
+${BOLD}squad link${RESET} — Link to Remote Team
+
+${BOLD}USAGE${RESET}
+  squad link <team-repo-path>
+
+${BOLD}DESCRIPTION${RESET}
+  Links the current project to a remote team root. Enables dual-root mode
+  where project-specific state lives in .squad/ and team identity lives
+  in a shared location.
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Link to parent directory's team${RESET}
+  squad link ../team-repo
+
+  ${DIM}# Link to absolute path${RESET}
+  squad link /Users/org/shared-squad
+`,
+    aspire: `
+${BOLD}squad aspire${RESET} — Launch Aspire Dashboard
+
+${BOLD}USAGE${RESET}
+  squad aspire [--docker] [--port <number>]
+
+${BOLD}DESCRIPTION${RESET}
+  Launches the .NET Aspire dashboard for observability. Squad exports
+  OpenTelemetry traces and metrics to the dashboard for real-time visibility.
+
+${BOLD}OPTIONS${RESET}
+  --docker         Force Docker mode
+  --port <number>  OTLP port (default: 4317)
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Launch Aspire dashboard (auto-detect runtime)${RESET}
+  squad aspire
+
+  ${DIM}# Force Docker mode${RESET}
+  squad aspire --docker
+`,
+  };
+
+  // Handle 'watch' alias → triage
+  const key = cmd === 'watch' ? 'triage' : cmd;
+  return help[key];
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const hasGlobal = args.includes('--global');
@@ -96,7 +351,7 @@ async function main(): Promise<void> {
     console.log(`             <file> [--force]`);
     console.log(`  ${BOLD}scrub-emails${RESET}`);
     console.log(`             Remove email addresses from squad state`);
-    console.log(`             [directory] (default: .ai-team/)`);
+    console.log(`             [directory] (default: .squad/)`);
     console.log(`  ${BOLD}doctor${RESET}     Check your setup`);
     console.log(`  ${BOLD}link${RESET}       Connect to a remote team`);
     console.log(`             <team-repo-path>`);
@@ -135,6 +390,15 @@ async function main(): Promise<void> {
       console.log(`Or run ${BOLD}squad help${RESET} for all commands.\n`);
     }
     return;
+  }
+
+  // Per-command --help/-h: intercept before dispatching (fixes #511, #512)
+  if (hasHelpFlag(args)) {
+    const helpText = getCommandHelp(cmd!);
+    if (helpText) {
+      console.log(helpText);
+      return;
+    }
   }
 
   // Route subcommands
@@ -235,7 +499,7 @@ async function main(): Promise<void> {
 
   if (cmd === 'scrub-emails') {
     const { scrubEmails } = await import('./cli/core/email-scrub.js');
-    const targetDir = args[1] || '.ai-team';
+    const targetDir = args[1] || '.squad';
     const count = await scrubEmails(targetDir);
     if (count > 0) {
       console.log(`Scrubbed ${count} email${count !== 1 ? 's' : ''}.`);

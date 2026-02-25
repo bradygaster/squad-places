@@ -31,3 +31,27 @@
 - Fixed `fatal` import: was aliasing `error` (print-only) from output.js; now imports real `fatal` from errors.js (throws SquadError)
 - Defense in depth: `execFileSync` prevents shell interpretation even if validation is bypassed
 - Build and all 2022 tests pass after fix
+
+### Public Release Security Assessment (2026-02-24)
+**Requested by:** Brady  
+**Verdict:** 🟡 Ready with caveats
+
+**Findings:**
+1. **Secrets scan** — ✅ PASS. No hardcoded tokens/keys. .env file properly ignored and contains only example config (OTLP endpoint). Workflow secrets use GitHub Actions secrets pattern correctly.
+2. **PII exposure** — ✅ PASS. All email addresses in repo are: (a) example.com test data, (b) Copilot bot attribution, or (c) git@github.com SSH URLs. PII scrubbing hooks are active. No real user emails committed.
+3. **Dependency vulnerabilities** — 🟡 MEDIUM. 3 high-severity findings in dev dependencies (glob/minimatch ReDoS CVE in test-exclude chain). Not exploitable in production SDK/CLI. npm audit fix blocked by unpublished local version (0.8.5.1). Fix available post-publish.
+4. **.gitignore quality** — ✅ PASS. Properly excludes node_modules, dist, .env, logs, and .squad/orchestration-log/. All sensitive paths covered.
+5. **Hook security** — ✅ PASS. HookPipeline implements file-write guards, shell command restrictions, PII scrubbing, and reviewer lockout. Hooks are code-enforced, not prompt-based.
+6. **Agent permissions** — ✅ PASS. No sandbox escape vectors found. Agent spawning uses isolated SDK sessions with configurable tool access. No eval/Function() code injection risks. Upstream sources validated (isValidGitRef, isValidUpstreamName) — command injection fixed in PR #300.
+7. **Source exposure risks** — ✅ PASS. No security-through-obscurity patterns. Secret sanitization in sharing/export.ts actively strips tokens/keys. Hook-based governance model is transparent and auditable. Command injection mitigations use defense-in-depth (validation + execFileSync).
+8. **License** — ✅ PASS. MIT license in root and both packages. Repository URL references public GitHub repo (bradygaster/squad).
+
+**Caveats:**
+- npm audit fix will fail until 0.8.5.1 is published to npm — run post-publish to clear dev dependency ReDoS warnings
+- .copilot/mcp-config.json contains EXAMPLE trello server config with env var placeholders — users must supply their own keys (no leak risk, just documentation clarity)
+- Dogfood testing (#324) still open — real-world security edge cases may emerge
+
+**Recommendation:** Safe to publish source and packages. Address npm audit post-publish. Monitor #324 dogfood feedback for security findings.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

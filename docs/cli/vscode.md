@@ -1,5 +1,7 @@
 # SquadUI Integration Guide
 
+> **⚠️ Experimental:** Squad CLI is under active development. APIs and file formats may change between versions. We'd love your feedback — if something isn't working as expected, please [file a bug report](https://github.com/bradygaster/squad-pr/issues/new).
+
 This guide explains how Squad works in VS Code (SquadUI), what extension developers need to know, and how the SDK adapts behavior based on the client context.
 
 ## How Squad Works in VS Code

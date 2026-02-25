@@ -1,5 +1,7 @@
 # Global CLI Installation Guide
 
+> **⚠️ Experimental:** Squad CLI is under active development. APIs and file formats may change between versions. We'd love your feedback — if something isn't working as expected, please [file a bug report](https://github.com/bradygaster/squad-pr/issues/new).
+
 This guide explains how to install the Squad CLI globally, use it one-off with `npx`, set up a personal squad, and understand package resolution.
 
 ## Quick Start

@@ -150,3 +150,18 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Updated test assertions: `listSessions` now checks `.sessionId` not `.id`, `getStatus` checks `.protocolVersion` not `.uptime`, `getAuthStatus` checks `.isAuthenticated`/`.login` not `.authenticated`/`.user`
 - 3 new tests for optional adapter methods (`sendAndWait`, `abort`, `getMessages`)
 - Build clean, 2219/2219 tests pass, zero `as any` or `as unknown as` remain in adapter layer
+
+### Public readiness assessment (Brady's request)
+- **TypeScript strictness:** Root tsconfig.json has `strict: true` enabled, all strict family flags on except `noUncheckedIndexedAccess` (missing — medium risk)
+- **Type quality:** Found ~26 `any` usages across codebase — most defensible (adapter layer bridging untyped SDK, recursive scrubbing), but coordinator has loose config casting that should be tightened
+- **No @ts-ignore:** Zero suppressions found — clean
+- **Public API surface:** `packages/squad-sdk/src/index.ts` is clean barrel with 43 named exports, zero side effects. All exports have corresponding .d.ts files
+- **Declaration files:** 18 subpath exports, all have types-first condition ordering. Declaration maps enabled. Source maps present
+- **ESM compliance:** package.json has `"type": "module"`, all exports use `.js` extensions in import paths, no CJS detected in dist/
+- **Build output:** Both SDK and CLI compile with zero errors (`npx tsc --noEmit` clean), dist/ contains .js + .d.ts + .d.ts.map + .js.map for all modules
+- **Consumer experience:** Import path `@bradygaster/squad-sdk` resolves to typed barrel, autocomplete will work, 18 subpath exports for tree-shaking
+- **Breaking change risk:** Constants module (`MODELS`, `TIMEOUTS`, `AGENT_ROLES`) exported as `as const` tuples — changing these would break consumers. Adapter types are stable
+- **Verdict:** 🟡 Ready with caveats — missing `noUncheckedIndexedAccess` (array access can return undefined, not type-checked), some loose any casts in coordinator config mapping. For M1 public release, recommend adding `noUncheckedIndexedAccess: true` and tightening coordinator/routing config types. All other type quality markers are green
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

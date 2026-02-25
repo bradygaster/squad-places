@@ -7,6 +7,14 @@
 
 ## Learnings
 
+### 2026-02-24T18:42:00Z: Waves A–D Completion Assessment (Brady handoff catch-up)
+- **Task:** Brady's session crashed. Verify Wave A–D completion per PRD, check issue states, assess what remains.
+- **Findings:** All 30 PRD-referenced issues are CLOSED. Waves A (13 issues), B (7 issues), C (E2E + integration, merged into timeline), D Batch 1 (6 issues). Test count: 2930 passing. Repository clean — no open PRs. Only 1 open issue: #324 (dogfood testing, P0).
+- **Wave C insight:** E2E + integration testing was NOT a discrete sequential wave. Instead, it was merged into the continuous quality epic (#323) across all 3 phases. Issues #326, #372, #373 (coordination), #374–#378 (accessibility + boundary), #410, #433 all closed as part of Testing → Improvement → Breathtaking phases. Pattern: Testing got integrated continuously rather than sequential.
+- **Architecture pattern learned:** 3-phase epic structure (Testing → Improvement → Breathtaking) proved more effective than separate sequential waves. Phases overlapped and compounded. For Wave E planning, recommend continuing 3-phase rhythm: (1) Dogfood findings capture, (2) Priority bugs + high-value wins, (3) Polish + delight.
+- **Blocker:** #324 (dogfood CLI against 4 repo types: fresh init, existing squadded, monorepo, solo) is OPEN. Blocks Wave E planning and release confidence. Must be closed before Wave E.
+- **Next action:** Brady completes #324 dogfood (assign to Waingro + team member), then plan Wave E Batch 1 (3–5 items, 1 week, phase-based structure).
+
 ### 2026-02-24: Testing Epic PRD (3-Phase Quality & UX)
 - **Task:** Write comprehensive PRD for testing epic covering P0 timeout bug, UX audit implementation, and breathtaking polish.
 - **Context:** Brady's CLI died after 2 minutes (hard-coded timeout at shell/index.ts:123). New agents joined (Cheritto TUI, Breedan E2E, Waingro QA, Nate accessibility, Marquez UX). Marquez delivered 21-item UX audit (P0/P1/P2), Breedan designed E2E harness (child_process + Gherkin), Kovash shipped REPL UX overhaul (ThinkingIndicator, AgentPanel, MessageStream), Hockney has 40 REPL UX tests.
@@ -209,3 +217,23 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 - **Total Effort Estimate:** ~20–25 hours, ~4–5 PRs, 1 week
 - **Quality Gate:** P0 tests passing, E2E coverage verified, memory safety audit signed off
 - **Next Step:** Brady reviews issues, assigns agents, executes Batch 1 workload
+
+### 2026-02-24: Public Release Readiness Assessment (requested by Brady)
+- **Task:** Assess whether Squad SDK + CLI are ready for public release — source and all.
+- **Context:** Waves A–D complete (30 PRD issues closed, 2930 tests passing), only #324 (dogfood) open. Brady asking for architecture/product readiness verdict.
+- **Findings:**
+  1. **Architecture maturity:** 🟢 STRONG. Monorepo split (SDK/CLI) is clean, one-way DAG dependency (CLI → SDK → Copilot SDK). 600 TypeScript files, strict mode enforced, zero compilation errors, ESM-only. 18 SDK subpath exports with clear module boundaries. Hook-based governance (not prompt-based). Pattern: decisions that compound — every architectural choice makes future features easier.
+  2. **API surface stability:** 🟡 CAVEATS. SDK v0.8.5.1 is stable enough for early adopters but NOT frozen. README warns: "Alpha — API and file formats may change." Acceptable for v1 public release IF we communicate breaking change policy clearly. No show-stopping API debt. Router, coordinator, casting engine, tools, hooks — all coherent and well-typed. Key risk: We haven't dogfooded the SDK programmatically (only CLI usage). External devs might discover API friction we didn't hit.
+  3. **Feature completeness:** 🟢 READY. Interactive shell, parallel agent spawning, session persistence, crash recovery, skill system, upstream inheritance, casting, routing, hooks, telemetry, remote squad mode. CLI has 9 commands (init, upgrade, status, triage, copilot, plugin, export, import, scrub-emails). SDK covers orchestration, coordination, tools, governance. Missing: Advanced features (SquadUI, observability dashboard, multi-repo coordination) are NOT v1 blockers.
+  4. **Technical debt:** 🟡 MANAGEABLE. Only 3 TODOs in CLI code (upgrade.ts, workflows.ts), 1 in SDK (tools/index.ts). Issue #306 cleanup audit from Feb 22 identified 47 findings (18 hardcoded values, 16 code quality, 8 test gaps, 5 UX) — most are polish, not blockers. Critical security issue (command injection in upstream.ts) was FIXED in Feb. 2928/2931 tests passing (2 flaky timing tests). No @ts-ignore violations (11 minimal uses of `any`, all justified). Low embarrassment risk.
+  5. **Contributor readiness:** 🟡 NEEDS WORK. CONTRIBUTING.md exists and is solid (monorepo structure, workflow, changesets, branch strategy). README is comprehensive (quick start, architecture, SDK examples). BUT: No docs/ARCHITECTURE.md, no contributor onboarding guide beyond CONTRIBUTING.md, no "how to add a new tool/hook/coordinator feature" guide. External devs can clone and build (instructions clear), but understanding internal architecture requires reading code. Recommendation: Add docs/architecture/ with module diagrams + decision rationale BEFORE public launch.
+- **Verdict:** 🟡 READY WITH CAVEATS
+  - **Ship it IF:** (1) Dogfood #324 completes successfully (only open blocker), (2) Add docs/architecture/overview.md (15-20 min), (3) Explicitly document breaking change policy in README (alpha → beta → stable path).
+  - **Why ship now:** Architecture is sound, tests are comprehensive, SDK API is coherent, CLI is polished (Waves A–D done). Early adopters can build on this. Waiting for "perfect" delays feedback loop.
+  - **Risks to mitigate:** (a) SDK API churn — add CHANGELOG discipline + semver adherence, (b) External contributor confusion — add architecture docs, (c) Dogfood gaps — complete #324 before launch.
+- **Recommendation:** Close #324 (dogfood), write architecture overview, then public launch v0.8.6 or v0.9.0 (signaling stability confidence). Post-launch: Wave E focuses on feedback from external usage.
+- **Report location:** `.squad/decisions/inbox/keaton-public-readiness.md`
+- **Next step:** Brady reviews verdict, decides launch timing
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

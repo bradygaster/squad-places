@@ -210,3 +210,6 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **All 4 version references verified:** Root, SDK, CLI package versions + CLI SDK dependency
 - **Learning:** Brady uses four-part versioning (x.x.x.x) with a patch level as the fourth component. Enables finer-grained version control while maintaining semantic boundaries.
 - **Outcome:** All version references updated from debug state to production version 0.8.5.1. CLI SDK dependency correctly pinned.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.

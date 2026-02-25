@@ -5,6 +5,31 @@
 - **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
 - **Created:** 2026-02-21
 
+---
+
+## 2025-01-XX: CLI Command Inventory (Complete Ground Truth)
+
+**Task:** Map every CLI command that exists — implementation status, help coverage, ghost commands, orphaned commands.
+
+**Deliverable:** `.squad/agents/fenster/cli-command-inventory.md` (28KB comprehensive reference)
+
+**Key Findings:**
+- **13 implemented commands:** init, upgrade, status, triage/watch, copilot, plugin, export, import, scrub-emails, doctor, link, aspire, (no args)
+- **1 orphaned command:** `upstream` — fully implemented, not in help
+- **5 ghost commands:** hire, heartbeat, loop, shell, run — in docs, not in code
+- **10 shell commands:** /status, /history, /agents, /clear, /help, /quit, /exit, /sessions, /resume, /version
+- **Help coverage:** 12/13 in main help (missing upstream), 0/13 with dedicated --help handlers, 0/13 with examples
+
+**Recommendations:**
+1. Wire ghost commands or remove from docs (Priority 1)
+2. Add `upstream` to main help (Priority 2)
+3. Add dedicated --help handlers + examples (Priority 3)
+
+**Files Created:**
+- `.squad/agents/fenster/cli-command-inventory.md` — full inventory with command tables, implementation file map, draft help outputs for all 13 commands
+
+---
+
 ## Core Context
 
 **Created:** 2026-02-21  
@@ -408,3 +433,47 @@ Replaced regex-based markdownToHtml() with markdown-it for proper rendering of c
 **Root Cause:** Test was timing out when run with full test suite due to 5s default timeout. Rendering 67 hostile strings (including three 1KB, 10KB, and 100KB strings) through Ink/React legitimately takes 4.3-4.7s, exceeding default timeout under resource contention.
 **Fix:** Added explicit 10s timeout to the slow test via third argument to `it()`: `it('renders all 67 hostile strings...', () => {...}, 10000)`. This is the standard Vitest pattern for long-running tests per their error message.
 **Verification:** All 2912 tests now pass, including the previously failing hostile integration test. No code changes to MessageStream component or hostile corpus needed — test expectation was correct, just needed more time.
+
+
+## Learnings
+
+### 📌 Public Readiness Assessment (2026-02-24) — Fenster
+**Requested by:** Brady. Evaluate SDK and CLI for public source release.
+
+**Build status:** ✅ Clean. Both packages build with 0 TypeScript errors, 0 warnings. Monorepo workspace resolves correctly.
+
+**Code quality findings:**
+- SDK: 1 benign TODO in tools/index.ts (parent span context propagation — future enhancement). 3 console.log statements in coordinator/index.ts (lines 117, 122, 127) — event subscription debug logging. Only in commented example code elsewhere.
+- CLI: 0 TODOs/FIXMEs/HACKs found in shell modules. All console.log occurrences are in examples or commented code.
+- Hardcoded paths: localhost references only in OTel config docs/examples — not in runtime defaults.
+
+**Runtime modules:**
+- Adapter (client.ts, errors.ts): Robust. CopilotSessionAdapter properly wraps SDK, event mapping complete (10 event types), unsubscriber tracking fixed (#315-#319). No unsafe casts in hot path.
+- Client (session-pool.ts, index.ts): Complete. Pool lifecycle, health checks, concurrency limits implemented.
+- Casting engine: Complete. Universe templates (Usual Suspects, Ocean's Eleven), role assignment logic solid.
+- Ralph (monitor): Event-driven work monitor implemented with health checks and state persistence.
+- Tools: Tool definition with OTel span tracking, 1 TODO for future parent span wiring.
+
+**CLI completeness:** ✅ Full command set. Help output shows 12 commands (init, upgrade, status, triage, copilot, plugin, export, import, scrub-emails, doctor, link, aspire) plus interactive shell. All documented commands implemented.
+
+**Code hygiene issues:**
+- **P1:** coordinator/index.ts lines 117/122/127 — 3 console.log statements in initialize() for session lifecycle events. Should be debug-gated or removed before public release.
+- **P2:** tools/index.ts line 119 — TODO comment about parent span propagation. Non-blocking, documents future work.
+
+**Dependencies:** Clean. SDK: @github/copilot-sdk + optional OTel. CLI: squad-sdk + ink + react. No problematic deps. Zero-dependency scaffolding preserved per Rabin decision.
+
+**Tests:** 2930 tests passing per now.md. Build passes strict TypeScript.
+
+**VERDICT:** 🟡 Ready with caveats. Code is solid, runtime stable, CLI complete. One P1 issue: remove/gate 3 coordinator console.log statements. Otherwise production-ready. Recommend: 1) Gate coordinator debug logs behind SQUAD_DEBUG env var, 2) Add source code disclaimer in README (alpha/preview status), 3) Ship it.
+
+### 2026-02-24T17-25-08Z : Team consensus on public readiness
+📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+## Learnings
+
+### Per-command --help/-h intercept pattern
+- Intercepting help flags BEFORE command dispatch is critical — without it, `squad init --help` runs init as a side effect
+- A single intercept point (one if-block before the routing switch) is cleaner than adding help checks inside each command handler
+- Help text sourced from cli-command-inventory.md draft outputs — that document proved invaluable as a single source of truth
+- The `watch` → `triage` alias needs explicit handling in the help lookup (not just in the routing)
+- PR #533 on branch `squad/511-per-command-help`, closes #511 and #512

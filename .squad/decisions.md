@@ -3623,3 +3623,97 @@ The action tagline ("Add an AI agent team...") feels like feature description, n
 **Details:** See keaton-wave-d-assessment.md. Total effort: 20–25 hrs for Batch 1 (~4–5 PRs, 1 week). Dogfood testing closes last blocker before launch.
 **Closes:** #410 (via PR #487)
 
+## 2026-02-24: Public Readiness Assessment (consolidated)
+**By:** Keaton, Fenster, Hockney, McManus, Rabin, Baer, Edie
+
+### Context
+Brady requested comprehensive public readiness assessment for Squad SDK + CLI source release. All 7 agents conducted independent reviews (architecture, code quality, testing, documentation, distribution, security, types).
+
+### Consensus Verdict
+🟡 **Ready with caveats** — All agents agree. Ship after 3 must-fixes (LICENSE file, CI workflow, debug console.logs). No blockers to source publication.
+
+### Key Findings (Consolidated)
+
+**Architecture & Core Dev (Keaton, Fenster):**
+- Architecture is mature, production-grade, well-typed
+- Feature set sufficient for v1 public release
+- 2930 tests passing, builds clean
+- P1 issue: 3 console.log statements in coordinator/index.ts (gate behind SQUAD_DEBUG env var or remove)
+
+**Testing & Quality (Hockney):**
+- Test quality is genuine: 2930 passing tests, 90.68% branch coverage
+- Critical issue: CI workflow runs wrong test runner (node --test vs npm test) — false green
+- Missing: real Copilot SDK integration tests (all tests mock CopilotClient)
+- Action: Fix CI workflow, verify coverage config, add 1 integration test
+
+**Documentation & Messaging (McManus):**
+- Docs strong: README comprehensive, getting-started clear, API documented
+- Tone clean: no hype, no overclaiming
+- 3 critical issues (30 min to fix):
+  1. No LICENSE file at repo root (package.json claims MIT)
+  2. Status contradiction: README badge says "alpha", Status section says "Production"
+  3. Broken link: CONTRIBUTING.md references non-existent CONTRIBUTORS.md
+
+**Distribution & Packaging (Rabin):**
+- Package metadata complete and correct
+- Files field clean (no test fixtures, no src leakage)
+- Security: zero npm audit vulnerabilities
+- Nice-to-have: add homepage/bugs fields to package.json
+
+**Security & Compliance (Baer):**
+- No hardcoded secrets, no PII leaks
+- Hook-based governance solid (file-write guards, shell restrictions, PII scrubbing all code-enforced)
+- Dev dependency warning (minimatch ReDoS) is not in production code
+- Action: Run npm audit fix after v0.8.5.1 published to npm
+
+**Type System & Public API (Edie):**
+- Strict mode enforced, zero @ts-ignore suppressions
+- ESM-only, no CJS pollution
+- 43 named exports, 18 subpath exports, clean public API
+- Missing: noUncheckedIndexedAccess (acceptable for M1, add in M2)
+
+### Must-Fixes (Consensus)
+1. **LICENSE file** (McManus) — Create LICENSE at repo root with MIT text
+2. **CI workflow** (Hockney) — Change .github/workflows/squad-ci.yml line 24 from 
+ode --test test/*.test.js to 
+pm test
+3. **Debug console.logs** (Fenster) — Gate 3 coordinator console.log statements (lines 117, 122, 127) behind SQUAD_DEBUG env var or remove
+
+### Nice-to-Have (Post-M1)
+- Add homepage/bugs fields to packages/squad-sdk/package.json and packages/squad-cli/package.json
+- Add 
+oUncheckedIndexedAccess: true to tsconfig.json (Edie, M2)
+- Tighten coordinator config types (Edie, post-M1)
+- Add architecture overview doc (Keaton, 15-20 min)
+- Document breaking change policy (Keaton)
+- Close #324 dogfood testing (Keaton blocker, must close before Wave E)
+
+### Risk Assessment
+- **Low risk:** Code quality, architecture, security posture all solid
+- **Medium risk:** API surface is alpha (breaking changes expected, but documented honestly)
+- **Dependencies:** Clean, zero production vulnerabilities
+
+### Recommendation
+**🟢 Green-light public source release** after fixing 3 must-fixes. Estimated 1-2 hours to resolve. All agents agree: technical foundation is sound, presentation needs hygiene fixes only.
+
+### What Happens Next
+1. Fix must-fixes (1-2 hours)
+2. Merge orchestration logs and consolidate decisions (Scribe)
+3. Tag release and announce publicly
+4. Post-publish: run npm audit fix, monitor #324 dogfood, gather external feedback
+5. Wave E planning: Address must-fixes from live feedback, ship improvements
+
+### 2026-02-24: User directive
+**By:** Brady (via Copilot)
+**What:** CLI docs should note that the project is experimental and ask users to file issues if they encounter problems.
+**Why:** User request — captured for team memory
+
+### 2026-02-24: Documentation readiness for public alpha release
+**By:** McManus (DevRel)
+**What:** Standardized documentation for public alpha release:
+1. Created MIT LICENSE file at repo root with Brady Gaster and contributors as copyright holders
+2. Added experimental/alpha warnings to all CLI docs (installation, shell, vscode) with consistent blockquote banner
+3. Fixed README Status contradiction: changed from "🟢 **Production** — v0.6.0" to "⚠️ **Experimental** — v0.8.x alpha"
+4. Fixed broken CONTRIBUTING link: corrected relative path from ../CONTRIBUTORS.md to CONTRIBUTING.md
+
+**Why:** Makes public documentation honest, helpful, consistent, and functional. Signals alpha status clearly while maintaining friendly tone and enabling user feedback channels.
