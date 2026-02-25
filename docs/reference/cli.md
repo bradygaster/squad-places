@@ -24,35 +24,27 @@ squad init
 | Command | Description | Requires `.squad/` |
 |---------|-------------|:------------------:|
 | `squad` | Enter interactive shell (no args) | No |
-| `squad init` | Initialize Squad in the current repo | No |
+| `squad init` | Initialize Squad in the current repo (idempotent — safe to run multiple times) | No |
 | `squad init --global` | Create a personal squad at `~/.squad/` | No |
 | `squad init --mode remote <path>` | Initialize linked to a remote team root | No |
-| `squad shell` | Enter the interactive shell explicitly | Yes |
 | `squad status` | Show which squad is active and why | Yes |
-| `squad doctor` | Validate squad setup integrity (9-check diagnostic) | Yes |
-| `squad hire` | Team creation wizard | Yes |
-| `squad hire --name <name> --role <role>` | Add a specific member | Yes |
+| `squad doctor` | Validate squad setup integrity and diagnose issues | Yes |
 | `squad upgrade` | Upgrade Squad-owned files to latest version | Yes |
-| `squad upgrade --migrate-directory` | Rename legacy directory to `.squad/` | Yes |
+| `squad upgrade --migrate-directory` | Rename legacy `.ai-team/` directory to `.squad/` | Yes |
 | `squad link <team-repo-path>` | Link project to a remote team root | Yes |
-| `squad export` | Export squad to a portable archive | Yes |
-| `squad export --out <path>` | Export to a custom path | Yes |
-| `squad import <file>` | Import a squad from an export archive | No |
-| `squad import <file> --force` | Replace existing squad (archives the old one) | No |
 | `squad triage` | Scan for work and categorize issues | Yes |
 | `squad triage --interval <min>` | Continuous triage (default: every 10 min) | Yes |
-| `squad loop` | Continuous work loop (Ralph mode) | Yes |
-| `squad loop --filter <label>` | Filter work loop by label | Yes |
-| `squad heartbeat` | Run Ralph's triage cycle manually | Yes |
-| `squad heartbeat --dry-run` | Preview what Ralph would do | Yes |
 | `squad copilot` | Add the @copilot coding agent to the team | Yes |
 | `squad copilot --off` | Remove @copilot from the team | Yes |
 | `squad copilot --auto-assign` | Enable auto-assignment for @copilot | Yes |
-| `squad plugin marketplace add\|list\|browse` | Manage plugin marketplaces | Yes |
-| `squad upstream add <path-or-url>` | Inherit skills from another squad | Yes |
+| `squad plugin marketplace add\|remove\|list\|browse` | Manage plugin marketplaces | Yes |
+| `squad export` | Export squad to a portable JSON snapshot | Yes |
+| `squad export --out <path>` | Export to a custom path | Yes |
+| `squad import <file>` | Import a squad from an export file | No |
+| `squad import <file> --force` | Replace existing squad (archives the old one) | No |
 | `squad aspire` | Launch Aspire dashboard for observability | No |
 | `squad aspire --docker` | Force Docker mode for Aspire | No |
-| `squad scrub-emails [directory]` | Remove emails from Squad state files | No |
+| `squad scrub-emails [directory]` | Remove email addresses from Squad state files (default: `.squad/`) | No |
 | `squad --version` | Print installed version | No |
 
 ---
@@ -202,6 +194,38 @@ First match wins.
 |----------|---------|--------|
 | `SQUAD_CLIENT` | Detected client platform | `cli`, `vscode` |
 | `COPILOT_TOKEN` | Copilot auth token (SDK usage) | Token string |
+
+---
+
+---
+
+## Troubleshooting with `squad doctor`
+
+When something isn't working, run:
+
+```bash
+squad doctor
+```
+
+This performs a comprehensive diagnostic check of your Squad setup, validating:
+
+- `.squad/` directory structure
+- Required configuration files (team.md, routing.md, etc.)
+- Agent definitions and capabilities
+- File permissions and integrity
+- Integration with GitHub and Copilot
+
+### Example Output
+
+```
+✓ .squad/ directory exists
+✓ team.md is readable and valid
+✓ 4 agents registered
+⚠ skills/ directory is empty — consider adding documentation
+✓ .gitattributes rules applied
+```
+
+The doctor always exits cleanly (no error code) because it's a diagnostic tool, not a gate. Use it to troubleshoot setup issues, validate team state, or run before opening an issue on GitHub.
 
 ---
 

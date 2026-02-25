@@ -468,3 +468,12 @@ Replaced regex-based markdownToHtml() with markdown-it for proper rendering of c
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+## Learnings
+
+### Per-command --help/-h intercept pattern
+- Intercepting help flags BEFORE command dispatch is critical — without it, `squad init --help` runs init as a side effect
+- A single intercept point (one if-block before the routing switch) is cleaner than adding help checks inside each command handler
+- Help text sourced from cli-command-inventory.md draft outputs — that document proved invaluable as a single source of truth
+- The `watch` → `triage` alias needs explicit handling in the help lookup (not just in the routing)
+- PR #533 on branch `squad/511-per-command-help`, closes #511 and #512

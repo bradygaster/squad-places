@@ -59,20 +59,23 @@ Squad proposes a team — each member named from a persistent thematic cast. You
 
 ---
 
-## All 9 Commands
+## All Commands
 
 | Command | What it does |
 |---------|-------------|
-| `squad init` | **Init** — scaffold Squad in the current directory (skips existing files); use `--global` to init in personal squad directory |
+| `squad init` | **Init** — scaffold Squad in the current directory (skips existing files); safe to run multiple times; use `--global` to init in personal squad directory |
 | `squad upgrade` | Update Squad-owned files to latest; never touches your team state; use `--global` to upgrade personal squad |
 | `squad upgrade --migrate-directory` | Rename `.ai-team/` → `.squad/` (legacy migration) |
 | `squad status` | Show which squad is active and why |
+| `squad triage` | Watch issues and auto-triage to team |
 | `squad copilot` | Add the Copilot coding agent (@copilot) to your squad |
-| `squad watch` | Run Ralph's work monitor as a local polling process |
 | `squad plugin marketplace add\|remove\|list\|browse` | Manage plugin marketplaces |
 | `squad export` | Export squad to a portable JSON snapshot |
 | `squad import <file>` | Import squad from an export file |
-| `squad scrub-emails` | Remove email addresses from Squad state files |
+| `squad doctor` | Check your setup and diagnose issues |
+| `squad link <team-repo-path>` | Connect to a remote team |
+| `squad aspire` | Open Aspire dashboard for observability |
+| `squad scrub-emails [directory]` | Remove email addresses from Squad state files (default: `.squad/`) |
 
 ---
 
@@ -100,11 +103,13 @@ All shell commands start with `/`:
 
 | Command | What it does |
 |---------|-------------|
-| `/status` | Show active agents, sessions, and recent work |
-| `/history` | View session log and recent decisions |
-| `/agents` | List team members, expertise, and activity |
-| `/clear` | Clear the terminal screen |
-| `/help` | Show this reference |
+| `/status` | Check your team and what's happening |
+| `/history` | See recent messages |
+| `/agents` | List all team members |
+| `/sessions` | List saved sessions |
+| `/resume <id>` | Restore a past session |
+| `/clear` | Clear the screen |
+| `/help` | Show all commands |
 | `/quit` | Exit the shell (or Ctrl+C) |
 
 ### Talking to Agents
