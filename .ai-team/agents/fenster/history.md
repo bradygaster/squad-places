@@ -282,3 +282,14 @@ Completed M1-3, M1-4, and M1-10 (Issues #99, #109, #130):
 
 - **Windows EPERM on migrate-directory (#135):** `fs.renameSync()` fails when VS Code holds file handles on `.ai-team/` files. Added `safeRename()` helper inside the migration block that catches EPERM/EACCES and falls back to `fs.cpSync()` + `fs.rmSync()`. Applied to both renames (`.ai-team/` → `.squad/` and `.ai-team-templates/` → `.squad-templates/`). `fs.cpSync` requires Node 16.7+ — fine since Squad requires 18+.
 - **--version shows installed version (#137):** `--version` now prints both `Package:` (npx-fetched) and `Installed:` (from `squad.agent.md` HTML comment `<!-- version: X.X.X -->`). Shows "not installed" when file doesn't exist. Updated one test assertion in `mcp-config.test.js` for the new output format. All 95 tests pass.
+
+
+### Content Reference Replacement in migrate-directory — #134 (PR #151)
+- **Problem:** `--migrate-directory` renamed `.ai-team/` → `.squad/` but left stale `.ai-team/` path references inside the migrated files (routing.md, decisions.md, agent histories, etc.).
+- **Fix:** Added `replaceAiTeamReferences(dirPath)` — walks all `.md` and `.json` files recursively, replaces `.ai-team/` → `.squad/` and `.ai-team-templates/` → `.squad-templates/` in file content. Runs after the email scrub step. Reusable function following `scrubEmailsFromDirectory` pattern.
+- **Key decisions:** Replacement order matters — `.ai-team-templates/` must be replaced before `.ai-team/` to avoid partial matches. Function is top-level (not nested inside migration block) for reuse.
+
+### Remove squad-main-guard.yml — #150
+- **Problem:** The guard workflow blocked .squad/ files from reaching main/preview branches. Users should control what gets committed via .gitignore, not a CI guard.
+- **Fix:** Deleted templates/workflows/squad-main-guard.yml (stops distribution to new installs), deleted .github/workflows/squad-main-guard.yml (this repo's copy), added v0.5.4 migration that deletes the guard from existing consumer repos on next `squad upgrade`.
+- **Key pattern:** Workflow loop at line ~1664 reads templates/workflows/ dynamically — deleting the template file is sufficient, no hardcoded references existed.
