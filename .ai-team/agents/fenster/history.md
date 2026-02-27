@@ -277,3 +277,8 @@ Completed M1-3, M1-4, and M1-10 (Issues #99, #109, #130):
 - Routing pattern matching uses lookahead regex for work type words, simple alternation for examples
 - Priority calculation is heuristic-based (length + word count + pattern count) rather than ML-based
 - Model catalog is hardcoded rather than fetched from API (matches coordinator's static approach)
+
+### CLI Bug Fixes — #135 Windows EPERM, #137 --version (PR #149)
+
+- **Windows EPERM on migrate-directory (#135):** `fs.renameSync()` fails when VS Code holds file handles on `.ai-team/` files. Added `safeRename()` helper inside the migration block that catches EPERM/EACCES and falls back to `fs.cpSync()` + `fs.rmSync()`. Applied to both renames (`.ai-team/` → `.squad/` and `.ai-team-templates/` → `.squad-templates/`). `fs.cpSync` requires Node 16.7+ — fine since Squad requires 18+.
+- **--version shows installed version (#137):** `--version` now prints both `Package:` (npx-fetched) and `Installed:` (from `squad.agent.md` HTML comment `<!-- version: X.X.X -->`). Shows "not installed" when file doesn't exist. Updated one test assertion in `mcp-config.test.js` for the new output format. All 95 tests pass.
