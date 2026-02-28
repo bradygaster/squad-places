@@ -3749,3 +3749,178 @@ oUncheckedIndexedAccess: true to tsconfig.json (Edie, M2)
 4. Fixed broken CONTRIBUTING link: corrected relative path from ../CONTRIBUTORS.md to CONTRIBUTING.md
 
 **Why:** Makes public documentation honest, helpful, consistent, and functional. Signals alpha status clearly while maintaining friendly tone and enabling user feedback channels.
+
+
+# Decision: Ghost Command Aliasing Strategy
+
+**Author:** Fenster
+**Date:** 2026-02-24
+**Issues:** #501, #503, #504, #507, #509
+
+## Context
+
+Five commands were documented but had no CLI handlers: `hire`, `heartbeat`, `shell`, `loop`, `run`. Users hitting these got "Unknown command" errors.
+
+## Decision
+
+Wire them as aliases to existing functionality rather than building new features:
+
+| Ghost Command | Resolution | Rationale |
+|---------------|-----------|-----------|
+| `squad hire` | Alias → `squad init` | Team creation = initialization |
+| `squad heartbeat` | Alias → `squad doctor` | Health check already exists |
+| `squad shell` | Explicit launch → `runShell()` | Same as no-args behavior, but explicit |
+| `squad loop` | Alias → `squad triage` | Work monitoring = triage |
+| `squad run <agent>` | Stub with "coming soon" message | Non-trivial to implement properly; directs users to REPL |
+
+## Rationale
+
+- **Minimal code change:** Each alias is 1-2 lines in the command router.
+- **No new dependencies:** All aliases reuse existing implementations.
+- **`run` is deferred:** Proper agent dispatch outside the REPL requires session lifecycle changes. A stub with a helpful message is better than a broken implementation.
+- **Backwards compatible:** No existing commands were changed.
+
+## Impact
+
+- CLI help text updated to show all five commands.
+- Users can now use the documented names without confusion.
+- `squad run` will need a real implementation in a future PR when non-interactive agent dispatch is ready.
+
+
+### Per-command --help/-h: intercept-before-dispatch pattern
+**By:** Fenster (Core Dev)
+**Date:** 2025-07-14
+**PR:** #533
+**Closes:** #511, #512
+
+**What:** All CLI subcommands now support `--help` and `-h` flags. Help is intercepted in a single block *before* the command routing switch, so destructive commands (like `squad init`) never execute when help is requested.
+
+**Why:** Brady reported that `squad init --help` actually ran init instead of showing help. This is a safety issue — users expect `--help` to be non-destructive. The intercept-before-dispatch pattern guarantees no side effects.
+
+**Convention:** Any new CLI command added to the router MUST have a corresponding entry in the `getCommandHelp()` map in `cli-entry.ts`. Help text should include: usage line, 1-2 sentence description, options, and at least 2 examples.
+
+**Source:** Draft help text from `.squad/agents/fenster/cli-command-inventory.md`.
+
+
+# Decision: Watch uses SDK triage subpath
+
+- Date: 2026-02-27
+- Owner: Fenster
+- Context: packages/squad-cli/src/cli/commands/watch.ts needed to adopt routing-aware triage from SDK.
+
+## Decision
+Use direct SDK subpath import @bradygaster/squad-sdk/ralph/triage and add ./ralph/triage to packages/squad-sdk/package.json exports.
+
+## Rationale
+- Keeps triage logic centralized in SDK and avoids duplicate parsing/matching code in CLI.
+- Preserves explicit access to triage helpers without broadening ralph/index.ts public surface unnecessarily.
+- Minimal change to existing CLI control flow (copilot auto-assign, polling, shutdown unchanged).
+
+
+# Decision: Ralph Smart Triage Module — Architecture Review
+
+**Date:** 2026-02-25
+**Author:** Keaton (Lead)
+**Verdict:** ✅ APPROVED
+
+## Files Reviewed
+
+1. `packages/squad-sdk/src/ralph/triage.ts` — NEW
+2. `packages/squad-cli/src/cli/core/gh-cli.ts` — MODIFIED
+3. `packages/squad-sdk/src/agents/onboarding.ts` — MODIFIED
+4. `packages/squad-sdk/src/config/init.ts` — MODIFIED
+
+## Architecture Assessment
+
+**triage.ts** is well-architected:
+- **Pure functions, zero side effects** — parsing and triage logic has no I/O, no network calls. CLI reads files; SDK just decides. Follows SDK's pure-library ethos.
+- **Correct priority cascade:** module ownership → routing rules → role keywords → lead fallback. This matches how real triage works — specific path mentions are strongest signal, generic keywords are weakest.
+- **Parses actual routing.md format correctly** — verified regex against real `## Work Type → Agent` header (including unicode arrow), column name matching against actual headers, emoji handling in agent names via `normalizeName()`.
+- **Parses actual team.md format correctly** — `## Members` section found, Name/Role columns extracted, Scribe/Ralph correctly excluded from assignable roster.
+- **normalizeEol dependency exists** — confirmed at `packages/squad-sdk/src/utils/normalize-eol.ts`. Critical for Windows cross-platform parsing.
+- **Interfaces are extensible** — `TriageDecision.source` union, confidence levels, decoupled `TriageIssue` (not tied to `GhIssue`).
+
+**gh-cli.ts GhPullRequest** covers Ralph's PR monitoring needs: number, title, author, labels, isDraft, reviewDecision, state, headRefName, statusCheckRollup.
+
+**onboarding.ts and init.ts** — Ralph charter/description updates from "Persistent Memory Agent" to "Work Monitor" are consistent and accurate.
+
+## Minor Suggestions (Non-blocking)
+
+1. **Emoji in RoutingRule.agentName:** `parseRoutingRules` stores raw values like `"Fenster 🔧"` — normalization only happens during `findMember`. Consider stripping emoji at parse time so stored values are clean.
+2. **GhPullRequest missing `createdAt`/`updatedAt`:** Ralph will need these for staleness detection. Add in next iteration.
+3. **`findRoleKeywordMatch` takes first match:** If multiple members share a role keyword (e.g., Hockney=Tester, Breedan=E2E Test Engineer), first wins. Acceptable since routing rules (higher priority) catch specific cases.
+4. **Role keyword matching is hardcoded to frontend/backend/test:** Doesn't leverage project-specific roles (Prompt Engineer, SDK Expert). Fine as a fallback — routing rules handle specifics.
+
+## Decision
+
+Approved for merge. Architecture compounds — pure parsing + typed decisions + priority cascade means future triage features (label-based routing, PR auto-assignment, staleness alerts) can layer on without restructuring.
+
+
+# Decision: REPL cancellation and configurable timeout
+
+**Author:** Kovash  
+**Date:** 2026-02-25  
+**PR:** #538  
+**Issues:** #500, #502
+
+## Context
+
+The REPL had two UX friction points: (1) Ctrl+C during streaming left the shell locked because `processing` wasn't reset, and (2) the 10-minute session timeout was hardcoded.
+
+## Decisions
+
+1. **Ctrl+C immediately resets `processing` state** — `setProcessing(false)` is called alongside `onCancel()` in App.tsx's Ctrl+C handler, so the InputPrompt re-enables instantly. The async session abort still runs in background.
+
+2. **Timeout configuration uses `SQUAD_REPL_TIMEOUT` env var (seconds)** — Precedence: `SQUAD_REPL_TIMEOUT` → `SQUAD_SESSION_TIMEOUT_MS` (SDK-level, milliseconds) → 600000ms default. The `--timeout` CLI flag sets the env var before shell launch.
+
+## Impact
+
+- All shell components: Ctrl+C behavior change affects InputPrompt, ThinkingIndicator
+- CLI entry point: new `--timeout` flag
+- SDK: no changes (existing `SQUAD_SESSION_TIMEOUT_MS` env var preserved as fallback)
+
+
+# Decision: Shell Observability Metrics Design
+
+**Author:** Saul (Aspire & Observability)
+**Date:** 2026-02-24
+**Issues:** #508, #520, #526, #530, #531
+
+## Context
+
+Five overlapping issues requested telemetry instrumentation of the REPL shell: session lifetime, agent response latency, error rate tracking, and basic retention metrics. The SDK already had OTel infrastructure (Phases 1–4), but no user-facing shell metrics.
+
+## Decision
+
+### Metrics Added (all under `squad.shell.*` namespace)
+
+| Metric | Type | Unit | Description |
+|--------|------|------|-------------|
+| `squad.shell.session_count` | Counter | — | Incremented once per shell session start (retention proxy) |
+| `squad.shell.session_duration_ms` | Histogram | ms | Recorded on shell exit with total session lifetime |
+| `squad.shell.agent_response_latency_ms` | Histogram | ms | Time from message dispatch to first visible response token |
+| `squad.shell.error_count` | Counter | — | Errors during dispatch (agent, coordinator, general) |
+
+### Opt-in Gate
+
+**All shell metrics are gated behind `SQUAD_TELEMETRY=1`** — not just the OTLP endpoint. This is a stronger privacy guarantee than the SDK-level metrics (which activate whenever `OTEL_EXPORTER_OTLP_ENDPOINT` is set). Rationale: shell metrics describe user behavior patterns, so they require explicit consent.
+
+### Architecture
+
+- New module: `packages/squad-cli/src/cli/shell/shell-metrics.ts`
+- Uses `getMeter('squad-shell')` from SDK — shares the same MeterProvider and OTLP pipeline
+- Wired into `runShell()` lifecycle in `index.ts`
+- Latency measured at first `message_delta` event (first visible token), not at connection time
+- No PII collected — only agent names, dispatch types, and timing data
+
+### Alternatives Considered
+
+1. **SDK-level only** — Rejected because SDK metrics track API sessions, not user-visible experience
+2. **Separate OTLP endpoint for shell** — Over-engineered; sharing the SDK's MeterProvider is simpler
+3. **Always-on with OTLP endpoint** — Rejected for privacy; shell metrics need explicit opt-in
+
+## Impact
+
+- 18 new tests covering all metrics + opt-in gating
+- Zero impact when `SQUAD_TELEMETRY` is unset (no instruments created)
+- Compatible with existing Aspire dashboard — metrics appear under `squad-shell` meter

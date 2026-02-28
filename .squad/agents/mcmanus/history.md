@@ -7,6 +7,35 @@
 
 ## Learnings
 
+### 2026-02-25: Ralph Documentation — Routing-aware triage and work monitoring
+
+**Status:** Complete. Updated `docs/features/ralph.md`, created `.squad/templates/ralph-reference.md`.
+
+**Changes made:**
+
+1. **docs/features/ralph.md** — Added 4 new sections:
+   - **Routing-Aware Triage:** Explained that Ralph reads `.squad/routing.md` for intelligent work assignment, not keyword matching. Documented the triage priority order: module path match → routing rule keywords → role keywords → Lead fallback.
+   - **Work-in-Progress Monitoring:** Described how Ralph watches dispatched work through its full lifecycle (assigned → PR created → review → CI → merge). Each step triggers a re-scan.
+   - **Board State:** Documented the 8 board categories (untriaged, assigned, inProgress, needsReview, changesRequested, ciFailure, readyToMerge, done) as a state flow table with labels.
+   - **What Wakes Ralph Up:** Detailed the wake-up events for all three layers (in-session: agent completion; watch: poll interval; heartbeat: cron + issue/PR events).
+
+2. **.squad/templates/ralph-reference.md** — Created new reference template (2.8 KB):
+   - Ralph's work-check cycle (scan → categorize → dispatch → watch → report → loop)
+   - Board format and state transitions
+   - Idle-watch mode and wake-up triggers
+   - Activation triggers ("Ralph, go" / "Ralph, status" / `squad watch`)
+   - Work-check termination conditions
+   - Concise, actionable — designed to be loaded into agent context
+
+**Key messaging decisions:**
+- Emphasized that routing.md is THE intelligence source, not a nice-to-have
+- Framed work-in-progress monitoring as a continuous watch, not fire-and-forget
+- Board state table makes categories concrete and actionable
+- Three-layer wake-up structure clarifies how Ralph behaves across contexts (in-session vs. watch vs. heartbeat)
+- No hype — factual, practical language throughout
+
+**Tone applied:** Factual and practical. No hand-waving about Ralph's intelligence; concrete examples of triage priority and board states.
+
 ### 2026-02-24: Issue #338 — Copy polish: human, fun, action-oriented
 **Status:** Complete. PR #358 created.
 **Changes made:**

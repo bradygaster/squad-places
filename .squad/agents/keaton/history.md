@@ -237,3 +237,18 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### 2026-02-25: Ralph Smart Triage Module — Architecture Review
+- **Task:** Review routing-aware triage module (`triage.ts`), `gh-cli.ts` GhPullRequest additions, Ralph charter/description updates.
+- **Verdict:** ✅ APPROVED. Architecture is sound.
+- **Key findings:**
+  - `triage.ts` is pure functions with zero side effects — parsing + decision only, no I/O. Follows SDK pure-library pattern.
+  - Priority cascade (module ownership → routing rules → role keywords → lead fallback) is correct and matches real triage workflow.
+  - Regex patterns verified against actual routing.md format (unicode arrow `→`, emoji in agent names, em-dash in secondary column).
+  - `parseRoster` correctly handles team.md `## Members` format and excludes Scribe/Ralph from assignable roster.
+  - `normalizeEol` dependency confirmed at `utils/normalize-eol.ts`.
+  - GhPullRequest interface covers PR monitoring needs (author, reviewDecision, statusCheckRollup, isDraft).
+  - Interfaces are well-designed for extension — `TriageDecision.source` union, confidence levels, decoupled `TriageIssue`.
+- **Minor suggestions (non-blocking):** (1) Strip emoji from `RoutingRule.agentName` at parse time, (2) Add `createdAt`/`updatedAt` to `GhPullRequest` for staleness detection, (3) `findRoleKeywordMatch` takes first match among tied roles.
+- **Pattern learned:** Pure parsing modules that take markdown content as input and return typed decisions are highly testable and composable. This pattern should be used for any future `.squad/*.md` file parsing.
+- **Decision file:** `.squad/decisions/inbox/keaton-ralph-triage-review.md`

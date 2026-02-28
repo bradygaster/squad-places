@@ -7,6 +7,16 @@
 
 ## Learnings
 
+### Ralph triage parity guard (2026-02-27)
+- Added `describe('triage parity')` in `test/ralph-triage.test.ts` to lock the routing priority contract (`module-ownership` > `routing-rule` > `role-keyword` > `lead-fallback`) expected to match `templates/ralph-triage.js`.
+- Added a syntax-validity test using `node --check templates/ralph-triage.js` so template script regressions are caught by Vitest.
+- Verified with `node templates/ralph-triage.js --help`, `node --check templates/ralph-triage.js`, and `npx vitest run test/ralph-triage.test.ts` (29 passing).
+
+### RalphMonitor event-driven coverage (2026-02-27)
+- `test/ralph-monitor.test.ts` should import Ralph source directly via `../packages/squad-sdk/src/ralph/index.js` for Vitest runs, since `@bradygaster/squad-sdk/ralph` depends on a built dist artifact.
+- Added event-bus behavior tests for `session:created`, `session:destroyed`, `session:error`, `agent:milestone`, stale detection in `healthCheck()`, and independent multi-agent tracking.
+- Verified with `npx vitest run test/ralph-monitor.test.ts` (25 passing).
+
 ### REPL UX visual test suite (2026-02-23)
 **Status:** Complete — 40 tests, all passing across 6 test categories.
 - Created `test/repl-ux.test.ts` using ink-testing-library v4 + Ink v6 components.
@@ -337,3 +347,14 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### Ralph triage module + gh-cli contract tests (2026-02-27)
+- Created `test/ralph-triage.test.ts` with 27 tests covering `parseRoster`, `parseRoutingRules`, `parseModuleOwnership`, `triageIssue`, and gh-cli type contracts.
+- Used real `.squad/routing.md` and `.squad/team.md` fixtures to validate emoji-bearing owner names, keyword extraction from Examples, module ownership path normalization, and roster filtering of Scribe/Ralph.
+- Verified triage behavior for module-priority routing, keyword scoring, role fallback, lead fallback, null-roster handling, case-insensitive matching, title+body matching, and longest-path module selection.
+
+### Board state reporting tests for watch command (2026-02-27)
+- Added `test/ralph-board.test.ts` with coverage for `reportBoard` output on clear and mixed boards, including round display.
+- Exported `BoardState` and `reportBoard` from `packages/squad-cli/src/cli/commands/watch.ts` so board reporting logic is testable without `gh` CLI access.
+- Added integration-style compatibility test showing `triageIssue` assignment labels move an issue from `untriaged` to `assigned` in board-state counting semantics.
+- Verified with `npx vitest run test/ralph-board.test.ts` (5 passing).

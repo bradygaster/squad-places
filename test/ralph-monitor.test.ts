@@ -17,7 +17,7 @@ import {
   RalphMonitor,
   type MonitorConfig,
   type AgentWorkStatus,
-} from '@bradygaster/squad-sdk/ralph';
+} from '../packages/squad-sdk/src/ralph/index.js';
 
 // --- Mock EventBus ---
 
@@ -166,6 +166,92 @@ describe('RalphMonitor', () => {
       await monitor.start(eventBus);
       const result = await monitor.healthCheck();
       expect(Array.isArray(result)).toBe(true);
+    });
+  });
+
+  // --- event handling ---
+
+  describe('event handling', () => {
+    it('tracks agent on session:created', async () => {
+      const eventBus = createMockEventBus();
+      await monitor.start(eventBus);
+
+      await eventBus.emit({
+        type: 'session:created',
+        sessionId: 'test-session-1',
+        agentName: 'Fenster',
+        payload: null,
+        timestamp: new Date(),
+      });
+
+      const status = monitor.getStatus();
+      expect(status).toHaveLength(1);
+      expect(status[0].agentName).toBe('Fenster');
+      expect(status[0].status).toBe('working');
+      expect(status[0].sessionId).toBe('test-session-1');
+    });
+
+    it('removes agent on session:destroyed', async () => {
+      const eventBus = createMockEventBus();
+      await monitor.start(eventBus);
+
+      await eventBus.emit({ type: 'session:created', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date() });
+      expect(monitor.getStatus()).toHaveLength(1);
+
+      await eventBus.emit({ type: 'session:destroyed', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date() });
+      expect(monitor.getStatus()).toHaveLength(0);
+    });
+
+    it('marks agent error on session:error', async () => {
+      const eventBus = createMockEventBus();
+      await monitor.start(eventBus);
+
+      await eventBus.emit({ type: 'session:created', sessionId: 's1', agentName: 'Hockney', payload: null, timestamp: new Date() });
+      await eventBus.emit({ type: 'session:error', sessionId: 's1', agentName: 'Hockney', payload: { message: 'timeout' }, timestamp: new Date() });
+
+      const status = monitor.getStatus();
+      expect(status[0].status).toBe('error');
+    });
+
+    it('records milestones on agent:milestone', async () => {
+      const eventBus = createMockEventBus();
+      await monitor.start(eventBus);
+
+      await eventBus.emit({ type: 'session:created', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date() });
+      await eventBus.emit({ type: 'agent:milestone', sessionId: 's1', agentName: 'Fenster', payload: { milestone: 'tests passing', task: 'refactoring' }, timestamp: new Date() });
+
+      const status = monitor.getStatus();
+      expect(status[0].milestones).toContain('tests passing');
+      expect(status[0].currentTask).toBe('refactoring');
+    });
+
+    it('detects stale agents in healthCheck', async () => {
+      const config = makeConfig({ staleSessionThreshold: 100 });
+      const m = new RalphMonitor(config);
+      const eventBus = createMockEventBus();
+      await m.start(eventBus);
+
+      await eventBus.emit({ type: 'session:created', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date(Date.now() - 200) });
+
+      const result = await m.healthCheck();
+      expect(result[0].status).toBe('stale');
+
+      await m.stop();
+    });
+
+    it('tracks multiple agents independently', async () => {
+      const eventBus = createMockEventBus();
+      await monitor.start(eventBus);
+
+      await eventBus.emit({ type: 'session:created', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date() });
+      await eventBus.emit({ type: 'session:created', sessionId: 's2', agentName: 'Hockney', payload: null, timestamp: new Date() });
+
+      expect(monitor.getStatus()).toHaveLength(2);
+
+      await eventBus.emit({ type: 'session:destroyed', sessionId: 's1', agentName: 'Fenster', payload: null, timestamp: new Date() });
+      const remaining = monitor.getStatus();
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0].agentName).toBe('Hockney');
     });
   });
 

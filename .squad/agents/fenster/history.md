@@ -493,3 +493,41 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - Help text sourced from cli-command-inventory.md draft outputs — that document proved invaluable as a single source of truth
 - The `watch` → `triage` alias needs explicit handling in the help lookup (not just in the routing)
 - PR #533 on branch `squad/511-per-command-help`, closes #511 and #512
+
+### 2026-02-27 : Watch PR/CI visibility added
+- Added PR polling to `watch.ts` via `ghPrList()` and `GhPullRequest` so Ralph now reports squad draft PRs, change-requested PRs, CI failures, and approved+green PRs ready to merge.
+- Kept issue triage flow intact and layered PR checks after issue handling, with an early PR check before emitting the board-clear message when no issue work is pending.
+
+### 2026-02-27 : Standalone Ralph triage script template
+- Added `ralph-triage.js` as a zero-dependency CommonJS template for heartbeat workflows to run outside the SDK runtime.
+- Ported `packages/squad-sdk/src/ralph/triage.ts` parsing/matching logic directly (module ownership → routing keyword → role keyword → lead fallback) to keep routing behavior identical.
+- Script reads `.squad/team.md` + `.squad/routing.md`, fetches open `squad` issues with `GITHUB_TOKEN`, filters untriaged issues (no `squad:{member}` label), and emits JSON decisions for downstream workflow steps.
+
+### 2026-02-27 : watch.ts moved to SDK routing-aware triage
+- Replaced local watch.ts parsing/triage helpers with SDK exports from @bradygaster/squad-sdk/ralph/triage.
+- watch now reads .squad/routing.md once, parses Work Type rules and Module Ownership, and reuses rules/modules/roster for each runCheck cycle.
+- Added SDK package export subpath ./ralph/triage so CLI can import triage helpers without duplicating routing logic.
+
+### 2026-02-27 : Watch loop board state + rounds
+- `watch.ts` now returns a `BoardState` from `runCheck()` and prints a per-round board summary with round number, while preserving detailed issue/PR item logs.
+- PR monitoring returns structured counts (`drafts`, `needsReview`, `changesRequested`, `ciFailures`, `readyToMerge`) so board status and board-clear idling can be computed after each poll cycle.
+- Assigned issue WIP is derived from labeled squad issues minus active squad PR count, keeping "assigned" focused on issue work that has not started a PR yet.
+
+### 2026-02-27 : Heartbeat workflow now uses standalone triage script
+- Replaced the inline "Ralph — Check for squad work" workflow logic with script-driven triage (`node .squad-templates/ralph-triage.js`) plus a separate apply-decisions step.
+- Added a guard step that checks for `.squad-templates/ralph-triage.js` and logs upgrade guidance when missing.
+- Kept triggers and `Ralph — Assign @copilot issues` unchanged, and synchronized all four heartbeat workflow copies to identical content.
+
+### 2026-02-27 : Watch wired to RalphMonitor SDK
+- Wired `runWatch()` to instantiate `RalphMonitor` with team root, interval-based health checks, 3x stale threshold, and persisted state at `.squad/.ralph-state.json`.
+- Added an in-process `EventBus` (`@bradygaster/squad-sdk/runtime/event-bus`) so watch emits `session:created`, per-round `agent:milestone`, and `session:destroyed` lifecycle events.
+- Added `monitor.healthCheck()` after each watch cycle and `monitor.stop()` during graceful shutdown so monitor state is persisted across watch sessions.
+
+### 2026-02-27 : PR #552 reviewer follow-ups
+- `watch.ts` now reports `assigned` as raw `assignedIssues.length` instead of subtracting active PR count, avoiding fragile issue↔PR assumptions.
+- `packages/squad-cli/package.json` now pins `@bradygaster/squad-sdk` to `workspace:*` for monorepo-local dependency resolution.
+- `.squad/templates/ralph-reference.md` now documents PR state tracking via `reviewDecision` and `statusCheckRollup` API fields instead of non-existent status labels.
+
+### 2026-02-27 : Sync headers for duplicated templates
+- Added explicit sync notices to all three `ralph-triage.js` template copies so SDK triage parity ownership is documented in-file.
+- Added sync notices to all four `squad-heartbeat.yml` workflow copies to make multi-location maintenance requirements visible at the workflow definition header.

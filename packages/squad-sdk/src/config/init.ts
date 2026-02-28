@@ -85,7 +85,7 @@ const AGENT_TEMPLATES: Record<string, { displayName: string; description: string
   },
   'ralph': {
     displayName: 'Ralph',
-    description: 'Persistent memory agent that maintains context across sessions.'
+    description: 'Work monitor that tracks the work queue and ensures the team never sits idle.'
   }
 };
 

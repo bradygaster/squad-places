@@ -23,6 +23,8 @@ Ralph tracks the work queue, monitors CI status, and ensures the team never sits
 
 Ralph is a built-in squad member whose job is keeping tabs on work. Like Scribe tracks decisions, **Ralph tracks and drives the work queue**. He's always on the roster — not cast from a universe — and has one job: make sure the team never sits idle when there's work to do.
 
+Ralph uses intelligent routing to match work to the right agent. Rather than simple keyword matching against role titles, Ralph reads `.squad/routing.md` — your team's work-type definitions and module ownership — to make smart triage and dispatch decisions. This is the same intelligence the in-session coordinator uses.
+
 ## Prerequisites
 
 Ralph requires access to GitHub Issues and Pull Requests via the `gh` CLI. **A GitHub PAT (Personal Access Token) with Classic scope is required.**
@@ -61,7 +63,21 @@ Once authenticated, Ralph can monitor your repository's issues and PRs.
 
 ## How It Works
 
-Once activated, Ralph continuously checks for pending work — open issues, draft PRs, review feedback, CI failures — and keeps the squad moving through the backlog without manual nudges.
+Once activated, Ralph continuously checks for pending work — open issues, draft PRs, review feedback, CI failures — and keeps the squad moving through the backlog without manual nudges. Ralph's behavior is built on three layers: in-session coordinator, watch mode for local polling, and cloud heartbeat for fully unattended monitoring.
+
+### Routing-Aware Triage
+
+Ralph doesn't rely on dumb keyword matching. He reads your `.squad/routing.md` file to understand:
+- **Work types** — categories like "Core runtime", "Docs & messaging", "Tests & quality"
+- **Agent assignments** — which agent owns each domain
+- **Module ownership** — which files belong to which agent (e.g., `src/hooks/` → Baer)
+
+When triaging an issue, Ralph uses this priority order:
+1. **Module path match** — If the issue mentions a file in `src/hooks/`, it routes to Baer (primary owner)
+2. **Routing rule keywords** — If the issue mentions "docs" or "messaging", Ralph looks up those work types and assigns the matching agent (McManus for "Docs & messaging")
+3. **Role keywords** — If no module or routing rule matches, Ralph scans the issue for role titles ("test", "security", "performance")
+4. **Lead fallback** — If still no match, escalate to the team Lead for manual review
+This ensures Ralph makes intelligent decisions based on your team's actual structure, not generic heuristics.
 
 ### In-Session (Copilot Chat)
 
@@ -80,11 +96,61 @@ When you're in a Copilot session, Ralph self-chains the coordinator's work loop:
 When no one is at the keyboard, the `squad-heartbeat.yml` workflow runs on a cron schedule (every 30 minutes by default). It:
 
 - Finds untriaged `squad`-labeled issues
-- Auto-triages based on team roles and issue keywords
+- Auto-triages based on your routing.md — matching issues to the right agent by work type and module ownership
 - Assigns `squad:{member}` labels
 - For `@copilot` (if enabled with auto-assign): assigns `copilot-swe-agent[bot]` so the coding agent picks up work autonomously
 
 This creates a fully autonomous loop for `@copilot` — heartbeat triages → assigns → agent works → issue closed → heartbeat finds next issue → repeat.
+
+### Work-in-Progress Monitoring
+
+Ralph doesn't just dispatch work and forget about it. Once an issue is assigned or a PR is created, Ralph **watches the work** — tracking its lifecycle from assigned → PR created → review requested → CI running → approved → merged. Each completed step triggers a re-scan:
+
+- **Assigned but no PR**: Ralph checks if the assigned agent has started work
+- **PR created**: Ralph monitors for review feedback and CI status
+- **Changes requested**: Ralph routes the feedback back to the author agent
+- **CI passing**: Ralph marks as ready to merge
+- **PR merged**: Ralph closes the corresponding issue and picks up the next work item
+
+This continuous watch prevents work from getting stuck in intermediate states — Ralph catches stalled PRs, failed CI, and review bottlenecks automatically.
+
+### Board State
+
+Ralph maintains an internal view of the work board. Work items flow through these categories:
+
+| Category | Meaning | Label(s) |
+|----------|---------|----------|
+| **Untriaged** | Issue has `squad` label but no `squad:{member}` assignment | `squad` only |
+| **Assigned** | Issue assigned to a squad member, awaiting agent start | `squad:{member}` |
+| **In Progress** | Agent has started work (draft PR exists or assignee begun) | `squad:{member}` + issue assigned |
+| **Needs Review** | PR created, awaiting review feedback or approval | `squad:{member}` + PR open |
+| **Changes Requested** | PR review came back with feedback | `squad:{member}` + `changes-requested` |
+| **CI Failure** | PR checks are failing | `squad:{member}` + `ci-failure` |
+| **Ready to Merge** | PR approved, all checks passing | `squad:{member}` + `approved` |
+| **Done** | PR merged, issue closed | *(removed from board)* |
+
+Ralph uses these categories internally to decide what action to take next. When you ask for status, Ralph reports the current board state across all these categories.
+
+### What Wakes Ralph Up
+
+Ralph monitors work at three different layers, each with different wake-up triggers:
+
+**In-Session (Copilot Chat):**
+- Agent completes work → Ralph immediately checks for next item (no delay)
+- You say "Ralph, go" or "Ralph, status" → Ralph starts active loop
+- You say "Ralph, idle" → Ralph stops checking
+
+**Watch Mode (`squad watch` CLI):**
+- Poll interval expires (default 10 min) → Ralph checks GitHub
+- You press Ctrl+C → Ralph stops
+
+**Cloud Heartbeat (GitHub Actions cron):**
+- Scheduled cron triggers (default every 30 min) → Ralph checks GitHub
+- Manual dispatch via GitHub Actions UI → Ralph checks GitHub
+- Issue closed event → Ralph checks for next item
+- PR merged event → Ralph checks for next item
+
+In all three layers, when Ralph wakes up, he scans the board, triages any untriaged items using routing.md, dispatches work to the right agent, watches in-flight items for progress, and reports results.
 
 ## Talking to Ralph
 

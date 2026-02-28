@@ -157,9 +157,9 @@ ${context || 'Context will be provided by the team.'}
 - Maintain consistent formatting
 `,
 
-  'ralph': (displayName: string, context?: string) => `# ${displayName} — Persistent Memory Agent
+  'ralph': (displayName: string, context?: string) => `# ${displayName} — Work Monitor
 
-Persistent memory agent that maintains context across sessions.
+Work monitor that tracks the work queue, monitors CI status, and ensures the team never sits idle.
 
 ## Project Context
 
@@ -167,19 +167,19 @@ ${context || 'Context will be provided by the team.'}
 
 ## Responsibilities
 
-- Maintain session-to-session continuity
-- Surface relevant historical context
-- Track long-running initiatives
-- Connect current work to past decisions
-- Preserve institutional knowledge
+- Scan for untriaged issues and assign to the right team member
+- Monitor PR lifecycle: drafts, review feedback, CI status, merge readiness
+- Track work in progress and detect when tasks complete
+- Report board status and flag blockers
+- Keep the pipeline moving — dispatch, watch, scan again
 
 ## Work Style
 
-- Read team history before responding
-- Surface relevant past work without overwhelming
-- Connect dots across sessions
-- Maintain perspective on long-term goals
-- Help team avoid repeating mistakes
+- Read routing rules before assigning work
+- Process all pending items in each cycle, not just the first
+- Report board state after each cycle
+- Never do the work — hand off to the responsible team member
+- Loop until the board is clear, then idle
 `,
 
   'designer': (displayName: string, context?: string) => `# ${displayName} — User Experience Designer

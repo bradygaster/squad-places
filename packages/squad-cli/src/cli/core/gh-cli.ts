@@ -10,6 +10,7 @@ const execFileAsync = promisify(execFile);
 export interface GhIssue {
   number: number;
   title: string;
+  body?: string;
   labels: Array<{ name: string }>;
   assignees: Array<{ login: string }>;
 }
@@ -25,6 +26,24 @@ export interface GhEditOptions {
   removeLabel?: string;
   addAssignee?: string;
   removeAssignee?: string;
+}
+
+export interface GhPullRequest {
+  number: number;
+  title: string;
+  author: { login: string };
+  labels: Array<{ name: string }>;
+  isDraft: boolean;
+  reviewDecision: string;
+  state: string;
+  headRefName: string;
+  statusCheckRollup: Array<{ state: string; name: string }>;
+}
+
+export interface GhPrListOptions {
+  state?: 'open' | 'closed' | 'merged' | 'all';
+  limit?: number;
+  label?: string;
 }
 
 /**
@@ -55,7 +74,7 @@ export async function ghAuthenticated(): Promise<boolean> {
  * List issues with optional filters
  */
 export async function ghIssueList(options: GhListOptions = {}): Promise<GhIssue[]> {
-  const args = ['issue', 'list', '--json', 'number,title,labels,assignees'];
+  const args = ['issue', 'list', '--json', 'number,title,body,labels,assignees'];
   
   if (options.label) {
     args.push('--label', options.label);
@@ -65,6 +84,23 @@ export async function ghIssueList(options: GhListOptions = {}): Promise<GhIssue[
   }
   if (options.limit) {
     args.push('--limit', String(options.limit));
+  }
+  
+  const { stdout } = await execFileAsync('gh', args);
+  return JSON.parse(stdout || '[]');
+}
+
+export async function ghPrList(options: GhPrListOptions = {}): Promise<GhPullRequest[]> {
+  const args = ['pr', 'list', '--json', 'number,title,author,labels,isDraft,reviewDecision,state,headRefName,statusCheckRollup'];
+  
+  if (options.state) {
+    args.push('--state', options.state);
+  }
+  if (options.limit) {
+    args.push('--limit', String(options.limit));
+  }
+  if (options.label) {
+    args.push('--label', options.label);
   }
   
   const { stdout } = await execFileAsync('gh', args);

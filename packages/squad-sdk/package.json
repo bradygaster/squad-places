@@ -74,6 +74,10 @@
       "types": "./dist/ralph/index.d.ts",
       "import": "./dist/ralph/index.js"
     },
+    "./ralph/triage": {
+      "types": "./dist/ralph/triage.d.ts",
+      "import": "./dist/ralph/triage.js"
+    },
     "./casting": {
       "types": "./dist/casting/index.d.ts",
       "import": "./dist/casting/index.js"
