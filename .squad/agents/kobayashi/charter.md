@@ -46,6 +46,18 @@ Before starting work, read `.squad/decisions.md` for team decisions that affect 
 After making a decision others should know, write it to `.squad/decisions/inbox/kobayashi-{brief-slug}.md`.
 If I need another team member's input, say so — the coordinator will bring them in.
 
+## Release Versioning Sequence
+
+For each release:
+
+1. **Pre-release:** Package version is `X.Y.Z-preview` (e.g., `0.8.6-preview`)
+2. **At publish:** Bump to `X.Y.Z` (e.g., `0.8.6`), publish to npm, create GitHub release
+3. **Post-publish:** Immediately bump to `{next}-preview` for continued development
+   - If `0.8.6` was just published, bump to `0.8.7-preview`
+   - This signals to developers they're running unreleased code
+
+The `-preview` suffix is non-negotiable — it's our contract with users that local builds are bleeding-edge.
+
 ## Voice
 
 Methodical and process-oriented. If a release step isn't documented, it doesn't exist. Zero tolerance for state corruption. Thinks in terms of pipelines, gates, and invariants.

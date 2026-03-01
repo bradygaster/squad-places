@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
+// Suppress Node.js experimental feature warnings (e.g., SQLite) from end users
+const originalEmitWarning = process.emitWarning;
+process.emitWarning = (warning: any, ...args: any[]) => {
+  if (typeof warning === 'string' && warning.includes('ExperimentalWarning')) return;
+  if (warning?.name === 'ExperimentalWarning') return;
+  return (originalEmitWarning as any).call(process, warning, ...args);
+};
+
 /**
  * Squad CLI — entry point for command-line invocation.
  * Separated from src/index.ts so library consumers can import
@@ -11,6 +19,7 @@
 // Load .env file if present (dev mode)
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const envPath = resolve(process.cwd(), '.env');
 if (existsSync(envPath)) {
@@ -48,6 +57,108 @@ function debugLog(...args: unknown[]): void {
 /** Check if --help or -h appears in args after the subcommand. */
 function hasHelpFlag(args: string[]): boolean {
   return args.slice(1).includes('--help') || args.slice(1).includes('-h');
+}
+
+/** Commands that skip the auto-link check (non-interactive or utility). */
+const SKIP_AUTO_LINK_CMDS = new Set([
+  '--version', '-v', 'version',
+  '--help', '-h', 'help',
+  'export', 'import', 'doctor', 'heartbeat',
+  'scrub-emails', '--preview', '--dry-run',
+]);
+
+/**
+ * Dev convenience: when running from source (-preview), check if the CLI
+ * is globally linked and offer to link it if not.
+ */
+async function checkAutoLink(cmd: string | undefined, args: string[]): Promise<void> {
+  try {
+    if (!VERSION.includes('-preview')) return;
+    if (cmd && SKIP_AUTO_LINK_CMDS.has(cmd)) return;
+    if (args.includes('--preview') || args.includes('--dry-run')) return;
+    if (args.includes('--help') || args.includes('-h')) return;
+    if (!process.stdin.isTTY) return;
+
+    const { homedir } = await import('node:os');
+    const home = homedir();
+    const squadDir = path.join(home, '.squad');
+    const markerPath = path.join(squadDir, '.no-auto-link');
+    if (fs.existsSync(markerPath)) return;
+
+    // Locate this package and the monorepo root
+    const thisFile = fileURLToPath(import.meta.url);
+    const packageDir = path.resolve(path.dirname(thisFile), '..');
+    const repoRoot = path.resolve(packageDir, '..', '..');
+
+    // Check if already globally linked
+    const { execSync } = await import('node:child_process');
+    let alreadyLinked = false;
+    let output = '';
+    try {
+      output = execSync('npm ls -g @bradygaster/squad-cli --json', {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } catch (e: unknown) {
+      const err = e as { stdout?: string };
+      output = err.stdout ?? '';
+    }
+    if (output) {
+      try {
+        const parsed = JSON.parse(output);
+        const dep = parsed?.dependencies?.['@bradygaster/squad-cli'];
+        if (dep?.link === true) {
+          alreadyLinked = true;
+        } else if (typeof dep?.resolved === 'string' && dep.resolved.startsWith('file:')) {
+          try {
+            const resolvedPath = fileURLToPath(new URL(dep.resolved));
+            alreadyLinked = path.resolve(resolvedPath) === path.resolve(packageDir);
+          } catch {
+            // URL parsing failed — skip
+          }
+        }
+      } catch {
+        // JSON parse failed
+      }
+    }
+    if (alreadyLinked) return;
+
+    // Prompt the user
+    console.log(`\n📦 You're running Squad from source (${VERSION}).`);
+    console.log(`   Run 'npm link -w packages/squad-cli' to make 'squad' use your local build?`);
+
+    const { createInterface } = await import('node:readline');
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await new Promise<string>((resolve) => {
+      rl.question('\n[Y/n] ', (ans) => {
+        rl.close();
+        resolve(ans.trim().toLowerCase());
+      });
+    });
+
+    if (answer === '' || answer === 'y' || answer === 'yes') {
+      console.log('Linking...');
+      try {
+        execSync('npm link -w packages/squad-cli', {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        console.log('✓ Linked successfully. The "squad" command now uses your local build.\n');
+      } catch (linkErr) {
+        debugLog('npm link failed:', linkErr);
+        console.log('Link failed — you can run it manually: npm link -w packages/squad-cli\n');
+      }
+    } else {
+      if (!fs.existsSync(squadDir)) {
+        fs.mkdirSync(squadDir, { recursive: true });
+      }
+      fs.writeFileSync(markerPath, '# Created by squad CLI. Delete this file to be prompted again.\n');
+      console.log("Got it — won't ask again. Run 'npm link -w packages/squad-cli' manually anytime.\n");
+    }
+  } catch (err) {
+    debugLog('Auto-link check failed, skipping:', err);
+  }
 }
 
 /** Per-command help text. Returns undefined for unknown commands. */
@@ -370,6 +481,9 @@ async function main(): Promise<void> {
   if (timeoutIdx >= 0 && args[timeoutIdx + 1]) {
     process.env['SQUAD_REPL_TIMEOUT'] = args[timeoutIdx + 1];
   }
+
+  // Dev convenience: offer to npm-link when running from source
+  await checkAutoLink(cmd, args);
 
   // Empty or whitespace-only args should show help, not launch shell
   if (rawCmd !== undefined && !cmd) {

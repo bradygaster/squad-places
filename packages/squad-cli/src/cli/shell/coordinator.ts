@@ -32,7 +32,16 @@ export function buildCoordinatorPrompt(config: CoordinatorConfig): string {
     teamContent = readFileSync(teamPath, 'utf-8');
   } catch (err) {
     debugLog('buildCoordinatorPrompt: failed to read team.md at', teamPath, err);
-    teamContent = '(No team.md found — run `squad init` to create one)';
+    teamContent = `⚠️ NO TEAM CONFIGURED
+
+This project doesn't have a Squad team yet.
+
+**You MUST NOT do any project work.** Instead, tell the user:
+1. "This project doesn't have a Squad team yet."
+2. Suggest running \`squad init\` or the \`/init\` command to set one up.
+3. Politely refuse any work requests until init is done.
+
+Do not answer coding questions, route to agents, or perform any project tasks.`;
   }
 
   // Load routing.md for routing rules

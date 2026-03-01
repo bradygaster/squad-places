@@ -7,6 +7,42 @@ import { ThinkingIndicator } from './ThinkingIndicator.js';
 import type { ThinkingPhase } from './ThinkingIndicator.js';
 import type { ShellMessage, AgentSession } from '../types.js';
 
+/** Convert basic inline markdown to Ink <Text> elements. */
+export function renderMarkdownInline(text: string): React.ReactNode {
+  // Split on bold (**text**), italic (*text*), and code (`text`) patterns
+  const parts: React.ReactNode[] = [];
+  // Regex: bold first (greedy **), then code (`), then italic (single *)
+  const re = /(\*\*(.+?)\*\*)|(`([^`]+?)`)|(\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = re.exec(text)) !== null) {
+    // Add plain text before this match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1]) {
+      // Bold: **text**
+      parts.push(<Text key={key++} bold>{match[2]}</Text>);
+    } else if (match[3]) {
+      // Code: `text`
+      parts.push(<Text key={key++} color="yellow">{match[4]}</Text>);
+    } else if (match[5]) {
+      // Italic: *text*
+      parts.push(<Text key={key++} dimColor>{match[6]}</Text>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining plain text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length === 0 ? text : parts;
+}
+
 interface MessageStreamProps {
   messages: ShellMessage[];
   agents?: AgentSession[];
@@ -113,8 +149,8 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
                 </>
               ) : (
                 <>
-                  <Text color={noColor ? undefined : 'green'} bold dimColor={isFading}>{emoji ? `${emoji} ` : ''}{msg.agentName ?? 'agent'}:</Text>
-                  <Text wrap="wrap" dimColor={isFading}>{msg.content}</Text>
+                  <Text color={noColor ? undefined : 'green'} bold dimColor={isFading}>{emoji ? `${emoji} ` : ''}{(msg.agentName === 'coordinator' ? 'Squad' : msg.agentName) ?? 'agent'}:</Text>
+                  <Text wrap="wrap" dimColor={isFading}>{renderMarkdownInline(msg.content)}</Text>
                   {duration && <Text dimColor>({duration})</Text>}
                 </>
               )}
@@ -133,9 +169,9 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
                   {roleMap.has(agentName)
                     ? `${getRoleEmoji(roleMap.get(agentName)!)} `
                     : ''}
-                  {agentName}:
+                  {agentName === 'coordinator' ? 'Squad' : agentName}:
                 </Text>
-                <Text wrap="wrap">{content}</Text>
+                <Text wrap="wrap">{renderMarkdownInline(content)}</Text>
                 <Text color={noColor ? undefined : 'cyan'}>▌</Text>
               </Box>
             ) : null

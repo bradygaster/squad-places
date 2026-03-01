@@ -580,3 +580,20 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - Issue #583 already filed for missing `homepage` and `bugs` fields
 
 **Summary:** Codebase is clean. Type safety discipline is being maintained. Two legitimate issues filed (workspace protocol violation + skipped test). No broken or abandoned code patterns detected.
+
+## Learnings
+
+### Auto-link detection for preview builds (2026-02-28)
+**Task:** Add dev convenience feature — when running from source (`-preview` version), detect if the CLI is globally npm-linked and offer to link it automatically.
+
+**Implementation:** Added `checkAutoLink()` in `cli-entry.ts`, called early in `main()` after timeout parsing and before command routing. Key decisions:
+- Gated on `VERSION.includes('-preview')` so published builds never trigger it
+- Skip list covers all non-interactive commands (`--version`, `--help`, `export`, `import`, `doctor`, `scrub-emails`, etc.)
+- Checks `process.stdin.isTTY` to avoid prompting in CI/piped environments
+- Marker file at `~/.squad/.no-auto-link` suppresses future prompts after decline
+- Uses `npm ls -g @bradygaster/squad-cli --json` to detect existing link; checks both `link: true` flag and `resolved` file: URL matching package dir
+- Repo root detected from `import.meta.url` via `fileURLToPath` (handles Windows paths correctly), not from `cwd`
+- Entire function wrapped in try/catch — any failure skips silently with a debug log
+- `readline.question()` for the Y/n prompt; readline interface closed immediately after answer
+
+**Files modified:** `packages/squad-cli/src/cli-entry.ts`

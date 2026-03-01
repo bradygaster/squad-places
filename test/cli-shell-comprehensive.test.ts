@@ -111,7 +111,7 @@ describe('coordinator.ts — buildCoordinatorPrompt', () => {
 
   it('handles missing team.md gracefully', () => {
     const prompt = buildCoordinatorPrompt({ teamRoot: '/nonexistent' });
-    expect(prompt).toContain('No team.md found');
+    expect(prompt).toContain('NO TEAM CONFIGURED');
   });
 
   it('handles missing routing.md gracefully', () => {

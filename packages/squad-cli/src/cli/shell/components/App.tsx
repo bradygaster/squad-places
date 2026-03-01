@@ -6,14 +6,14 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Box, Text, useApp, useInput } from 'ink';
+import { Box, Text, Static, useApp, useInput } from 'ink';
 import { AgentPanel } from './AgentPanel.js';
-import { MessageStream } from './MessageStream.js';
+import { MessageStream, renderMarkdownInline } from './MessageStream.js';
 import { InputPrompt } from './InputPrompt.js';
 import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
-import { loadWelcomeData } from '../lifecycle.js';
-import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { loadWelcomeData, getRoleEmoji } from '../lifecycle.js';
+import { isNoColor, useTerminalWidth, detectTerminal, boxChars } from '../terminal.js';
 import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
 import type { ShellRenderer } from '../render.js';
@@ -57,7 +57,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const [processing, setProcessing] = useState(false);
   const [activityHint, setActivityHint] = useState<string | undefined>(undefined);
   const [agentActivities, setAgentActivities] = useState<Map<string, string>>(new Map());
-  const [welcome, setWelcome] = useState<WelcomeData | null>(null);
+  const [welcome, setWelcome] = useState<WelcomeData | null>(() => loadWelcomeData(teamRoot));
   const messagesRef = useRef<ShellMessage[]>([]);
   const ctrlCRef = useRef(0);
   const ctrlCTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,12 +76,6 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
   // Keep ref in sync so command handlers see latest history
   useEffect(() => { messagesRef.current = messages; }, [messages]);
-
-  // Load welcome data from .squad/ directory on mount
-  useEffect(() => {
-    const data = loadWelcomeData(teamRoot);
-    if (data) setWelcome(data);
-  }, [teamRoot]);
 
   // Expose API for external callers (StreamBridge, coordinator)
   useEffect(() => {
@@ -245,6 +239,30 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   // Determine ThinkingIndicator phase based on SDK connection state
   const thinkingPhase: ThinkingPhase = !onDispatch ? 'connecting' : 'routing';
 
+  // Derive @mention hint from last user message (needed because MessageStream
+  // receives messages=[] after the Static scrollback refactor).
+  const mentionHint = useMemo(() => {
+    if (!processing) return undefined;
+    const lastUser = [...messages].reverse().find(m => m.role === 'user');
+    if (lastUser) {
+      const atMatch = lastUser.content.match(/^@(\w+)/);
+      if (atMatch?.[1]) return `${atMatch[1]} is thinking...`;
+    }
+    return undefined;
+  }, [messages, processing]);
+
+  // Combine archived + current messages for Static rendering.
+  // This array only grows — archival moves items between the two source arrays
+  // but the combined list stays stable, which is required by Ink's Static tracking.
+  const staticMessages = useMemo(
+    () => [...archivedMessages, ...messages],
+    [archivedMessages, messages],
+  );
+  const roleMap = useMemo(() => new Map((agents ?? []).map(a => [a.name, a.role])), [agents]);
+  const caps = detectTerminal();
+  const box = boxChars(caps);
+  const sepWidth = Math.min(width, 120) - 2;
+
   return (
     <Box flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
@@ -288,8 +306,40 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         </Box>
       ) : null}
 
+      {/* Completed messages — rendered once to the terminal scroll buffer via Ink Static */}
+      <Static items={staticMessages}>
+        {(msg, i) => {
+          const isNewTurn = msg.role === 'user' && i > 0;
+          const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
+          const emoji = agentRole ? getRoleEmoji(agentRole) : '';
+          return (
+            <Box key={`sm-${i}`} flexDirection="column">
+              {isNewTurn && <Text dimColor>{box.h.repeat(sepWidth)}</Text>}
+              <Box gap={1}>
+                {msg.role === 'user' ? (
+                  <>
+                    <Text color={noColor ? undefined : 'cyan'} bold>❯</Text>
+                    <Text color={noColor ? undefined : 'cyan'} wrap="wrap">{msg.content}</Text>
+                  </>
+                ) : msg.role === 'system' ? (
+                  <>
+                    <Text dimColor>[system]</Text>
+                    <Text dimColor wrap="wrap">{msg.content}</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text color={noColor ? undefined : 'green'} bold>{emoji ? `${emoji} ` : ''}{(msg.agentName === 'coordinator' ? 'Squad' : msg.agentName) ?? 'agent'}:</Text>
+                    <Text wrap="wrap">{renderMarkdownInline(msg.content)}</Text>
+                  </>
+                )}
+              </Box>
+            </Box>
+          );
+        }}
+      </Static>
+
       <AgentPanel agents={agents} streamingContent={streamingContent} />
-      <MessageStream messages={messages} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
+      <MessageStream messages={[]} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint || mentionHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
       <InputPrompt onSubmit={handleSubmit} disabled={processing} agentNames={agents.map(a => a.name)} messageCount={messages.length} />
     </Box>
   );

@@ -140,6 +140,29 @@ Squad follows strict TypeScript conventions:
 
 All docs in v1 are **internal only**. No public docs site until v2.
 
+## Local Development Versioning
+
+When developing Squad locally, set the package version to `{next-version}-preview`. For example, if the last published version is `0.8.5.1`, the local dev version should be `0.8.6-preview`.
+
+This convention makes `squad version` show the preview tag locally, clearly indicating you're running unreleased source code, not the published npm package. The release agent will bump this to the final version at publish time, then immediately back to the next preview version for continued development.
+
+### Making the `squad` Command Use Your Local Build
+
+To make the `squad` CLI command globally available and pointing to your local development build:
+
+```bash
+npm run build -w packages/squad-sdk && npm run build -w packages/squad-cli
+npm link -w packages/squad-cli
+```
+
+After this, `squad version` will show `0.8.6-preview` (or the current preview version). When you make code changes and rebuild, the `squad` command automatically picks up the changes—no need to reinstall. To verify your local build is active, the version output should include the `-preview` tag.
+
+To revert back to the globally installed npm package version, run:
+
+```bash
+npm unlink -w packages/squad-cli
+```
+
 ## Changesets: Independent Versioning
 
 Squad uses [@changesets/cli](https://github.com/changesets/changesets) for independent package versioning.

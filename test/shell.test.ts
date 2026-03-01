@@ -167,7 +167,7 @@ describe('Coordinator', () => {
         teamRoot: join(FIXTURES, 'nonexistent'),
         teamPath: join(FIXTURES, 'nonexistent', 'team.md'),
       });
-      expect(prompt).toContain('No team.md found');
+      expect(prompt).toContain('NO TEAM CONFIGURED');
     });
 
     it('falls back gracefully when routing.md is missing', () => {

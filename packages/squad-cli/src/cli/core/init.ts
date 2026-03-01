@@ -254,6 +254,10 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
     console.log(`${DIM}mcp-config.json already exists — skipping${RESET}`);
   }
 
+  // Create agents/ directory
+  const agentsDir = path.join(squadInfo.path, 'agents');
+  await fs.mkdir(agentsDir, { recursive: true });
+
   // Copy default ceremonies config
   const ceremoniesDest = path.join(squadInfo.path, 'ceremonies.md');
   if (!fsSync.existsSync(ceremoniesDest)) {
@@ -262,6 +266,40 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
     success(`${squadInfo.name}/ceremonies.md`);
   } else {
     console.log(`${DIM}ceremonies.md already exists — skipping${RESET}`);
+  }
+
+  // Copy routing.md from template
+  const routingDest = path.join(squadInfo.path, 'routing.md');
+  if (!fsSync.existsSync(routingDest)) {
+    const routingSrc = path.join(templatesDir, 'routing.md');
+    if (fsSync.existsSync(routingSrc)) {
+      await fs.copyFile(routingSrc, routingDest);
+    } else {
+      await fs.writeFile(routingDest, '# Work Routing\n\nHow to decide who handles what.\n');
+    }
+    success(`${squadInfo.name}/routing.md`);
+  } else {
+    console.log(`${DIM}routing.md already exists — skipping${RESET}`);
+  }
+
+  // Create decisions.md
+  const decisionsDest = path.join(squadInfo.path, 'decisions.md');
+  if (!fsSync.existsSync(decisionsDest)) {
+    const decisionsTemplate = `# Decisions\n\n> Team decisions that all agents must respect. Managed by Scribe.\n`;
+    await fs.writeFile(decisionsDest, decisionsTemplate);
+    success(`${squadInfo.name}/decisions.md`);
+  } else {
+    console.log(`${DIM}decisions.md already exists — skipping${RESET}`);
+  }
+
+  // Create team.md
+  const teamDest = path.join(squadInfo.path, 'team.md');
+  if (!fsSync.existsSync(teamDest)) {
+    const teamTemplate = `# Team\n\n> Your Squad roster. Add members with \`squad cast\` or edit directly.\n\n## Members\n\n<!-- Add team members here -->\n`;
+    await fs.writeFile(teamDest, teamTemplate);
+    success(`${squadInfo.name}/team.md`);
+  } else {
+    console.log(`${DIM}team.md already exists — skipping${RESET}`);
   }
 
   // Append merge=union rules for append-only squad state files

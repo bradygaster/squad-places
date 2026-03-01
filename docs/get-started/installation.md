@@ -85,6 +85,18 @@ The SDK gives you typed configuration, routing, model selection, and the full ag
 
 ---
 
+### Personal squad (cross-project)
+
+Want the same agents across all your projects?
+
+```bash
+squad init --global
+```
+
+This creates `~/.squad/` — a personal team root that any project can inherit from. See [Configuration](../reference/index.md) for details on upstream inheritance.
+
+---
+
 ## First-Time Setup
 
 After installing, initialize Squad in your project:
@@ -118,16 +130,6 @@ export default defineConfig({
 ```
 
 `defineConfig()` gives you full autocomplete and validation. But you don't need it to get started — Squad works out of the box with sensible defaults.
-
-### Personal squad (cross-project)
-
-Want the same agents across all your projects?
-
-```bash
-squad init --global
-```
-
-This creates `~/.squad/` — a personal team root that any project can inherit from. See [Configuration](../reference/index.md) for details on upstream inheritance.
 
 ---
 

@@ -6,6 +6,8 @@
  */
 
 import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { render } from 'ink';
 import { App } from './components/App.js';
@@ -156,8 +158,11 @@ export async function runShell(): Promise<void> {
   const teamRoot = process.cwd();
 
   // Session persistence — create or resume a previous session
+  // Skip resume on first run (no team.md or .first-run marker present)
+  const hasTeam = existsSync(join(teamRoot, '.squad', 'team.md'));
+  const isFirstRun = existsSync(join(teamRoot, '.squad', '.first-run'));
   let persistedSession: SessionData = createSession();
-  const recentSession = loadLatestSession(teamRoot);
+  const recentSession = (hasTeam && !isFirstRun) ? loadLatestSession(teamRoot) : null;
   if (recentSession) {
     persistedSession = recentSession;
     debugLog('resuming recent session', persistedSession.id);
@@ -596,6 +601,17 @@ export async function runShell(): Promise<void> {
 
   /** Handle dispatching parsed input to agents or coordinator. */
   async function handleDispatch(parsed: ParsedInput): Promise<void> {
+    // Guard: require a Squad team before processing work requests
+    const teamFile = join(teamRoot, '.squad', 'team.md');
+    if (!existsSync(teamFile)) {
+      shellApi?.addMessage({
+        role: 'system',
+        content: '\u26A0 No Squad team found. Run /init to create your team first.',
+        timestamp: new Date(),
+      });
+      return;
+    }
+
     messageCount++;
     try {
       // Check for multiple @agent mentions for parallel dispatch
@@ -707,7 +723,7 @@ export async function runShell(): Promise<void> {
         onRestoreSession,
       }),
     ),
-    { exitOnCtrlC: false },
+    { exitOnCtrlC: false, patchConsole: false },
   );
 
   // Clear the loading message now that Ink is rendering
