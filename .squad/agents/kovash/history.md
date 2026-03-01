@@ -72,4 +72,10 @@
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
 
+### Issue #606 — Conflicting prompt styles
+- **Root cause:** `getHintText()` in InputPrompt.tsx showed "Type @agent or /help" as a placeholder for the first 5 messages, duplicating the same guidance already shown in the App.tsx header banner (`Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit`). Two competing prompt elements created visual noise.
+- **Fix:** Collapsed three hint tiers to two. Removed the first tier that duplicated header content. Now: messageCount < 10 shows "Tab completes · ↑↓ history", messageCount >= 10 shows "/status · /clear · /export". The header banner is the single source of truth for @agent and /help guidance.
+- **Pattern:** Prompt placeholders should provide complementary info, never duplicate guidance shown elsewhere on screen. Header = persistent reference, placeholder = progressive discovery of new features.
+- **Tests:** Updated 4 test assertions in repl-ux.test.ts. All 110 REPL UX tests pass.
+
 - **PR #538 (CTRL+C CANCEL + CONFIGURABLE TIMEOUT):** Fixed #500 and #502 together. Ctrl+C during streaming now sets `processing = false` immediately alongside `onCancel()`, so the InputPrompt re-enables instantly instead of staying locked. Added `SQUAD_REPL_TIMEOUT` env var (seconds) and `--timeout` CLI flag — computed as `replTimeoutMs` in `runShell()`, with precedence: env var → `TIMEOUTS.SESSION_RESPONSE_MS` → 600s default. The existing `handleCancel` in index.ts (session abort + stream buffer clear) was already correct; the missing piece was the UI state reset in App.tsx. Help text updated. All 2925 tests pass.

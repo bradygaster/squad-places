@@ -26,6 +26,13 @@
 
 ## Learnings
 
+### First-run gating tests — Issue #607 (2026-03-01)
+**Status:** Complete — 25 new tests in `test/first-run-gating.test.ts`, all passing.
+- **Categories:** Banner renders once (3), First-run hint (5), Console warning suppression (4), Assembled message gating (5), Session-scoped Static keys (5), Terminal clear ordering (3).
+- **Key findings:** `loadWelcomeData` consumes the `.first-run` marker file on read (unlinkSync), making `isFirstRun` a one-shot flag. Terminal clear (`\x1b[2J\x1b[H`) at `index.ts:695` precedes `render()` at line 697. The `firstRunElement` in App.tsx requires both `isFirstRun=true` AND `rosterAgents.length > 0` to show "Your squad is assembled" — empty roster falls back to init guidance. Session resume in `runShell` is gated by `(hasTeam && !isFirstRun)`.
+- **Coverage gaps found:** No E2E test that renders the full App component for first-run flow (requires too many SDK dependencies). No test for `console.error('◆ Loading Squad shell...')` appearing exactly once. Warning suppression tests are logic-replicated, not testing `cli-entry.ts` directly.
+- **Test strategy:** Logic-level conditional extraction from App.tsx JSX, filesystem marker lifecycle via loadWelcomeData, source-code structural assertions for render ordering, Ink render tests for banner uniqueness, MemoryManager integration for key stability.
+
 ### Round 2 REPL UX fix tests (2026-03-01)
 **Status:** Complete — 17 new tests added to `test/repl-ux-fixes.test.ts` (30→47 total, all passing).
 - **Categories:** Screen corruption prevention (3), Banner logic (5), Compaction removal (3), Coordinator label (3), Init guidance (3).

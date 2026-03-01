@@ -12,11 +12,10 @@ interface InputPromptProps {
   messageCount?: number;
 }
 
-/** Return context-appropriate placeholder hint based on session progress. */
+/** Return context-appropriate placeholder hint based on session progress.
+ *  The header banner already shows @agent / /help guidance, so the prompt
+ *  placeholder provides complementary tips instead of duplicating it. */
 function getHintText(messageCount: number, narrow: boolean): string {
-  if (messageCount < 5) {
-    return narrow ? ' @agent or /help' : ' Type @agent or /help';
-  }
   if (messageCount < 10) {
     return narrow ? ' Tab · ↑↓ history' : ' Tab completes · ↑↓ history';
   }

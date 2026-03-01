@@ -8,7 +8,7 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, Static, useApp, useInput } from 'ink';
 import { AgentPanel } from './AgentPanel.js';
-import { MessageStream, renderMarkdownInline } from './MessageStream.js';
+import { MessageStream, renderMarkdownInline, formatDuration } from './MessageStream.js';
 import { InputPrompt } from './InputPrompt.js';
 import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
@@ -335,6 +335,16 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           const isNewTurn = msg.role === 'user' && i > 0;
           const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
           const emoji = agentRole ? getRoleEmoji(agentRole) : '';
+          // Compute response duration for agent messages: time since preceding user message
+          let duration: string | null = null;
+          if (msg.role === 'agent') {
+            for (let j = i - 1; j >= 0; j--) {
+              if (staticMessages[j]?.role === 'user') {
+                duration = formatDuration(staticMessages[j]!.timestamp, msg.timestamp);
+                break;
+              }
+            }
+          }
           return (
             <Box key={`${sessionId}-${i}`} flexDirection="column">
               {isNewTurn && <Text dimColor>{box.h.repeat(sepWidth)}</Text>}
@@ -353,6 +363,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
                   <>
                     <Text color={noColor ? undefined : 'green'} bold>{emoji ? `${emoji} ` : ''}{(msg.agentName === 'coordinator' ? 'Squad' : msg.agentName) ?? 'agent'}:</Text>
                     <Text wrap="wrap">{renderMarkdownInline(msg.content)}</Text>
+                    {duration && <Text dimColor>({duration})</Text>}
                   </>
                 )}
               </Box>

@@ -55,7 +55,7 @@ interface MessageStreamProps {
 }
 
 /** Format elapsed seconds for response timestamps. */
-function formatDuration(start: Date, end: Date): string {
+export function formatDuration(start: Date, end: Date): string {
   const ms = end.getTime() - start.getTime();
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;

@@ -157,3 +157,13 @@
 - **`compact` variable kept** in App.tsx (line 233) for future use — just not gating content anymore
 - **Pattern:** In Ink 6, only one `<Static>` allowed per render tree. Content before Static is dynamic (re-renders in-place). useMemo reduces reconciliation cost but doesn't prevent Ink re-layout. For true render-once semantics, items must go through Static's `items` prop.
 - Build clean (tsc --noEmit passes). 12 test failures are pre-existing acceptance test timeouts, unrelated.
+
+### 2026-03-01: Elapsed time placement standardization (#605)
+- **Branch:** `squad/605-elapsed-time-placement`
+- **Problem:** Elapsed time annotations `(Xs)` were inconsistent — ThinkingIndicator showed them during processing, but completed messages in Static block had no duration. MessageStream had duration code that was dead (`messages={[]}`).
+- **Fix:** Exported `formatDuration` from MessageStream.tsx, added inline `(duration)` to App.tsx Static block for agent messages.
+- **Duration computation:** Walk backward from agent message to find preceding user message, compute `formatDuration(user.timestamp, agent.timestamp)`.
+- **Format:** Inline dimColor after message content — `Agent: response text (4.4s)` — matches MessageStream's original intent.
+- **Key insight:** After the Static scrollback refactor, all completed messages render through App.tsx's `<Static items={staticMessages}>` block, NOT MessageStream. MessageStream only renders live streaming content + ThinkingIndicator.
+- **Files changed:** `App.tsx` (import + duration computation + inline display), `MessageStream.tsx` (export `formatDuration`)
+- Build clean, 110/110 repl-ux tests pass.
