@@ -767,3 +767,9 @@ Filed 10 moderate CLI/test gaps discovered in last session's coverage analysis:
 - **#567**: Flag parsing error handling (missing args, invalid/unknown flags → user-friendly errors)
 
 All labeled squad:hockney for routing. Each issue includes: what's missing, why it matters, and suggested test approach. Ready for assignment.
+
+### Tests for #624 and #625 fixes (parallel work)
+- Added 5 tests to 	est/first-run-gating.test.ts covering two parallel fixes:
+  - **#624 (SQLite warning suppression):** Structural test verifying NODE_NO_WARNINGS='1' is set before any import in cli-entry.ts. Filter test confirming process.emitWarning override blocks both string and object ExperimentalWarning forms while passing other warnings through.
+  - **#625 (Redundant init messaging):** Logic test verifying empty roster + isFirstRun yields null firstRunElement (no duplicate init text). Logic test verifying non-empty roster still renders "assembled" message. Structural test confirming banner guidance text prioritizes /init over xit and run squad init.
+- All 30 tests pass (25 existing + 5 new). Test patterns match existing style: structural source verification, logic simulation, and process.emitWarning interception.

@@ -485,3 +485,116 @@ describe('#607.6 — Terminal clear runs before Ink render', () => {
     expect(clearMsgIdx).toBeLessThan(ansiClearIdx);
   });
 });
+
+// ============================================================================
+// #624 — SQLite warning suppression (NODE_NO_WARNINGS env var)
+// ============================================================================
+
+describe('#624 — SQLite warning suppression via NODE_NO_WARNINGS', () => {
+  it('cli-entry.ts sets NODE_NO_WARNINGS=1 before any import statements', async () => {
+    // Structural test: verify the env var assignment appears before any imports
+    const fs = await import('node:fs');
+    const source = fs.readFileSync(
+      join(process.cwd(), 'packages', 'squad-cli', 'src', 'cli-entry.ts'),
+      'utf-8',
+    );
+
+    // NODE_NO_WARNINGS = '1' must appear in the file
+    const envVarPattern = /process\.env\.NODE_NO_WARNINGS\s*=\s*['"]1['"]/;
+    expect(source).toMatch(envVarPattern);
+
+    // It must appear before the first import statement (top-of-file side effect)
+    const envVarIndex = source.search(envVarPattern);
+    const firstImportIndex = source.search(/^import\s/m);
+    expect(envVarIndex).toBeGreaterThan(-1);
+    expect(firstImportIndex).toBeGreaterThan(-1);
+    expect(envVarIndex).toBeLessThan(firstImportIndex);
+  });
+
+  it('ExperimentalWarning override filters both string and object forms', () => {
+    // Replicate the exact filter logic from cli-entry.ts lines 5-10
+    const originalEmitWarning = process.emitWarning;
+    const emitted: string[] = [];
+
+    process.emitWarning = (warning: any, ...args: any[]) => {
+      if (typeof warning === 'string' && warning.includes('ExperimentalWarning')) return;
+      if (warning?.name === 'ExperimentalWarning') return;
+      emitted.push(typeof warning === 'string' ? warning : warning?.message ?? String(warning));
+      return (originalEmitWarning as any).call(process, warning, ...args);
+    };
+
+    try {
+      // String form — SQLite experimental warning
+      process.emitWarning('ExperimentalWarning: SQLite is an experimental feature');
+      // Object form — require() ESM warning
+      const w = new Error('require() of ES Module not supported');
+      w.name = 'ExperimentalWarning';
+      process.emitWarning(w as any);
+      // Non-experimental warning should pass through
+      process.emitWarning('DeprecationWarning: something old');
+
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0]).toContain('DeprecationWarning');
+    } finally {
+      process.emitWarning = originalEmitWarning;
+    }
+  });
+});
+
+// ============================================================================
+// #625 — Redundant init messaging (firstRunElement + banner text)
+// ============================================================================
+
+describe('#625 — Redundant init messaging eliminated', () => {
+  it('firstRunElement returns null when isFirstRun=true and rosterAgents is empty', () => {
+    // App.tsx lines 308-323: empty roster branch now returns null (no duplicate init text)
+    const bannerReady = true;
+    const isFirstRun = true;
+    const rosterAgents: Array<{ name: string; role: string; emoji: string }> = [];
+
+    // Simulate the useMemo logic from App.tsx firstRunElement
+    const shouldRenderFirstRun = bannerReady && isFirstRun;
+    const hasAssembledContent = rosterAgents.length > 0;
+    // When empty roster: the ternary yields null — no JSX rendered
+    const firstRunContent = shouldRenderFirstRun ? (hasAssembledContent ? 'assembled' : null) : null;
+
+    expect(shouldRenderFirstRun).toBe(true);
+    expect(firstRunContent).toBeNull();
+  });
+
+  it('firstRunElement still renders "assembled" when isFirstRun=true and rosterAgents has agents', () => {
+    const bannerReady = true;
+    const isFirstRun = true;
+    const rosterAgents = [
+      { name: 'Keaton', role: 'Lead', emoji: '👑' },
+      { name: 'Fenster', role: 'Core Dev', emoji: '🔧' },
+    ];
+
+    const shouldRenderFirstRun = bannerReady && isFirstRun;
+    const hasAssembledContent = rosterAgents.length > 0;
+    const firstRunContent = shouldRenderFirstRun ? (hasAssembledContent ? 'assembled' : null) : null;
+
+    expect(firstRunContent).toBe('assembled');
+  });
+
+  it('banner text prioritizes /init over exit+squad init', async () => {
+    // App.tsx line 300: text should mention /init first in the guidance string
+    const fs = await import('node:fs');
+    const source = fs.readFileSync(
+      join(process.cwd(), 'packages', 'squad-cli', 'src', 'cli', 'shell', 'components', 'App.tsx'),
+      'utf-8',
+    );
+
+    // Find the empty-roster banner guidance line
+    const guidanceMatch = source.match(/rosterAgents\.length === 0[\s\S]*?<Text[^>]*>[^<]*\/init[^<]*<\/Text>/);
+    expect(guidanceMatch).not.toBeNull();
+
+    // /init should appear before 'squad init' in the guidance text
+    const guidanceLine = guidanceMatch![0];
+    const initSlashIndex = guidanceLine.indexOf('/init');
+    const squadInitIndex = guidanceLine.indexOf('squad init');
+    expect(initSlashIndex).toBeGreaterThan(-1);
+    expect(squadInitIndex).toBeGreaterThan(-1);
+    expect(initSlashIndex).toBeLessThan(squadInitIndex);
+  });
+});

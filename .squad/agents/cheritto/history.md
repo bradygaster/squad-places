@@ -167,3 +167,12 @@
 - **Key insight:** After the Static scrollback refactor, all completed messages render through App.tsx's `<Static items={staticMessages}>` block, NOT MessageStream. MessageStream only renders live streaming content + ThinkingIndicator.
 - **Files changed:** `App.tsx` (import + duration computation + inline display), `MessageStream.tsx` (export `formatDuration`)
 - Build clean, 110/110 repl-ux tests pass.
+
+### 2026-03-01: SQLite ExperimentalWarning subprocess leak fix (#624)
+- **Branch:** `squad/624-sqlite-warning-leak`
+- **Problem:** `ExperimentalWarning` for SQLite leaked into terminal via Copilot SDK subprocess. The SDK (`@github/copilot-sdk/dist/client.js:764-799`) spawns a CLI subprocess using `process.execPath` and forwards stderr with `[CLI subprocess]` prefix. The existing `process.emitWarning` override in `cli-entry.ts` only suppressed warnings in the main process — child processes didn't inherit it.
+- **Fix:** Added `process.env.NODE_NO_WARNINGS = '1';` as line 2 of `cli-entry.ts` (right after shebang). This env var is inherited by all child processes spawned by the SDK, suppressing warnings at the Node.js runtime level before they reach stderr.
+- **Belt-and-suspenders:** Kept the existing `process.emitWarning` override (lines 4-9) for main-process coverage.
+- **Key insight:** `process.emitWarning` overrides are per-process and don't propagate to child processes. Environment variables DO propagate. `NODE_NO_WARNINGS=1` is the Node.js-native way to suppress warnings globally across process trees.
+- **File changed:** `packages/squad-cli/src/cli-entry.ts` (1 line added)
+- Build clean (tsc --noEmit passes).

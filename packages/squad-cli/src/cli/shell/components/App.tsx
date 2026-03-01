@@ -297,7 +297,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready - {activeCount} active</Text>
         </>
       ) : bannerReady && rosterAgents.length === 0 ? (
-        <Text dimColor>{"  Exit and run 'squad init', or type /init to set up your team"}</Text>
+        <Text dimColor>{"  Type /init to set up your team, or exit and run 'squad init'"}</Text>
       ) : null}
       {bannerReady && <Text>{' '}</Text>}
       {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
@@ -317,9 +317,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
             <Text dimColor>Squad automatically routes your message to the best agent.</Text>
             <Text dimColor>Or use <Text bold>@{leadAgent}</Text> to message an agent directly.</Text>
           </>
-        ) : (
-          <Text dimColor>{"Run 'squad init' to set up your team."}</Text>
-        )}
+        ) : null}
       </Box>
     );
   }, [bannerReady, welcome?.isFirstRun, rosterAgents, noColor, leadAgent]);

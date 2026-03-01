@@ -79,3 +79,8 @@
 - **Tests:** Updated 4 test assertions in repl-ux.test.ts. All 110 REPL UX tests pass.
 
 - **PR #538 (CTRL+C CANCEL + CONFIGURABLE TIMEOUT):** Fixed #500 and #502 together. Ctrl+C during streaming now sets `processing = false` immediately alongside `onCancel()`, so the InputPrompt re-enables instantly instead of staying locked. Added `SQUAD_REPL_TIMEOUT` env var (seconds) and `--timeout` CLI flag — computed as `replTimeoutMs` in `runShell()`, with precedence: env var → `TIMEOUTS.SESSION_RESPONSE_MS` → 600s default. The existing `handleCancel` in index.ts (session abort + stream buffer clear) was already correct; the missing piece was the UI state reset in App.tsx. Help text updated. All 2925 tests pass.
+
+### Issue #625 — Redundant 'squad init' messaging in first-run experience
+- **Root cause:** Two separate UI elements in App.tsx both told users to run `squad init` when no roster exists: the banner (line ~300) and the `firstRunElement` (line ~321). Duplicate guidance adds visual noise and confuses the hierarchy of where to look.
+- **Fix:** (1) Changed `firstRunElement` empty-roster branch from showing `"Run 'squad init' to set up your team."` to returning `null` — the banner already covers this case. (2) Reworded banner text to prioritize the in-shell path: `"Type /init to set up your team, or exit and run 'squad init'"` (was exit-first). The `rosterAgents.length > 0` branch ("Your squad is assembled") is untouched.
+- **Pattern:** Single source of truth for guidance — banner owns the "no roster" messaging, `firstRunElement` owns the "roster exists" first-run onboarding. No duplication across UI layers.

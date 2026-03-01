@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+process.env.NODE_NO_WARNINGS = '1';
 
 // Suppress Node.js experimental feature warnings (e.g., SQLite) from end users
 const originalEmitWarning = process.emitWarning;
