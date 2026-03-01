@@ -27,7 +27,7 @@ import { loadAgentCharter, buildAgentPrompt } from './spawn.js';
 import { createSession, saveSession, loadLatestSession, type SessionData } from './session-store.js';
 import { parseDispatchTargets, type ParsedInput } from './router.js';
 import { agentSessionGuidance, genericGuidance, formatGuidance } from './error-messages.js';
-import { parseCastResponse, createTeam, formatCastSummary } from '../core/cast.js';
+import { parseCastResponse, createTeam, formatCastSummary, type CastProposal } from '../core/cast.js';
 
 export { SessionRegistry } from './sessions.js';
 export { StreamBridge } from './stream-bridge.js';
@@ -198,6 +198,7 @@ export async function runShell(): Promise<void> {
   const agentSessions = new Map<string, SquadSession>();
   let coordinatorSession: SquadSession | null = null;
   let activeInitSession: SquadSession | null = null;
+  let pendingCastConfirmation: { proposal: CastProposal; parsed: ParsedInput } | null = null;
 
   // Eager SDK warm-up — start coordinator session before user's first message
   // This runs in background so UI renders immediately
@@ -586,6 +587,9 @@ export async function runShell(): Promise<void> {
       activeInitSession = null;
     }
 
+    // Clear pending cast confirmation
+    pendingCastConfirmation = null;
+
     // Abort coordinator session
     if (coordinatorSession) {
       try { await coordinatorSession.abort?.(); } catch (err) { debugLog('abort coordinator failed:', err); }
@@ -613,7 +617,7 @@ export async function runShell(): Promise<void> {
    * sends the user's message, parses the team proposal, creates files,
    * and then re-dispatches the original message to the now-populated team.
    */
-  async function handleInitCast(parsed: ParsedInput): Promise<void> {
+  async function handleInitCast(parsed: ParsedInput, skipConfirmation?: boolean): Promise<void> {
     debugLog('handleInitCast: entering Init Mode');
 
     // Check for a stored init prompt (from `squad init "prompt"`)
@@ -692,54 +696,26 @@ export async function runShell(): Promise<void> {
         content: `Team proposed:\n\n${formatCastSummary(proposal)}\n\nUniverse: ${proposal.universe}`,
         timestamp: new Date(),
       });
-      shellApi?.setActivityHint('Creating team files...');
 
-      // Create all team files
-      const result = await createTeam(teamRoot, proposal);
-      debugLog('handleInitCast: team created', {
-        members: result.membersCreated.length,
-        files: result.filesCreated.length,
-      });
-
-      shellApi?.addMessage({
-        role: 'system',
-        content: `✅ Team hired! ${result.membersCreated.length} members created.`,
-        timestamp: new Date(),
-      });
-
-      // Clean up stored init prompt (it's been consumed)
-      if (existsSync(initPromptFile)) {
-        try { unlinkSync(initPromptFile); } catch { /* ignore */ }
-      }
-
-      // Invalidate the old coordinator session so the next dispatch builds one
-      // with the real team roster
-      if (coordinatorSession) {
-        try { await coordinatorSession.abort?.(); } catch { /* ignore */ }
-        coordinatorSession = null;
-        streamBuffers.delete('coordinator');
-      }
-
-      // Close the init session
+      // Close the init session — it's no longer needed after parsing the proposal
       try { await initSession.close?.(); } catch { /* ignore */ }
       initSession = null;
       activeInitSession = null;
 
-      // Register the new agents in the session registry
-      for (const member of proposal.members) {
-        const roleName = member.role || 'Agent';
-        registry.register(member.name.toLowerCase(), roleName);
+      // P2: Cast confirmation — require user approval for freeform REPL casts
+      if (!skipConfirmation) {
+        shellApi?.addMessage({
+          role: 'system',
+          content: 'Look good? Type **y** to confirm or **n** to cancel.',
+          timestamp: new Date(),
+        });
+        pendingCastConfirmation = { proposal, parsed };
+        shellApi?.setActivityHint(undefined);
+        return;
       }
 
-      shellApi?.setActivityHint('Routing your message to the team...');
-
-      // Re-dispatch the original message — now with a populated roster
-      shellApi?.addMessage({
-        role: 'system',
-        content: '📌 Routing your message to the team now...',
-        timestamp: new Date(),
-      });
-      await dispatchToCoordinator(parsed.content ?? parsed.raw);
+      // Auto-confirmed path (auto-cast or /init command) — create team immediately
+      await finalizeCast(proposal, parsed);
 
     } catch (err) {
       debugLog('handleInitCast error:', err);
@@ -758,8 +734,86 @@ export async function runShell(): Promise<void> {
     }
   }
 
+  /**
+   * Finalize a confirmed cast — create team files, register agents, re-dispatch.
+   * Shared by the auto-confirmed path and the pending-confirmation accept path.
+   */
+  async function finalizeCast(proposal: CastProposal, parsed: ParsedInput): Promise<void> {
+    shellApi?.setActivityHint('Creating team files...');
+
+    const result = await createTeam(teamRoot, proposal);
+    debugLog('finalizeCast: team created', {
+      members: result.membersCreated.length,
+      files: result.filesCreated.length,
+    });
+
+    shellApi?.addMessage({
+      role: 'system',
+      content: `✅ Team hired! ${result.membersCreated.length} members created.`,
+      timestamp: new Date(),
+    });
+
+    // Clean up stored init prompt (it's been consumed)
+    const initPromptFile = join(teamRoot, '.squad', '.init-prompt');
+    if (existsSync(initPromptFile)) {
+      try { unlinkSync(initPromptFile); } catch { /* ignore */ }
+    }
+
+    // Invalidate the old coordinator session so the next dispatch builds one
+    // with the real team roster
+    if (coordinatorSession) {
+      try { await coordinatorSession.abort?.(); } catch { /* ignore */ }
+      coordinatorSession = null;
+      streamBuffers.delete('coordinator');
+    }
+
+    // Register the new agents in the session registry
+    for (const member of proposal.members) {
+      const roleName = member.role || 'Agent';
+      registry.register(member.name.toLowerCase(), roleName);
+    }
+
+    shellApi?.setActivityHint('Routing your message to the team...');
+
+    // Re-dispatch the original message — now with a populated roster
+    shellApi?.addMessage({
+      role: 'system',
+      content: '📌 Routing your message to the team now...',
+      timestamp: new Date(),
+    });
+    await dispatchToCoordinator(parsed.content ?? parsed.raw);
+    shellApi?.setActivityHint(undefined);
+  }
+
   /** Handle dispatching parsed input to agents or coordinator. */
   async function handleDispatch(parsed: ParsedInput): Promise<void> {
+    // P2: Handle pending cast confirmation before any other dispatch
+    if (pendingCastConfirmation) {
+      const input = parsed.raw.trim().toLowerCase();
+      const { proposal, parsed: originalParsed } = pendingCastConfirmation;
+      pendingCastConfirmation = null;
+      if (input === 'y' || input === 'yes') {
+        try {
+          await finalizeCast(proposal, originalParsed);
+        } catch (err) {
+          debugLog('finalizeCast error:', err);
+          recordShellError('init_cast', err instanceof Error ? err.constructor.name : 'unknown');
+          shellApi?.addMessage({
+            role: 'system',
+            content: `⚠ Team casting failed: ${err instanceof Error ? err.message : String(err)}\nTry again or edit .squad/team.md directly.`,
+            timestamp: new Date(),
+          });
+        }
+      } else {
+        shellApi?.addMessage({
+          role: 'system',
+          content: 'Cast cancelled. Describe what you\'re building to try again.',
+          timestamp: new Date(),
+        });
+      }
+      return;
+    }
+
     // Guard: require a Squad team before processing work requests
     const teamFile = join(teamRoot, '.squad', 'team.md');
     if (!existsSync(teamFile)) {
@@ -774,7 +828,7 @@ export async function runShell(): Promise<void> {
     // Check if roster is actually populated — if not, enter Init Mode (cast a team)
     const teamContent = readFileSync(teamFile, 'utf-8');
     if (!hasRosterEntries(teamContent)) {
-      await handleInitCast(parsed);
+      await handleInitCast(parsed, parsed.skipCastConfirmation);
       return;
     }
 
@@ -911,7 +965,7 @@ export async function runShell(): Promise<void> {
                 debugLog('Auto-cast: .init-prompt found with empty roster, triggering cast');
                 // Trigger cast after Ink settles, but now shellApi is guaranteed to be set
                 setTimeout(() => {
-                  handleInitCast({ type: 'coordinator', raw: storedPrompt, content: storedPrompt }).catch(err => {
+                  handleInitCast({ type: 'coordinator', raw: storedPrompt, content: storedPrompt }, true).catch(err => {
                     debugLog('Auto-cast error:', err);
                   });
                 }, 100);

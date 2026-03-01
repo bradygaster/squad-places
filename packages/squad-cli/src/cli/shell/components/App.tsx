@@ -203,6 +203,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           type: 'coordinator',
           raw: result.triggerInitCast.prompt,
           content: result.triggerInitCast.prompt,
+          skipCastConfirmation: true,
         };
         setProcessing(true);
         onDispatch(castParsed).finally(() => {

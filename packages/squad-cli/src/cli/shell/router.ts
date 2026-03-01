@@ -10,6 +10,7 @@ export interface ParsedInput {
   args?: string[];         // command arguments
   agentName?: string;      // for @Agent direct messages
   content?: string;        // the actual message content
+  skipCastConfirmation?: boolean; // skip cast confirmation (explicit /init or auto-cast)
 }
 
 /**

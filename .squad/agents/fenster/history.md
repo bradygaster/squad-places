@@ -77,6 +77,8 @@ Migrated 56 test files (173 imports) from ../src/ to @bradygaster/squad-sdk/* an
 ### 📌 Team update (2026-02-23T08:00:00Z): REPL streaming bug fixed via sendAndWait pattern — decided by Kovash
 All shell dispatch calls must use awaitStreamedResponse() to wait for full streamed response before parsing. Pattern includes fallback to turn_end/idle listeners. Critical fix for coordinator prompt parsing. Test coverage: 13 new tests in repl-streaming.test.ts. All 2351 tests passing.
 
+### 📌 P2 Cast Confirmation Step (PR #641 implementation)
+Implemented cast confirmation before team creation in handleInitCast. Freeform REPL casts now show the proposal and wait for y/n before calling createTeam. Auto-cast (.init-prompt) and /init "prompt" skip confirmation since the user explicitly provided the prompt. Pattern: pendingCastConfirmation state intercepted at top of handleDispatch, finalizeCast() extracted as shared helper. Ctrl+C clears pending state. Three files changed: index.ts (main logic), router.ts (skipCastConfirmation flag on ParsedInput), App.tsx (flag set for /init trigger). Build clean, 353 shell/repl/cast tests passing.
 
 **Requested by:** Brady. Understand current build capability, identify gaps for GitHub Pages deployment.
 

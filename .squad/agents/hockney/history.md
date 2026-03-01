@@ -430,6 +430,13 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Added a syntax-validity test using `node --check templates/ralph-triage.js` so template script regressions are caught by Vitest.
 - Verified with `node templates/ralph-triage.js --help`, `node --check templates/ralph-triage.js`, and `npx vitest run test/ralph-triage.test.ts` (29 passing).
 
+### Auto-cast trigger and /init command coverage — PR #640 P0/P1 (2026-03-02)
+**Status:** Complete — 35 new tests in `test/init-autocast.test.ts`, all passing.
+- **Categories:** hasRosterEntries predicate (7), Auto-cast trigger conditions (6), Orphan .init-prompt cleanup (3), /init command triggerInitCast signal (7), triggerInitCast App.tsx dispatch contract (3), activeInitSession Ctrl+C abort lifecycle (5), handleInitCast .init-prompt consumption (4).
+- **Key finding:** `hasRosterEntries()` in coordinator.ts is the single gating predicate for auto-cast. It parses the `## Members` markdown table, filtering out header and separator rows. Testing the predicate directly is the highest-value path since the auto-cast logic in index.ts is deep inside the Ink render closure (onReady callback).
+- **Test strategy:** Direct function tests for `executeCommand('init', ...)` and `hasRosterEntries()`. Filesystem-state tests for auto-cast condition matrix (init-prompt × roster × team.md existence). Structural pattern replication for activeInitSession lifecycle (abort/clear/finally) since the closure variable can't be accessed directly.
+- **Coverage gap remaining:** No integration test that renders the full Ink app and verifies auto-cast fires end-to-end (requires SDK mock infrastructure). The condition-level tests cover the decision logic but not the setTimeout dispatch in onReady.
+
 ### RalphMonitor event-driven coverage (2026-02-27)
 - `test/ralph-monitor.test.ts` should import Ralph source directly via `../packages/squad-sdk/src/ralph/index.js` for Vitest runs, since `@bradygaster/squad-sdk/ralph` depends on a built dist artifact.
 - Added event-bus behavior tests for `session:created`, `session:destroyed`, `session:error`, `agent:milestone`, stale detection in `healthCheck()`, and independent multi-agent tracking.
