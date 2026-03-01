@@ -292,6 +292,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       <Text bold color={noColor ? undefined : 'cyan'}>{'  ___  ___  _   _  _   ___\n / __|/ _ \\| | | |/_\\ |   \\\n \\__ \\ (_) | |_| / _ \\| |) |\n |___/\\__\\_\\\\___/_/ \\_\\___/'}</Text>
       <Text>{' '}</Text>
       <Text dimColor>v{version} · Type naturally · @Agent to direct · /help</Text>
+      <Text color={noColor ? undefined : 'yellow'} dimColor>⚠️  Experimental preview — file issues at github.com/bradygaster/squad-pr</Text>
     </Box>
   ), [noColor, version]);
 

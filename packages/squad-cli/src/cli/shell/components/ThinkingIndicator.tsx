@@ -21,8 +21,24 @@ export interface ThinkingIndicatorProps {
   phase?: ThinkingPhase;
 }
 
-/** Default thinking label — exported for backward compat with tests. */
-export const THINKING_PHRASES = ['Routing to agent'];
+/** Rotating thinking phrases — cycled every few seconds to keep the UI alive. */
+export const THINKING_PHRASES = [
+  'Routing to agent',
+  'Analyzing your request',
+  'Reviewing project context',
+  'Consulting the team',
+  'Evaluating options',
+  'Gathering context',
+  'Synthesizing a response',
+  'Reading the codebase',
+  'Considering approaches',
+  'Mapping dependencies',
+  'Checking project structure',
+  'Weighing trade-offs',
+  'Crafting a plan',
+  'Connecting the dots',
+  'Exploring possibilities',
+];
 
 /** Map phase to its default label. */
 function phaseLabel(phase: ThinkingPhase): string {
@@ -59,6 +75,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
 }) => {
   const noColor = isNoColor();
   const [frame, setFrame] = useState(0);
+  const [phraseIndex, setPhraseIndex] = useState(0);
 
   // Spinner animation — 80ms per frame (disabled in NO_COLOR)
   useEffect(() => {
@@ -69,9 +86,18 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
     return () => clearInterval(timer);
   }, [isThinking, noColor]);
 
+  // Rotate thinking phrases every 3 seconds
+  useEffect(() => {
+    if (!isThinking) { setPhraseIndex(0); return; }
+    const timer = setInterval(() => {
+      setPhraseIndex(i => (i + 1) % THINKING_PHRASES.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [isThinking]);
+
   // Reset frame when thinking starts
   useEffect(() => {
-    if (isThinking) setFrame(0);
+    if (isThinking) { setFrame(0); setPhraseIndex(0); }
   }, [isThinking]);
 
   if (!isThinking) return null;
@@ -80,12 +106,17 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
   const elapsedStr = formatElapsed(elapsedMs);
   const spinnerChar = noColor ? STATIC_SPINNER : (SPINNER_FRAMES[frame] ?? '⠋');
 
+  // Resolve the display label: activity hint > rotating phrase > phase label
+  const displayLabel = activityHint ?? (
+    phase === 'connecting' ? phaseLabel(phase) : `${THINKING_PHRASES[phraseIndex]}...`
+  );
+
   // NO_COLOR: no color props, use text labels
   if (noColor) {
     return (
       <Box gap={1}>
         <Text>{spinnerChar}</Text>
-        <Text>{activityHint ?? phaseLabel(phase)}</Text>
+        <Text>{displayLabel}</Text>
         {elapsedStr ? <Text>({elapsedStr})</Text> : null}
       </Box>
     );
@@ -93,22 +124,10 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
 
   const color = indicatorColor(elapsedSec);
 
-  // Activity hint takes priority when available
-  if (activityHint) {
-    return (
-      <Box gap={1}>
-        <Text color={color}>{spinnerChar}</Text>
-        <Text color={color} italic>{activityHint}</Text>
-        {elapsedStr ? <Text dimColor>({elapsedStr})</Text> : null}
-      </Box>
-    );
-  }
-
-  // Default: phase-based label
   return (
     <Box gap={1}>
       <Text color={color}>{spinnerChar}</Text>
-      <Text color={color} italic>{phaseLabel(phase)}</Text>
+      <Text color={color} italic>{displayLabel}</Text>
       {elapsedStr ? <Text dimColor>({elapsedStr})</Text> : null}
     </Box>
   );
