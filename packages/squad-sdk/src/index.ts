@@ -32,6 +32,8 @@ export { createOTelTransport, bridgeEventBusToOTel } from './runtime/otel-bridge
 export * from './runtime/otel-metrics.js';
 export { initSquadTelemetry, initAgentModeTelemetry } from './runtime/otel-init.js';
 export type { SquadTelemetryOptions, SquadTelemetryHandle } from './runtime/otel-init.js';
+export { EventBus as RuntimeEventBus } from './runtime/event-bus.js';
+export type { SquadEvent as RuntimeSquadEvent, SquadEventType as RuntimeSquadEventType } from './runtime/event-bus.js';
 export { SquadObserver, classifyFile } from './runtime/squad-observer.js';
 export type { SquadFileChange, SquadFileCategory, SquadObserverConfig } from './runtime/squad-observer.js';
 

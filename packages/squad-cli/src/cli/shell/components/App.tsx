@@ -32,6 +32,7 @@ export interface ShellApi {
   setAgentActivity: (agentName: string, activity: string | undefined) => void;
   setProcessing: (processing: boolean) => void;
   refreshAgents: () => void;
+  refreshWelcome: () => void;
 }
 
 export interface AppProps {
@@ -133,6 +134,10 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
       setProcessing,
       refreshAgents: () => {
         setAgents([...registry.getAll()]);
+      },
+      refreshWelcome: () => {
+        const data = loadWelcomeData(teamRoot);
+        if (data) setWelcome(data);
       },
     });
   }, [onReady, registry, appendMessages]);
@@ -243,18 +248,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
   const rosterAgents = welcome?.agents ?? [];
 
-  const agentCount = welcome?.agents.length ?? 0;
-  const activeCount = agents.filter(a => a.status === 'streaming' || a.status === 'working').length;
-
   const noColor = isNoColor();
   const width = useTerminalWidth();
-  const compact = width <= 60;
-  const wide = width >= 100;
-
-  // Welcome banner: instant display (no typewriter blocking)
-  const titleRevealed = welcome ? '◆ SQUAD' : '';
-  const bannerReady = true;
-  const bannerDim = false;
+  const contentWidth = Math.min(width, 80);
 
   // Prefer lead/coordinator for first-run hint, fall back to first agent
   const leadAgent = welcome?.agents.find(a =>
@@ -288,42 +284,19 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const roleMap = useMemo(() => new Map((agents ?? []).map(a => [a.name, a.role])), [agents]);
   const caps = detectTerminal();
   const box = boxChars(caps);
-  const sepWidth = Math.min(width, 120) - 2;
+  const sepWidth = Math.min(width, 80) - 2;
 
-  // Memoize the header box so it doesn't re-layout on every state change (P1).
-  // Dependencies are all derived from welcome data (stable) + width (resize only).
+  // Memoize the header box — rendered once into Static scroll buffer at the top.
   const headerElement = useMemo(() => (
     <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
-      <Box gap={1}>
-        <Text bold color={noColor ? undefined : 'cyan'}>{welcome ? titleRevealed : '◆ SQUAD'}</Text>
-        {bannerReady && <Text dimColor>v{version}</Text>}
-        {bannerReady && welcome?.description ? (
-          <>
-            <Text dimColor>-</Text>
-            <Text dimColor wrap="wrap">{welcome.description}</Text>
-          </>
-        ) : null}
-      </Box>
-      {bannerReady && <Text>{' '}</Text>}
-      {bannerReady && rosterAgents.length > 0 ? (
-        <>
-          <Box flexWrap="wrap" columnGap={1}>
-            {rosterAgents.map((a, i) => (
-              <Box key={a.name}><Text dimColor={bannerDim}>{a.name}{i < rosterAgents.length - 1 ? ' -' : ''}</Text></Box>
-            ))}
-          </Box>
-          <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready - {activeCount} active</Text>
-        </>
-      ) : bannerReady && rosterAgents.length === 0 ? (
-        <Text dimColor>{"  Describe what you're building to cast your team"}</Text>
-      ) : null}
-      {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
-      {bannerReady && <Text dimColor>Type naturally · @Agent to direct · /help · Ctrl+C to exit</Text>}
+      <Text bold color={noColor ? undefined : 'cyan'}>{'  ___  ___  _   _  _   ___\n / __|/ _ \\| | | |/_\\ |   \\\n \\__ \\ (_) | |_| / _ \\| |) |\n |___/\\__\\_\\\\___/_/ \\_\\___/'}</Text>
+      <Text>{' '}</Text>
+      <Text dimColor>v{version} · Type naturally · @Agent to direct · /help</Text>
     </Box>
-  ), [noColor, welcome, titleRevealed, bannerReady, version, rosterAgents, bannerDim, agentCount, activeCount, wide]);
+  ), [noColor, version]);
 
   const firstRunElement = useMemo(() => {
-    if (!bannerReady || !welcome?.isFirstRun) return null;
+    if (!welcome?.isFirstRun) return null;
     return (
       <Box flexDirection="column" paddingX={1} paddingY={1}>
         {rosterAgents.length > 0 ? (
@@ -337,20 +310,39 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         ) : null}
       </Box>
     );
-  }, [bannerReady, welcome?.isFirstRun, rosterAgents, noColor, leadAgent]);
+  }, [welcome?.isFirstRun, rosterAgents, noColor, leadAgent]);
+
+  // Static items: header rendered once at top of scroll buffer, then messages below.
+  // Ink's Static renders each keyed item exactly once — header stays at the top.
+  type StaticItem =
+    | { kind: 'header'; key: string }
+    | { kind: 'msg'; key: string; msg: ShellMessage; idx: number };
+
+  const allStaticItems = useMemo((): StaticItem[] => {
+    const items: StaticItem[] = [{ kind: 'header', key: 'welcome-header' }];
+    for (let i = 0; i < staticMessages.length; i++) {
+      items.push({ kind: 'msg', key: `${sessionId}-${i}`, msg: staticMessages[i]!, idx: i });
+    }
+    return items;
+  }, [staticMessages, sessionId]);
 
   return (
     <Box flexDirection="column">
-      {headerElement}
-      {firstRunElement}
-
-      {/* Completed messages — rendered once to the terminal scroll buffer via Ink Static */}
-      <Static items={staticMessages}>
-        {(msg, i) => {
+      {/* Static block: header first (stays at top of scroll buffer), then messages */}
+      <Static items={allStaticItems}>
+        {(item) => {
+          if (item.kind === 'header') {
+            return (
+              <Box key={item.key} flexDirection="column">
+                {headerElement}
+                {firstRunElement}
+              </Box>
+            );
+          }
+          const { msg, idx: i } = item;
           const isNewTurn = msg.role === 'user' && i > 0;
           const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
           const emoji = agentRole ? getRoleEmoji(agentRole) : '';
-          // Compute response duration for agent messages: time since preceding user message
           let duration: string | null = null;
           if (msg.role === 'agent') {
             for (let j = i - 1; j >= 0; j--) {
@@ -361,7 +353,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
             }
           }
           return (
-            <Box key={`${sessionId}-${i}`} flexDirection="column">
+            <Box key={item.key} flexDirection="column" width={contentWidth}>
               {isNewTurn && <Text dimColor>{box.h.repeat(sepWidth)}</Text>}
               <Box gap={1} paddingLeft={msg.role === 'user' ? 0 : 2}>
                 {msg.role === 'user' ? (
@@ -377,10 +369,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
                     ))}
                   </Box>
                 ) : msg.role === 'system' ? (
-                  <>
-                    <Text dimColor>[system]</Text>
-                    <Text dimColor wrap="wrap">{msg.content}</Text>
-                  </>
+                  <Text dimColor wrap="wrap">{msg.content}</Text>
                 ) : (
                   <>
                     <Text color={noColor ? undefined : 'green'} bold>{emoji ? `${emoji} ` : ''}{(msg.agentName === 'coordinator' ? 'Squad' : msg.agentName) ?? 'agent'}:</Text>

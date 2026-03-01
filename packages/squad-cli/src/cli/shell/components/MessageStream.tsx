@@ -120,12 +120,13 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
 
   const noColor = isNoColor();
   const width = useTerminalWidth();
-  const sepWidth = Math.min(width, 120) - 2;
+  const contentWidth = Math.min(width, 80);
+  const sepWidth = contentWidth - 2;
   const caps = detectTerminal();
   const box = boxChars(caps);
 
   return (
-    <Box flexDirection="column" flexGrow={1} marginTop={1}>
+    <Box flexDirection="column" flexGrow={1} marginTop={1} width={contentWidth}>
       {visible.map((msg, i) => {
         const isNewTurn = msg.role === 'user' && i > 0;
         const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
@@ -144,7 +145,6 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
                 </>
               ) : msg.role === 'system' ? (
                 <>
-                  <Text dimColor>[system]</Text>
                   <Text dimColor wrap="wrap">{msg.content}</Text>
                 </>
               ) : (

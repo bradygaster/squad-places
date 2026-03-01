@@ -577,21 +577,18 @@ describe('#625 — Redundant init messaging eliminated', () => {
     expect(firstRunContent).toBe('assembled');
   });
 
-  it('banner text uses simple CTA when roster is empty', async () => {
-    // App.tsx line 300: text should be a simple CTA when roster is empty
+  it('banner text does not reference squad cast', async () => {
+    // App.tsx banner was simplified — no longer has roster length branches
     const fs = await import('node:fs');
     const source = fs.readFileSync(
       join(process.cwd(), 'packages', 'squad-cli', 'src', 'cli', 'shell', 'components', 'App.tsx'),
       'utf-8',
     );
 
-    // Find the empty-roster banner guidance line — should have a simple message
-    const guidanceMatch = source.match(/rosterAgents\.length === 0[\s\S]*?<Text[^>]*>[^<]+<\/Text>/);
-    expect(guidanceMatch).not.toBeNull();
-
-    const guidanceLine = guidanceMatch![0];
-    // Should NOT reference 'squad cast' (doesn't exist as a command)
-    expect(guidanceLine).not.toContain('squad cast');
+    // Banner should NOT reference 'squad cast' (doesn't exist as a command)
+    const headerBlock = source.match(/const headerElement[\s\S]*?useMemo/);
+    expect(headerBlock).not.toBeNull();
+    expect(headerBlock![0]).not.toContain('squad cast');
   });
 });
 
@@ -610,13 +607,12 @@ describe('Banner simplification (#626, #627)', () => {
   it('Banner init message uses simple CTA — no squad cast reference', async () => {
     const source = await readAppSource();
 
-    // Find the empty-roster guidance line (rosterAgents.length === 0 branch)
-    const emptyRosterBlock = source.match(/rosterAgents\.length === 0[\s\S]*?<Text[^>]*>([^<]+)<\/Text>/);
-    expect(emptyRosterBlock).not.toBeNull();
+    // Banner was simplified — verify no squad cast reference anywhere in header/first-run sections
+    const headerAndFirstRun = source.match(/const headerElement[\s\S]*?const firstRunElement[\s\S]*?useMemo/);
+    expect(headerAndFirstRun).not.toBeNull();
 
-    const guidanceText = emptyRosterBlock![1];
     // Should NOT reference non-existent 'squad cast' command
-    expect(guidanceText).not.toContain('squad cast');
+    expect(headerAndFirstRun![0]).not.toContain('squad cast');
   });
 
   it('Usage line uses middle-dot separators (U+00B7)', async () => {
@@ -647,19 +643,14 @@ describe('Banner simplification (#626, #627)', () => {
     expect(lineText).not.toContain('Just type what you need');
   });
 
-  it('Ctrl+C formatting — "Ctrl+C to exit" not "Ctrl+C exit"', async () => {
+  it('Ctrl+C formatting — "Ctrl+C again to exit" in system message', async () => {
     const source = await readAppSource();
 
-    // Find the usage line with Ctrl+C
-    const usageLine = source.match(/<Text[^>]*>[^<]*Ctrl\+C[^<]*<\/Text>/);
-    expect(usageLine).not.toBeNull();
-
-    const lineText = usageLine![0];
-    expect(lineText).toContain('Ctrl+C to exit');
-    expect(lineText).not.toMatch(/Ctrl\+C exit(?! )/); // "Ctrl+C exit" without "to"
+    // Ctrl+C exit hint is now in the system message, not the header
+    expect(source).toContain('Press Ctrl+C again to exit.');
   });
 
-  it('No redundant spacers — at most one empty Text between roster/init and usage line', async () => {
+  it('Header has at most one spacer between banner and version line', async () => {
     const source = await readAppSource();
 
     // Extract the headerElement useMemo block
@@ -667,15 +658,8 @@ describe('Banner simplification (#626, #627)', () => {
     expect(headerBlock).not.toBeNull();
 
     const block = headerBlock![0];
-    // Find the section between roster/init (rosterAgents.length === 0) and the usage line (@Agent)
-    const rosterEndIdx = block.lastIndexOf('rosterAgents.length === 0');
-    const usageLineIdx = block.indexOf('@Agent', rosterEndIdx);
-    expect(rosterEndIdx).toBeGreaterThan(-1);
-    expect(usageLineIdx).toBeGreaterThan(-1);
-
-    const between = block.slice(rosterEndIdx, usageLineIdx);
-    // Count standalone spacer lines: {bannerReady && <Text>{' '}</Text>}
-    const spacerMatches = between.match(/\{bannerReady && <Text>\{' '\}<\/Text>\}/g);
+    // Count standalone spacer lines: <Text>{' '}</Text>
+    const spacerMatches = block.match(/<Text>\{' '\}<\/Text>/g);
     const spacerCount = spacerMatches ? spacerMatches.length : 0;
     expect(spacerCount).toBeLessThanOrEqual(1);
   });

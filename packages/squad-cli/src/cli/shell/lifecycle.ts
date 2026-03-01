@@ -83,11 +83,10 @@ export class ShellLifecycle {
 
     if (this.discoveredAgents.length === 0) {
       const initPromptPath = path.join(squadDir, '.init-prompt');
-      if (fs.existsSync(initPromptPath)) {
-        console.warn('🏗️ No team yet — auto-casting from your init prompt...');
-      } else {
+      if (!fs.existsSync(initPromptPath)) {
         console.warn('⚠ No agents found in team.md. Run `squad init "describe your project"` to cast a team.');
       }
+      // Auto-cast message is shown inside the Ink UI (index.ts handleInitCast)
     }
 
     // Register discovered agents in the session registry
@@ -236,7 +235,7 @@ function parseTeamManifest(content: string): DiscoveredAgent[] {
 /** Role → emoji mapping for rich terminal display. */
 export function getRoleEmoji(role: string): string {
   const normalized = role.toLowerCase();
-  const map: Record<string, string> = {
+  const exactMap: Record<string, string> = {
     'lead': '🏗️',
     'prompt engineer': '💬',
     'core dev': '🔧',
@@ -255,7 +254,20 @@ export function getRoleEmoji(role: string): string {
     'coordinator': '🎯',
     'coding agent': '🤖',
   };
-  return map[normalized] ?? '🔹';
+  if (exactMap[normalized]) return exactMap[normalized]!;
+  // Keyword-based fallbacks for custom roles
+  if (normalized.includes('lead') || normalized.includes('architect')) return '🏗️';
+  if (normalized.includes('frontend') || normalized.includes('ui')) return '⚛️';
+  if (normalized.includes('backend') || normalized.includes('api') || normalized.includes('server')) return '🔧';
+  if (normalized.includes('test') || normalized.includes('qa') || normalized.includes('quality')) return '🧪';
+  if (normalized.includes('game') || normalized.includes('logic')) return '🎮';
+  if (normalized.includes('devops') || normalized.includes('infra') || normalized.includes('platform')) return '⚙️';
+  if (normalized.includes('security') || normalized.includes('auth')) return '🔒';
+  if (normalized.includes('doc') || normalized.includes('writer') || normalized.includes('devrel')) return '📝';
+  if (normalized.includes('data') || normalized.includes('database') || normalized.includes('analytics')) return '📊';
+  if (normalized.includes('design') || normalized.includes('visual') || normalized.includes('graphic')) return '🎨';
+  if (normalized.includes('dev') || normalized.includes('engineer')) return '🔧';
+  return '🔹';
 }
 
 export interface WelcomeData {

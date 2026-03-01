@@ -318,7 +318,7 @@ describe('Journey: I\'m waiting and getting anxious', () => {
 
   // ─── 5. /status shows which agent is working ────────────────────────────
 
-  it('/status shows active agent with [WORK] tag', async () => {
+  it('/status shows active agent status', async () => {
     // Mark agent as working in the registry
     shell.registry.updateStatus('Keaton', 'working');
     shell.api().refreshAgents();
@@ -327,7 +327,6 @@ describe('Journey: I\'m waiting and getting anxious', () => {
     await shell.submit('/status');
     await tick(200);
 
-    expect(shell.hasText('[WORK]')).toBe(true);
     expect(shell.hasText('Keaton')).toBe(true);
     expect(shell.hasText('1 active')).toBe(true);
   });
@@ -414,23 +413,25 @@ describe('Journey: I\'m waiting and getting anxious', () => {
     expect(shell.hasText('check the logs instead')).toBe(true);
   });
 
-  // ─── Bonus: AgentPanel shows [WORK] label for active agents ──────────────
+  // ─── Bonus: AgentPanel shows active status for working agents ──────────────
 
-  it('AgentPanel shows [WORK] label when agent is working', async () => {
+  it('AgentPanel shows agent name when agent is working', async () => {
     shell.registry.updateStatus('Keaton', 'working');
     shell.api().refreshAgents();
     await tick(200);
 
-    expect(shell.hasText('[WORK]')).toBe(true);
     expect(shell.hasText('Keaton')).toBe(true);
+    // Active agents show with pulsing dot and activity info, not [WORK] tag
+    expect(shell.hasText('working')).toBe(true);
   });
 
-  it('AgentPanel shows [STREAM] label when agent is streaming', async () => {
+  it('AgentPanel shows agent name when agent is streaming', async () => {
     shell.registry.updateStatus('Fenster', 'streaming');
     shell.api().refreshAgents();
     await tick(200);
 
-    expect(shell.hasText('[STREAM]')).toBe(true);
     expect(shell.hasText('Fenster')).toBe(true);
+    // Active agents show with pulsing dot and activity info, not [STREAM] tag
+    expect(shell.hasText('working')).toBe(true);
   });
 });

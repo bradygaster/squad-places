@@ -16,11 +16,12 @@ import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { SessionRegistry } from './sessions.js';
 import { ShellRenderer } from './render.js';
 import { StreamBridge } from './stream-bridge.js';
-import { ShellLifecycle } from './lifecycle.js';
+import { ShellLifecycle, loadWelcomeData } from './lifecycle.js';
 import { SquadClient } from '@bradygaster/squad-sdk/client';
 import type { SquadSession } from '@bradygaster/squad-sdk/client';
 import type { ShellMessage } from './types.js';
-import { initSquadTelemetry, TIMEOUTS } from '@bradygaster/squad-sdk';
+import { initSquadTelemetry, TIMEOUTS, StreamingPipeline, recordAgentSpawn, recordAgentDuration, recordAgentError, recordAgentDestroy, RuntimeEventBus } from '@bradygaster/squad-sdk';
+import type { UsageEvent } from '@bradygaster/squad-sdk';
 import { enableShellMetrics, recordShellSessionDuration, recordAgentResponseLatency, recordShellError } from './shell-metrics.js';
 import { buildCoordinatorPrompt, buildInitModePrompt, parseCoordinatorResponse, hasRosterEntries } from './coordinator.js';
 import { loadAgentCharter, buildAgentPrompt } from './spawn.js';
@@ -170,12 +171,16 @@ export async function runShell(): Promise<void> {
   }
 
   // Initialize OpenTelemetry if endpoint is configured (e.g. Aspire dashboard)
-  const telemetry = initSquadTelemetry({ serviceName: 'squad-cli', mode: 'cli' });
+  const eventBus = new RuntimeEventBus();
+  const telemetry = initSquadTelemetry({ serviceName: 'squad-cli', mode: 'cli', eventBus });
   if (telemetry.tracing || telemetry.metrics) {
     debugLog('🔭 Telemetry active — exporting to ' + process.env['OTEL_EXPORTER_OTLP_ENDPOINT']);
   }
 
-  // Shell-level observability metrics (opt-in via SQUAD_TELEMETRY=1)
+  // Streaming pipeline for token usage and response latency metrics
+  const streamingPipeline = new StreamingPipeline();
+
+  // Shell-level observability metrics (auto-enabled when OTel is configured)
   const shellMetricsActive = enableShellMetrics();
   if (shellMetricsActive) {
     debugLog('shell observability metrics enabled');
@@ -264,42 +269,19 @@ export async function runShell(): Promise<void> {
     if (session.sendAndWait) {
       debugLog('awaitStreamedResponse: using sendAndWait');
       
-      // Progress indicator for long operations (shows after 30s, updates every 30s)
-      const startTime = Date.now();
-      let progressInterval: NodeJS.Timeout | undefined;
-      
-      const updateProgress = (): void => {
-        const elapsedMs = Date.now() - startTime;
-        const elapsedSec = Math.floor(elapsedMs / 1000);
-        const minutes = Math.floor(elapsedSec / 60);
-        const seconds = elapsedSec % 60;
-        const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-        shellApi?.setActivityHint(`Still working... (${timeStr} elapsed)`);
-      };
-      
-      // Start progress updates after 30s
-      const progressTimer = setTimeout(() => {
-        updateProgress(); // Show immediately at 30s
-        progressInterval = setInterval(updateProgress, 30000); // Update every 30s after
-      }, 30000);
-      
-      try {
-        const result = await session.sendAndWait({ prompt }, replTimeoutMs);
-        debugLog('awaitStreamedResponse: sendAndWait returned', {
-          type: typeof result,
-          keys: result ? Object.keys(result as Record<string, unknown>) : [],
-          hasData: !!(result as Record<string, unknown> | undefined)?.['data'],
-        });
-        // Return full response content as fallback for when deltas weren't captured
-        const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
-        const content = typeof data?.['content'] === 'string' ? data['content'] as string : '';
-        debugLog('awaitStreamedResponse: fallback content length', content.length);
-        return content;
-      } finally {
-        // Clean up progress timers
-        clearTimeout(progressTimer);
-        if (progressInterval) clearInterval(progressInterval);
-      }
+      // ThinkingIndicator already shows elapsed time via its own timer;
+      // no need to override the current activity hint with generic text.
+      const result = await session.sendAndWait({ prompt }, replTimeoutMs);
+      debugLog('awaitStreamedResponse: sendAndWait returned', {
+        type: typeof result,
+        keys: result ? Object.keys(result as Record<string, unknown>) : [],
+        hasData: !!(result as Record<string, unknown> | undefined)?.['data'],
+      });
+      // Return full response content as fallback for when deltas weren't captured
+      const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+      const content = typeof data?.['content'] === 'string' ? data['content'] as string : '';
+      debugLog('awaitStreamedResponse: fallback content length', content.length);
+      return content;
     } else {
       const done = new Promise<void>((resolve) => {
         const onEnd = (): void => {
@@ -360,6 +342,7 @@ export async function runShell(): Promise<void> {
     debugLog('dispatchToAgent:', agentName, message.slice(0, 120));
     const dispatchStartMs = Date.now();
     let firstTokenRecorded = false;
+    let dispatchError = false;
     let session = agentSessions.get(agentName);
     if (!session) {
       shellApi?.setActivityHint(`Connecting to ${agentName}...`);
@@ -382,12 +365,20 @@ export async function runShell(): Promise<void> {
       agentSessions.set(agentName, session);
     }
 
+    // Record agent spawn metric
+    recordAgentSpawn(agentName, 'direct');
+    // Attach streaming pipeline for token/latency metrics
+    const sid = session.sessionId ?? `agent-${agentName}-${Date.now()}`;
+    if (!streamingPipeline.isAttached(sid)) streamingPipeline.attachToSession(sid);
+    streamingPipeline.markMessageStart(sid);
+
     registry.updateStatus(agentName, 'streaming');
     shellApi?.refreshAgents();
     shellApi?.setActivityHint(`${agentName} is thinking...`);
     shellApi?.setAgentActivity(agentName, 'thinking...');
 
     let accumulated = '';
+    let deltaIndex = 0;
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
       debugLog('agent onDelta fired', agentName, { eventType: event['type'] });
       const delta = extractDelta(event);
@@ -396,12 +387,44 @@ export async function runShell(): Promise<void> {
         firstTokenRecorded = true;
         recordAgentResponseLatency(agentName, Date.now() - dispatchStartMs, 'direct');
       }
+      // Feed delta to streaming pipeline for TTFT/latency metrics
+      streamingPipeline.processEvent({
+        type: 'message_delta',
+        sessionId: sid,
+        agentName,
+        content: delta,
+        index: deltaIndex++,
+        timestamp: new Date(),
+      });
       accumulated += delta;
       shellApi?.setStreamingContent({ agentName, content: accumulated });
       shellApi?.setActivityHint(undefined); // Clear hint once content is flowing
     };
 
+    // Listen for usage events to record token metrics and capture model name
+    const onUsage = (event: { type: string; [key: string]: unknown }): void => {
+      const inputTokens = typeof event['inputTokens'] === 'number' ? event['inputTokens'] : 0;
+      const outputTokens = typeof event['outputTokens'] === 'number' ? event['outputTokens'] : 0;
+      const model = typeof event['model'] === 'string' ? event['model'] : 'unknown';
+      const estimatedCost = typeof event['estimatedCost'] === 'number' ? event['estimatedCost'] : 0;
+      // Update model display in agent panel
+      registry.updateModel(agentName, model);
+      shellApi?.refreshAgents();
+      // Feed usage to streaming pipeline for token/duration metrics
+      streamingPipeline.processEvent({
+        type: 'usage',
+        sessionId: sid,
+        agentName,
+        model,
+        inputTokens,
+        outputTokens,
+        estimatedCost,
+        timestamp: new Date(),
+      } as UsageEvent);
+    };
+
     session.on('message_delta', onDelta);
+    try { session.on('usage', onUsage); } catch { /* event may not exist */ }
     // Listen for tool/activity events to show Copilot-style hints
     const onToolCall = (event: { type: string; [key: string]: unknown }): void => {
       const toolName = event['toolName'] ?? event['name'] ?? event['tool'];
@@ -426,21 +449,30 @@ export async function runShell(): Promise<void> {
     try {
       accumulated = await ghostRetry(async () => {
         accumulated = '';
+        deltaIndex = 0;
         const fallback = await awaitStreamedResponse(session, message);
         debugLog('agent dispatch:', agentName, 'accumulated length', accumulated.length, 'fallback length', fallback.length);
         if (!accumulated && fallback) accumulated = fallback;
         return accumulated;
       }, message);
     } catch (err) {
+      dispatchError = true;
       // Evict dead session so next attempt creates a fresh one
       debugLog('dispatchToAgent: evicting dead session for', agentName, err);
       recordShellError('agent_dispatch', agentName);
+      recordAgentError(agentName, 'dispatch_failure');
       agentSessions.delete(agentName);
       streamBuffers.delete(agentName);
       throw err;
     } finally {
       try { session.off('message_delta', onDelta); } catch { /* session may not support off */ }
+      try { session.off('usage', onUsage); } catch { /* ignore */ }
       try { session.off('tool_call', onToolCall); } catch { /* ignore */ }
+      // Record agent duration and destroy metrics
+      const durationMs = Date.now() - dispatchStartMs;
+      recordAgentDuration(agentName, durationMs, dispatchError ? 'error' : 'success');
+      recordAgentDestroy(agentName);
+      streamingPipeline.detachFromSession(sid);
       shellApi?.clearAgentStream(agentName);
       shellApi?.setActivityHint(undefined);
       shellApi?.setAgentActivity(agentName, undefined);
@@ -471,10 +503,34 @@ export async function runShell(): Promise<void> {
    * 
    * Event wiring is identical to `dispatchToAgent` — both use the same `message_delta` pattern.
    */
+
+  /** Extract a meaningful activity description from coordinator text near an agent name mention. */
+  function extractAgentHint(text: string, agentName: string): string {
+    const lower = text.toLowerCase();
+    const nameIdx = lower.lastIndexOf(agentName.toLowerCase());
+    if (nameIdx === -1) return 'working...';
+    const afterName = text.slice(nameIdx + agentName.length, nameIdx + agentName.length + 120);
+    const patterns = [
+      /^\s*(?:is|will|should|can)\s+(\w[\w\s,'-]{3,50}?)(?:[.\n;]|$)/i,
+      /^\s*[:\-→—]+\s*(\w[\w\s,'-]{3,50}?)(?:[.\n;]|$)/i,
+      /^\s+(?:to|for)\s+(\w[\w\s,'-]{3,50}?)(?:[.\n;]|$)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = afterName.match(pattern);
+      if (match?.[1]) {
+        let hint = match[1].trim().replace(/[.…,;:\-]+$/, '').trim();
+        if (hint.length > 45) hint = hint.slice(0, 42) + '...';
+        return hint.charAt(0).toUpperCase() + hint.slice(1);
+      }
+    }
+    return 'working...';
+  }
+
   async function dispatchToCoordinator(message: string): Promise<void> {
     debugLog('dispatchToCoordinator: sending message', message.slice(0, 120));
     const coordStartMs = Date.now();
     let coordFirstToken = false;
+    let coordError = false;
     if (!coordinatorSession) {
       shellApi?.setActivityHint('Connecting to SDK...');
       // Give React a tick to render the connection hint before blocking on SDK
@@ -493,7 +549,17 @@ export async function runShell(): Promise<void> {
     }
     shellApi?.setActivityHint('Coordinator is thinking...');
 
+    // Record coordinator spawn metric
+    recordAgentSpawn('coordinator', 'coordinator');
+    const coordSid = coordinatorSession.sessionId ?? `coordinator-${Date.now()}`;
+    if (!streamingPipeline.isAttached(coordSid)) streamingPipeline.attachToSession(coordSid);
+    streamingPipeline.markMessageStart(coordSid);
+
+    // Build a set of known agent names for detecting mentions in coordinator text
+    const knownAgentNames = registry.getAll().map(a => a.name.toLowerCase());
+
     let accumulated = '';
+    let coordDeltaIndex = 0;
     const onDelta = (event: { type: string; [key: string]: unknown }): void => {
       debugLog('coordinator onDelta fired', { eventType: event['type'] });
       const delta = extractDelta(event);
@@ -502,19 +568,95 @@ export async function runShell(): Promise<void> {
         coordFirstToken = true;
         recordAgentResponseLatency('coordinator', Date.now() - coordStartMs, 'coordinator');
       }
+      // Feed delta to streaming pipeline for TTFT/latency metrics
+      streamingPipeline.processEvent({
+        type: 'message_delta',
+        sessionId: coordSid,
+        agentName: 'coordinator',
+        content: delta,
+        index: coordDeltaIndex++,
+        timestamp: new Date(),
+      });
       accumulated += delta;
       // Don't push coordinator routing text to streamingContent — it's internal
       // routing instructions, not user-facing content. Keeping streamingContent
       // empty lets the ThinkingIndicator stay visible with the "Routing..." hint.
+
+      // Parse streaming text for agent name mentions → update AgentPanel
+      for (const name of knownAgentNames) {
+        if (delta.toLowerCase().includes(name)) {
+          const displayName = registry.get(name)?.name ?? name;
+          registry.updateStatus(name, 'working');
+          // Extract task description from accumulated coordinator text
+          const hint = extractAgentHint(accumulated, name);
+          registry.updateActivityHint(name, hint);
+          shellApi?.setActivityHint(`${displayName} — ${hint}`);
+          shellApi?.setAgentActivity(name, hint);
+          shellApi?.refreshAgents();
+        }
+      }
+    };
+
+    // Listen for usage events to record token metrics
+    const onCoordUsage = (event: { type: string; [key: string]: unknown }): void => {
+      const inputTokens = typeof event['inputTokens'] === 'number' ? event['inputTokens'] : 0;
+      const outputTokens = typeof event['outputTokens'] === 'number' ? event['outputTokens'] : 0;
+      const model = typeof event['model'] === 'string' ? event['model'] : 'unknown';
+      const estimatedCost = typeof event['estimatedCost'] === 'number' ? event['estimatedCost'] : 0;
+      streamingPipeline.processEvent({
+        type: 'usage',
+        sessionId: coordSid,
+        agentName: 'coordinator',
+        model,
+        inputTokens,
+        outputTokens,
+        estimatedCost,
+        timestamp: new Date(),
+      } as UsageEvent);
+    };
+
+    // Listen for tool/activity events (same pattern as dispatchToAgent)
+    const onToolCall = (event: { type: string; [key: string]: unknown }): void => {
+      const toolName = event['toolName'] ?? event['name'] ?? event['tool'];
+      if (typeof toolName === 'string') {
+        const hintMap: Record<string, string> = {
+          'read_file': 'Reading file...',
+          'write_file': 'Writing file...',
+          'edit_file': 'Editing file...',
+          'run_command': 'Running command...',
+          'search': 'Searching codebase...',
+          'spawn_agent': 'Spawning agent...',
+          'task': 'Dispatching to agent...',
+          'analyze': 'Analyzing dependencies...',
+        };
+        // Try to extract agent name from task description (e.g., "🔧 Morpheus: Building effects")
+        const desc = typeof event['description'] === 'string' ? event['description'] as string : '';
+        const agentMatch = desc.match(/^\S*\s*(\w+):/);
+        const matchedAgent = agentMatch?.[1]?.toLowerCase();
+        if (matchedAgent && knownAgentNames.includes(matchedAgent)) {
+          registry.updateStatus(matchedAgent, 'working');
+          const taskSummary = desc.replace(/^\S*\s*\w+:\s*/, '').slice(0, 60);
+          registry.updateActivityHint(matchedAgent, taskSummary || 'working...');
+          shellApi?.setActivityHint(`${registry.get(matchedAgent)?.name ?? matchedAgent} — ${taskSummary || 'working'}...`);
+          shellApi?.setAgentActivity(matchedAgent, taskSummary || 'working...');
+          shellApi?.refreshAgents();
+        } else {
+          const hint = hintMap[toolName] ?? `Using ${toolName}...`;
+          shellApi?.setActivityHint(hint);
+        }
+      }
     };
 
     const activeCoordSession = coordinatorSession;
-    // Wire message_delta listener BEFORE sending the message to ensure we catch all deltas
+    // Wire event listeners BEFORE sending the message to ensure we catch all events
     activeCoordSession.on('message_delta', onDelta);
-    debugLog('coordinator message_delta listener registered');
+    try { activeCoordSession.on('usage', onCoordUsage); } catch { /* event may not exist */ }
+    try { activeCoordSession.on('tool_call', onToolCall); } catch { /* event may not exist */ }
+    debugLog('coordinator message_delta + usage + tool_call listeners registered');
     try {
       accumulated = await ghostRetry(async () => {
         accumulated = '';
+        coordDeltaIndex = 0;
         debugLog('coordinator: starting awaitStreamedResponse');
         const fallback = await awaitStreamedResponse(activeCoordSession, message);
         debugLog('coordinator dispatch: accumulated length', accumulated.length, 'fallback length', fallback.length);
@@ -526,9 +668,11 @@ export async function runShell(): Promise<void> {
       }, message);
       debugLog('coordinator: final accumulated length', accumulated.length);
     } catch (err) {
+      coordError = true;
       // Evict dead coordinator session so next attempt creates a fresh one
       debugLog('dispatchToCoordinator: evicting dead coordinator session', err);
       recordShellError('coordinator_dispatch');
+      recordAgentError('coordinator', 'dispatch_failure');
       coordinatorSession = null;
       streamBuffers.delete('coordinator');
       throw err;
@@ -537,7 +681,34 @@ export async function runShell(): Promise<void> {
         activeCoordSession.off('message_delta', onDelta); 
         debugLog('coordinator message_delta listener removed');
       } catch { /* session may not support off */ }
+      try { activeCoordSession.off('usage', onCoordUsage); } catch { /* ignore */ }
+      try { activeCoordSession.off('tool_call', onToolCall); } catch { /* ignore */ }
+      // Record coordinator duration and destroy metrics
+      const coordDurationMs = Date.now() - coordStartMs;
+      recordAgentDuration('coordinator', coordDurationMs, coordError ? 'error' : 'success');
+      recordAgentDestroy('coordinator');
+      streamingPipeline.detachFromSession(coordSid);
       shellApi?.clearAgentStream('coordinator');
+      // Reset any agents that were marked working during coordinator dispatch
+      for (const name of knownAgentNames) {
+        const agent = registry.get(name);
+        if (agent && (agent.status === 'working' || agent.status === 'streaming')) {
+          registry.updateStatus(name, 'idle');
+          shellApi?.setAgentActivity(name, undefined);
+        }
+      }
+      // Re-sync registry from team.md for any new agents added by coordinator
+      const freshRoster = loadWelcomeData(teamRoot);
+      if (freshRoster) {
+        for (const agent of freshRoster.agents) {
+          const lname = agent.name.toLowerCase();
+          if (!registry.get(lname)) {
+            registry.register(agent.name, agent.role);
+          }
+        }
+      }
+      shellApi?.refreshWelcome();
+      shellApi?.refreshAgents();
     }
 
     // Parse routing decision from coordinator response
@@ -773,9 +944,11 @@ export async function runShell(): Promise<void> {
     // Register the new agents in the session registry
     for (const member of proposal.members) {
       const roleName = member.role || 'Agent';
-      registry.register(member.name.toLowerCase(), roleName);
+      registry.register(member.name, roleName);
     }
 
+    // Refresh the header box to show new team roster
+    shellApi?.refreshWelcome();
     shellApi?.setActivityHint('Routing your message to the team...');
 
     // Re-dispatch the original message — now with a populated roster
@@ -904,7 +1077,7 @@ export async function runShell(): Promise<void> {
     persistedSession = session;
     // Clear old messages and terminal to prevent content bleed-through
     shellApi?.clearMessages();
-    process.stdout.write('\x1b[2J\x1b[H');
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
     // Use unwrapped addMessage to avoid per-message autoSave and duplicate pushes
     for (const msg of session.messages) {
       origAddMessage?.(msg);
@@ -913,9 +1086,9 @@ export async function runShell(): Promise<void> {
     autoSave();
   }
 
-  // Clear terminal and enter fresh state for the shell — prevents old
-  // scrollback content from bleeding through in extended sessions.
-  process.stdout.write('\x1b[2J\x1b[H');
+  // Clear terminal and scrollback — prevents old scaffold output from
+  // bleeding through above the header box in extended sessions.
+  process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
 
   const { waitUntilExit } = render(
     React.createElement(ErrorBoundary, null,

@@ -186,7 +186,7 @@ describe('AgentPanel status display', () => {
     );
     const frame = lastFrame()!;
     expect(frame).toContain('Kovash');
-    expect(frame).toContain('[STREAM]');
+    expect(frame).toContain('working');
   });
 
   it('mixed statuses render correctly together', () => {
@@ -245,14 +245,13 @@ describe('MessageStream formatting', () => {
     expect(lastFrame()!).toContain('🧪');
   });
 
-  it('system messages show system prefix', () => {
+  it('system messages render dimmed', () => {
     const { lastFrame } = render(
       h(MessageStream, {
         messages: [makeMessage({ role: 'system', content: 'Agent spawned' })],
       })
     );
     const frame = lastFrame()!;
-    expect(frame).toContain('system');
     expect(frame).toContain('Agent spawned');
   });
 
@@ -802,20 +801,20 @@ describe('ThinkingIndicator integration with MessageStream', () => {
 describe('Rich progress indicators', () => {
   // -- AgentPanel progress display --
 
-  it('working agent shows "[WORK]" in status line', () => {
+  it('working agent shows activity description in status line', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'working' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('[WORK]');
+    expect(frame).toContain('working');
   });
 
-  it('streaming agent shows "[STREAM]" in status line', () => {
+  it('streaming agent shows activity description in status line', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'streaming' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('[STREAM]');
+    expect(frame).toContain('working');
   });
 
   it('active agent shows pulsing dot in roster', () => {
@@ -831,13 +830,13 @@ describe('Rich progress indicators', () => {
     expect(frame).toContain('Reviewing architecture');
   });
 
-  it('agent status shows format: Name ([WORK]) — hint', () => {
+  it('agent status shows hint directly (no [WORK] tag)', () => {
     const agents = [makeAgent({ name: 'Keaton', status: 'working', activityHint: 'Reading file' })];
     const { lastFrame } = render(h(AgentPanel, { agents }));
     const frame = lastFrame()!;
     expect(frame).toContain('Keaton');
-    expect(frame).toContain('[WORK]');
     expect(frame).toContain('Reading file');
+    expect(frame).not.toContain('[WORK]');
   });
 
   it('idle agent does not show activity hint even if set', () => {
@@ -1000,7 +999,7 @@ describe('Animations and transitions', () => {
     expect(frame).toContain('✓ Done');
     // Hockney still working
     expect(frame).toContain('Hockney');
-    expect(frame).toContain('[WORK]');
+    expect(frame).toContain('working');
   });
 
   // -- NO_COLOR respect --
@@ -1323,13 +1322,13 @@ describe('NO_COLOR mode rendering', () => {
     }
   });
 
-  it('AgentPanel renders [WORK] text label in NO_COLOR', () => {
+  it('AgentPanel renders working status in NO_COLOR', () => {
     setNoColor();
     try {
       const agents = [makeAgent({ name: 'Kovash', status: 'working' })];
       const { lastFrame } = render(h(AgentPanel, { agents }));
       const frame = lastFrame()!;
-      expect(frame).toContain('[WORK]');
+      expect(frame).toContain('working');
       expect(frame).toContain('Kovash');
     } finally {
       restoreNoColor();
@@ -1431,7 +1430,6 @@ describe('NO_COLOR mode rendering', () => {
         })
       );
       const frame = lastFrame()!;
-      expect(frame).toContain('system');
       expect(frame).toContain('System alert');
     } finally {
       restoreNoColor();

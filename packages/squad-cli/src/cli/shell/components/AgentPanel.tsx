@@ -71,7 +71,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
   }
 
   const activeAgents = agents.filter(a => a.status === 'streaming' || a.status === 'working');
-  const sepWidth = Math.min(width, 120) - 2;
+  const sepWidth = Math.min(width, 80) - 2;
 
   // Compact layout (≤60 cols): single-line per agent, no detail
   if (compact) {
@@ -90,7 +90,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
               >
                 {getRoleEmoji(agent.role)} {agent.name}
               </Text>
-              {active && <><Text> </Text><PulsingDot /><Text bold> {statusLabel}</Text></>}
+              {active && <><Text> </Text><PulsingDot />{agent.activityHint && <Text bold> {agent.activityHint.slice(0, 25)}</Text>}</>}
               {errored && <Text color={noColor ? undefined : 'red'} bold> {statusLabel}</Text>}
               {completionFlash.has(agent.name) && <Text color={noColor ? undefined : 'green'} bold> ✓</Text>}
               {!active && !errored && <Text dimColor> {statusLabel}</Text>}
@@ -124,7 +124,8 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
                 <Box marginLeft={0}>
                   <Text> </Text>
                   <PulsingDot />
-                  <Text color={noColor ? undefined : 'green'} bold> {getStatusTag(agent.status)}</Text>
+                  {agent.activityHint && <Text color={noColor ? undefined : 'green'}> {agent.activityHint.slice(0, 35)}</Text>}
+                  {agent.model && <Text dimColor> ({agent.model})</Text>}
                 </Box>
               )}
               {errored && (
@@ -149,15 +150,13 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ agents, streamingContent
           {activeAgents.map(a => {
             const sec = agentElapsedSec(a);
             const elapsed = formatElapsed(sec);
-            const statusLabel = getStatusTag(a.status);
             const hint = a.activityHint;
             // At ≥100 cols show full hint; otherwise truncate to fit
-            // Auto-clear stale hints after 30s
             const maxHintLen = width >= 100 ? Infinity : width - 30;
-            const displayHint = hint && sec < 30 ? (hint.length > maxHintLen ? hint.slice(0, maxHintLen - 1) + '…' : hint) : undefined;
+            const displayHint = hint ? (hint.length > maxHintLen ? hint.slice(0, maxHintLen - 1) + '…' : hint) : 'working';
             return (
               <Text key={a.name} color={noColor ? undefined : 'yellow'}>
-                {' '}{getRoleEmoji(a.role)} {a.name} ({statusLabel}{elapsed ? `, ${elapsed}` : ''}){displayHint ? ` — ${displayHint}` : ''}
+                {' '}{getRoleEmoji(a.role)} {a.name} — {displayHint}{elapsed ? ` (${elapsed})` : ''}{a.model ? ` [${a.model}]` : ''}
               </Text>
             );
           })}

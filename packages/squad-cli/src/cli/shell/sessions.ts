@@ -14,12 +14,12 @@ export class SessionRegistry {
       status: 'idle',
       startedAt: new Date(),
     };
-    this.sessions.set(name, session);
+    this.sessions.set(name.toLowerCase(), session);
     return session;
   }
 
   get(name: string): AgentSession | undefined {
-    return this.sessions.get(name);
+    return this.sessions.get(name.toLowerCase());
   }
 
   getAll(): AgentSession[] {
@@ -31,7 +31,7 @@ export class SessionRegistry {
   }
 
   updateStatus(name: string, status: AgentSession['status']): void {
-    const session = this.sessions.get(name);
+    const session = this.sessions.get(name.toLowerCase());
     if (session) {
       session.status = status;
       // Clear activity hint when agent goes idle or errors
@@ -40,12 +40,17 @@ export class SessionRegistry {
   }
 
   updateActivityHint(name: string, hint: string | undefined): void {
-    const session = this.sessions.get(name);
+    const session = this.sessions.get(name.toLowerCase());
     if (session) session.activityHint = hint;
   }
 
+  updateModel(name: string, model: string | undefined): void {
+    const session = this.sessions.get(name.toLowerCase());
+    if (session) session.model = model;
+  }
+
   remove(name: string): boolean {
-    return this.sessions.delete(name);
+    return this.sessions.delete(name.toLowerCase());
   }
 
   clear(): void {

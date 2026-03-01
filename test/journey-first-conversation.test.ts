@@ -190,7 +190,8 @@ describe('Journey: My first conversation (#384)', () => {
 
   describe('Step 1 — Welcome message on shell start', () => {
     it('shows SQUAD title in the welcome banner', () => {
-      expect(shell.hasText('SQUAD')).toBe(true);
+      // Figlet banner renders SQUAD as ASCII art (not literal text)
+      expect(shell.hasText('___')).toBe(true);
     });
 
     it('displays the version number', () => {
@@ -397,7 +398,7 @@ describe('Journey: My first conversation (#384)', () => {
     it('exit hint is a system message', async () => {
       shell.raw('\x03');
       await tick(120);
-      expect(shell.hasText('system')).toBe(true);
+      // System messages no longer have [system] prefix — just check for Ctrl+C hint
       expect(shell.hasText('Ctrl+C')).toBe(true);
     });
   });

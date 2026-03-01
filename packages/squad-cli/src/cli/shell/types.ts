@@ -21,4 +21,5 @@ export interface AgentSession {
   status: 'idle' | 'working' | 'streaming' | 'error';
   startedAt: Date;
   activityHint?: string;
+  model?: string;
 }

@@ -69,10 +69,12 @@ function ensureMetrics(): ShellMetrics | undefined {
 
 /**
  * Enable shell metrics collection. Call once at shell startup.
- * Returns true if metrics were enabled, false if SQUAD_TELEMETRY is not set.
+ * Always enabled when OTel is configured; SQUAD_TELEMETRY=1 also enables.
+ * Returns true if metrics were enabled.
  */
 export function enableShellMetrics(): boolean {
-  if (!isShellTelemetryEnabled()) return false;
+  const hasOTel = !!process.env['OTEL_EXPORTER_OTLP_ENDPOINT'];
+  if (!hasOTel && !isShellTelemetryEnabled()) return false;
   _enabled = true;
   const m = ensureMetrics();
   m?.sessionCount.add(1);

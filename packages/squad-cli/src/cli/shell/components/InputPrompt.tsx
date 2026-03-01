@@ -95,6 +95,15 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
 
   useInput((input, key) => {
     if (disabled) {
+      // Allow slash commands through while processing (read-only, no dispatch)
+      if (key.return && bufferRef.current.trimStart().startsWith('/')) {
+        const cmd = bufferRef.current.trim();
+        bufferRef.current = '';
+        setBufferDisplay('');
+        pendingInputRef.current = [];
+        onSubmit(cmd);
+        return;
+      }
       // Preserve newlines from pasted text in disabled buffer
       if (key.return) {
         bufferRef.current += '\n';
