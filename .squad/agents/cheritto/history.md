@@ -176,3 +176,21 @@
 - **Key insight:** `process.emitWarning` overrides are per-process and don't propagate to child processes. Environment variables DO propagate. `NODE_NO_WARNINGS=1` is the Node.js-native way to suppress warnings globally across process trees.
 - **File changed:** `packages/squad-cli/src/cli-entry.ts` (1 line added)
 - Build clean (tsc --noEmit passes).
+
+### 2026-03-01: Banner polish — visual overload + command formatting (#626, #627)
+- **Branch:** `squad/626-627-banner-polish`
+- **Problem:** Banner crammed three concerns (branding, init/roster, usage guide) into one box with four inconsistent command syntax styles.
+- **Fix:** Three surgical line edits in `headerElement` useMemo (App.tsx lines 300, 302, 304):
+  1. Simplified empty-roster message: removed `or exit and run 'squad init'` dual-path CTA — `/init` is the primary path
+  2. Removed spacer line between roster/init and usage line — tightens vertical layout
+  3. Rewrote usage line: `"Type naturally · @Agent to direct · /help · Ctrl+C to exit"` — middle-dot separators, punchier copy, consistent syntax
+- **Pattern:** Middle dot `·` as standard inline separator for banner hint lines (replaces mixed `—` and `-`)
+- Build clean, commit `4753e55`.
+
+### 2026-03-01: Multi-line user message rendering in Static scrollback
+- **Problem:** User messages with embedded `\n` rendered in a single horizontal `<Box gap={1}>` — multi-line content could collapse or misalign because the `❯` prefix and content were side-by-side siblings.
+- **Fix:** Wrapped user message rendering in `<Box flexDirection="column">`. First line keeps `❯` prefix via inner `<Box gap={1}>`. Subsequent lines (from `split('\n').slice(1)`) render in separate `<Box key={li} paddingLeft={2}>` elements, aligning with the first line's text.
+- **Key detail:** `paddingLeft={2}` matches the visual width of `❯ ` (chevron + gap), so continuation lines align cleanly.
+- **TypeScript:** Used `?? ''` for `split('\n')[0]` due to `noUncheckedIndexedAccess: true` in tsconfig.
+- **File changed:** `App.tsx` lines 349-360 (Static scrollback user message block)
+- Build clean (tsc passes for both squad-sdk and squad-cli).

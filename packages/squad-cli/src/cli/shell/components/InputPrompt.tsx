@@ -42,19 +42,29 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const bufferRef = useRef('');
   const wasDisabledRef = useRef(disabled);
   const pendingInputRef = useRef<string[]>([]);
+  const pasteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const valueRef = useRef('');
 
   // When transitioning from disabled → enabled, restore buffered input
   useEffect(() => {
     if (wasDisabledRef.current && !disabled) {
+      // Clear any pending paste timer from before disable
+      if (pasteTimerRef.current) {
+        clearTimeout(pasteTimerRef.current);
+        pasteTimerRef.current = null;
+      }
       // Drain pending input queue first (fast typing during transition)
       const pending = pendingInputRef.current.join('');
       pendingInputRef.current = [];
       
       const combined = bufferRef.current + pending;
       if (combined) {
+        valueRef.current = combined;
         setValue(combined);
         bufferRef.current = '';
         setBufferDisplay('');
+      } else {
+        valueRef.current = '';
       }
     }
     wasDisabledRef.current = disabled;
@@ -76,10 +86,22 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     return () => clearInterval(timer);
   }, [disabled, noColor]);
 
+  // Clean up paste detection timer on unmount
+  useEffect(() => {
+    return () => {
+      if (pasteTimerRef.current) clearTimeout(pasteTimerRef.current);
+    };
+  }, []);
+
   useInput((input, key) => {
     if (disabled) {
-      // Buffer keystrokes while disabled (ignore control keys)
-      if (key.return || key.upArrow || key.downArrow || key.ctrl || key.meta) return;
+      // Preserve newlines from pasted text in disabled buffer
+      if (key.return) {
+        bufferRef.current += '\n';
+        setBufferDisplay(bufferRef.current);
+        return;
+      }
+      if (key.upArrow || key.downArrow || key.ctrl || key.meta) return;
       if (key.backspace || key.delete) {
         bufferRef.current = bufferRef.current.slice(0, -1);
         setBufferDisplay(bufferRef.current);
@@ -101,23 +123,34 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     }
     
     if (key.return) {
-      if (value.trim()) {
-        onSubmit(value.trim());
-        setHistory(prev => [...prev, value.trim()]);
-        setHistoryIndex(-1);
-      }
-      setValue('');
+      // Debounce to detect multi-line paste: if more input arrives
+      // within 10ms this is a paste and the newline should be preserved.
+      if (pasteTimerRef.current) clearTimeout(pasteTimerRef.current);
+      valueRef.current += '\n';
+      pasteTimerRef.current = setTimeout(() => {
+        pasteTimerRef.current = null;
+        const submitVal = valueRef.current.trim();
+        if (submitVal) {
+          onSubmit(submitVal);
+          setHistory(prev => [...prev, submitVal]);
+          setHistoryIndex(-1);
+        }
+        valueRef.current = '';
+        setValue('');
+      }, 10);
       return;
     }
     
     if (key.backspace || key.delete) {
-      setValue(prev => prev.slice(0, -1));
+      valueRef.current = valueRef.current.slice(0, -1);
+      setValue(valueRef.current);
       return;
     }
     
     if (key.upArrow && history.length > 0) {
       const newIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
       setHistoryIndex(newIndex);
+      valueRef.current = history[newIndex]!;
       setValue(history[newIndex]!);
       return;
     }
@@ -127,9 +160,11 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
         const newIndex = historyIndex + 1;
         if (newIndex >= history.length) {
           setHistoryIndex(-1);
+          valueRef.current = '';
           setValue('');
         } else {
           setHistoryIndex(newIndex);
+          valueRef.current = history[newIndex]!;
           setValue(history[newIndex]!);
         }
       }
@@ -150,6 +185,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
         }
       }
       if (tabMatchesRef.current.length > 0) {
+        valueRef.current = tabMatchesRef.current[tabIndexRef.current]!;
         setValue(tabMatchesRef.current[tabIndexRef.current]!);
       }
       return;
@@ -159,7 +195,8 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     tabPrefixRef.current = '';
     
     if (input && !key.ctrl && !key.meta) {
-      setValue(prev => prev + input);
+      valueRef.current += input;
+      setValue(valueRef.current);
     }
   });
 

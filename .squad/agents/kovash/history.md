@@ -84,3 +84,11 @@
 - **Root cause:** Two separate UI elements in App.tsx both told users to run `squad init` when no roster exists: the banner (line ~300) and the `firstRunElement` (line ~321). Duplicate guidance adds visual noise and confuses the hierarchy of where to look.
 - **Fix:** (1) Changed `firstRunElement` empty-roster branch from showing `"Run 'squad init' to set up your team."` to returning `null` — the banner already covers this case. (2) Reworded banner text to prioritize the in-shell path: `"Type /init to set up your team, or exit and run 'squad init'"` (was exit-first). The `rosterAgents.length > 0` branch ("Your squad is assembled") is untouched.
 - **Pattern:** Single source of truth for guidance — banner owns the "no roster" messaging, `firstRunElement` owns the "roster exists" first-run onboarding. No duplication across UI layers.
+
+### Multi-line paste fix in InputPrompt
+- **Root cause:** `useInput` fires per-character. On first `\n` in a paste, `key.return` triggered immediate `onSubmit` + `setValue('')`, then `setProcessing(true)` disabled the input. Remaining paste characters hit the disabled branch where `key.return` was ignored entirely, stripping all newlines and garbling lines together.
+- **Fix (two parts):**
+  1. **Enabled state — paste detection via debounce:** Instead of submitting immediately on `key.return`, a 10ms debounce timer starts. If more input arrives before the timer fires, it's a paste — newline is preserved in `valueRef` and accumulation continues. If the timer fires without more input, it's a real Enter — submit the accumulated value. Added `valueRef` to track real-time value synchronously (React state `value` is stale in closures).
+  2. **Disabled state — newline preservation:** Changed `key.return` from being ignored to appending `\n` to `bufferRef`, so pasted text arriving during processing retains its line structure.
+- **Key insight:** Ink's `useInput` delivers paste characters synchronously within a single event loop tick, so a 10ms debounce cleanly separates paste (characters arrive in <1ms) from real Enter (next input arrives after human reaction time). The 10ms delay is imperceptible for normal typing.
+- **All value mutation paths** (backspace, history nav, tab completion, regular input) now sync `valueRef` alongside React state to keep the ref as source of truth for the debounced submit.

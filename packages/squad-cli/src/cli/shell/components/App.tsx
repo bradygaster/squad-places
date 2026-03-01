@@ -347,10 +347,17 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
               {isNewTurn && <Text dimColor>{box.h.repeat(sepWidth)}</Text>}
               <Box gap={1} paddingLeft={msg.role === 'user' ? 0 : 2}>
                 {msg.role === 'user' ? (
-                  <>
-                    <Text color={noColor ? undefined : 'cyan'} bold>❯</Text>
-                    <Text color={noColor ? undefined : 'cyan'} wrap="wrap">{msg.content}</Text>
-                  </>
+                  <Box flexDirection="column">
+                    <Box gap={1}>
+                      <Text color={noColor ? undefined : 'cyan'} bold>❯</Text>
+                      <Text color={noColor ? undefined : 'cyan'} wrap="wrap">{msg.content.split('\n')[0] ?? ''}</Text>
+                    </Box>
+                    {msg.content.split('\n').slice(1).map((line, li) => (
+                      <Box key={li} paddingLeft={2}>
+                        <Text color={noColor ? undefined : 'cyan'} wrap="wrap">{line}</Text>
+                      </Box>
+                    ))}
+                  </Box>
                 ) : msg.role === 'system' ? (
                   <>
                     <Text dimColor>[system]</Text>

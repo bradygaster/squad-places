@@ -26,6 +26,14 @@
 
 ## Learnings
 
+### Multi-line paste handling tests (2026-03-01)
+**Status:** Complete — 18 new tests in `test/multiline-paste.test.ts`, all passing.
+- **Categories:** MessageStream multi-line rendering (6), Single-line submit behavior (3), Disabled-state buffering with newlines (4), Multi-line content integrity in ShellMessage (5).
+- **Bug context:** Ink's `useInput` fires per-character. Newlines in pasted text trigger `key.return` which submits the first line, then `disabled=true` causes remaining newlines to be stripped — garbling multi-line pastes.
+- **Test strategy:** ink-testing-library render tests for both MessageStream and InputPrompt components. Same patterns as `repl-ux.test.ts` — `React.createElement`, `stdin.write()`, `makeMessage()` helpers. Tests assert on rendered TEXT content, not internal state.
+- **Key finding:** `stdin.write()` for single characters in disabled mode requires `await setTimeout(50)` for React reconciler flush — same compatibility gap documented in REPL UX visual test suite learnings. Two tests initially failed without the async flush.
+- **Coverage:** Tests document expected behavior for multi-line input preservation, blank line handling, CRLF retention, special character rendering, disabled-state buffering with backspace, and mixed single/multi-line conversation display.
+
 ### Banner simplification tests — Issues #626, #627 (2026-03-01)
 **Status:** Complete — 5 new tests in `test/first-run-gating.test.ts`, all 35 tests passing.
 - **Tests added:** Single CTA (no dual-path `squad init`), middle-dot `·` separators in usage line, concise "Type naturally" prefix, "Ctrl+C to exit" formatting, no redundant spacers between roster and usage line.
