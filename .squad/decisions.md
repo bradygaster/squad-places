@@ -516,3 +516,65 @@ Scribe and Ralph are always injected if missing from the proposal. Casting state
 **What:** The CLI timeout is set too low — Brady tried using Squad CLI in this repo and it didn't work well. Timeout needs to be increased. Not urgent but should be captured as a CLI improvement opportunity.
 
 **Why:** User request — captured for team memory and PRD inclusion
+
+### 2026-03-01: Multi-Squad Storage & Resolution Design
+**By:** Keaton (Lead)
+**What:** 
+- New directory structure: ~/.config/squad/squads/{name}/.squad/ with ~/.config/squad/config.json for registry
+- Keep esolveGlobalSquadPath() unchanged; add esolveNamedSquadPath(name?: string) and listPersonalSquads() on top
+- Auto-migration: existing single personal squad moves to squads/default/ on first run
+- Resolution priority: explicit (CLI flag) > project config > env var > git remote mapping > path mapping > default
+- Global config.json schema: { version, defaultSquad, squads, mappings }
+
+**Why:** 
+- squads/ container avoids collisions with existing files at global root
+- Backward-compatible: legacy layout detected and auto-migrated; existing code continues to work
+- Clean separation: global config lives alongside squads, not inside any one squad
+- Resolution chain enables flexible mapping without breaking existing workflows
+
+### 2026-03-01: Multi-Squad SDK Functions
+**By:** Kujan (SDK Expert)
+**What:**
+- New SDK exports: esolveNamedSquadPath(), listSquads(), createSquad(), deleteSquad(), switchSquad(), esolveSquadForProject()
+- New type: SquadEntry { name, path, isDefault, createdAt }
+- squads.json registry (separate file, not config.json) with squad metadata and mappings
+- SquadDirConfig v2 addition: optional personalSquad?: string field (v1 configs unaffected)
+- Consult mode updated: setupConsultMode(options?: { squad?: string }) with explicit selection or auto-resolution
+
+**Why:**
+- Lazy migration with fallback chain ensures zero breaking changes to existing users
+- Separate squads.json is single source of truth for routing; keeps project config focused
+- Version handling allows incremental adoption; v1 configs work unchanged
+- SDK resolution functions can be called from CLI and library code without duplication
+
+### 2026-03-01: Multi-Squad CLI Commands & REPL
+**By:** Kovash (REPL)
+**What:**
+- New commands: squad list, squad create <name>, squad switch <name>, squad delete <name>
+- Modified commands: squad consult --squad=<name>, squad extract --squad=<name>, squad init --global --name=<name>
+- Interactive picker for squad selection: arrow keys (↑/↓), Enter to confirm, Ctrl+C to cancel
+- REPL integration: /squad and /squads slash commands with 	riggerSquadReload signal
+- .active file stores current active squad name (plain text)
+- Status command enhanced to show active squad and squad list
+
+**Why:**
+- Picker only shows when needed (multiple squads) and TTY available; non-TTY gracefully uses active squad
+- Slash commands follow existing pattern (/init, /agents, etc.); seamless REPL integration
+- .active file is simple and atomic; suitable for concurrent CLI access
+- Squad deletion safety: cannot delete active squad; requires confirmation
+
+### 2026-03-01: Multi-Squad UX & Interaction Design
+**By:** Marquez (UX Designer)
+**What:**
+- Visual indicator: current squad marked with ●, others with ○; non-default squads tagged [switched]
+- Squad name always visible in REPL header and prompt: ◆ Squad (client-acme)
+- Picker interactions: ↑/↓ navigate, Enter select, Esc/Ctrl+C cancel; 5-7 squads displayed, wrap around
+- Error states: clear copy with next actions (e.g., "Squad not found. Try @squad:personal." or "Run /squads to list.")
+- Copy style: active verbs (Create, Switch, List), human-readable nouns (no jargon), 3-5 words per line
+- Onboarding: fresh install defaults to "personal"; existing single-squad users see migration notice
+
+**Why:**
+- Persistent context (squad name in header/prompt) prevents "Which squad am I in?" confusion
+- Interactive picker is discoverable and non-blocking; minimal cognitive load
+- Error messages with next actions reduce support friction
+- Onboarding defaults and migration notices ensure smooth upgrade path for existing users
