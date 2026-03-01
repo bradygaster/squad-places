@@ -29,6 +29,22 @@
 
 **Next Sprint:** Brady to assign P1 fixes immediately; Waingro available for dogfood support or additional QA.
 
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — Hostile QA on human testing screenshots
+- **Status:** Completed — Brady requested full team review of 15 REPL screenshots from human testing. Waingro provided hostile QA perspective.
+- **Finding:** P0 blocker — assembled vs empty roster contradiction
+  - Contradictory state messaging confuses users
+  - Conflicting data validity signals
+  - Root cause likely shared with Keaton's phantom team finding and Marquez's confusing @your lead placeholder
+- **P1 Friction (3 points):**
+  - In-REPL command confusion (discoverability issue)
+  - Screen corruption (blocks testing, same issue Kovash/Cheritto flagged independently)
+- **P2 Polish (2 items):**
+  - Input/output distinction clarity
+  - Empty roster guidance/documentation
+- **Cross-team alignment:** Independent finding by Keaton (contradictory roster state) confirms this is systemic state coherence issue, not isolated messaging problem.
+- **Next:** Coordinate with Keaton and Marquez on state coherence redesign. High priority. This affects user trust and data validity perception.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
+
 ## Learnings
 
 ### 📌 Team update (2026-02-28T15:34:36Z): 4 dogfood UX issues filed + CI blocker identified

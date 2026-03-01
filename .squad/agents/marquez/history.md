@@ -28,6 +28,21 @@
 - `packages/squad-cli/src/cli/core/output.ts` — ANSI codes, success/error/warn helpers
 - `packages/squad-cli/src/cli/core/errors.ts` — SquadError, fatal()
 
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — UX messaging and state clarity P0s
+- **Status:** Completed — Joined Keaton, Kovash, Cheritto, Waingro in parallel review of 15 REPL screenshots from human testing.
+- **Finding:** P0 blockers from UX perspective:
+  - Orphaned period in UI text (punctuation/clarity issue)
+  - Confusing @your lead placeholder (messaging clarity)
+  - These connect to root cause: contradictory state messaging across roster/team display
+- **P1 Friction identified (4 points):**
+  - Duplicate header (redundancy)
+  - Coordinator label (clarity)
+  - Wall of text (information density)
+  - Redundant CTAs (user guidance confusion)
+- **Cross-team alignment:** Keaton and Waingro independently flagged contradictory roster messaging (assembled vs empty). Suggests systemic state representation issue requiring messaging + state coherence alignment.
+- **Next:** Coordinate with Keaton and Waingro on messaging/state coherence redesign. Prioritize clarity and density before addressing P1s.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
+
 ---
 
 ## OVERALL GRADE: B

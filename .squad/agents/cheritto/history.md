@@ -11,6 +11,18 @@
 
 **Wave A–C Archive (Feb 23–26):** Completed timeout hardening (#325), thinking feedback UI (#331), ghost response retry logic (#332), P1 UX polish (#330 — help verbs, focus labels, keyboard hints, system prefix, separators, input placeholder, prompt colors, command examples), progress indicators (#335 — activity hints in panel + stream), animations (#337 — typewriter/fade/flash/message-fade hooks with NO_COLOR support), terminal adaptivity (#336 — 40–120 col responsive layouts), P2 nice-to-haves (#340 — user message chevron cleanup, ASCII-only separators, thinking label simplification, /agents text status labels, activity feed indicator change), product love first-run UX (#414 — /clear fix, natural language routing hints, narrow terminal hint handling, exit emoji, roster wrapping), shell loading indicator (#427 — instant stderr feedback), welcome animation removal (#423), TUI final fixes (#405/#404/#407 — exit ASCII, compact-mode first-run, emoji-free roster, separator normalization). All components (App.tsx, AgentPanel, MessageStream, InputPrompt, ThinkingIndicator) updated. Shell responsive and fully tested (151–2744 tests passing).
 
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — Frame corruption and terminal lifecycle P0
+- **Status:** Completed — Joined Keaton, Kovash, Marquez, Waingro in parallel review of 15 REPL screenshots from human testing.
+- **Finding:** P0 blocker in screenshot 015 — overlapping UI frames
+  - Confirmed TUI rendering issue (not terminal transparency like 008-010)
+  - Requires TUI frame layout refactor
+- **Cross-team diagnosis:**
+  - Kovash independently identified static key collisions + missing terminal clear + no alt screen buffer (008-010/015)
+  - Both findings point to same root cause: terminal state lifecycle mismanagement
+  - Likely affects frame ordering, buffer management, and state coherence
+- **Next:** High-priority collaboration with Kovash (REPL Expert) on terminal lifecycle redesign. P0 blocker.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
+
 ## Learnings
 
 
@@ -125,3 +137,23 @@
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### 2026-03-01: REPL scrollback rendering fixes — compaction removal + header memoization
+- **Branch:** `squad/repl-scrollback-fixes`
+- **Context:** Brady directive: "The app should scroll. Stop compacting text vertically — the user can scroll."
+- **Changes verified on branch (prior commit `745e773`):**
+  - All `!compact` guards removed from App.tsx banner — description, spacing, roster, help text always render fully
+  - Compact agent-count-only branch removed — always shows full roster with names
+  - `paddingY={1}` always on first-run hint (was `compact ? 0 : 1`)
+  - Help text always full string (was truncated to `/help - Ctrl+C exit` in compact)
+  - First-run hint always shows full text + routing explanation (was suppressed in compact)
+  - `paddingLeft={2}` on agent/system messages in Static for visual hierarchy — user messages left-aligned, responses indented
+  - Session-scoped Static keys (`${sessionId}-${i}`) prevent Ink item confusion across session boundaries
+- **New commit (`3bfc0a1`):** Memoized header box and first-run hint with `useMemo`
+  - Header depends on stable values (welcome data, width) — created once, reused across renders
+  - Prevents unnecessary Ink layout work on every state change (message add, streaming update, etc.)
+- **Not changed:** InputPrompt.tsx — prompt pattern `◆ squad> ` is clean, no `:>` artifact found
+- **Not changed:** MessageStream.tsx — no compaction logic present, streaming/activity rendering correct
+- **`compact` variable kept** in App.tsx (line 233) for future use — just not gating content anymore
+- **Pattern:** In Ink 6, only one `<Static>` allowed per render tree. Content before Static is dynamic (re-renders in-place). useMemo reduces reconciliation cost but doesn't prevent Ink re-layout. For true render-once semantics, items must go through Static's `items` prop.
+- Build clean (tsc --noEmit passes). 12 test failures are pre-existing acceptance test timeouts, unrelated.

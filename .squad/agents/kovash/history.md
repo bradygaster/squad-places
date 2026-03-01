@@ -13,6 +13,12 @@
 
 ## Learnings
 
+### P0 Screen Corruption Fix (2026-03-01)
+- **Root cause:** Three contributing factors — (1) `<Static>` keys used bare index (`sm-${i}`) so Ink couldn't distinguish items across session boundaries, (2) no terminal clear on shell start left old scrollback visible, (3) session restore via `/resume` added messages on top of existing state without clearing first.
+- **Fix:** Added `process.stdout.write('\x1b[2J\x1b[H')` before `render()` call in index.ts. Changed Static keys to session-scoped (`${sessionId}-${i}`) using `useMemo(() => Date.now().toString(36), [])`. Added `clearMessages()` to ShellApi that resets both `messages` and `archivedMessages`. Called `clearMessages()` + terminal clear in `onRestoreSession()` before restoring messages. Also fixed `/clear` command to clear `archivedMessages` too.
+- **Key insight:** Ink's `<Static>` component tracks items by key. If keys collide across sessions (e.g., restored session reuses `sm-0`, `sm-1`...), Ink silently drops or overlaps items. Session-scoped keys make each render pass unique.
+- **Brady's directive respected:** Full scrollback preserved — content flows naturally into the terminal scroll buffer via `<Static>`. No vertical compaction.
+
 ### SDK & Shell Architecture
 - `CopilotSessionAdapter` maps `sendMessage()` → `inner.send()`, event names via EVENT_MAP.
 - Shell modules: index.ts (entry), coordinator.ts, router.ts, spawn.ts, sessions.ts, render.ts, stream-bridge.ts, lifecycle.ts, memory.ts, terminal.ts, autocomplete.ts, commands.ts, types.ts
@@ -23,6 +29,19 @@
 - SDK `_dispatchEvent` dispatches typed handlers first, then wildcard handlers; both swallow errors silently
 - `awaitStreamedResponse()` returns full response content from `sendAndWait` result as fallback if delta accumulation empty
 - Pattern: `dev:link` / `dev:unlink` scripts for local npm link workflow
+
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — Terminal lifecycle and state messaging P0s
+- **Status:** Completed — Joined Keaton, Marquez, Cheritto, Waingro in parallel review of 15 REPL screenshots from human testing.
+- **Finding:** P0 blocker in screenshots 008-010/015 — screen buffer corruption
+  - Root cause: Static key collisions in terminal state management
+  - Missing terminal clear between renders
+  - No alt screen buffer implementation
+  - Blocks REPL stability; requires terminal lifecycle refactor
+- **Cross-team alignment:**
+  - Cheritto confirmed overlapping UI frames in 015 (likely our bug, not terminal transparency)
+  - Keaton flagged contradictory state messaging alongside the buffer corruption — likely related state management issues
+- **Next:** Coordinate with Cheritto (TUI Engineer) on terminal lifecycle redesign. High priority P0.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
 
 ### Recent Work Examples (#437, #440, #441, #442)
 

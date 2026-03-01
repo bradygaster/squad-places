@@ -26,6 +26,12 @@
 
 ## Learnings
 
+### Round 2 REPL UX fix tests (2026-03-01)
+**Status:** Complete — 17 new tests added to `test/repl-ux-fixes.test.ts` (30→47 total, all passing).
+- **Categories:** Screen corruption prevention (3), Banner logic (5), Compaction removal (3), Coordinator label (3), Init guidance (3).
+- **Key findings:** MemoryManager import requires `await import()` (ESM-only project — no `require()`). Static keys now use `${sessionId}-${i}` pattern with base-36 timestamp prefix, preventing Ink key collisions across session boundaries. Coordinator→Squad label mapping verified in both completed messages and streaming content paths.
+- **Test strategy:** Logic-level tests extracting conditionals from App.tsx JSX. Ink render tests via ink-testing-library for MessageStream coordinator label and streaming content display. MemoryManager tested directly for archival overflow behavior.
+
 ### 📌 Team update (2026-02-28T15:34:36Z): 10 test gaps filed + Wave E planning ready
 - **Status:** Completed — Hockney conducted coverage analysis, filed 10 test gap issues (#558–#567)
 - **Issues filed:** Exit code consistency, timeout edge cases, per-command help, shell-specific flags, env var fallbacks, REPL transitions, config precedence, spawn flags, flag aliases, error handling

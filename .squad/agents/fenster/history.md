@@ -597,3 +597,14 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - `readline.question()` for the Y/n prompt; readline interface closed immediately after answer
 
 **Files modified:** `packages/squad-cli/src/cli-entry.ts`
+
+### Banner messaging cleanup (2026-03-01)
+**Task:** Fix contradictory/confusing messages in App.tsx banner and first-run block.
+**Changes (App.tsx only):**
+- First-run block now branches on `rosterAgents.length > 0` — shows "assembled" only when agents exist, shows init hint when empty
+- Removed `'your lead'` fallback from `leadAgent` — dead code after removing the @agent line
+- Empty-roster hint in banner now says "Exit and run 'squad init', or type /init" — clearer in-REPL context
+- Removed two redundant dim lines ("Squad automatically routes" and "@lead direct") — moved conceptually to /help
+- ThinkingIndicator.tsx already clean — no "Coordinator" label anywhere in shell components
+- No trailing-period formatting issues found in warning strings
+**Verified:** TypeScript compiles clean, 3110 tests pass (2 pre-existing failures unrelated).

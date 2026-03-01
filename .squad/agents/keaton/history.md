@@ -28,6 +28,19 @@
 - **Impact:** Team context bloat eliminated; CLI improvements have explicit GitHub tracking; Wave E planning ready with actionable issue list
 - **Session log:** `.squad/log/2026-02-28T15-34-36Z-issue-filing-sprint.md` — decided by Keaton, McManus, Hockney, Waingro
 
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — P0 blockers identified
+- **Status:** Completed — Brady requested full team review of 15 REPL screenshots from human testing. 5 UX-focused agents (Keaton, Kovash, Marquez, Cheritto, Waingro) spawned in parallel with vision models.
+- **P0 Blockers Found (2 cross-team):**
+  - Screen buffer/frame corruption (Kovash: static key collisions, missing terminal clear, no alt screen buffer in 008-010/015; Cheritto: overlapping UI frames in 015)
+  - Contradictory state messaging (Keaton: phantom team/contradictory roster; Marquez: @your lead placeholder confusion, orphaned period; Waingro: assembled vs empty roster contradiction)
+- **P1 Friction (4 points):**
+  - Phantom team / onboarding friction (Keaton)
+  - In-REPL command confusion (Waingro)
+  - Coordinator label, wall of text, duplicate header, redundant CTAs (Marquez)
+- **P2 Polish (6+ items):** Minor UI/UX refinements across all perspectives
+- **Impact:** P0 blockers require terminal lifecycle refactor (Kovash + Cheritto) and messaging/state coherence alignment (Keaton + Marquez + Waingro). High convergence on shared architectural concerns.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
+
 ### 2026-02-24T18:42:00Z: Waves A–D Completion Assessment (Brady handoff catch-up)
 - **Task:** Brady's session crashed. Verify Wave A–D completion per PRD, check issue states, assess what remains.
 - **Findings:** All 30 PRD-referenced issues are CLOSED. Waves A (13 issues), B (7 issues), C (E2E + integration, merged into timeline), D Batch 1 (6 issues). Test count: 2930 passing. Repository clean — no open PRs. Only 1 open issue: #324 (dogfood testing, P0).

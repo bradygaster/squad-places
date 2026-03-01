@@ -284,3 +284,16 @@
 3. Going forward: Maintain type discipline; review package.json metadata during SDK/CLI version bumps
 
 **Conclusion:** Codebase in good health. Type safety discipline strong. No hidden technical debt. Conventions mostly followed (one npm workspace exception). Test coverage has minor gaps in observability.
+
+### 2026-02-28: Auto-link detection for preview builds
+**By:** Fenster (Core Dev)
+**Date:** 2026-02-28
+**What:** When running from source (`VERSION` contains `-preview`), the CLI checks if `@bradygaster/squad-cli` is globally npm-linked. If not, it prompts the developer to link it. Declining creates `~/.squad/.no-auto-link` to suppress future prompts.
+**Why:** Dev convenience — saves contributors from forgetting `npm link` after cloning. Non-interactive commands (help, version, export, import, doctor, scrub-emails) skip the check. Everything is wrapped in try/catch so failures are silent.
+**Impact:** Only affects `-preview` builds in interactive TTY sessions. No effect on published releases or CI.
+
+### 2026-03-01T00:34Z: User directive — Full scrollback support in REPL shell
+**By:** Brady (via Copilot)
+**What:** The REPL shell must support full scrollback — users should be able to scroll up and down to see all text (paste, run output, rendered content, logs) over time, like GitHub Copilot CLI does. The current Ink-based rendering loses/hides content and that's unacceptable.
+**Why:** User request — captured for team memory. This is a P0 UX requirement for the shell.
+**Status:** P0 blocking issue. Requires rendering architecture review (Cheritto, Kovash, Marquez).

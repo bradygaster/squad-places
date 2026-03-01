@@ -25,6 +25,7 @@ import type { ThinkingPhase } from './ThinkingIndicator.js';
 /** Methods exposed to the host so StreamBridge can push data into React state. */
 export interface ShellApi {
   addMessage: (msg: ShellMessage) => void;
+  clearMessages: () => void;
   setStreamingContent: (content: { agentName: string; content: string } | null) => void;
   clearAgentStream: (agentName: string) => void;
   setActivityHint: (hint: string | undefined) => void;
@@ -49,6 +50,9 @@ const EXIT_WORDS = new Set(['exit', 'quit', 'q']);
 
 export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version, maxMessages, onReady, onDispatch, onCancel, onRestoreSession }) => {
   const { exit } = useApp();
+  // Session-scoped ID ensures Static keys are unique across session boundaries,
+  // preventing Ink from confusing items when sessions are restored.
+  const sessionId = useMemo(() => Date.now().toString(36), []);
   const memoryManager = useMemo(() => new MemoryManager(maxMessages != null ? { maxMessages } : undefined), [maxMessages]);
   const [messages, setMessages] = useState<ShellMessage[]>([]);
   const [archivedMessages, setArchivedMessages] = useState<ShellMessage[]>([]);
@@ -90,6 +94,10 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           });
         }
         setActivityHint(undefined);
+      },
+      clearMessages: () => {
+        setMessages([]);
+        setArchivedMessages([]);
       },
       setStreamingContent: (content) => {
         if (content === null) {
@@ -185,6 +193,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
       if (result.clear) {
         setMessages([]);
+        setArchivedMessages([]);
         return;
       }
 
@@ -234,7 +243,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
     a.role?.toLowerCase().includes('lead') ||
     a.role?.toLowerCase().includes('coordinator') ||
     a.role?.toLowerCase().includes('architect')
-  )?.name ?? welcome?.agents[0]?.name ?? 'your lead';
+  )?.name ?? welcome?.agents[0]?.name;
 
   // Determine ThinkingIndicator phase based on SDK connection state
   const thinkingPhase: ThinkingPhase = !onDispatch ? 'connecting' : 'routing';
@@ -263,48 +272,62 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const box = boxChars(caps);
   const sepWidth = Math.min(width, 120) - 2;
 
+  // Memoize the header box so it doesn't re-layout on every state change (P1).
+  // Dependencies are all derived from welcome data (stable) + width (resize only).
+  const headerElement = useMemo(() => (
+    <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
+      <Box gap={1}>
+        <Text bold color={noColor ? undefined : 'cyan'}>{welcome ? titleRevealed : '◆ SQUAD'}</Text>
+        {bannerReady && <Text dimColor>v{version}</Text>}
+        {bannerReady && welcome?.description ? (
+          <>
+            <Text dimColor>-</Text>
+            <Text dimColor wrap="wrap">{welcome.description}</Text>
+          </>
+        ) : null}
+      </Box>
+      {bannerReady && <Text>{' '}</Text>}
+      {bannerReady && rosterAgents.length > 0 ? (
+        <>
+          <Box flexWrap="wrap" columnGap={1}>
+            {rosterAgents.map((a, i) => (
+              <Box key={a.name}><Text dimColor={bannerDim}>{a.name}{i < rosterAgents.length - 1 ? ' -' : ''}</Text></Box>
+            ))}
+          </Box>
+          <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready - {activeCount} active</Text>
+        </>
+      ) : bannerReady && rosterAgents.length === 0 ? (
+        <Text dimColor>{"  Exit and run 'squad init', or type /init to set up your team"}</Text>
+      ) : null}
+      {bannerReady && <Text>{' '}</Text>}
+      {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
+      {bannerReady && <Text dimColor>Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit</Text>}
+    </Box>
+  ), [noColor, welcome, titleRevealed, bannerReady, version, rosterAgents, bannerDim, agentCount, activeCount, wide]);
+
+  const firstRunElement = useMemo(() => {
+    if (!bannerReady || !welcome?.isFirstRun) return null;
+    return (
+      <Box flexDirection="column" paddingX={1} paddingY={1}>
+        {rosterAgents.length > 0 ? (
+          <>
+            <Text color={noColor ? undefined : 'green'} bold>Your squad is assembled.</Text>
+            <Text> </Text>
+            <Text>Try: <Text bold color={noColor ? undefined : 'cyan'}>What should we build first?</Text></Text>
+            <Text dimColor>Squad automatically routes your message to the best agent.</Text>
+            <Text dimColor>Or use <Text bold>@{leadAgent}</Text> to message an agent directly.</Text>
+          </>
+        ) : (
+          <Text dimColor>{"Run 'squad init' to set up your team."}</Text>
+        )}
+      </Box>
+    );
+  }, [bannerReady, welcome?.isFirstRun, rosterAgents, noColor, leadAgent]);
+
   return (
     <Box flexDirection="column">
-      <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
-        <Box gap={1}>
-          <Text bold color={noColor ? undefined : 'cyan'}>{welcome ? titleRevealed : '◆ SQUAD'}</Text>
-          {bannerReady && <Text dimColor>v{version}</Text>}
-          {bannerReady && !compact && welcome?.description ? (
-            <>
-              <Text dimColor>-</Text>
-              <Text dimColor wrap="wrap">{welcome.description}</Text>
-            </>
-          ) : null}
-        </Box>
-        {bannerReady && !compact && <Text>{' '}</Text>}
-        {bannerReady && !compact && rosterAgents.length > 0 ? (
-          <>
-            <Box flexWrap="wrap" columnGap={1}>
-              {rosterAgents.map((a, i) => (
-                <Box key={a.name}><Text dimColor={bannerDim}>{a.name}{i < rosterAgents.length - 1 ? ' -' : ''}</Text></Box>
-              ))}
-            </Box>
-            <Text dimColor>  {agentCount} agent{agentCount !== 1 ? 's' : ''} ready - {activeCount} active</Text>
-          </>
-        ) : bannerReady && compact && agentCount > 0 ? (
-          <Text dimColor>{agentCount} agent{agentCount !== 1 ? 's' : ''} - {activeCount} active</Text>
-        ) : bannerReady && rosterAgents.length === 0 ? (
-          <Text dimColor>{"  Run 'squad init' to get started"}</Text>
-        ) : null}
-        {bannerReady && !compact && <Text>{' '}</Text>}
-        {bannerReady && wide && welcome?.focus ? <Text dimColor>Focus: {welcome.focus}</Text> : null}
-        {bannerReady && <Text dimColor>{compact ? '/help - Ctrl+C exit' : 'Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit'}</Text>}
-      </Box>
-
-      {bannerReady && welcome?.isFirstRun ? (
-        <Box flexDirection="column" paddingX={1} paddingY={compact ? 0 : 1}>
-          <Text color={noColor ? undefined : 'green'} bold>Your squad is assembled.</Text>
-          {!compact && <Text> </Text>}
-          <Text>Try: <Text bold color={noColor ? undefined : 'cyan'}>{compact ? 'What should we build?' : 'What should we build first?'}</Text></Text>
-          {!compact && <Text dimColor>Squad automatically routes your message to the best agent.</Text>}
-          {!compact && <Text dimColor>Or use <Text bold>@{leadAgent}</Text> to message an agent directly.</Text>}
-        </Box>
-      ) : null}
+      {headerElement}
+      {firstRunElement}
 
       {/* Completed messages — rendered once to the terminal scroll buffer via Ink Static */}
       <Static items={staticMessages}>
@@ -313,9 +336,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           const agentRole = msg.agentName ? roleMap.get(msg.agentName) : undefined;
           const emoji = agentRole ? getRoleEmoji(agentRole) : '';
           return (
-            <Box key={`sm-${i}`} flexDirection="column">
+            <Box key={`${sessionId}-${i}`} flexDirection="column">
               {isNewTurn && <Text dimColor>{box.h.repeat(sepWidth)}</Text>}
-              <Box gap={1}>
+              <Box gap={1} paddingLeft={msg.role === 'user' ? 0 : 2}>
                 {msg.role === 'user' ? (
                   <>
                     <Text color={noColor ? undefined : 'cyan'} bold>❯</Text>

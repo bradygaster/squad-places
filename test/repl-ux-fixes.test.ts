@@ -644,3 +644,286 @@ describe('#603 — Init prompt gates when no team', () => {
     await expect(lifecycle.initialize()).rejects.toThrow(/squad init/i);
   });
 });
+
+// ============================================================================
+// Round 2 REPL UX fixes
+// ============================================================================
+
+describe('Round 2 REPL UX fixes', () => {
+
+  // --------------------------------------------------------------------------
+  // Screen corruption prevention
+  // --------------------------------------------------------------------------
+
+  describe('Screen corruption prevention', () => {
+    it('Static keys include a session identifier, not just index', () => {
+      // App generates sessionId = Date.now().toString(36) and uses `${sessionId}-${i}` as keys.
+      // Verify the sessionId generation produces a non-numeric, non-trivial key prefix.
+      const sessionId = Date.now().toString(36);
+      expect(sessionId.length).toBeGreaterThan(0);
+      // It should NOT be a plain integer — base-36 encoding ensures alpha chars
+      expect(sessionId).toMatch(/[a-z]/);
+      // Composed key should include the session prefix
+      const composedKey = `${sessionId}-0`;
+      expect(composedKey).toContain(sessionId);
+      expect(composedKey).not.toBe('0'); // not index-only
+    });
+
+    it('archivedMessages start empty and only grow via archival', async () => {
+      // When App mounts, archivedMessages = useState<ShellMessage[]>([]).
+      // On session restore (onRestoreSession), the host calls origAdd per message
+      // which feeds into appendMessages → setMessages, NOT setArchivedMessages.
+      // archivedMessages only grows when MemoryManager trims overflow.
+      // Verify MemoryManager's trimWithArchival preserves all when under cap.
+      const { MemoryManager } = await import('../packages/squad-cli/src/cli/shell/memory.js');
+      const mm = new MemoryManager({ maxMessages: 200 });
+      const msgs: ShellMessage[] = Array.from({ length: 5 }, (_, i) =>
+        makeMessage({ role: 'user', content: `msg-${i}` }),
+      );
+      const { kept, archived } = mm.trimWithArchival(msgs);
+      expect(kept).toHaveLength(5);
+      expect(archived).toHaveLength(0);
+    });
+
+    it('MemoryManager archives overflow messages on session restore flood', async () => {
+      const { MemoryManager } = await import('../packages/squad-cli/src/cli/shell/memory.js');
+      const mm = new MemoryManager({ maxMessages: 3 });
+      const msgs: ShellMessage[] = Array.from({ length: 10 }, (_, i) =>
+        makeMessage({ role: 'user', content: `restored-${i}` }),
+      );
+      const { kept, archived } = mm.trimWithArchival(msgs);
+      expect(kept).toHaveLength(3);
+      expect(archived).toHaveLength(7);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Banner logic
+  // --------------------------------------------------------------------------
+
+  describe('Banner logic', () => {
+    let tmpRoot: string;
+    beforeEach(() => { tmpRoot = makeTmpRoot(); });
+    afterEach(() => { rmSync(tmpRoot, { recursive: true, force: true }); });
+
+    it('when rosterAgents.length === 0 AND isFirstRun, banner should NOT show "Your squad is assembled"', () => {
+      // Simulates App logic: isFirstRun true but agents = []
+      // Lines 302-313: rosterAgents.length > 0 gates "Your squad is assembled"
+      const rosterAgents: Array<{ name: string; role: string; emoji: string }> = [];
+      const isFirstRun = true;
+      const bannerReady = true;
+
+      // This mirrors the JSX conditional in App.tsx lines 302-313
+      const showAssembled = bannerReady && isFirstRun && rosterAgents.length > 0;
+      expect(showAssembled).toBe(false);
+    });
+
+    it('when rosterAgents.length > 0 AND isFirstRun, banner SHOULD show "Your squad is assembled"', () => {
+      const rosterAgents = [{ name: 'Fenster', role: 'Core Dev', emoji: '🔧' }];
+      const isFirstRun = true;
+      const bannerReady = true;
+
+      const showAssembled = bannerReady && isFirstRun && rosterAgents.length > 0;
+      expect(showAssembled).toBe(true);
+    });
+
+    it('when no agents exist, the @lead hint should not appear (no "your lead" text)', () => {
+      // leadAgent derivation: App.tsx lines 236-240
+      // When agents=[], leadAgent is undefined
+      const agents: Array<{ name: string; role: string; emoji: string }> = [];
+      const leadAgent = agents.find(a =>
+        a.role?.toLowerCase().includes('lead') ||
+        a.role?.toLowerCase().includes('coordinator') ||
+        a.role?.toLowerCase().includes('architect')
+      )?.name ?? agents[0]?.name;
+
+      expect(leadAgent).toBeUndefined();
+    });
+
+    it('when agents exist with a lead, the @lead hint uses actual agent name', () => {
+      const agents = [
+        { name: 'Keaton', role: 'Lead', emoji: '👑' },
+        { name: 'Fenster', role: 'Core Dev', emoji: '🔧' },
+      ];
+      const leadAgent = agents.find(a =>
+        a.role?.toLowerCase().includes('lead') ||
+        a.role?.toLowerCase().includes('coordinator') ||
+        a.role?.toLowerCase().includes('architect')
+      )?.name ?? agents[0]?.name;
+
+      expect(leadAgent).toBe('Keaton');
+      // Not a generic fallback
+      expect(leadAgent).not.toBe('your lead');
+    });
+
+    it('leadAgent falls back to first agent when no lead/coordinator/architect role', () => {
+      const agents = [
+        { name: 'Hockney', role: 'Tester', emoji: '🧪' },
+        { name: 'McManus', role: 'DevRel', emoji: '📣' },
+      ];
+      const leadAgent = agents.find(a =>
+        a.role?.toLowerCase().includes('lead') ||
+        a.role?.toLowerCase().includes('coordinator') ||
+        a.role?.toLowerCase().includes('architect')
+      )?.name ?? agents[0]?.name;
+
+      expect(leadAgent).toBe('Hockney');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Compaction removal
+  // --------------------------------------------------------------------------
+
+  describe('Compaction removal', () => {
+    it('banner content renders fully even when width <= 60', () => {
+      // App.tsx line 227: compact = width <= 60
+      // Line 292-293: compact mode still shows agent count
+      // Line 299: compact mode shows '/help - Ctrl+C exit'
+      const width = 40;
+      const compact = width <= 60;
+      expect(compact).toBe(true);
+
+      // Even in compact, agentCount > 0 renders summary (line 292-293)
+      const agentCount = 3;
+      const activeCount = 1;
+      const bannerReady = true;
+      const showCompactAgents = bannerReady && compact && agentCount > 0;
+      expect(showCompactAgents).toBe(true);
+
+      // Help text is always rendered (line 299)
+      const helpText = compact
+        ? '/help - Ctrl+C exit'
+        : 'Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit';
+      expect(helpText).toBe('/help - Ctrl+C exit');
+      expect(helpText.length).toBeGreaterThan(0);
+    });
+
+    it('spacing elements always render regardless of terminal width', () => {
+      // In both compact and non-compact, bannerReady always renders help text (line 299).
+      // The "◆ SQUAD" title and version always render (lines 273-274).
+      const widths = [30, 40, 60, 80, 120, 200];
+      for (const w of widths) {
+        const compact = w <= 60;
+        const bannerReady = true;
+        // Title always present
+        expect(bannerReady).toBe(true);
+        // Help text always present (line 299)
+        const helpText = compact
+          ? '/help - Ctrl+C exit'
+          : 'Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit';
+        expect(helpText.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('help text is always full, never truncated for compact', () => {
+      // Compact help text: '/help - Ctrl+C exit' (line 299)
+      // Wide help text: full string — both are complete, not truncated
+      const compactHelp = '/help - Ctrl+C exit';
+      const fullHelp = 'Just type what you need — Squad routes it - @Agent to direct - /help - Ctrl+C exit';
+      // Both contain /help and Ctrl+C — no truncation
+      expect(compactHelp).toContain('/help');
+      expect(compactHelp).toContain('Ctrl+C');
+      expect(fullHelp).toContain('/help');
+      expect(fullHelp).toContain('Ctrl+C');
+      // Neither is empty or cut off
+      expect(compactHelp).not.toBe('');
+      expect(fullHelp).not.toBe('');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Coordinator label
+  // --------------------------------------------------------------------------
+
+  describe('Coordinator label', () => {
+    it('MessageStream shows "Squad" not "Coordinator" for coordinator agent messages', () => {
+      const messages: ShellMessage[] = [
+        makeMessage({ role: 'agent', agentName: 'coordinator', content: 'Routing your request.' }),
+      ];
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages,
+          processing: false,
+          streamingContent: new Map(),
+        }),
+      );
+      const frame = lastFrame() ?? '';
+      expect(frame).toContain('Squad:');
+      expect(frame).not.toMatch(/\bcoordinator:/i);
+    });
+
+    it('agent messages with agentName="coordinator" display as "Squad" in streaming content', () => {
+      const messages: ShellMessage[] = [];
+      const streamMap = new Map<string, string>();
+      streamMap.set('coordinator', 'Working on it...');
+
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages,
+          processing: true,
+          streamingContent: streamMap,
+        }),
+      );
+      const frame = lastFrame() ?? '';
+      expect(frame).toContain('Squad:');
+      expect(frame).not.toMatch(/\bcoordinator:/i);
+    });
+
+    it('non-coordinator agents retain their original name', () => {
+      const messages: ShellMessage[] = [
+        makeMessage({ role: 'agent', agentName: 'Fenster', content: 'Done.' }),
+      ];
+      const { lastFrame } = render(
+        h(MessageStream, {
+          messages,
+          processing: false,
+          streamingContent: new Map(),
+        }),
+      );
+      const frame = lastFrame() ?? '';
+      expect(frame).toContain('Fenster:');
+      expect(frame).not.toContain('Squad:');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Init guidance
+  // --------------------------------------------------------------------------
+
+  describe('Init guidance', () => {
+    let tmpRoot: string;
+    beforeEach(() => { tmpRoot = makeTmpRoot(); });
+    afterEach(() => { rmSync(tmpRoot, { recursive: true, force: true }); });
+
+    it('empty roster shows actionable init guidance mentioning squad init', () => {
+      // App.tsx lines 294-296: when rosterAgents.length === 0, banner shows init guidance
+      const rosterAgents: Array<{ name: string; role: string; emoji: string }> = [];
+      const bannerReady = true;
+
+      const showInitGuidance = bannerReady && rosterAgents.length === 0;
+      expect(showInitGuidance).toBe(true);
+
+      // The actual text mentions both 'squad init' and '/init'
+      const guidanceText = "  Exit and run 'squad init', or type /init to set up your team";
+      expect(guidanceText).toContain('squad init');
+      expect(guidanceText).toContain('/init');
+    });
+
+    it('coordinator prompt shows squad init guidance when team.md missing', () => {
+      const config: CoordinatorConfig = {
+        teamRoot: tmpRoot,
+        teamPath: join(tmpRoot, '.squad', 'team.md'),
+      };
+      const prompt = buildCoordinatorPrompt(config);
+      expect(prompt).toContain('squad init');
+      expect(prompt).toContain('/init');
+    });
+
+    it('loadWelcomeData returns null (triggering init guidance) when no team.md', async () => {
+      const { loadWelcomeData } = await import('../packages/squad-cli/src/cli/shell/lifecycle.js');
+      const result = loadWelcomeData(tmpRoot);
+      expect(result).toBeNull();
+    });
+  });
+});

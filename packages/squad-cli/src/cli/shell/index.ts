@@ -679,6 +679,9 @@ export async function runShell(): Promise<void> {
   /** Callback for /resume command — replaces current messages with restored session. */
   function onRestoreSession(session: SessionData): void {
     persistedSession = session;
+    // Clear old messages and terminal to prevent content bleed-through
+    shellApi?.clearMessages();
+    process.stdout.write('\x1b[2J\x1b[H');
     // Use unwrapped addMessage to avoid per-message autoSave and duplicate pushes
     for (const msg of session.messages) {
       origAddMessage?.(msg);
@@ -686,6 +689,10 @@ export async function runShell(): Promise<void> {
     shellMessages = [...session.messages];
     autoSave();
   }
+
+  // Clear terminal and enter fresh state for the shell — prevents old
+  // scrollback content from bleeding through in extended sessions.
+  process.stdout.write('\x1b[2J\x1b[H');
 
   const { waitUntilExit } = render(
     React.createElement(ErrorBoundary, null,
