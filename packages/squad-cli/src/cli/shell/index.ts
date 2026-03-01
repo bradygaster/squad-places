@@ -6,7 +6,7 @@
  */
 
 import { createRequire } from 'node:module';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import React from 'react';
 import { render } from 'ink';
@@ -609,6 +609,17 @@ export async function runShell(): Promise<void> {
   async function handleInitCast(parsed: ParsedInput): Promise<void> {
     debugLog('handleInitCast: entering Init Mode');
 
+    // Check for a stored init prompt (from `squad init "prompt"`)
+    const initPromptFile = join(teamRoot, '.squad', '.init-prompt');
+    let castPrompt = parsed.raw;
+    if (existsSync(initPromptFile)) {
+      const storedPrompt = readFileSync(initPromptFile, 'utf-8').trim();
+      if (storedPrompt) {
+        debugLog('handleInitCast: using stored init prompt', storedPrompt.slice(0, 100));
+        castPrompt = storedPrompt;
+      }
+    }
+
     shellApi?.addMessage({
       role: 'system',
       content: '🏗️ No team yet — casting one based on your project...',
@@ -619,15 +630,15 @@ export async function runShell(): Promise<void> {
     // Create a temporary Init Mode coordinator session
     let initSession: SquadSession | null = null;
     try {
-      const initPrompt = buildInitModePrompt({ teamRoot });
+      const initSysPrompt = buildInitModePrompt({ teamRoot });
       initSession = await client.createSession({
         streaming: true,
-        systemMessage: { mode: 'append', content: initPrompt },
+        systemMessage: { mode: 'append', content: initSysPrompt },
         workingDirectory: teamRoot,
       });
       debugLog('handleInitCast: init session created');
 
-      // Send the user's message and collect the response
+      // Send the prompt and collect the response
       let accumulated = '';
       const onDelta = (event: { type: string; [key: string]: unknown }): void => {
         const delta = extractDelta(event);
@@ -638,26 +649,28 @@ export async function runShell(): Promise<void> {
       try {
         accumulated = await ghostRetry(async () => {
           accumulated = '';
-          const fallback = await awaitStreamedResponse(initSession!, parsed.raw);
+          const fallback = await awaitStreamedResponse(initSession!, castPrompt);
           if (!accumulated && fallback) accumulated = fallback;
           return accumulated;
-        }, parsed.raw);
+        }, castPrompt);
       } finally {
         try { initSession.off('message_delta', onDelta); } catch { /* ignore */ }
       }
 
       debugLog('handleInitCast: response length', accumulated.length);
-      debugLog('handleInitCast: response preview', accumulated.slice(0, 300));
+      debugLog('handleInitCast: response preview', accumulated.slice(0, 500));
 
       // Parse the team proposal
       const proposal = parseCastResponse(accumulated);
       if (!proposal) {
-        debugLog('handleInitCast: failed to parse INIT_TEAM from response');
+        debugLog('handleInitCast: failed to parse team from response');
+        debugLog('handleInitCast: full response:', accumulated);
         shellApi?.addMessage({
           role: 'system',
           content: [
-            '⚠ Could not parse a team proposal from the coordinator response.',
-            'Try again or edit .squad/team.md directly to add members.',
+            '⚠ Could not parse a team proposal from the model response.',
+            '',
+            'Try again, or run: squad init "describe your project"',
           ].join('\n'),
           timestamp: new Date(),
         });
@@ -685,6 +698,11 @@ export async function runShell(): Promise<void> {
         content: `✅ Team hired! ${result.membersCreated.length} members created.`,
         timestamp: new Date(),
       });
+
+      // Clean up stored init prompt (it's been consumed)
+      if (existsSync(initPromptFile)) {
+        try { unlinkSync(initPromptFile); } catch { /* ignore */ }
+      }
 
       // Invalidate the old coordinator session so the next dispatch builds one
       // with the real team roster

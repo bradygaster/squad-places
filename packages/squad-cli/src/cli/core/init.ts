@@ -104,7 +104,12 @@ async function writeWorkflowFile(file: string, srcPath: string, destPath: string
 /**
  * Main init command handler
  */
-export async function runInit(dest: string): Promise<void> {
+export interface InitOptions {
+  /** Project description prompt — stored for REPL auto-casting. */
+  prompt?: string;
+}
+
+export async function runInit(dest: string, options: InitOptions = {}): Promise<void> {
   const version = getPackageVersion();
 
   console.log();
@@ -386,6 +391,13 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
     await fs.writeFile(firstRunMarker, new Date().toISOString() + '\n');
   }
 
+  // Store init prompt for REPL auto-casting
+  if (options.prompt) {
+    const promptFile = path.join(squadInfo.path, '.init-prompt');
+    await fs.writeFile(promptFile, options.prompt, 'utf-8');
+    success(`.init-prompt stored — team will be cast when you start squad`);
+  }
+
   // ── Celebration ceremony ──────────────────────────────────────────
   console.log();
   await typewrite(`${CYAN}${BOLD}◆ SQUAD${RESET}`, 10);
@@ -399,7 +411,11 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
   if (!isInitNoColor()) await sleep(80);
   console.log();
-  console.log(`${GREEN}${BOLD}Scaffold ready.${RESET} Start a Copilot session in this directory to cast your team and start building.`);
+  if (options.prompt) {
+    console.log(`${GREEN}${BOLD}Scaffold ready.${RESET} Run ${BOLD}squad${RESET} to cast your team and start building.`);
+  } else {
+    console.log(`${GREEN}${BOLD}Scaffold ready.${RESET} Run ${BOLD}squad init "describe your project"${RESET} to cast a team, or start a Copilot session to cast interactively.`);
+  }
   console.log();
 
   if (squadInfo.isLegacy) {

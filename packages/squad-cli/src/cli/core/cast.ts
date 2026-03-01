@@ -52,14 +52,124 @@ export function roleToEmoji(role: string): string {
 // ── Parser ─────────────────────────────────────────────────────────
 
 /**
- * Parse an INIT_TEAM block from the coordinator's response.
- * Returns null if the response doesn't contain the expected format.
+ * Parse a team proposal from the coordinator's response.
+ * Handles multiple formats:
+ *   1. Strict INIT_TEAM: format
+ *   2. Markdown code blocks wrapping INIT_TEAM
+ *   3. Pipe-delimited lines without INIT_TEAM header
+ *   4. Emoji-prefixed role lines (🏗️ Name — Role  Scope)
+ * Returns null only if no team members could be extracted.
  */
 export function parseCastResponse(response: string): CastProposal | null {
-  const initIdx = response.indexOf('INIT_TEAM:');
-  if (initIdx === -1) return null;
+  // Strip markdown code fences if present
+  let cleaned = response.replace(/```[\s\S]*?```/g, (match) => {
+    return match.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
+  });
 
-  const block = response.slice(initIdx);
+  // Also try without code fence stripping
+  const candidates = [cleaned, response];
+
+  for (const text of candidates) {
+    const result = tryParseInitTeam(text);
+    if (result && result.members.length > 0) return result;
+  }
+
+  // Fallback: try to extract pipe-delimited lines anywhere in the response
+  const fallback = tryParsePipeLines(response);
+  if (fallback && fallback.members.length > 0) return fallback;
+
+  // Last resort: try emoji-prefixed lines (🏗️ Name — Role  Scope)
+  const emojiResult = tryParseEmojiLines(response);
+  if (emojiResult && emojiResult.members.length > 0) return emojiResult;
+
+  return null;
+}
+
+function tryParseInitTeam(text: string): CastProposal | null {
+  const initIdx = text.indexOf('INIT_TEAM:');
+  // Also try "INIT_TEAM" without colon, and case-insensitive
+  const altIdx = initIdx === -1 ? text.search(/INIT_TEAM\s*:?/i) : initIdx;
+  if (altIdx === -1) return null;
+
+  const block = text.slice(altIdx);
+  return extractFromBlock(block);
+}
+
+function tryParsePipeLines(text: string): CastProposal | null {
+  // Look for lines with pipe separators: "- Name | Role | Scope" or "Name | Role | Scope"
+  const lines = text.split('\n');
+  const members: CastMember[] = [];
+  let universe = '';
+  let projectDescription = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip table headers and separators
+    if (trimmed.match(/^\|?\s*Name\s*\|/i)) continue;
+    if (trimmed.match(/^\|?\s*-+\s*\|/)) continue;
+
+    // Match: "- Name | Role | Scope" or "* Name | Role | Scope" or just "Name | Role | Scope"
+    const pipeMatch = trimmed.match(/^[-*•]?\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+)/);
+    if (pipeMatch) {
+      const name = pipeMatch[1]!.trim();
+      const role = pipeMatch[2]!.trim();
+      const scope = pipeMatch[3]!.trim().replace(/\|.*$/, '').trim(); // remove trailing pipes
+      if (name && role && !/^-+$/.test(name)) {
+        members.push({ name, role, scope, emoji: roleToEmoji(role) });
+      }
+    }
+
+    const universeMatch = trimmed.match(/^(?:\*\*)?Universe(?:\*\*)?:?\s*(.+)/i);
+    if (universeMatch) universe = universeMatch[1]!.trim();
+
+    const projectMatch = trimmed.match(/^(?:\*\*)?Project(?:\*\*)?:?\s*(.+)/i);
+    if (projectMatch) projectDescription = projectMatch[1]!.trim();
+  }
+
+  if (members.length === 0) return null;
+  return { members, universe: universe || 'Unknown', projectDescription: projectDescription || 'User project' };
+}
+
+function tryParseEmojiLines(text: string): CastProposal | null {
+  // Match lines like: 🏗️ Ripley — Lead   Architecture, code review
+  // or: 🏗️  Ripley  — Lead          Scope, decisions
+  const lines = text.split('\n');
+  const members: CastMember[] = [];
+  let universe = '';
+  let projectDescription = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match emoji + name + dash/emdash + role + optional scope
+    const emojiMatch = trimmed.match(/^[^\w\s][\uFE0F]?\s+(\w+)\s+[—–-]\s+(.+)/);
+    if (emojiMatch) {
+      const name = emojiMatch[1]!.trim();
+      const rest = emojiMatch[2]!.trim();
+      // Split rest into role and scope (role is first word(s) before double space or tab)
+      const roleScopeMatch = rest.match(/^(.+?)\s{2,}(.+)$/);
+      if (roleScopeMatch) {
+        const role = roleScopeMatch[1]!.trim();
+        const scope = roleScopeMatch[2]!.trim();
+        members.push({ name, role, scope, emoji: roleToEmoji(role) });
+      } else {
+        // No clear scope separation — treat whole rest as role
+        members.push({ name, role: rest, scope: rest, emoji: roleToEmoji(rest) });
+      }
+    }
+
+    const universeMatch = trimmed.match(/Universe:?\s*(.+)/i);
+    if (universeMatch && !trimmed.includes('|')) universe = universeMatch[1]!.trim();
+
+    const projectMatch = trimmed.match(/Project:?\s*(.+)/i);
+    if (projectMatch && !trimmed.includes('|')) projectDescription = projectMatch[1]!.trim();
+  }
+
+  if (members.length === 0) return null;
+  return { members, universe: universe || 'Unknown', projectDescription: projectDescription || 'User project' };
+}
+
+function extractFromBlock(block: string): CastProposal | null {
   const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
 
   const members: CastMember[] = [];
@@ -78,22 +188,29 @@ export function parseCastResponse(response: string): CastProposal | null {
       }
     }
 
-    // UNIVERSE: line
-    const universeMatch = line.match(/^UNIVERSE:\s*(.+)/i);
+    // Also handle * bullets
+    if (line.startsWith('*') && line.includes('|')) {
+      const parts = line.slice(1).split('|').map(s => s.trim());
+      if (parts.length >= 3) {
+        members.push({ name: parts[0]!, role: parts[1]!, scope: parts[2]!, emoji: roleToEmoji(parts[1]!) });
+      }
+    }
+
+    // UNIVERSE: line (handles **UNIVERSE:** and **UNIVERSE**: formats)
+    const universeMatch = line.match(/^(?:\*\*)?UNIVERSE(?:\*\*)?:?\s*(?:\*\*)?\s*(.+)/i);
     if (universeMatch) {
-      universe = universeMatch[1]!.trim();
+      universe = universeMatch[1]!.replace(/^\*\*\s*/, '').trim();
     }
 
     // PROJECT: line
-    const projectMatch = line.match(/^PROJECT:\s*(.+)/i);
+    const projectMatch = line.match(/^(?:\*\*)?PROJECT(?:\*\*)?:?\s*(?:\*\*)?\s*(.+)/i);
     if (projectMatch) {
-      projectDescription = projectMatch[1]!.trim();
+      projectDescription = projectMatch[1]!.replace(/^\*\*\s*/, '').trim();
     }
   }
 
   if (members.length === 0) return null;
-
-  return { members, universe, projectDescription };
+  return { members, universe: universe || 'Unknown', projectDescription: projectDescription || 'User project' };
 }
 
 // ── Charter / history generators ───────────────────────────────────

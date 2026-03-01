@@ -169,18 +169,27 @@ function getCommandHelp(cmd: string): string | undefined {
 ${BOLD}squad init${RESET} — Initialize Squad
 
 ${BOLD}USAGE${RESET}
-  squad init [--global] [--mode remote <path>]
+  squad init [prompt] [--file <path>] [--global] [--mode remote <path>]
 
 ${BOLD}DESCRIPTION${RESET}
   Creates the .squad/ directory structure in your project or personal directory.
   Detects your project type and scaffolds appropriate workflows and templates.
+  If a prompt is provided, stores it so the REPL can auto-cast your team.
 
 ${BOLD}OPTIONS${RESET}
+  prompt                A project description (quoted string) for team casting
+  --file <path>         Read the project description from a file
   --global              Create personal squad at ~/.squad/
   --mode remote <path>  Link to a remote team root (dual-root mode)
 
 ${BOLD}EXAMPLES${RESET}
-  ${DIM}# Initialize Squad in current repo${RESET}
+  ${DIM}# Initialize and describe your project for auto-casting${RESET}
+  squad init "Build a snake game in HTML and JavaScript"
+
+  ${DIM}# Initialize with a spec file${RESET}
+  squad init --file ./PROJECT.md
+
+  ${DIM}# Initialize without a prompt (cast later interactively)${RESET}
   squad init
 
   ${DIM}# Create personal squad${RESET}
@@ -693,7 +702,23 @@ async function main(): Promise<void> {
       writeRemoteConfig(dest, teamRootArg);
     }
 
-    await runInit(dest);
+    // Extract project prompt: squad init "Build a snake game" or squad init --file ./spec.txt
+    let initPrompt: string | undefined;
+    const fileIdx = args.indexOf('--file');
+    if (fileIdx !== -1 && args[fileIdx + 1]) {
+      const filePath = resolve(args[fileIdx + 1]!);
+      if (!existsSync(filePath)) {
+        fatal(`Prompt file not found: ${filePath}`);
+      }
+      initPrompt = readFileSync(filePath, 'utf-8').trim();
+    } else {
+      // Look for a positional string arg (not a flag, not 'init'/'hire')
+      const skipSet = new Set(['init', 'hire', '--global', '--mode', mode]);
+      const positional = args.find((a, i) => i > 0 && !a.startsWith('--') && !skipSet.has(a));
+      if (positional) initPrompt = positional;
+    }
+
+    await runInit(dest, { prompt: initPrompt });
     return;
   }
 
