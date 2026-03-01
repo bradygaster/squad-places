@@ -437,6 +437,31 @@ ${BOLD}EXAMPLES${RESET}
   ${DIM}# Sync all upstreams${RESET}
   squad upstream sync
 `,
+    nap: `
+${BOLD}squad nap${RESET} — Context Hygiene
+
+${BOLD}USAGE${RESET}
+  squad nap [--deep] [--dry-run]
+
+${BOLD}DESCRIPTION${RESET}
+  Compresses agent histories, prunes old logs, archives stale decisions,
+  and cleans up orphaned inbox files. Shows before/after stats with
+  estimated token savings.
+
+${BOLD}OPTIONS${RESET}
+  --deep      Aggressive mode — tighter history compression
+  --dry-run   Show what would change without modifying files
+
+${BOLD}EXAMPLES${RESET}
+  ${DIM}# Run a standard nap${RESET}
+  squad nap
+
+  ${DIM}# Preview changes without modifying files${RESET}
+  squad nap --dry-run
+
+  ${DIM}# Deep clean for maximum compression${RESET}
+  squad nap --deep
+`,
     shell: `
 ${BOLD}squad shell${RESET} — Launch Interactive Shell
 
@@ -535,6 +560,9 @@ async function main(): Promise<void> {
     console.log(`                 add|remove|list|sync`);
 
     console.log(`\n${BOLD}Utilities${RESET}`);
+    console.log(`  ${BOLD}nap${RESET}            Context hygiene — compress, prune, archive`);
+    console.log(`                 --deep               Aggressive compression`);
+    console.log(`                 --dry-run            Preview without changes`);
     console.log(`  ${BOLD}export${RESET}         Save squad to JSON`);
     console.log(`                 --out <path>         Output path (default: squad-export.json)`);
     console.log(`  ${BOLD}import${RESET}         Load squad from JSON`);
@@ -697,6 +725,16 @@ async function main(): Promise<void> {
       migrateDirectory: migrateDir,
     });
     
+    return;
+  }
+
+  if (cmd === 'nap') {
+    const { runNap, formatNapReport } = await import('./cli/core/nap.js');
+    const squadDir = path.join(hasGlobal ? resolveGlobalSquadPath() : process.cwd(), '.squad');
+    const deep = args.includes('--deep');
+    const dryRun = args.includes('--dry-run');
+    const result = await runNap({ squadDir, deep, dryRun });
+    console.log(formatNapReport(result, !!process.env['NO_COLOR']));
     return;
   }
 

@@ -26,6 +26,15 @@
 
 ## Learnings
 
+### Nap feature tests — Issue #635 (2026-03-01)
+**Status:** Complete — 38 new tests in `test/nap.test.ts`, all passing.
+- **Categories:** Metrics collection (3), History compression (5), Log pruning (3), Inbox cleanup (3), Decision archival (2), Deep mode (2), Dry-run mode (3), Journal safety (2), Report formatting (5), Edge cases (8), Combined scenarios (2).
+- **Key finding:** History compressor operates on `##` headings as section boundaries, NOT `###` entries. Test fixtures must use `## Date: Entry N` format for compression to trigger. Real history.md uses `## Learnings` as a single section container — compression only kicks in when there are >5 top-level `##` sections.
+- **Substring trap:** `toContain('Entry 1')` false-positives on `Entry 10`. Use full heading assertions like `not.toContain('## 2026-03-01: Entry 1')` for unambiguous matching.
+- **Decision archival dates:** `daysAgoFromLine()` computes real calendar age. Test fixtures must use genuinely old dates (e.g., `2024-01-xx`) for entries to exceed the 30-day threshold — future dates compute negative age and won't archive.
+- **Non-existent dir:** Implementation returns `{ before: emptyMetrics(), after: emptyMetrics(), actions: [] }` instead of throwing. Tests should assert empty result, not `rejects.toThrow()`.
+- **Test strategy:** Isolated temp dirs via `mkdtempSync`, per-test fixtures, cleanup in `afterEach`. Same patterns as `bump-build.test.ts`. No component rendering needed — pure filesystem + function-call assertions.
+
 ### Multi-line paste handling tests (2026-03-01)
 **Status:** Complete — 18 new tests in `test/multiline-paste.test.ts`, all passing.
 - **Categories:** MessageStream multi-line rendering (6), Single-line submit behavior (3), Disabled-state buffering with newlines (4), Multi-line content integrity in ShellMessage (5).

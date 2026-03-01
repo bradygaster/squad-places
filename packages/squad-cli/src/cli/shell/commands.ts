@@ -5,6 +5,8 @@ import { BOLD, DIM, RESET } from '../core/output.js';
 import { listSessions, loadSessionById, type SessionData } from './session-store.js';
 import { formatAgentLine, getStatusTag } from './agent-status.js';
 import type { ShellMessage } from './types.js';
+import path from 'node:path';
+import { runNapSync, formatNapReport } from '../core/nap.js';
 
 export interface CommandContext {
   registry: SessionRegistry;
@@ -52,6 +54,8 @@ export function executeCommand(
       return handleResume(args, context);
     case 'version':
       return { handled: true, output: context.version ?? 'unknown' };
+    case 'nap':
+      return handleNap(args, context);
     default:
       return { handled: false, output: `Hmm, /${command}? Type /help for commands.` };
   }
@@ -115,6 +119,7 @@ function handleHelp(args: string[]): CommandResult {
         '/agents — List team members',
         '/sessions — Past sessions',
         '/resume <id> — Restore session',
+        '/nap — Context hygiene',
         '/version — Show version',
         '/clear — Clear screen',
         '/quit — Exit',
@@ -135,6 +140,7 @@ function handleHelp(args: string[]): CommandResult {
       '  /agents    — List all team members',
       '  /sessions  — List saved sessions',
       '  /resume    — Restore a past session',
+      '  /nap       — Context hygiene (compress, prune, archive)',
       '  /version   — Show version',
       '  /clear     — Clear the screen',
       '  /quit      — Exit',
@@ -185,4 +191,16 @@ function handleResume(args: string[], context: CommandContext): CommandResult {
     return { handled: true, output: `✓ Restored session ${match.id.slice(0, 8)} (${session.messages.length} messages)` };
   }
   return { handled: true, output: 'Session restore not available.' };
+}
+
+function handleNap(args: string[], context: CommandContext): CommandResult {
+  try {
+    const squadDir = path.join(context.teamRoot, '.squad');
+    const deep = args.includes('--deep');
+    const dryRun = args.includes('--dry-run');
+    const result = runNapSync({ squadDir, deep, dryRun });
+    return { handled: true, output: formatNapReport(result, !!process.env['NO_COLOR']) };
+  } catch {
+    return { handled: true, output: 'Nap failed. Run `squad nap` from the CLI for details.' };
+  }
 }

@@ -608,3 +608,24 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - ThinkingIndicator.tsx already clean — no "Coordinator" label anywhere in shell components
 - No trailing-period formatting issues found in warning strings
 **Verified:** TypeScript compiles clean, 3110 tests pass (2 pre-existing failures unrelated).
+
+### Nap feature — context hygiene engine (#635, 2026-03-01)
+**Task:** Full nap feature — context hygiene for .squad/ state. Compresses histories, prunes old logs, archives decisions, cleans inbox.
+
+**Architecture:**
+- Core engine at `packages/squad-cli/src/cli/core/nap.ts` — both async (`runNap`) and sync (`runNapSync`) exports
+- Sync version needed because REPL `executeCommand` is synchronous; all fs operations are sync anyway
+- Tiered approach: Tier 1 (default) keeps 5 history entries, Tier 2 (`--deep`) keeps 3
+- History compression: preserves `## Core Context` section, keeps N most recent `##` sections, archives rest to `*-archive.md`
+- Journal-based safety: `.nap-journal` written before mutations, removed on completion, warns if found at start
+- `formatNapReport()` handles NO_COLOR and humanized byte/token display
+
+**Key patterns:**
+- CLI command follows exact same pattern as `upgrade`, `export` etc in `cli-entry.ts`
+- REPL `/nap` imports `runNapSync` and `formatNapReport` statically (ESM — no `require()`)
+- Help text added to both `getCommandHelp()` dict and main `--help` listing
+- Skill template at `.squad-templates/skills/nap/SKILL.md` for new squad scaffolding
+
+**Files created:** `packages/squad-cli/src/cli/core/nap.ts`, `.squad-templates/skills/nap/SKILL.md`
+**Files modified:** `packages/squad-cli/src/cli-entry.ts`, `packages/squad-cli/src/cli/shell/commands.ts`
+**Verified:** TypeScript compiles clean, all 3229 tests pass (38 nap-specific).
