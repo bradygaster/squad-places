@@ -22,11 +22,12 @@ import type { SquadSession } from '@bradygaster/squad-sdk/client';
 import type { ShellMessage } from './types.js';
 import { initSquadTelemetry, TIMEOUTS } from '@bradygaster/squad-sdk';
 import { enableShellMetrics, recordShellSessionDuration, recordAgentResponseLatency, recordShellError } from './shell-metrics.js';
-import { buildCoordinatorPrompt, parseCoordinatorResponse, hasRosterEntries } from './coordinator.js';
+import { buildCoordinatorPrompt, buildInitModePrompt, parseCoordinatorResponse, hasRosterEntries } from './coordinator.js';
 import { loadAgentCharter, buildAgentPrompt } from './spawn.js';
 import { createSession, saveSession, loadLatestSession, type SessionData } from './session-store.js';
 import { parseDispatchTargets, type ParsedInput } from './router.js';
 import { agentSessionGuidance, genericGuidance, formatGuidance } from './error-messages.js';
+import { parseCastResponse, createTeam, formatCastSummary } from '../core/cast.js';
 
 export { SessionRegistry } from './sessions.js';
 export { StreamBridge } from './stream-bridge.js';
@@ -36,7 +37,7 @@ export { ShellLifecycle } from './lifecycle.js';
 export type { LifecycleOptions, DiscoveredAgent } from './lifecycle.js';
 export { spawnAgent, loadAgentCharter, buildAgentPrompt } from './spawn.js';
 export type { SpawnOptions, SpawnResult, ToolDefinition } from './spawn.js';
-export { buildCoordinatorPrompt, parseCoordinatorResponse, formatConversationContext, hasRosterEntries } from './coordinator.js';
+export { buildCoordinatorPrompt, buildInitModePrompt, parseCoordinatorResponse, formatConversationContext, hasRosterEntries } from './coordinator.js';
 export type { CoordinatorConfig, RoutingDecision } from './coordinator.js';
 export { parseInput, parseDispatchTargets } from './router.js';
 export type { MessageType, ParsedInput, DispatchTargets } from './router.js';
@@ -599,6 +600,136 @@ export async function runShell(): Promise<void> {
     });
   }
 
+  /**
+   * Init Mode — cast a team when the roster is empty.
+   * Creates a temporary coordinator session with Init Mode instructions,
+   * sends the user's message, parses the team proposal, creates files,
+   * and then re-dispatches the original message to the now-populated team.
+   */
+  async function handleInitCast(parsed: ParsedInput): Promise<void> {
+    debugLog('handleInitCast: entering Init Mode');
+
+    shellApi?.addMessage({
+      role: 'system',
+      content: '🏗️ No team yet — casting one based on your project...',
+      timestamp: new Date(),
+    });
+    shellApi?.setActivityHint('Casting your team...');
+
+    // Create a temporary Init Mode coordinator session
+    let initSession: SquadSession | null = null;
+    try {
+      const initPrompt = buildInitModePrompt({ teamRoot });
+      initSession = await client.createSession({
+        streaming: true,
+        systemMessage: { mode: 'append', content: initPrompt },
+        workingDirectory: teamRoot,
+      });
+      debugLog('handleInitCast: init session created');
+
+      // Send the user's message and collect the response
+      let accumulated = '';
+      const onDelta = (event: { type: string; [key: string]: unknown }): void => {
+        const delta = extractDelta(event);
+        if (delta) accumulated += delta;
+      };
+
+      initSession.on('message_delta', onDelta);
+      try {
+        accumulated = await ghostRetry(async () => {
+          accumulated = '';
+          const fallback = await awaitStreamedResponse(initSession!, parsed.raw);
+          if (!accumulated && fallback) accumulated = fallback;
+          return accumulated;
+        }, parsed.raw);
+      } finally {
+        try { initSession.off('message_delta', onDelta); } catch { /* ignore */ }
+      }
+
+      debugLog('handleInitCast: response length', accumulated.length);
+      debugLog('handleInitCast: response preview', accumulated.slice(0, 300));
+
+      // Parse the team proposal
+      const proposal = parseCastResponse(accumulated);
+      if (!proposal) {
+        debugLog('handleInitCast: failed to parse INIT_TEAM from response');
+        shellApi?.addMessage({
+          role: 'system',
+          content: [
+            '⚠ Could not parse a team proposal from the coordinator response.',
+            'Try again or edit .squad/team.md directly to add members.',
+          ].join('\n'),
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      // Show the proposed team
+      shellApi?.addMessage({
+        role: 'agent',
+        agentName: 'coordinator',
+        content: `Team proposed:\n\n${formatCastSummary(proposal)}\n\nUniverse: ${proposal.universe}`,
+        timestamp: new Date(),
+      });
+      shellApi?.setActivityHint('Creating team files...');
+
+      // Create all team files
+      const result = await createTeam(teamRoot, proposal);
+      debugLog('handleInitCast: team created', {
+        members: result.membersCreated.length,
+        files: result.filesCreated.length,
+      });
+
+      shellApi?.addMessage({
+        role: 'system',
+        content: `✅ Team hired! ${result.membersCreated.length} members created.`,
+        timestamp: new Date(),
+      });
+
+      // Invalidate the old coordinator session so the next dispatch builds one
+      // with the real team roster
+      if (coordinatorSession) {
+        try { await coordinatorSession.abort?.(); } catch { /* ignore */ }
+        coordinatorSession = null;
+        streamBuffers.delete('coordinator');
+      }
+
+      // Close the init session
+      try { await initSession.close?.(); } catch { /* ignore */ }
+      initSession = null;
+
+      // Register the new agents in the session registry
+      for (const member of proposal.members) {
+        const roleName = member.role || 'Agent';
+        registry.register(member.name.toLowerCase(), roleName);
+      }
+
+      shellApi?.setActivityHint('Routing your message to the team...');
+
+      // Re-dispatch the original message — now with a populated roster
+      shellApi?.addMessage({
+        role: 'system',
+        content: '📌 Routing your message to the team now...',
+        timestamp: new Date(),
+      });
+      await dispatchToCoordinator(parsed.content ?? parsed.raw);
+
+    } catch (err) {
+      debugLog('handleInitCast error:', err);
+      recordShellError('init_cast', err instanceof Error ? err.constructor.name : 'unknown');
+      shellApi?.addMessage({
+        role: 'system',
+        content: `⚠ Team casting failed: ${err instanceof Error ? err.message : String(err)}\nTry again or edit .squad/team.md directly.`,
+        timestamp: new Date(),
+      });
+    } finally {
+      if (initSession) {
+        try { await initSession.close?.(); } catch { /* ignore */ }
+      }
+      shellApi?.setActivityHint(undefined);
+    }
+  }
+
   /** Handle dispatching parsed input to agents or coordinator. */
   async function handleDispatch(parsed: ParsedInput): Promise<void> {
     // Guard: require a Squad team before processing work requests
@@ -612,23 +743,10 @@ export async function runShell(): Promise<void> {
       return;
     }
 
-    // Check if roster is actually populated
+    // Check if roster is actually populated — if not, enter Init Mode (cast a team)
     const teamContent = readFileSync(teamFile, 'utf-8');
     if (!hasRosterEntries(teamContent)) {
-      shellApi?.addMessage({
-        role: 'system',
-        content: [
-          '\u26A0 No team members yet. Your scaffold is ready but no team has been cast.',
-          '',
-          'To cast your team:',
-          '  \u2022 Open this project in VS Code \u2192 Copilot Chat \u2192 the coordinator will propose a team',
-          '  \u2022 Or edit .squad/team.md directly to add members',
-          '  \u2022 Or run squad init in a new Copilot CLI session (the coordinator handles casting)',
-          '',
-          'The REPL needs at least one team member to route work.',
-        ].join('\n'),
-        timestamp: new Date(),
-      });
+      await handleInitCast(parsed);
       return;
     }
 

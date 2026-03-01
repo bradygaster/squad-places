@@ -213,13 +213,12 @@ function handleInit(context: CommandContext): CommandResult {
   return {
     handled: true,
     output: [
-      'To set up your Squad team:',
+      'To cast your Squad team, just type what you want to build.',
       '',
-      '  1. Exit the REPL (Ctrl+C or /quit)',
-      '  2. Open this project in VS Code with GitHub Copilot',
-      '  3. Start a Copilot Chat — the coordinator will propose a team',
+      'The coordinator will analyze your message, propose a team,',
+      'create agent files, and route your work — all automatically.',
       '',
-      'Or edit .squad/team.md directly to add team members.',
+      'Example: "Build a React app with a Node.js backend"',
       '',
       `Team file: ${context.teamRoot}/.squad/team.md`,
     ].join('\n'),
