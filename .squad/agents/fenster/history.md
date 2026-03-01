@@ -644,4 +644,5 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 
 **Files modified:** `coordinator.ts`, `shell/index.ts`, `commands.ts`, `core/init.ts`, `test/human-journeys.test.ts`
 **Verified:** Build clean, all 3229 tests pass.
+📌 Team update (2026-03-01T05:57:23): Nap feature complete — dual sync/async export pattern, 38 comprehensive tests, all 3229 tests pass. Issue #635 closed, PR #636 merged. — decided by Fenster, Hockney
 
