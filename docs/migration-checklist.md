@@ -1,265 +1,207 @@
-# Migration Checklist: squad-pr → squad (v0.6.0-preview)
+# Migration Checklist: origin (squad-pr) → beta (squad) — v0.6.0
 
-**⚠️ CRITICAL: Do not execute ANY steps until Brady says "banana"**
-
-Print this page and check off as you proceed.
+**⚠️ BANANA RULE IS ACTIVE.** Do NOT execute ANY steps until Brady says "banana".
 
 ---
 
 ## BANANA GATE
 - [ ] **Brady explicitly said: "banana"**
 
-If this is NOT checked, STOP. Do not proceed.
+If NOT checked, STOP. Do not proceed.
 
 ---
 
-## Phase 1: Prerequisites & Environment
-
-- [ ] Both repos cloned: `C:\src\squad-pr` and `C:\src\squad`
-- [ ] Squad-pr: `git status` shows clean tree
-- [ ] Squad (public): `git status` shows clean tree
-- [ ] GitHub CLI authenticated: `gh auth status` ✅
-- [ ] Both repos accessible: `gh repo view bradygaster/squad-pr` ✅
-- [ ] Node.js ≥20: `node --version` shows 20.x+
-- [ ] npm ≥10: `npm --version` ✅
+## Phase 1: Prerequisites
+- [ ] Both repos accessible: `origin` remote (bradygaster/squad-pr), `beta` remote (bradygaster/squad)
+- [ ] Working directory: `C:\src\squad-pr`
+- [ ] Clean tree: `git status` shows no uncommitted changes
+- [ ] Node.js ≥20: `node --version`
+- [ ] npm ≥10: `npm --version`
 
 ---
 
-## Phase 2: Security Scan
+## Phase 2: Tag v0.6.0 on Origin
 
-- [ ] No `.env` files in git: `git ls-files | grep "\.env"` (empty)
-- [ ] No hardcoded secrets: Scanned for token, password, key, secret patterns
-- [ ] Scanned .copilot/ for sensitive content — safe
-- [ ] No Authorization headers in source code
-- [ ] **Result: PASS** (or STOP if secrets found — use BFG)
+**Note:** Public repo (bradygaster/squad) is at v0.5.4. v0.6.0 is the clean next minor bump for the public release. The v0.6.0 tag will be created at the migration merge commit on the public repo (not retroactively on origin).
 
 ---
 
-## Phase 3: Version Preparation (squad-pr)
-
-- [ ] Updated `package.json` version → 0.6.0-preview
-- [ ] Updated `packages/squad-sdk/package.json` version → 0.6.0-preview
-- [ ] Updated `packages/squad-cli/package.json` version → 0.6.0-preview
-- [ ] Ran `npm install --package-lock-only`
-- [ ] Build passes: `npm run build` (exit code 0)
-- [ ] Tests pass: `npm test` (all pass)
-- [ ] Commit created: "chore: version bump to 0.6.0-preview for public migration"
+## Phase 3: Push origin/migration to beta/migration
+- [ ] Verify migration branch HEAD: `git rev-parse migration` → `87e4f1c`
+- [ ] Ensure beta remote exists: `git remote -v | grep beta`
+- [ ] If missing: `git remote add beta https://github.com/bradygaster/squad.git`
+- [ ] Fetch beta: `git fetch beta`
+- [ ] Push migration branch to beta: `git push beta migration:migration`
+- [ ] Verify on beta: `gh repo view bradygaster/squad --branch migration`
 
 ---
 
-## Phase 4: Breaking Changes & Beta User Migration
-
-- [ ] Documented breaking changes between v0.5.x and v0.6.0-preview:
-  - [ ] TypeScript rewrite of entire codebase
-  - [ ] New .squad/ directory format (v0.5.4 format incompatible)
-  - [ ] Command structure reorganization
-  - [ ] SDK API changes for programmatic integration
-- [ ] Created beta user upgrade guide section in `docs/migration-guide-private-to-public.md`
-- [ ] Documented two distribution channels (~~GitHub-native~~ removed, npm only)
-- [ ] Documented migration path: `npx github:bradygaster/squad` → `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`
-- [ ] Documented recommended migration path to npm for version management
-- [ ] Added .squad/ directory migration procedure (v0.5.4 → v0.6.0 format)
-- [ ] Documented shell script/CI updates needed (GitHub-native → npm)
+## Phase 4: Merge beta/migration → beta/main
+- [ ] Navigate to beta repo (or switch remote context)
+- [ ] Create PR: `gh pr create --repo bradygaster/squad --base main --head migration --title "Migration: squad-pr → squad" --body "..."`
+- [ ] PR body should include:
+  - [ ] Version jump: v0.5.4 → v0.6.0
+  - [ ] Breaking changes (monorepo, npm distribution, .squad/ vs .ai-team/)
+  - [ ] User upgrade path (GitHub-native → npm)
+  - [ ] Distribution change (npx github: → npm install -g)
+- [ ] Wait for CI checks (if any)
+- [ ] Merge PR to beta/main
+- [ ] Verify merge: `git fetch beta && git log beta/main -5`
 
 ---
 
-## Phase 5: Test npm Distribution
+## Phase 5: Version Alignment on Beta
+**Decision:** v0.6.0 is the target public release version (decided by Brady).
 
-- [ ] After migration is complete, test npm distribution:
-  - [ ] Temporary directory: `mkdir $HOME\squad-test-npm`
-  - [ ] Install via npm: `npm install -g @bradygaster/squad-cli@latest`
-  - [ ] Expected output: `squad --version` → v0.6.0-preview (or newer)
-  - [ ] Verify: `squad doctor` passes
-  - [ ] Cleanup: `npm uninstall -g @bradygaster/squad-cli && rm -Recurse -Force $HOME\squad-test-npm`
-- [ ] Confirm that `npx @bradygaster/squad-cli` works without global install
+- [ ] Beta's package.json versions should be set to 0.6.0 at migration merge commit
+- [ ] Create v0.6.0 tag at merge commit on beta/main
+- [ ] Document as "Migration release: GitHub-native → npm distribution, monorepo structure"
+- [ ] Rationale: Clean public version (0.5.4 → 0.6.0 is standard semver bump), clear "before/after" marker for users
 
 ---
 
-## Phase 6: Repository Reference Sweep (squad-pr → squad)
+## Phase 6: Package Name Reconciliation
+**Problem:** Beta uses `@bradygaster/create-squad`. Origin uses `@bradygaster/squad-cli` + `@bradygaster/squad-sdk`.
 
-- [ ] Searched all files for squad-pr references: `Get-ChildItem -Recurse -Include *.ts,*.tsx,*.md,*.json,*.yml,*.yaml -File | Select-String -Pattern "squad-pr"`
-- [ ] Reviewed search results and captured in CSV
-- [ ] Replaced all package.json `@bradygaster/squad-pr` → `@bradygaster/squad`
-- [ ] Replaced all GitHub URLs: `github.com/bradygaster/squad-pr` → `github.com/bradygaster/squad`
-- [ ] Replaced repository fields in package.json files
-- [ ] Updated README.md links and references
-- [ ] Updated CONTRIBUTING.md links
-- [ ] Updated all docs/*.md files
-- [ ] Updated .github/workflows/*.yml references
-- [ ] Updated product title/header strings in CLI
-- [ ] Updated .squad/team.md repository references
-- [ ] Verified zero remaining squad-pr references: `Get-ChildItem -Recurse -Include *.ts,*.tsx,*.md,*.json,*.yml,*.yaml -File | Select-String -Pattern "squad-pr" | Measure-Object` returned 0
-- [ ] Commit created: "chore: sweep repository references squad-pr → squad"
+### Option A: Deprecate `@bradygaster/create-squad`
+- [ ] Publish final version of `@bradygaster/create-squad` with deprecation notice
+- [ ] Update npm metadata: `npm deprecate @bradygaster/create-squad "Migrated to @bradygaster/squad-cli"`
+- [ ] All future releases under `@bradygaster/squad-cli` + `@bradygaster/squad-sdk`
+
+### Option B: Rename packages back to `@bradygaster/create-squad`
+- [ ] Update all package.json `name` fields in origin
+- [ ] Not recommended (origin's naming is more accurate: CLI vs SDK)
+
+**Recommendation: Option A.** Deprecate old package, move forward with new names.
 
 ---
 
-## Phase 7: Migration Branch & Merge
+## Phase 7: Beta User Upgrade Path
 
-- [ ] Navigated to `C:\src\squad`
-- [ ] Squad on main: `git status` shows main branch
-- [ ] Verified current remotes: `git remote -v` (only origin shown)
-- [ ] Added squad-pr remote: `git remote add squad-pr https://github.com/bradygaster/squad-pr.git`
-- [ ] Fetched from squad-pr: `git fetch squad-pr` (no errors)
-- [ ] Verified fetch: `git log --oneline squad-pr/main -5` (shows commits)
-- [ ] Created migration branch: `git checkout -b migration`
-- [ ] Merge command executed: `git merge squad-pr/main --allow-unrelated-histories`
-- [ ] Merge paused (expected for unrelated histories)
-- [ ] Conflicts identified: Listed all "both modified" files
+**For users on v0.5.4 (GitHub-native distribution):**
 
----
+1. **Uninstall old distribution (if globally installed):**
+   - [ ] N/A (GitHub-native doesn't install globally)
 
-## Phase 8: Conflict Resolution
+2. **Switch to npm distribution:**
+   - [ ] `npm install -g @bradygaster/squad-cli@latest`
+   - [ ] Or: `npx @bradygaster/squad-cli`
 
-### package.json files
-- [ ] Resolved `package.json` (took squad-pr version: 0.6.0-preview)
-- [ ] Resolved `packages/squad-sdk/package.json` (took squad-pr version)
-- [ ] Resolved `packages/squad-cli/package.json` (took squad-pr version)
-- [ ] All three files added: `git add package.json packages/*/package.json`
+3. **Migrate `.ai-team/` to `.squad/`:**
+   - [ ] Squad v0.6.0 uses `.squad/` directory (not `.ai-team/`)
+   - [ ] User must manually rename: `mv .ai-team .squad` (if project has one)
+   - [ ] ⚠️ Format may be incompatible — see migration guide
 
-### Infrastructure files
-- [ ] Resolved `.gitignore` (merged both versions)
-- [ ] Resolved `.github/workflows/*` (took squad-pr versions)
-- [ ] Files added: `git add .gitignore .github/`
+4. **Update CI/CD scripts:**
+   - [ ] Replace `npx github:bradygaster/squad` with `npx @bradygaster/squad-cli`
+   - [ ] Update version pinning strategy (npm tags instead of git SHAs)
 
-### Documentation
-- [ ] Resolved `README.md` (chose squad-pr dev-facing version)
-- [ ] Resolved `CHANGELOG.md` (merged both histories)
-- [ ] Resolved `docs/**` (merged content)
-- [ ] Files added: `git add README.md CHANGELOG.md docs/`
-
-### .squad/ files
-- [ ] Verified no conflicts in `.squad/` (union merge driver active)
-- [ ] If conflicts: resolved by taking both sides
-- [ ] `git add .squad/`
-
-### Other conflicts
-- [ ] All remaining conflicts resolved
-- [ ] `git status` shows no "both modified" files
-- [ ] All modified files staged: `git status` shows clean staging
-
-### Merge commit
-- [ ] Merge completed: `git commit` with comprehensive message
-- [ ] Merge commit visible: `git log --oneline -1`
+5. **Test new version:**
+   - [ ] `squad --version` → v0.6.0
+   - [ ] `squad doctor` (if available)
 
 ---
 
-## Phase 9: Post-Merge Verification
-
-- [ ] Deleted node_modules: `rm -Recurse -Force node_modules`
-- [ ] Deleted package-lock.json: `rm package-lock.json`
-- [ ] Fresh install: `npm install` (exit code 0, no errors)
-- [ ] Build passes: `npm run build` (exit code 0)
-- [ ] Tests pass: `npm test` (all pass)
-- [ ] Versions verified: All three package.json at 0.6.0-preview
-- [ ] CLI version: `node cli.js --version` → 0.6.0-preview
-- [ ] Git status clean: `git status` (working tree clean)
+## Phase 8: npm Publish (Origin Packages)
+- [ ] Verify npm credentials: `npm whoami`
+- [ ] Build packages: `npm run build` (exit code 0)
+- [ ] Test packages: `npm test` (all pass)
+- [ ] Publish SDK: `npm publish -w packages/squad-sdk --access public`
+- [ ] Publish CLI: `npm publish -w packages/squad-cli --access public`
+- [ ] Verify on npm: `npm view @bradygaster/squad-cli@0.6.0`
+- [ ] Verify on npm: `npm view @bradygaster/squad-sdk@0.6.0`
 
 ---
 
-## Phase 10: Push & PR
-
-- [ ] Pushed migration branch: `git push origin migration`
-- [ ] Push verified on GitHub: `gh repo view bradygaster/squad --branch migration`
-- [ ] PR created: `gh pr create ...`
-- [ ] PR number captured: `PR #___`
-- [ ] PR has title: "v0.6.0-preview: Merge squad-pr private development into public"
-- [ ] PR has detailed body with:
-  - [ ] Overview section
-  - [ ] What's New (features from v0.8.6)
-  - [ ] Breaking Changes
-  - [ ] Migration Notes
-  - [ ] Testing results
-  - [ ] Reviewer Checklist
-
----
-
-## Phase 11: CI & Merge
-
-- [ ] Waiting for CI checks...
-- [ ] All checks PASSED: `gh pr view $PR_NUMBER --json statusCheckRollup`
-- [ ] No failed jobs
-- [ ] PR merged to main: `gh pr merge $PR_NUMBER --merge`
-- [ ] Merge verified: `git fetch origin && git checkout main && git pull origin main`
-- [ ] Merge commit visible in main history
-
----
-
-## Phase 12: Tag & Release
-
-- [ ] Fetched latest: `git fetch origin`
-- [ ] On main branch: `git status` shows main
-- [ ] Tag created: `git tag v0.6.0-preview`
-- [ ] Tag pushed: `git push origin v0.6.0-preview`
-- [ ] Tag verified: `git tag -v v0.6.0-preview` (shows commit)
-
----
-
-## Phase 13: GitHub Release
-
-- [ ] Release created: `gh release create v0.6.0-preview --prerelease`
-- [ ] Release title: "v0.6.0-preview — Public Beta"
+## Phase 9: GitHub Release (Beta Repo)
+- [ ] Fetch latest beta/main: `git fetch beta && git log beta/main -1`
+- [ ] Tag beta at merge commit: `git tag v0.8.17 <merge-commit-sha>`
+- [ ] Push tag: `git push beta v0.8.17`
+- [ ] Create GitHub Release: `gh release create v0.8.17 --repo bradygaster/squad --title "v0.8.17 — npm Distribution & Monorepo Structure"`
 - [ ] Release body includes:
-  - [ ] What's New section
-  - [ ] Breaking Changes (with link to upgrade guide)
-  - [ ] Installation instructions (both GitHub-native and npm)
-  - [ ] Migration guide for beta users
-  - [ ] Testing notes
-  - [ ] Known limitations / pre-release warning
-- [ ] Release marked as prerelease: ✅
-- [ ] Release visible on GitHub Releases page
+  - [ ] **Breaking Changes:** GitHub-native → npm, `.ai-team/` → `.squad/`, monorepo structure
+  - [ ] **New Distribution:** `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`
+  - [ ] **Upgrade Guide:** Link to migration docs
+  - [ ] **Version Jump:** v0.5.4 → v0.8.17 (intermediate versions skipped)
+- [ ] Mark as "Latest" release (not prerelease)
 
 ---
 
-## Phase 14: Post-Release Validation
-
-- [ ] Created test directory: `mkdir $HOME\squad-test-v0.6.0`
-- [ ] Installed from npm: `npm install -g @bradygaster/squad-cli@0.6.0-preview`
-- [ ] Version shows: `squad --version` → 0.6.0-preview
-- [ ] Help works: `squad --help` (no errors)
-- [ ] Doctor passes: `squad doctor` (✅)
-- [ ] npx works: `npx @bradygaster/squad-cli --version` → 0.6.0-preview
-- [ ] Cleaned up: `npm uninstall -g @bradygaster/squad-cli && rm -Recurse -Force $HOME\squad-test-v0.6.0`
+## Phase 10: Deprecate Beta's Old Package (if applicable)
+- [ ] If `@bradygaster/create-squad` was published to npm:
+  - [ ] `npm deprecate @bradygaster/create-squad "Migrated to @bradygaster/squad-cli. Install with: npm install -g @bradygaster/squad-cli"`
+- [ ] Verify deprecation: `npm view @bradygaster/create-squad`
 
 ---
 
-## Phase 15: Documentation & Closure
+## Phase 11: Post-Release Bump (Origin)
+**Per release versioning sequence:** After publishing v0.8.17, immediately bump to v0.8.18-preview.1 for continued development.
 
-- [ ] Decision file created: `.squad/decisions/inbox/kobayashi-beta-upgrade-path.md`
-- [ ] Kobayashi history updated: `.squad/agents/kobayashi/history.md` appended with learnings
-- [ ] Migration log created: `.squad/log/[timestamp]-migration-execution.md`
-- [ ] All rollback procedures documented (verified in place)
-- [ ] Post-migration decision made: Keep squad-pr as dev mirror? Archive? (Document here: ___________________)
-- [ ] Beta user docs reviewed and linked from Release notes
+- [ ] Already done: commit `87e4f1c` bumped to `0.8.18-preview`
+- [ ] Verify: `git show 87e4f1c:package.json | grep version` → `0.8.18-preview`
+- [ ] Note: Should be `0.8.18-preview.1` per new semver format (fix if needed)
+
+---
+
+## Phase 12: Update Migration Docs
+- [ ] Update `docs/migration-github-to-npm.md` with v0.6.0 specifics
+- [ ] Update `docs/migration-guide-private-to-public.md` with actual version numbers
+- [ ] Link to this checklist from main migration guide
+- [ ] Commit: "docs: update migration guides for v0.6.0 execution"
+
+---
+
+## Phase 13: Verification
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-cli@0.6.0` ✅
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-sdk@0.6.0` ✅
+- [ ] Beta release on GitHub: `gh release view v0.6.0 --repo bradygaster/squad` ✅
+- [ ] Beta main branch HEAD includes migration: `git log beta/main --oneline -5` shows merge ✅
+- [ ] Test install: `npm install -g @bradygaster/squad-cli@0.6.0 && squad --version` → v0.6.0 ✅
+
+---
+
+## Phase 14: Communication & Closure
+- [ ] Announce migration completion in team channels (if any)
+- [ ] Update beta repo README with new installation instructions
+- [ ] Add migration notes to beta repo's CHANGELOG.md
+- [ ] Document decision: `.squad/decisions/inbox/kobayashi-migration-complete.md`
+- [ ] Update Kobayashi history: `.squad/agents/kobayashi/history.md`
+
+---
+
+## Rollback Plans
+
+### If migration to beta fails:
+- [ ] Delete beta/migration branch: `git push beta :migration`
+- [ ] Close PR without merging
+- [ ] Origin remains unaffected (no changes pushed)
+
+### If npm publish fails:
+- [ ] Unpublish within 72 hours (npm policy): `npm unpublish @bradygaster/squad-cli@0.8.17`
+- [ ] Fix issue, re-publish with patch version (v0.8.18)
+
+### If beta users report critical issues:
+- [ ] Publish hotfix as v0.8.18 with fix
+- [ ] Update GitHub Release notes with workaround
+- [ ] Consider yanking v0.8.17 from npm (use `npm deprecate` instead of unpublish)
+
 ---
 
 ## Final Checklist
-
-- [ ] **All phases completed successfully**
-- [ ] **No rollbacks executed**
-- [ ] **Public squad repo now at v0.6.0-preview**
-- [ ] **Release accessible via GitHub & npx**
-- [ ] **Beta ready for external testing**
-
----
-
-## Troubleshooting Quick Links
-
-If you get stuck, see the corresponding section in `docs/migration-guide-private-to-public.md`:
-
-| Problem | Section |
-|---------|---------|
-| Secret found in git | Security Scan → If Secrets Found |
-| Merge conflicts won't resolve | Conflict Resolution Guide |
-| Build fails after merge | Post-Merge Verification |
-| CI checks fail on PR | Phase 9: CI & Merge (debug) |
-| Need to undo everything | Rollback Plans → Complete Rollback |
-| Unclear next step | Re-read current phase section + step description |
+- [ ] **v0.6.0 tag exists on beta** (at migration merge commit)
+- [ ] **origin/migration pushed to beta/migration**
+- [ ] **beta/migration merged to beta/main**
+- [ ] **Both npm packages published: squad-cli@0.6.0, squad-sdk@0.6.0**
+- [ ] **GitHub Release v0.6.0 created on beta repo**
+- [ ] **Beta users have upgrade path documented**
+- [ ] **Origin bumped to 0.8.18-preview for continued development**
+- [ ] **All docs updated with v0.6.0 specifics**
 
 ---
 
 **Execution Date:** _______________  
 **Executed By:** _______________  
-**Status:** ✅ COMPLETE / 🛑 FAILED (circle one)  
+**Status:** ✅ COMPLETE / 🛑 FAILED / ⏸️ PAUSED  
 **Notes:** _______________________________________________________________
 
 ---

@@ -1,3 +1,5 @@
+> **⚠️ SUPERSEDED** — This document has been consolidated into [`docs/migration-checklist.md`](migration-checklist.md). Retained for reference only.
+
 # Migration Guide: Private (squad-pr) → Public (squad) Repository
 
 ## ⚠️ BANANA GATE — HARD STOP
@@ -38,7 +40,7 @@ Squad is distributed exclusively via npm:
 
 | Channel | Distribution | Version | Versioning | Installation |
 |---------|--------------|---------|------------|--------------|
-| **npm** | npm registry `@bradygaster/squad-cli` | v0.8.x → v0.6.0-preview (after migration) | Semantic versioning with stable & insider channels | `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli` |
+| **npm** | npm registry `@bradygaster/squad-cli` | v0.5.4 → v0.6.0 (after migration) | Semantic versioning with stable & insider channels | `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli` |
 
 > **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed.
 
@@ -46,7 +48,7 @@ After this migration, users should install via npm:
 
 ### Step 1: Understand the Breaking Changes
 
-Between v0.5.4 and v0.6.0-preview:
+Between v0.5.4 and v0.6.0:
 
 #### Major Architectural Changes
 - **TypeScript rewrite:** Entire codebase ported from JavaScript to TypeScript (strict mode)
@@ -120,16 +122,16 @@ npm install -g @bradygaster/squad-cli
 # Global install (recommended)
 npm install -g @bradygaster/squad-cli
 squad --version
-# Output: v0.6.0-preview (stable release)
+# Output: v0.6.0
 
 # OR use npx without install
 npx @bradygaster/squad-cli --version
-# Output: v0.6.0-preview
+# Output: v0.6.0
 
 # For insider builds (pre-release)
 npm install -g @bradygaster/squad-cli@insider
 squad --version
-# Output: v0.6.0-preview-insider or newer
+# Output: v0.8.18-preview or newer
 ```
 
 **Advantages of npm:**
@@ -146,7 +148,7 @@ After switching to v0.6.0, verify your installation:
 ```bash
 # Check version (npm method)
 squad --version
-# Expected: v0.6.0-preview
+# Expected: v0.6.0
 
 # Run doctor to check environment
 squad doctor
@@ -247,7 +249,7 @@ gh auth status
 # Expected: "Logged in to github.com as {username} ({org account})"
 
 # Test access to both repos
-gh repo view bradygaster/squad-pr --json name
+gh repo view bradygas/squad-pr --json name
 gh repo view bradygaster/squad --json name
 ```
 
@@ -405,9 +407,9 @@ $versions | Format-Table -AutoSize
 # Expected output shows current versions (e.g., 0.8.6-preview, 0.8.6-preview, 0.8.6-preview)
 ```
 
-### Update Version to 0.6.0-preview
+### Update Version to 0.8.17
 
-**Rationale:** Public distribution targets v0.6.0 (public beta). The -preview suffix indicates pre-release status.
+**Rationale:** Public distribution targets v0.6.0.
 
 Update all three files:
 
@@ -416,11 +418,11 @@ Update all three files:
 ```powershell
 cd C:\src\squad-pr
 
-# Edit package.json: change "version" to "0.6.0-preview"
+# Edit package.json: change "version" to "0.8.17"
 # Use your editor or PowerShell:
 
 $content = Get-Content package.json | ConvertFrom-Json
-$content.version = "0.6.0-preview"
+$content.version = "0.8.17"
 $content | ConvertTo-Json -Depth 10 | Set-Content package.json
 ```
 
@@ -428,7 +430,7 @@ $content | ConvertTo-Json -Depth 10 | Set-Content package.json
 
 ```powershell
 $content = Get-Content packages/squad-sdk/package.json | ConvertFrom-Json
-$content.version = "0.6.0-preview"
+$content.version = "0.8.17"
 $content | ConvertTo-Json -Depth 10 | Set-Content packages/squad-sdk/package.json
 ```
 
@@ -436,7 +438,7 @@ $content | ConvertTo-Json -Depth 10 | Set-Content packages/squad-sdk/package.jso
 
 ```powershell
 $content = Get-Content packages/squad-cli/package.json | ConvertFrom-Json
-$content.version = "0.6.0-preview"
+$content.version = "0.8.17"
 $content | ConvertTo-Json -Depth 10 | Set-Content packages/squad-cli/package.json
 ```
 
@@ -451,7 +453,7 @@ npm install --package-lock-only
 
 ```powershell
 grep '"version"' package.json packages/squad-sdk/package.json packages/squad-cli/package.json
-# Expected output: All three show "0.6.0-preview"
+# Expected output: All three show "0.8.17"
 ```
 
 ### Verify Build Still Passes
@@ -471,9 +473,9 @@ npm run lint
 
 ```powershell
 git add package.json packages/squad-sdk/package.json packages/squad-cli/package.json package-lock.json
-git commit -m "chore: version bump to 0.6.0-preview for public migration
+git commit -m "chore: version bump to 0.8.17 for public migration
 
-Squad-pr v0.8.6.x → v0.6.0-preview (public beta target)
+Squad-pr v0.6.0 → v0.6.0 (stable release target)
 This commit prepares the codebase for migration to bradygaster/squad repo."
 ```
 
@@ -695,10 +697,10 @@ Two options, with **Option A recommended:**
 - Both .gitignore files, .github/ workflows, etc. must be manually resolved
 
 ```powershell
-git merge squad-pr/main --allow-unrelated-histories -m "Merge squad-pr v0.6.0-preview into public squad repo
+git merge squad-pr/main --allow-unrelated-histories -m "Merge squad-pr v0.6.0 into public squad repo
 
-This merge brings private development (v0.8.6.x branch) into the public
-repository as v0.6.0-preview (public beta). 
+This merge brings private development (v0.6.0) into the public
+repository as v0.6.0.
 
 Unrelated histories allowed due to repos diverging from separate starting points.
 See .squad/decisions.md and .squad/agents/kobayashi/history.md for context."
@@ -714,7 +716,7 @@ If you want a clean slate without both histories:
 # This approach: take all squad-pr files, discard public repo content
 git checkout --theirs squad-pr/main -- .
 git add -A
-git commit -m "Replace content with squad-pr v0.6.0-preview"
+git commit -m "Replace content with squad-pr v0.6.0"
 ```
 
 **⚠️ Not recommended** — loses public repo history. Use only if Brady explicitly directs.
@@ -735,7 +737,7 @@ When the merge pauses, you'll see conflicts in these files (expected):
 
 **Conflict reason:** Both repos updated versions independently.
 
-**Resolution:** Take squad-pr version (already at 0.6.0-preview).
+**Resolution:** Take squad-pr version (already at 0.8.17).
 
 ```powershell
 # View conflict
@@ -750,7 +752,7 @@ git add package.json
 
 #### 2. **packages/squad-sdk/package.json** and **packages/squad-cli/package.json**
 
-**Same as root.** Take squad-pr versions (0.6.0-preview).
+**Same as root.** Take squad-pr versions (0.8.17).
 
 ```powershell
 git checkout --theirs packages/squad-sdk/package.json packages/squad-cli/package.json
@@ -902,10 +904,10 @@ git status
 # All modified files should be in "staged" section
 
 # Complete the merge
-git commit -m "Merge squad-pr v0.6.0-preview into public squad
+git commit -m "Merge squad-pr v0.6.0 into public squad
 
 All conflicts resolved:
-- package.json versions: took squad-pr v0.6.0-preview
+- package.json versions: took squad-pr v0.6.0
 - .gitignore: merged both public and private rules
 - .github/workflows: took squad-pr versions
 - README.md: took squad-pr dev-facing version
@@ -955,11 +957,11 @@ npm test
 ```powershell
 # Check all three package.json files
 grep '"version"' package.json packages/squad-sdk/package.json packages/squad-cli/package.json
-# Expected: All three show "0.6.0-preview"
+# Expected: All three show "0.8.17"
 
 # Verify CLI shows correct version
 node cli.js --version
-# Expected: Output shows "0.6.0-preview"
+# Expected: Output shows "0.8.17"
 ```
 
 ### Verify Prerelease Banner (If Applicable)
@@ -967,7 +969,7 @@ node cli.js --version
 ```powershell
 # If squad has a prerelease banner in CLI output:
 node cli.js
-# Expected: Output includes "v0.6.0-preview (beta)" or similar warning
+# Expected: Output includes "v0.6.0" or similar warning
 
 # Check for spinner (TUI health check)
 node cli.js 2>&1 | grep -E "spinner|⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏"
@@ -979,7 +981,7 @@ node cli.js 2>&1 | grep -E "spinner|⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏"
 ```powershell
 # Test SDK import
 node -e "const { VERSION } = require('./packages/squad-sdk'); console.log('SDK VERSION:', VERSION)"
-# Expected: SDK VERSION: 0.6.0-preview
+# Expected: SDK VERSION: 0.8.17
 
 # Test CLI import
 node cli.js --help 2>&1 | head -5
@@ -1029,17 +1031,17 @@ gh api repos/bradygaster/squad/branches/migration --json name,commit
 
 ```powershell
 gh pr create \
-  --title "v0.6.0-preview: Merge squad-pr private development into public" \
+  --title "v0.6.0: Merge squad-pr private development into public" \
   --body "## Overview
 
-This PR merges the private squad-pr development (v0.8.6.x) into the public squad repository as v0.6.0-preview (public beta).
+This PR merges the private squad-pr development (v0.6.0) into the public squad repository as v0.6.0.
 
 ## What's New
 - [Summarize major features added in v0.8.6 development cycle]
 - [e.g., Remote Squad Mode, improved CLI UX, streaming diagnostics, etc.]
 
 ## Breaking Changes
-- [List any breaking changes from v0.5.4 → v0.6.0-preview]
+- [List any breaking changes from v0.5.4 → v0.6.0]
 - [e.g., New CLI interface, changed config structure, etc.]
 
 ## Migration Notes
@@ -1052,7 +1054,7 @@ For users upgrading from v0.5.4:
 - ✅ All tests pass (2500+ tests)
 - ✅ Build clean
 - ✅ CLI smoke test: \`npx squad\` works
-- ✅ Version displays correctly as 0.6.0-preview
+- ✅ Version displays correctly as 0.8.17
 - ✅ Spinner/TUI responsive
 
 ## Reviewer Checklist
@@ -1125,19 +1127,19 @@ git pull origin main
 
 # Verify merge commit is present
 git --no-pager log --oneline -3
-# Expected: Latest commit is the merge commit with message about v0.6.0-preview
+# Expected: Latest commit is the merge commit with message about v0.6.0
 ```
 
 ### Create Release Tag
 
 ```powershell
-git tag v0.6.0-preview
+git tag v0.6.0
 
 # Push tag to origin
-git push origin v0.6.0-preview
+git push origin v0.6.0
 
 # Verify tag created
-git --no-pager tag -v v0.6.0-preview
+git --no-pager tag -v v0.6.0
 # Expected: Tag points to HEAD (merge commit)
 ```
 
@@ -1151,7 +1153,7 @@ Create a formal GitHub Release for the tag.
 
 ```powershell
 $releaseNotes = @"
-# Squad v0.6.0-preview — Public Beta
+# Squad v0.6.0 — Public Beta
 
 ## 🎉 What's New
 
@@ -1172,7 +1174,7 @@ $releaseNotes = @"
 
 ## ⚠️ Pre-Release Status
 
-**This is a PUBLIC BETA (v0.6.0-preview).** Not recommended for production yet.
+**This is a v0.6.0.** Not recommended for production yet.
 
 ### Known Limitations
 - [Known issue 1]
@@ -1187,12 +1189,12 @@ $releaseNotes = @"
 
 ### GitHub Native (No longer supported — use npm)
 \`\`\`bash
-npm install -g @bradygaster/squad-cli@0.6.0-preview
+npm install -g @bradygaster/squad-cli@0.8.17
 \`\`\`
 
 ### npm
 \`\`\`bash
-npm install -g @bradygaster/squad-cli@0.6.0-preview
+npm install -g @bradygaster/squad-cli@0.8.17
 \`\`\`
 
 ## 🔄 Migration from v0.5.4
@@ -1214,7 +1216,7 @@ If upgrading from the previous stable release:
 
 4. **Verify installation**
    \`\`\`bash
-   squad --version  # Should show 0.6.0-preview
+   squad --version  # Should show 0.8.17
    squad doctor     # Run diagnostic checks
    \`\`\`
 
@@ -1256,8 +1258,8 @@ $releaseNotes | Set-Content release-notes.txt
 ### Create Release
 
 ```powershell
-gh release create v0.6.0-preview \
-  --title "v0.6.0-preview — Public Beta" \
+gh release create v0.6.0 \
+  --title "v0.6.0 — Public Beta" \
   --prerelease \
   --notes-file release-notes.txt
 
@@ -1267,12 +1269,12 @@ gh release create v0.6.0-preview \
 ### Verify Release
 
 ```powershell
-gh release view v0.6.0-preview
+gh release view v0.6.0
 # Expected: Shows release details (title, prerelease tag, body)
 
 # Check GitHub
-gh api repos/bradygaster/squad/releases/tags/v0.6.0-preview --json name,prerelease
-# Expected: {"name":"v0.6.0-preview", "prerelease":true}
+gh api repos/bradygaster/squad/releases/tags/v0.6.0 --json name,prerelease
+# Expected: {"name":"v0.6.0", "prerelease":true}
 ```
 
 ---
@@ -1291,7 +1293,7 @@ mkdir $HOME\squad-test-v0.6.0
 cd $HOME\squad-test-v0.6.0
 
 # Install via npm (the only supported distribution method)
-npm install -g @bradygaster/squad-cli@0.6.0-preview
+npm install -g @bradygaster/squad-cli@0.8.17
 
 # Expected: Installs and runs without errors
 ```
@@ -1300,7 +1302,7 @@ npm install -g @bradygaster/squad-cli@0.6.0-preview
 
 ```powershell
 squad --version
-# Expected output: v0.6.0-preview
+# Expected output: v0.6.0
 
 squad --help 2>&1 | head -20
 # Expected: Help text, no errors
@@ -1350,25 +1352,25 @@ cd C:\src\squad-pr
 # Path: .squad/decisions/inbox/kobayashi-public-migration.md
 
 $decision = @"
-# Decision: v0.6.0-preview Public Migration Complete
+# Decision: v0.6.0 Public Migration Complete
 
 **Date:** [Current Date]
 **Actor:** Kobayashi (Git & Release)
 
 ## What
-Executed migration of squad-pr (private, v0.8.6.x) → squad (public, v0.6.0-preview).
+Executed migration of squad-pr (private, v0.8.6.x) → squad (public, v0.6.0).
 
 ## Process
-1. Version prepared: 0.8.6.x → 0.6.0-preview
+1. Version prepared: 0.8.6.x → 0.8.17
 2. Merged via \`git merge --allow-unrelated-histories\`
 3. All conflicts resolved (package.json, .gitignore, workflows, docs)
 4. Created PR #[NUMBER], CI passed
-5. Merged to main, tagged v0.6.0-preview
+5. Merged to main, tagged v0.6.0
 6. Created GitHub Release
 7. Validated installation and CLI
 
 ## Outcome
-✅ Public Squad repo now at v0.6.0-preview
+✅ Public Squad repo now at v0.6.0
 ✅ GitHub release published and accessible
 ✅ npx @bradygaster/squad-cli works
 ✅ Beta testing ready
@@ -1381,7 +1383,7 @@ See .squad/log/[timestamp]-migration-execution.md for detailed run log.
 
 $decision | Set-Content ".squad/decisions/inbox/kobayashi-public-migration.md"
 git add ".squad/decisions/inbox/kobayashi-public-migration.md"
-git commit -m "doc: record v0.6.0-preview public migration decision"
+git commit -m "doc: record v0.6.0 public migration decision"
 ```
 
 ---
@@ -1494,14 +1496,14 @@ git log --oneline -3
 
 ```powershell
 # Delete local tag
-git tag -d v0.6.0-preview
+git tag -d v0.6.0
 
 # Delete remote tag
-git push origin --delete v0.6.0-preview
+git push origin --delete v0.6.0
 
 # Verify
 git tag -l
-# Expected: v0.6.0-preview not listed
+# Expected: v0.6.0 not listed
 ```
 
 ### Phase 8: After Release Published
@@ -1511,11 +1513,11 @@ git tag -l
 ```powershell
 # Delete release on GitHub (via web UI)
 # or via CLI:
-gh release delete v0.6.0-preview
+gh release delete v0.6.0
 
 # Delete tag
-git tag -d v0.6.0-preview
-git push origin --delete v0.6.0-preview
+git tag -d v0.6.0
+git push origin --delete v0.6.0
 
 # Restart from Phase 6 if needed
 ```
@@ -1533,8 +1535,8 @@ git reset --hard origin/main
 
 # Delete all migration artifacts
 git push origin --delete migration 2>/dev/null
-git tag -d v0.6.0-preview 2>/dev/null
-git push origin --delete v0.6.0-preview 2>/dev/null
+git tag -d v0.6.0 2>/dev/null
+git push origin --delete v0.6.0 2>/dev/null
 
 # Delete release on GitHub (manual via web)
 
@@ -1564,7 +1566,7 @@ Print this checklist. Brady must explicitly say the word "banana" before executi
 
 ### Pre-Merge Checklist
 
-- [ ] Version strings updated to 0.6.0-preview in all three package.json files
+- [ ] Version strings updated to 0.8.17 in all three package.json files
 - [ ] `npm install --package-lock-only` executed
 - [ ] Build passes (`npm run build` exits 0)
 - [ ] Tests pass (`npm test` exits 0)
@@ -1586,7 +1588,7 @@ Print this checklist. Brady must explicitly say the word "banana" before executi
 - [ ] Fresh `npm install` executed
 - [ ] Build passes
 - [ ] Tests pass
-- [ ] All version strings are 0.6.0-preview
+- [ ] All version strings are 0.8.17
 - [ ] CLI shows correct version (`node cli.js --version`)
 
 ### Pre-Push Checklist
@@ -1605,15 +1607,19 @@ Print this checklist. Brady must explicitly say the word "banana" before executi
 
 ### Release Checklist
 
-- [ ] Tag created (`git tag v0.6.0-preview`)
-- [ ] Tag pushed to origin (`git push origin v0.6.0-preview`)
-- [ ] GitHub Release created with comprehensive notes
-- [ ] Release marked as pre-release (prerelease: true)
-- [ ] Release notes include what's new, breaking changes, migration guide
+- [ ] Tag createdas descriptive title and body
+- [ ] Reviewer checklist included in PR
 
-### Post-Release Checklist
+### CI & Merge Checklist
 
-- [ ] Smoke test: Installation works (`npm install -g @bradygaster/squad-cli@0.6.0-preview`)
+- [ ] Wait for CI checks to pass (all green)
+- [ ] PR reviewed (at least one approval if required)
+- [ ] PR merged to main (`gh pr merge ...`)
+- [ ] Migration branch deleted on GitHub
+
+### Release Checklist
+
+- [lation works (`npm install -g @bradygaster/squad-cli@0.8.17`)
 - [ ] CLI shows correct version in new install
 - [ ] Doctor command runs successfully
 - [ ] Release is visible on GitHub Releases page
@@ -1640,7 +1646,7 @@ Print this checklist. Brady must explicitly say the word "banana" before executi
 
 ## Conclusion
 
-This migration brings v0.8.6.x development (squad-pr) into the public repository as v0.6.0-preview (public beta). The approach follows Brady's direction: set up remote, create migration branch, merge with conflict resolution, push PR, merge and tag, create release.
+This migration brings v0.6.0 development (squad-pr) into the public repository as v0.6.0. The approach follows Brady's direction: set up remote, create migration branch, merge with conflict resolution, push PR, merge and tag, create release.
 
 **Key principles:**
 - Zero execution until Brady says "banana"
@@ -1658,3 +1664,13 @@ This migration brings v0.8.6.x development (squad-pr) into the public repository
 **Document maintained by:** Kobayashi (Git & Release)  
 **Last updated:** [Current Date]  
 **Status:** WRITTEN — AWAITING BANANA GATE
+otal (including CI wait time and conflict resolution)
+
+**Support:** If any step is unclear or fails, contact Brady or Keaton for guidance. This document is a reference; adapt as needed for actual execution.
+
+---
+
+**Document maintained by:** Kobayashi (Git & Release)  
+**Last updated:** [Current Date]  
+**Status:** WRITTEN — AWAITING BANANA GATE
+

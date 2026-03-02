@@ -1,3 +1,5 @@
+> **⚠️ SUPERSEDED** — Migration planning has been consolidated into [`docs/migration-checklist.md`](../migration-checklist.md). This cookbook page covers general upgrade and troubleshooting.
+
 # Migration & Troubleshooting
 
 > ⚠️ **Experimental** — Squad is alpha software. APIs, commands, and behavior may change between releases.

@@ -14,7 +14,17 @@
 
 ---
 
-## 2. hook-governance
+## 2. knock-knock
+
+**The simplest multi-agent demo.** Two agents cast from a "Comedy Club" universe trade knock-knock jokes forever, streaming token-by-token via `StreamingPipeline`. No routing, no governance, no auth — just casting and streaming. Runs in Docker; demo mode built in.
+
+- **SDK APIs:** `CastingEngine.castTeam()`, `StreamingPipeline`, `onDelta()`, `EventBus`, `SessionPool`
+- **Difficulty:** Beginner
+- **Estimated LOC:** ~80–120
+
+---
+
+## 3. hook-governance
 
 **Every governance hook demoed in one script.** File-write guards that block writes outside allowed paths. PII scrubbing that redacts emails and phone numbers from tool output. Reviewer lockout that prevents an author from editing rejected files. Ask-user rate limiting that caps human interruptions per session. Custom pre-tool and post-tool hooks for audit logging and output validation. Each hook is configured, triggered, and the result printed — so you can see exactly what gets blocked and why.
 
@@ -69,12 +79,13 @@
 | # | Sample | Difficulty | Est. LOC | Key Theme |
 |---|--------|-----------|----------|-----------|
 | 1 | hello-squad | Beginner | ~60–80 | Casting + onboarding |
-| 2 | hook-governance | Intermediate | ~120–150 | All governance hooks |
-| 3 | streaming-chat | Intermediate | ~150–180 | Real-time multi-agent chat |
-| 4 | cost-aware-router | Int–Advanced | ~180–220 | Budget-aware routing |
-| 5 | skill-discovery | Intermediate | ~140–170 | Knowledge sharing |
-| 6 | autonomous-pipeline | Advanced | ~350–450 | Full showcase + dashboard |
+| 2 | knock-knock | Beginner | ~80–120 | Multi-agent streaming |
+| 3 | hook-governance | Intermediate | ~120–150 | All governance hooks |
+| 4 | streaming-chat | Intermediate | ~150–180 | Real-time multi-agent chat |
+| 5 | cost-aware-router | Int–Advanced | ~180–220 | Budget-aware routing |
+| 6 | skill-discovery | Intermediate | ~140–170 | Knowledge sharing |
+| 7 | autonomous-pipeline | Advanced | ~350–450 | Full showcase + dashboard |
 
-**Total estimated LOC across all 6 samples: ~1,000–1,250**
+**Total estimated LOC across all 7 samples: ~1,080–1,370**
 
 > ⚠️ Samples are being built by individual agents. This doc is the portfolio overview only.

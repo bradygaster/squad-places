@@ -268,6 +268,37 @@
 
 ---
 
+## 2025-07: Knock-Knock Multi-Agent Sample
+
+**Requested by:** Brady. Create the simplest possible multi-agent sample: two agents trading knock-knock jokes in Docker, demonstrating Squad SDK patterns without requiring Copilot auth.
+
+**What was built:** `samples/knock-knock/` — 6 files, ~200 lines total:
+- `index.ts`: CastingEngine to cast 2 agents, StreamingPipeline for token-by-token output, 12 hardcoded jokes, infinite loop
+- `package.json`, `tsconfig.json`: Minimal Node/TS config matching other samples
+- `Dockerfile`: Multi-stage build, copies monorepo context for local SDK dependency resolution
+- `docker-compose.yml`: Single service, runs the sample
+- `README.md`: Quick start guide
+
+**Key SDK patterns demonstrated:**
+1. **CastingEngine.castTeam()** — Cast from "usual-suspects" universe with required roles
+2. **StreamingPipeline** — Simulated token-by-token streaming via `onDelta()` callback
+3. **Demo mode** — Hardcoded responses (no live Copilot connection) for Docker-friendly demos
+4. **Session attachment** — `pipeline.attachToSession()` for each agent
+
+**Design constraint: SIMPLEST POSSIBLE.** No EventBus complexity, no SquadClientWithPool, no real Copilot auth. Just casting + streaming + simulated jokes. Perfect for first-time users.
+
+**Verification:** TypeScript compiles clean, sample runs locally, outputs joke exchange with emoji and streaming delays.
+
+## Learnings
+
+- StreamingPipeline's `onDelta()` is the core pattern for rendering agent output — accumulate or stream directly to stdout
+- Simulated streaming (demo mode) is essential for Docker samples where GitHub auth isn't available
+- The `file:../../packages/squad-sdk` dependency pattern in samples allows testing SDK changes without publishing
+- Multi-stage Dockerfile needed: builder stage copies monorepo workspace structure to resolve local dependencies, production stage copies built artifacts
+
+
+---
+
 ## 2025-07: Fix semver prerelease format in bump-build (#692)
 
 **Task:** `scripts/bump-build.mjs` produced invalid semver like `0.8.16.1-preview` (build number before prerelease tag). Fixed to produce `0.8.16-preview.1` (build as dot-separated prerelease identifier, per semver spec).
@@ -281,3 +312,41 @@
 
 - Semver prerelease identifiers are dot-separated after the hyphen: `1.2.3-preview.1` is valid, `1.2.3.1-preview` is not
 - The bump-build test suite copies the real script to a temp dir and patches `__dirname` — any regex changes must not break the patching mechanism
+
+---
+
+## 2025-07: Knock-Knock Sample Rewrite — Real LLM Integration
+
+**Requested by:** Brady. Rewrite `samples/knock-knock/index.ts` to use REAL Copilot sessions instead of hardcoded jokes. Original version rejected because "it doesn't look like it's using any type of LLM or copilot functionality."
+
+**What changed:** `samples/knock-knock/` completely rewritten (~190 lines):
+- **SquadClientWithPool integration**: Real GitHub Copilot connection with `GITHUB_TOKEN` auth
+- **Live LLM sessions**: Two Copilot sessions with distinct system prompts (Teller generates jokes, Responder plays audience)
+- **StreamingPipeline + message_delta**: Pattern from `streaming-chat` — register delta listener, feed to pipeline, capture full response
+- **Graceful auth errors**: Clear error messages if `GITHUB_TOKEN` missing/invalid, no stack traces
+- **Infinite joke loop**: Agents swap roles after each joke, LLM generates unique jokes every time
+- **docker-compose.yml**: Added `GITHUB_TOKEN=${GITHUB_TOKEN}` environment variable
+- **README.md**: Rewritten to document GITHUB_TOKEN requirement, setup instructions, Docker usage
+
+**Key SDK patterns demonstrated:**
+1. **SquadClientWithPool**: Connect with GitHub token, create/resume sessions
+2. **CastingEngine**: Cast two agents (unchanged pattern)
+3. **StreamingPipeline**: Token-by-token streaming from live LLM (not simulated)
+4. **Session management**: Creating sessions with system prompts, resuming, registering delta handlers
+5. **sendAndWait with fallback**: `session.sendAndWait()` with optional fallback to `sendMessage()`
+
+**Architecture:**
+- Two sessions created with different system prompts defining agent personas
+- `sendAndCapture()` helper: registers delta handler, sends prompt, captures full response text
+- Role swap: agents alternate between Teller and Responder after each joke
+- Streaming output: delta events piped to StreamingPipeline → stdout
+
+**Verification:** TypeScript compiles clean (`tsc --noEmit` passes).
+
+## Learnings
+
+- Real LLM integration pattern: SquadClientWithPool → createSession with systemPrompt → resumeSession → register message_delta handler → sendAndWait → capture response
+- System prompts define agent personas — Teller generates jokes, Responder plays natural audience role
+- `sendAndWait()` may be optional on session interface — use conditional check with fallback to `sendMessage()`
+- Auth error UX: check `GITHUB_TOKEN` before connecting, provide actionable error with setup instructions
+- Captured response text enables inter-agent conversation — Teller's joke becomes Responder's input

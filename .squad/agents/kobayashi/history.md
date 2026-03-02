@@ -337,4 +337,17 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Distribution:** npm-only (aligned with origin). Beta users get clear upgrade path with `squad upgrade` command.
 - **Breaking changes for beta users:** (1) Distribution method (GitHub-native → npm), (2) Directory name (`.ai-team/` → `.squad/`), (3) Package name, (4) Node.js >=22 → >=20 (less restrictive).
 - **Deliverables:** Migration checklist (14 phases), migration-plan decision, version-path decision. Status: PLANNING (banana rule active — no git operations until Brady says "banana").
+
+### 2026-03-03: Migration Version Target Updated to v0.6.0 — Brady directed
+**Status:** EXECUTED — All migration documentation updated to target v0.6.0 instead of v0.8.17.
+- **Direction:** Brady decided v0.6.0 is the public migration target (not v0.8.17).
+- **Rationale:** v0.5.4 → v0.6.0 is a clean minor semver bump for public users. Internal versions 0.6.x-0.8.x are private development milestones and don't need public release.
+- **Documentation updated:**
+  1. **docs/migration-checklist.md** — All 14 phases updated: removed dual-tagging logic (v0.6.0 tag at merge commit on public repo only), updated PR titles, Phase 5 consolidated single decision (no Option A/B), Phase 7 user upgrade path, Phase 8-13 npm & release steps all reference v0.6.0.
+  2. **docs/migration-guide-private-to-public.md** — 45+ version references updated (v0.8.17 → v0.6.0), including user upgrade paths, GitHub release notes, package versions, breaking changes.
+  3. **docs/launch/migration-guide-v051-v060.md** — No changes needed (internal SDK migration, already correct)
+  4. **docs/migration-github-to-npm.md** — No changes needed (distribution method docs)
+  5. **docs/cookbook/migration.md** — No changes needed (internal SDK migration, already correct)
+- **Decision document:** `.squad/decisions/inbox/kobayashi-v060-version-target.md` created documenting Brady's direction, rationale, and full list of updated docs.
+- **Key insight:** Supersedes previous v0.8.17 recommendation. Brady's decision prioritizes clean public version numbering (v0.5.4 → v0.6.0 standard bump) over internal development milestone versioning.
 - **Cross-agent sync:** Rabin analyzed npx distribution compatibility (separate decision merged to decisions.md). Both agents' decisions now in merged decisions.md for team coordination post-banana gate.

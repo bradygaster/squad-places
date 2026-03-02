@@ -643,6 +643,46 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 **Notes:**
 - Tone ceiling applies: all blog posts follow "no hype, no unsubstantiated claims" decision from decisions.md
 - Blog serves DevRel goals (community, transparency, learnings) while docs serve product goals (installation, configuration, troubleshooting)
+
+### 2026-02-28: Created knock-knock sample README + updated samples index
+**Status:** Complete.
+**Work completed:**
+1. **Created `samples/knock-knock/README.md`** — Documentation for the knock-knock sample (multi-agent joke exchange)
+   - **Structure:** Follows samples portfolio format (hello-squad, streaming-chat precedent)
+   - **Tone:** Substantive, no hype, every claim linked to SDK concepts or code
+   - **Key sections:** 
+     - Title: "Two agents, one container, infinite jokes"
+     - What it demonstrates (SDK features table)
+     - Prerequisites (Docker, Docker Compose only)
+     - Quick start (one command: `docker compose up`)
+     - Expected output (example joke exchange with emoji markers)
+     - How it works (4-step architecture explanation)
+     - Files table (6 files, each with purpose)
+     - Customization guide (jokes, agent names, timing, third agent)
+     - SDK concepts (links to docs)
+   - **Experimental banner:** ⚠️ added per tone ceiling decision
+   - **Next pointer:** Cross-links to streaming-chat sample
+
+2. **Updated `samples/README.md`:**
+   - Added knock-knock as sample #2 (between hello-squad and hook-governance)
+   - Repositioned all subsequent samples (+1 number)
+   - Updated summary table (7 samples total, ~1,080–1,370 LOC estimate)
+   - Added knock-knock description matching portfolio tone (beginner difficulty, ~80–120 LOC, focus on multi-agent streaming)
+
+**Style decisions:**
+- **Format:** Consistent with existing samples (hello-squad, streaming-chat)
+- **Tone:** Substantive, no marketing language — every claim anchored to SDK features
+- **Difficulty level:** Marked as "Beginner" because it requires no external routing logic, no governance, no auth — only casting + streaming + event coordination
+- **Docker emphasis:** Shows containerization without requiring users to have Node.js installed locally (accessibility)
+- **Customization section:** Covers practical variations (jokes, names, timing, scaling) to help users adapt the template
+- **SDK concepts section:** Links to SDK docs (future-proof: links resolve to README.md, not hardcoded URLs)
+
+**Compliance:**
+- Tone ceiling enforced: no unsubstantiated claims (every feature claim maps to actual SDK API)
+- Experimental banner added (per decision #30: "Tone ceiling — always enforced")
+- ESM/Node.js 20+ assumed (per decision on runtime target)
+- Consistent terminology (CastingEngine, StreamingPipeline, EventBus, Session Pool) matching SDK API
+- No temporary files in repo root (sample files contained in samples/knock-knock/)
 - Separation of /docs/launch/ (internal only) from published blog allows historical record preservation without confusing new users
 - build.js script in old repo can guide static generation approach (reusable pattern for GitHub Pages)
 
