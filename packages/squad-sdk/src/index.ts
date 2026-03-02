@@ -42,3 +42,15 @@ export * from './marketplace/index.js';
 export * from './build/index.js';
 export * from './sharing/index.js';
 export * from './upstream/index.js';
+
+// Multi-squad resolution, config, and migration (#652)
+export {
+  getSquadRoot,
+  resolveSquadPath,
+  listSquads,
+  createSquad,
+  deleteSquad,
+  switchSquad,
+  migrateIfNeeded,
+} from './multi-squad.js';
+export type { SquadEntry, MultiSquadConfig, SquadInfo } from './multi-squad.js';

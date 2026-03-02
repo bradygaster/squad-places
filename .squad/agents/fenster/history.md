@@ -874,3 +874,27 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 **Decision File Needed:**
 - This introduces a new CLI command paradigm (interactive terminal mirroring vs. agent orchestration). Needs a decision: "Remote access via devtunnel is Squad's mobile UX strategy" or "This is an experimental plugin".
 
+
+### 📌 Multi-Squad Phase 1: Core SDK + Config + Migration (PR #691, Issue #652)
+**Requested by:** Brady. Implement foundational layer for multiple personal squads.
+
+**What was built:**
+- New module: `packages/squad-sdk/src/multi-squad.ts` — 7 exported functions + 3 types
+- `getSquadRoot()` delegates to existing `resolveGlobalSquadPath()` for platform detection
+- `resolveSquadPath(name?)` implements 5-step resolution chain: explicit → env → config → default → legacy
+- `listSquads()`, `createSquad()`, `deleteSquad()`, `switchSquad()` — full CRUD for squad registry
+- `migrateIfNeeded()` — non-destructive: registers legacy `~/.squad` as "default" in `squads.json`, never moves files
+- Types `SquadEntry`, `MultiSquadConfig`, `SquadInfo` exported from SDK barrel + types.ts
+- squads.json lives at global config root (`%APPDATA%/squad/` on Windows, `~/.config/squad/` on Linux)
+
+**Key design choices:**
+- Migration is registration-only. Files stay where they are. This avoids data loss risk on first upgrade.
+- `deleteSquad()` blocks deletion of the active squad (safety valve).
+- `resolveSquadPath()` calls `migrateIfNeeded()` on every invocation — idempotent, returns fast after first run.
+- Re-used `resolveGlobalSquadPath()` from resolution.ts rather than duplicating platform logic.
+
+**What's NOT included (Phase 2):**
+- No CLI commands (`squad list`, `squad create`, `squad switch`, etc.)
+- No changes to CLI entry point or existing resolution chain
+
+**Verification:** tsc --noEmit clean. vitest run: 3217 passed, 126 failed (all pre-existing).
