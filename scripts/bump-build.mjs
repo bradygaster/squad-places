@@ -2,10 +2,11 @@
 /**
  * bump-build.mjs — Auto-increment build number before each build.
  *
- * Version format: major.minor.patch.build-prerelease
- *   e.g. 0.8.6.1-preview → 0.8.6.2-preview
+ * Version format: major.minor.patch-prerelease.build  (valid semver)
+ *   e.g. 0.8.6-preview.1 → 0.8.6-preview.2
  *
  * If no build number exists (e.g. 0.8.6-preview), starts at 1.
+ * Non-prerelease versions use: major.minor.patch.build
  * Updates all 3 package.json files (root + both workspaces) in lockstep.
  */
 
@@ -22,19 +23,34 @@ const PACKAGE_PATHS = [
   join(root, 'packages', 'squad-cli', 'package.json'),
 ];
 
-// Parse version: "major.minor.patch[.build]-prerelease"
+// Parse version: "major.minor.patch-prerelease.build" or "major.minor.patch.build"
 function parseVersion(version) {
-  const match = version.match(/^(\d+\.\d+\.\d+)(?:\.(\d+))?(-.*)?$/);
-  if (!match) throw new Error(`Cannot parse version: ${version}`);
-  return {
-    base: match[1],           // e.g. "0.8.6"
-    build: match[2] ? parseInt(match[2], 10) : 0,
-    prerelease: match[3] || '',  // e.g. "-preview"
-  };
+  // Try prerelease format: "1.2.3-tag" or "1.2.3-tag.N"
+  let match = version.match(/^(\d+\.\d+\.\d+)(-[a-zA-Z][a-zA-Z0-9-]*)(?:\.(\d+))?$/);
+  if (match) {
+    return {
+      base: match[1],
+      prerelease: match[2],  // e.g. "-preview"
+      build: match[3] ? parseInt(match[3], 10) : 0,
+    };
+  }
+  // Non-prerelease format: "1.2.3" or "1.2.3.N"
+  match = version.match(/^(\d+\.\d+\.\d+)(?:\.(\d+))?$/);
+  if (match) {
+    return {
+      base: match[1],
+      prerelease: '',
+      build: match[2] ? parseInt(match[2], 10) : 0,
+    };
+  }
+  throw new Error(`Cannot parse version: ${version}`);
 }
 
 function formatVersion({ base, build, prerelease }) {
-  return `${base}.${build}${prerelease}`;
+  if (prerelease) {
+    return `${base}${prerelease}.${build}`;
+  }
+  return `${base}.${build}`;
 }
 
 // Read the canonical version from root package.json

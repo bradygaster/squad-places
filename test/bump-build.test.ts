@@ -45,19 +45,19 @@ describe('bump-build.mjs', () => {
     if (workspace) rmSync(workspace.dir, { recursive: true, force: true });
   });
 
-  it('adds build number .1 when starting from x.y.z.0-preview', () => {
-    workspace = makeTempWorkspace('0.8.6.0-preview');
+  it('adds build number .1 when starting from x.y.z-preview', () => {
+    workspace = makeTempWorkspace('0.8.6-preview');
     execSync(`node ${join(workspace.dir, 'scripts', 'bump-build.mjs')}`, { stdio: 'pipe' });
     for (const p of workspace.paths) {
-      expect(readVersion(p)).toBe('0.8.6.1-preview');
+      expect(readVersion(p)).toBe('0.8.6-preview.1');
     }
   });
 
   it('increments existing build number', () => {
-    workspace = makeTempWorkspace('0.8.6.5-preview');
+    workspace = makeTempWorkspace('0.8.6-preview.5');
     execSync(`node ${join(workspace.dir, 'scripts', 'bump-build.mjs')}`, { stdio: 'pipe' });
     for (const p of workspace.paths) {
-      expect(readVersion(p)).toBe('0.8.6.6-preview');
+      expect(readVersion(p)).toBe('0.8.6-preview.6');
     }
   });
 
@@ -70,16 +70,16 @@ describe('bump-build.mjs', () => {
   });
 
   it('keeps all 3 package.json files in sync', () => {
-    workspace = makeTempWorkspace('0.8.6.0-preview');
+    workspace = makeTempWorkspace('0.8.6-preview');
     execSync(`node ${join(workspace.dir, 'scripts', 'bump-build.mjs')}`, { stdio: 'pipe' });
     const versions = workspace.paths.map(readVersion);
     expect(new Set(versions).size).toBe(1);
-    expect(versions[0]).toBe('0.8.6.1-preview');
+    expect(versions[0]).toBe('0.8.6-preview.1');
   });
 
   it('outputs the build transition to stdout', () => {
-    workspace = makeTempWorkspace('0.8.6.0-preview');
+    workspace = makeTempWorkspace('0.8.6-preview');
     const output = execSync(`node ${join(workspace.dir, 'scripts', 'bump-build.mjs')}`, { encoding: 'utf8' });
-    expect(output.trim()).toBe('Build 1: 0.8.6.0-preview → 0.8.6.1-preview');
+    expect(output.trim()).toBe('Build 1: 0.8.6-preview → 0.8.6-preview.1');
   });
 });
