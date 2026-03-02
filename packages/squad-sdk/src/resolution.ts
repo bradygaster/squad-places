@@ -154,6 +154,7 @@ export function loadDirConfig(squadDir: string): SquadDirConfig | null {
         teamRoot: parsed.teamRoot,
         projectKey: typeof parsed.projectKey === 'string' ? parsed.projectKey : null,
         consult: parsed.consult === true ? true : undefined,
+        extractionDisabled: parsed.extractionDisabled === true ? true : undefined,
       };
     }
     return null;

@@ -147,14 +147,14 @@ export async function runInit(dest: string, options: RunInitOptions = {}): Promi
 
   // Report created files
   for (const file of result.createdFiles) {
-    const relativePath = path.relative(dest, file);
-    success(relativePath);
+    // Files are already relative to teamRoot, just display as-is
+    success(file);
   }
 
   // Report skipped files
   for (const file of result.skippedFiles) {
-    const relativePath = path.relative(dest, file);
-    console.log(`${DIM}${relativePath} already exists — skipping${RESET}`);
+    // Files are already relative to teamRoot, just display as-is
+    console.log(`${DIM}${file} already exists — skipping${RESET}`);
   }
 
   // ── Celebration ceremony ──────────────────────────────────────────

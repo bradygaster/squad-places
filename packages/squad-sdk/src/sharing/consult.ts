@@ -533,7 +533,9 @@ export function loadSessionHistory(squadDir: string): AgentHistory {
     return { entries };
   }
 
-  const files = fs.readdirSync(sessionsDir).filter(f => f.endsWith('.json'));
+  const files = fs.readdirSync(sessionsDir)
+    .filter(f => f.endsWith('.json'))
+    .sort();
 
   for (const file of files) {
     try {

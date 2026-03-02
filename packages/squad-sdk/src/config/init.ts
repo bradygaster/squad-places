@@ -628,10 +628,10 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
   }
   
   // -------------------------------------------------------------------------
-  // Create decisions.md
+  // Create decisions.md (canonical location at squad root)
   // -------------------------------------------------------------------------
   
-  const decisionsPath = join(squadDir, 'decisions', 'decisions.md');
+  const decisionsPath = join(squadDir, 'decisions.md');
   const decisionsContent = `# Squad Decisions
 
 ## Active Decisions
@@ -718,7 +718,7 @@ ${projectDescription ? `- **Description:** ${projectDescription}\n` : ''}- **Cre
   
   const gitattributesPath = join(teamRoot, '.gitattributes');
   const unionRules = [
-    '.squad/decisions/decisions.md merge=union',
+    '.squad/decisions.md merge=union',
     '.squad/agents/*/history.md merge=union',
     '.squad/log/** merge=union',
     '.squad/orchestration-log/** merge=union',
