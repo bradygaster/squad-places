@@ -65,9 +65,9 @@ Install Squad in under a minute and run your first session.
 
 ## Quick Links
 
-- 💬 [Discussions & Support](https://github.com/bradygaster/squad-pr/discussions)
+- 💬 [Discussions & Support](https://github.com/bradygaster/squad/discussions)
 - 📦 [npm — @bradygaster/squad-cli](https://www.npmjs.com/package/@bradygaster/squad-cli)
 - 📦 [npm — @bradygaster/squad-sdk](https://www.npmjs.com/package/@bradygaster/squad-sdk)
-- 🔗 [GitHub Repository](https://github.com/bradygaster/squad-pr)
+- 🔗 [GitHub Repository](https://github.com/bradygaster/squad)
 
 **Ready?** → [Install Squad](get-started/installation.md)

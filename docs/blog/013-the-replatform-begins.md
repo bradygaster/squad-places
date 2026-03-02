@@ -19,7 +19,7 @@ hero: "We threw away everything that worked and rewrote Squad from scratch in Ty
 
 Squad beta shipped fast. Twelve blog posts. Trending on GitHub. A community forming in real time. And underneath all of it, a JavaScript codebase held together with string parsing and good intentions.
 
-Brady made the call on February 20: full replatform. Not a refactor. Not "add TypeScript gradually." A clean-room rewrite with strict typing, ESM modules, and a proper package architecture. The beta repo (`bradygaster/squad`) stays as historical record. The new repo (`bradygaster/squad-pr`) starts from zero.
+Brady made the call on February 20: full replatform. Not a refactor. Not "add TypeScript gradually." A clean-room rewrite with strict typing, ESM modules, and a proper package architecture. 
 
 The reason was simple. Squad was growing faster than the codebase could support. Every new feature — skills, upstream inheritance, multi-client support — required touching parsers that had no type safety. Agent charters were parsed with regex. Routing rules were string-matched. The adapter layer between Squad and `@github/copilot-sdk` was a single file with `as any` casts on every boundary. It worked. Until it didn't.
 
@@ -67,4 +67,4 @@ The replatform is the foundation. The waves are the house. Time to build.
 
 ---
 
-_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Try it →](https://github.com/bradygaster/squad-pr)_
+_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Try it →](https://github.com/bradygaster/squad)_

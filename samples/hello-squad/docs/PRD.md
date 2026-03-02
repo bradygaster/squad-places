@@ -91,7 +91,7 @@ roster.forEach(m => {
 ## Test Script
 
 ```bash
-# Clone squad-pr and navigate to samples/hello-squad
+# Clone squad and navigate to samples/hello-squad
 npm install
 
 # Run the sample

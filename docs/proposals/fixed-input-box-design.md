@@ -127,7 +127,7 @@ Currently, the Squad CLI input prompt flows linearly with message content — it
 ║ \__ \ (_) | |_| / _ \| |) |                                    ║
 ║ |___/\__\_\\___/_/ \_\___/                                      ║
 ║ v0.0.1-alpha · Type naturally · @Agent · /help                 ║
-║ ⚠️  Experimental — github.com/bradygaster/squad-pr              ║
+║ ⚠️  Experimental — github.com/bradygaster/squad              ║
 ╠════════════════════════════════════════════════════════════════╣
 ║ ❯ What should we build first?                                  ║
 ║ ▸ Keaton: Let's start with the auth...                         ║
@@ -596,7 +596,6 @@ No changes needed for a11y.
 - [Ink Static component](https://github.com/vadimdemedes/ink#static)
 - [Copilot CLI Input](https://github.com/github/copilot-cli) — reference for fixed-box UX
 - Claude CLI — reference for aesthetic
-- Current Issue: [#679](https://github.com/bradygaster/squad-pr/issues/679)
 - Related UX audit: `.squad/agents/marquez/history.md` (Feb 2026)
 
 ---

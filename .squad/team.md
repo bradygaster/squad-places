@@ -75,9 +75,3 @@
 - **Description:** The programmable multi-agent runtime for GitHub Copilot — v1 replatform of Squad beta
 - **Distribution:** npm (`npm install -g @bradygaster/squad-cli` for CLI, `npm install @bradygaster/squad-sdk` for SDK)
 - **Created:** 2026-02-21
-
-## Issue Source
-
-- **Repository:** bradygaster/squad-pr
-- **Connected:** 2026-02-22
-- **⚠️ NOTE: This squad works on `bradygaster/squad-pr` ONLY — not `bradygaster/squad` — until further notice.**

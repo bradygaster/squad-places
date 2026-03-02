@@ -286,7 +286,7 @@ What's still rough:
 - The resolution system is simple — no conflict handling if team identity diverges
 - No UI for browsing your global skills or agent histories (it's files for now)
 
-We're building in the open. If something feels off, [open an issue](https://github.com/bradygaster/squad-pr/issues). If something feels right, we want to hear about that too.
+We're building in the open. If something feels off, [open an issue](https://github.com/bradygaster/squad/issues). If something feels right, we want to hear about that too.
 
 ---
 

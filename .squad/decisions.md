@@ -82,10 +82,6 @@
 **By:** bradygaster (via Copilot)
 **What:** Doc and blog as you go during SquadUI integration work. Doesn't have to be perfect — keep docs updated incrementally.
 
-### 2026-02-22: Repository scope directive
-**By:** Brady (via Copilot)
-**What:** This squad works on `bradygaster/squad-pr` ONLY — not `bradygaster/squad`. Until further notice, all issue tracking, PRs, and work target the squad-pr repository. Do NOT change anything in bradygaster/squad repo.
-
 ### 2026-02-22: Runtime EventBus as canonical bus
 **By:** Fortier
 **What:** `runtime/event-bus.ts` (colon-notation: `session:created`, `subscribe()` API) is the canonical EventBus for all orchestration classes. The `client/event-bus.ts` (dot-notation) remains for backward-compat but should not be used in new code.
@@ -521,7 +517,9 @@ Scribe and Ralph are always injected if missing from the proposal. Casting state
 **By:** Keaton (Lead)
 **What:** 
 - New directory structure: ~/.config/squad/squads/{name}/.squad/ with ~/.config/squad/config.json for registry
-- Keep esolveGlobalSquadPath() unchanged; add esolveNamedSquadPath(name?: string) and listPersonalSquads() on top
+- Keep 
+esolveGlobalSquadPath() unchanged; add 
+esolveNamedSquadPath(name?: string) and listPersonalSquads() on top
 - Auto-migration: existing single personal squad moves to squads/default/ on first run
 - Resolution priority: explicit (CLI flag) > project config > env var > git remote mapping > path mapping > default
 - Global config.json schema: { version, defaultSquad, squads, mappings }
@@ -535,7 +533,9 @@ Scribe and Ralph are always injected if missing from the proposal. Casting state
 ### 2026-03-01: Multi-Squad SDK Functions
 **By:** Kujan (SDK Expert)
 **What:**
-- New SDK exports: esolveNamedSquadPath(), listSquads(), createSquad(), deleteSquad(), switchSquad(), esolveSquadForProject()
+- New SDK exports: 
+esolveNamedSquadPath(), listSquads(), createSquad(), deleteSquad(), switchSquad(), 
+esolveSquadForProject()
 - New type: SquadEntry { name, path, isDefault, createdAt }
 - squads.json registry (separate file, not config.json) with squad metadata and mappings
 - SquadDirConfig v2 addition: optional personalSquad?: string field (v1 configs unaffected)

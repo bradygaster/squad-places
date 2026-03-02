@@ -517,11 +517,6 @@ Summary: 2 passes (Keyboard Navigation ✅, Help Text ✅), 2 failures (Color Co
 
 **Why:** Brady requested a "try it now" guide for Aspire integration — single doc that covers launch AND connection, written for immediate action. This replaces scattered documentation and provides a clean entry point for developers wanting to observe Squad telemetry in real time.
 
-### 2026-02-22T035939Z: Repository scope directive
-**By:** Brady (via Copilot)
-**What:** Do NOT change anything in bradygaster/squad repo. This working copy is bradygaster/squad-pr — changes are permitted here. The two repos are distinct.
-**Why:** User request — captured for team memory
-
 ### 2026-02-22: SDK/CLI File Split Plan — Definitive Mapping
 **By:** Keaton (Lead)
 **Status:** Decision

@@ -174,11 +174,6 @@ Documentation quality is solid in structure but suffers from:
 - Before: "Unknown command: /foobar. Type /help for available commands" → After: "Hmm, /foobar? Type /help for commands." (more conversational, same info)
 - Before: "Squad Status\n  Active squad: repo\n  Reason: Found .squad/ in repo tree" → After: "Squad Status\n  Here: repo (in .squad/)" (cleaner structure, less explanation noise)
 
-**PR:** https://github.com/bradygaster/squad-pr/pull/358
-**Notes:**
-- All changes backward-compatible; no API breaking changes
-- Test updates validate that new copy passes UX gates (width, structure, completeness)
-- Ready to merge and deploy—no documentation changes needed (copy IS the docs)
 
 ### 2026-02-24: Public Readiness Assessment
 
@@ -382,7 +377,6 @@ Type /help full for complete docs.
    - Fixed concurrency setting: `cancel-in-progress: false` to prevent interrupting ongoing deployments
    - Reordered deploy job steps to match Brady's specification
 2. **`docs/template.html`** — Updated footer GitHub link:
-   - Changed from `https://github.com/bradygaster/squad` to `https://github.com/bradygaster/squad-pr`
    - Maintains link consistency with current repository
 **Tone applied:** Clean, operational. Docs publishing is infrastructure — focus on what changed and why (repository URL accuracy).
 **Notes:** 

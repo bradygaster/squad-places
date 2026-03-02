@@ -659,7 +659,7 @@ npm run lint           # Type check (tsc --noEmit)
 
 ## Status
 
-⚠️ **Experimental** — v0.8.x alpha. APIs and file formats may change between versions. We'd love your feedback — if you encounter issues, please [file a bug report](https://github.com/bradygaster/squad-pr/issues/new).
+⚠️ **Experimental** — v0.8.x alpha. APIs and file formats may change between versions. We'd love your feedback — if you encounter issues, please [file a bug report](https://github.com/bradygaster/squad/issues/new).
 
 **Conceived by** [@bradygaster](https://github.com/bradygaster).
 

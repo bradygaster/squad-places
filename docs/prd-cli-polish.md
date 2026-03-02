@@ -84,7 +84,7 @@ The Squad CLI is approaching its first public beta. A full-team review of 9 scre
 **Owner:** McManus 📣 / Marquez 🎨  
 **Problem:** Nothing in the CLI communicates that this is an early release. Users need to know "here there be dragons."  
 **Proposed Solution:**  
-- Add a line in the header box: `⚠️  Experimental preview — file issues at github.com/bradygaster/squad-pr`
+- Add a line in the header box: `⚠️  Experimental preview — file issues at github.com/bradygaster/squad`
 - Use dim/yellow styling to be visible but not distracting.
 - Remove or update this once the CLI reaches stable.
 

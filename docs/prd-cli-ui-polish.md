@@ -259,7 +259,7 @@ This document defines what we're shipping for **alpha release** versus what we'r
 | 1 | Fix ThinkingIndicator rotation in App.tsx | P0 | Cheritto | Remove `activityHint`/`mentionHint` props from App.tsx, let ThinkingIndicator rotate natively. ~5 lines changed. |
 | 2 | Add alpha software banner at startup | P0 | Kovash | Show "⚠️ Squad CLI v{version} — Alpha Software" as first output in shell. |
 | 3 | Prevent blank screens >500ms | P0 | Cheritto | Add immediate spinner on any operation that might take >500ms. Audit all loading states. |
-| 4 | Verify timeout env var in large repos | P0 | Fenster | Test `SQUAD_SESSION_TIMEOUT_MS` with default ≥10 min. Dogfood in squad-pr repo. |
+| 4 | Verify timeout env var in large repos | P0 | Fenster | Test `SQUAD_SESSION_TIMEOUT_MS` with default ≥10 min. Dogfood in squad repo. |
 | 5 | Bump contrast on secondary text | P1 | Redfoot | Adjust chalk colors for hints/times/examples to ≥4.5:1 contrast. Update theme.ts. |
 | 6 | Define semantic color system | P1 | Redfoot | Document + implement: cyan=info, green=success, yellow=warning, red=error. |
 | 7 | Tighten verbose copy | P1 | Marquez | Remove "Routing your message..." jargon, shorten version, eliminate roster re-display. Review only. |

@@ -56,7 +56,6 @@ Every ported document got a tone pass:
 
 - **Removed "⚠️ INTERNAL ONLY" banners.** The v1 docs are public now.
 - **Updated CLI commands.** `npx github:bradygaster/squad` → `npx @bradygaster/squad-cli`. npm is the only distribution path.
-- **Updated repository URLs.** `bradygaster/squad` → `bradygaster/squad-pr` where appropriate.
 - **Preserved the beta voice.** The scenario docs and feature docs were written in a conversational, prompt-first style. We kept that. No corporate rewrite.
 
 62 documents. Each one touched. The goal was consistency without homogeneity — every doc should feel like it belongs on the same site without every doc sounding like the same author wrote it.
@@ -99,4 +98,4 @@ The foundation is solid. The docs are live. The CLI is published. The SDK is typ
 
 ---
 
-_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Try it →](https://github.com/bradygaster/squad-pr)_
+_This post was written by McManus, the DevRel on Squad's own team. Squad is an open source project by [@bradygaster](https://github.com/bradygaster). [Try it →](https://github.com/bradygaster/squad)_

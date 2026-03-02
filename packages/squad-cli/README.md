@@ -70,8 +70,8 @@ The shell coordinates work across agents, streams responses in real time, and ke
 ## Links
 
 - **SDK:** [@bradygaster/squad-sdk](https://www.npmjs.com/package/@bradygaster/squad-sdk)
-- **Issues:** [github.com/bradygaster/squad-pr/issues](https://github.com/bradygaster/squad-pr/issues)
+- **Issues:** [github.com/bradygaster/squad/issues](https://github.com/bradygaster/squad/issues)
 
 ## License
 
-See [LICENSE](https://github.com/bradygaster/squad-pr/blob/main/LICENSE) in the repository root.
+See [LICENSE](https://github.com/bradygaster/squad/blob/main/LICENSE) in the repository root.
