@@ -106,3 +106,24 @@ export function boxChars(caps: TerminalCapabilities) {
   }
   return { tl: '+', tr: '+', bl: '+', br: '+', h: '-', v: '|' };
 }
+
+/**
+ * Terminal layout tier based on width.
+ * - **wide** (120+ cols): Full layout — complete tables, full separators, all chrome
+ * - **normal** (80-119 cols): Compact tables, shorter separators, abbreviated labels
+ * - **narrow** (<80 cols): Card/stacked layout for tables, minimal chrome, no borders
+ */
+export type LayoutTier = 'wide' | 'normal' | 'narrow';
+
+/** Determine layout tier from terminal width. */
+export function getLayoutTier(width: number): LayoutTier {
+  if (width >= 120) return 'wide';
+  if (width >= 80) return 'normal';
+  return 'narrow';
+}
+
+/** React hook — returns current layout tier, updates on resize. */
+export function useLayoutTier(): LayoutTier {
+  const width = useTerminalWidth();
+  return getLayoutTier(width);
+}

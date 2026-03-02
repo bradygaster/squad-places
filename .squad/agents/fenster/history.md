@@ -746,3 +746,131 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) — alpha ship when P0+P1 complete
 - **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
 - **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
+
+---
+
+### 📌 PR #547 Review (2026-03-01) — External Contributor — Fenster
+**Requested by:** Brady. Review "Squad Remote Control - PTY mirror + devtunnel for phone access" from tamirdresher.
+
+**What It Does:**
+- Adds `squad start --tunnel` command to run Copilot in a PTY and mirror terminal output over WebSocket + devtunnel
+- Adds RemoteBridge (WebSocket server) that streams terminal sessions to a PWA (xterm.js) on phone/browser
+- Uses Microsoft Dev Tunnels for authenticated relay (zero infrastructure)
+- Bidirectional: phone keyboard input goes to Copilot stdin
+- Session management dashboard (list/delete tunnels via `devtunnel list`)
+- 18 tests (all failing due to export issues)
+
+**Architecture:**
+- **CLI commands:** `start.ts` (PTY+tunnel orchestration), `rc.ts` (bridge-only mode), `rc-tunnel.ts` (devtunnel lifecycle)
+- **SDK bridge:** `packages/squad-sdk/src/remote/bridge.ts` (RemoteBridge class, WebSocket server, HTTP server, static file serving, sessions API)
+- **Protocol:** `protocol.ts` (event serialization), `types.ts` (config types)
+- **PWA UI:** `remote-ui/` (index.html, app.js, styles.css, manifest.json) — xterm.js terminal + session dashboard
+- **Integration:** New `start` command in `cli-entry.ts` (lines 230-242)
+
+**Dependencies Added:**
+- `node-pty@1.1.0` — PTY for terminal mirroring (native addon, requires node-gyp)
+- `ws@8.19.0` — WebSocket server (both CLI and SDK)
+- `qrcode-terminal@0.12.0` — QR code display in terminal
+- `@types/ws@8.18.1` (dev)
+
+**Critical Issues — MUST FIX BEFORE MERGE:**
+
+1. **Build broken (TypeScript errors):**
+   - `start.ts:117` — Cannot find module 'node-pty' (missing in tsconfig paths or needs `@types/node-pty`)
+   - `start.ts:177` — Binding element 'exitCode' implicitly has 'any' type (needs explicit type on `pty.onExit` callback)
+   - **All 18 tests fail** due to RemoteBridge/protocol functions not being exported properly from SDK
+
+2. **Security — Command Injection Risk (HIGH):**
+   - `rc-tunnel.ts:47-49` — Uses `execFileSync` with string interpolation in `--labels` args. If `repo`, `branch`, or `machine` contain shell metacharacters, this is CWE-78. **MUST** pass label values as separate array elements without string interpolation.
+   - `rc-tunnel.ts:62-64` — Same issue in `port create` command.
+   - **Pattern violation:** Baer's decision (decisions.md) mandates `execFileSync` with array args, no string interpolation.
+
+3. **Security — Environment Variable Blocklist (start.ts:135-148):**
+   - Good defense-in-depth pattern (blocks `NODE_OPTIONS`, `LD_PRELOAD`, etc.) but **incomplete**.
+   - Missing `PATH` restriction — allows PATH hijacking to inject malicious binaries.
+   - Missing `HOME`/`USERPROFILE` restriction — allows access to dotfiles with secrets.
+   - **Recommendation:** Explicitly allow-list safe vars (`TERM`, `LANG`, `TZ`, `COLORTERM`) instead of block-list. Current approach is fragile.
+
+4. **Security — Hardcoded Path Assumption (Windows-only):**
+   - `start.ts:119-122` and `rc.ts:184-188` — Hardcoded path `C:\ProgramData\global-npm\node_modules\@github\copilot\node_modules\@github\copilot-win32-x64\copilot.exe`.
+   - This breaks on macOS/Linux (no fallback logic shown).
+   - Cross-platform pattern should use `which copilot` or check `process.platform` and resolve from npm global dir programmatically.
+
+5. **Rate Limiting — Weak HTTP Protection:**
+   - `bridge.ts:94-106` — HTTP rate limit is 30 req/min per IP. WebSocket has per-connection limit but no global connection limit per IP.
+   - **Attack vector:** Attacker can open 1000 WebSocket connections (each under rate limit) and DoS the bridge.
+   - **Fix:** Add global connection limit per IP (e.g., max 3 concurrent WS connections per IP).
+
+6. **Session Token Exposure:**
+   - `start.ts:97-98` — Session token is appended to tunnel URL as query param and displayed in QR code + terminal output.
+   - This token is logged to terminal history, potentially visible in screenshots, and sent over tunnel URL (visible in proxy logs).
+   - **Better pattern:** Use the ticket exchange endpoint (`/api/auth/ticket`) instead — client POSTs token to get one-time ticket, uses ticket for WS connection.
+   - **Why it matters:** Token has 4-hour TTL, ticket has 1-minute TTL. Reduces window for replay attacks.
+
+7. **Audit Log Location:**
+   - `bridge.ts:43` — Audit log goes to `~/.cli-tunnel/audit/`. This is not in `.squad/` directory.
+   - **Inconsistency:** All Squad state is in `.squad/` (decisions.md), but audit logs are elsewhere.
+   - **Recommendation:** Use `.squad/log/remote-audit-{timestamp}.jsonl` for consistency.
+
+8. **Secret Redaction — Missing JWT Detection:**
+   - `bridge.ts:377-393` — `redactSecrets()` has patterns for GitHub tokens, AWS keys, Bearer tokens, JWTs.
+   - BUT: JWT regex `/eyJ.../` only matches base64 tokens. Doesn't catch Bearer-wrapped JWTs (`Bearer eyJ...`).
+   - **Fix:** Combine patterns — check for `Bearer eyJ...` before stripping Bearer header.
+
+9. **File Serving — Directory Traversal (Mitigated but Fragile):**
+   - `start.ts:63-74` and `rc.ts:118-142` — Both implement directory traversal guards (`!filePath.startsWith(uiDir)`).
+   - **Good:** Uses `path.resolve()` and prefix check.
+   - **Fragile:** Relies on manual sanitization in multiple places. If one handler is added later without this pattern, vulnerability reintroduced.
+   - **Recommendation:** Extract to shared `serveStaticFile(uiDir, req, res)` helper in SDK to enforce pattern.
+
+10. **Test Failures — Export Configuration Broken:**
+    - All 18 tests fail with "RemoteBridge is not a constructor" and "serializeEvent is not a function".
+    - Root cause: `packages/squad-sdk/src/remote/index.ts` exports `RemoteBridge` from `./bridge.js` but `bridge.ts` may not be built or exported correctly.
+    - **Build error** (from `npm run build`): TypeScript errors in `start.ts` block CLI build, so SDK may not have rebuilt.
+    - **Fix:** Resolve TypeScript errors, rebuild SDK, verify tests pass.
+
+**Non-Critical Issues:**
+
+11. **node-pty Native Dependency:**
+    - Requires node-gyp + C++ compiler on install. Will break in CI or Docker if build tools not installed.
+    - **Mitigation:** Document in PR that `node-pty` requires native build, or consider optional dependency with graceful fallback.
+
+12. **Windows-Centric Implementation:**
+    - Most code assumes Windows (`C:\`, PowerShell paths, devtunnel CLI).
+    - macOS/Linux support unclear. If intended as Windows-only, document clearly.
+
+13. **Devtunnel Dependency:**
+    - Requires `devtunnel` CLI installed + authenticated (`devtunnel user login`).
+    - Not bundled, not auto-installed. User must manually install via `winget` or download.
+    - **UX:** Should have better error message when devtunnel missing (currently just "⚠ devtunnel not installed" without link to install instructions).
+
+14. **Passthrough Mode vs. PTY Mode:**
+    - `rc.ts` spawns `copilot --acp` and pipes JSON-RPC (passthrough mode).
+    - `start.ts` spawns Copilot in PTY and sends raw terminal bytes (PTY mode).
+    - Two separate code paths for essentially the same feature. **Why not unify?**
+    - If PTY mode is better (full TUI experience), deprecate `rc.ts`. If ACP passthrough is needed for API access, document the use case split.
+
+**Integration with Existing CLI:**
+- ✅ Command routing in `cli-entry.ts` follows existing pattern (dynamic import, options parsing)
+- ✅ Help text added (lines 65-69)
+- ✅ Flag passthrough works (`--yolo`, `--model`, etc. passed to Copilot)
+- ❌ No integration with existing squad commands (`squad status`, `squad loop`, etc.) — isolated feature
+- ❌ No integration with EventBus or Coordinator — doesn't participate in Squad agent orchestration
+
+**Recommendation:**
+- **DO NOT MERGE** until critical issues fixed (build errors, command injection, test failures).
+- **After fixes:** This is a cool demo feature but needs architectural discussion:
+  1. Is remote access in scope for Squad v1? (Not in any PRD I've seen.)
+  2. Should this be a plugin or core feature?
+  3. Native dependency (node-pty) adds install complexity — is that acceptable?
+  4. Windows-only (effectively) — acceptable?
+  5. Devtunnel dependency — acceptable external requirement?
+
+**If Brady approves the concept:**
+- Merge only after all security issues fixed + tests passing + cross-platform support clarified.
+- Document clearly: experimental feature, Windows-only (if true), requires devtunnel CLI.
+- Consider renaming `start` command to `squad remote` or `squad tunnel` to avoid confusion with future `squad start` (which might mean "start the squad daemon").
+
+**Decision File Needed:**
+- This introduces a new CLI command paradigm (interactive terminal mirroring vs. agent orchestration). Needs a decision: "Remote access via devtunnel is Squad's mobile UX strategy" or "This is an experimental plugin".
+

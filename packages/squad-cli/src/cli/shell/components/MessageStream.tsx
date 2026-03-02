@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { getRoleEmoji } from '../lifecycle.js';
-import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { isNoColor, useTerminalWidth, useLayoutTier, type LayoutTier } from '../terminal.js';
 import { Separator } from './Separator.js';
 import { useMessageFade } from '../useAnimation.js';
 import { ThinkingIndicator } from './ThinkingIndicator.js';
@@ -62,6 +62,41 @@ export function formatDuration(start: Date, end: Date): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+/** Convert table to card layout for narrow terminals. */
+function tableToCardLayout(tableLines: string[]): string {
+  const parsed = tableLines.map(line => {
+    const trimmed = line.trim();
+    const inner = trimmed.slice(1, -1);
+    return inner.split('|').map(c => c.trim());
+  });
+
+  // Find separator row to split header from data rows
+  const sepIndex = parsed.findIndex(row =>
+    row.length > 0 && row.every(cell => /^[-:]+$/.test(cell))
+  );
+
+  if (sepIndex <= 0 || sepIndex >= parsed.length - 1) {
+    // No valid separator or no data rows — return as-is
+    return tableLines.join('\n');
+  }
+
+  const headers = parsed[sepIndex - 1];
+  const dataRows = parsed.slice(sepIndex + 1);
+
+  if (!headers || headers.length === 0) return tableLines.join('\n');
+
+  // Render each row as a card with "Header: value" pairs
+  const cards = dataRows.map(row => {
+    const pairs = headers.map((h, i) => {
+      const val = row[i] ?? '';
+      return `**${h}:** ${val}`;
+    });
+    return pairs.join('\n');
+  });
+
+  return cards.join('\n---\n');
+}
+
 /** Truncate table columns to fit within maxWidth. */
 function truncateTableColumns(tableLines: string[], maxWidth: number): string[] {
   const parsed = tableLines.map(line => {
@@ -117,11 +152,12 @@ function boldTableHeader(tableLines: string[]): string[] {
 }
 
 /**
- * Reformat markdown tables that exceed maxWidth by truncating columns.
- * Table rows are detected as consecutive lines starting and ending with |.
- * Header rows (above separator) are bolded for visual distinction.
+ * Reformat markdown tables based on layout tier.
+ * - **narrow**: Card layout (key-value pairs)
+ * - **normal**: Truncate columns to fit maxWidth
+ * - **wide**: Preserve full table
  */
-export function wrapTableContent(content: string, maxWidth: number): string {
+export function wrapTableContent(content: string, maxWidth: number, tier: LayoutTier): string {
   const lines = content.split('\n');
   const result: string[] = [];
   let i = 0;
@@ -134,11 +170,17 @@ export function wrapTableContent(content: string, maxWidth: number): string {
         tableLines.push(lines[i]!);
         i++;
       }
-      const maxLineLen = Math.max(...tableLines.map(l => l.length));
-      if (maxLineLen <= maxWidth) {
-        result.push(...boldTableHeader(tableLines));
+
+      if (tier === 'narrow') {
+        // Card layout for narrow terminals
+        result.push(tableToCardLayout(tableLines));
       } else {
-        result.push(...boldTableHeader(truncateTableColumns(tableLines, maxWidth)));
+        const maxLineLen = Math.max(...tableLines.map(l => l.length));
+        if (maxLineLen <= maxWidth) {
+          result.push(...boldTableHeader(tableLines));
+        } else {
+          result.push(...boldTableHeader(truncateTableColumns(tableLines, maxWidth)));
+        }
       }
     } else {
       result.push(line);
@@ -207,7 +249,8 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
 
   const noColor = isNoColor();
   const width = useTerminalWidth();
-  const contentWidth = Math.min(width, 80);
+  const tier = useLayoutTier();
+  const contentWidth = tier === 'wide' ? Math.min(width, 120) : tier === 'normal' ? Math.min(width, 80) : width;
 
   return (
     <Box flexDirection="column" marginTop={1} width={contentWidth}>
@@ -234,7 +277,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
               ) : (
                 <>
                   <Text color={noColor ? undefined : 'green'} bold dimColor={isFading}>{emoji ? `${emoji} ` : ''}{(msg.agentName === 'coordinator' ? 'Squad' : msg.agentName) ?? 'agent'}:</Text>
-                  <Text wrap="wrap" dimColor={isFading}>{renderMarkdownInline(wrapTableContent(msg.content, contentWidth))}</Text>
+                  <Text wrap="wrap" dimColor={isFading}>{renderMarkdownInline(wrapTableContent(msg.content, contentWidth, tier))}</Text>
                   {duration && <Text color="gray">({duration})</Text>}
                 </>
               )}
@@ -255,7 +298,7 @@ export const MessageStream: React.FC<MessageStreamProps> = ({
                     : ''}
                   {agentName === 'coordinator' ? 'Squad' : agentName}:
                 </Text>
-                <Text wrap="wrap">{renderMarkdownInline(wrapTableContent(content, contentWidth))}</Text>
+                <Text wrap="wrap">{renderMarkdownInline(wrapTableContent(content, contentWidth, tier))}</Text>
                 <Text color={noColor ? undefined : 'cyan'}>▌</Text>
               </Box>
             ) : null

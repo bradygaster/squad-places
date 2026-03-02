@@ -715,3 +715,92 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 - **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) — alpha ship when P0+P1 complete
 - **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
 - **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
+
+### 📌 Architecture Review: PR #582 — Consult Mode (2026-03-01)
+**Author:** James Sturtevant (external contributor, also filed #652 Multiple Personal Squads)
+**Status:** DRAFT PR — needs significant rework before merge
+**Context:** 18 files changed, 3256 additions, 64 deletions. Includes PRD, SDK changes, CLI command, tests.
+
+**What it does:**
+- Implements "Phase 1" of consult mode: allows personal squad to work on external projects invisibly
+- Adds `squad consult` command to set up local `.squad/` with `consult: true` flag
+- Uses `.git/info/exclude` for git invisibility (never committed)
+- PRD describes full vision: copy personal squad → work on project → extract learnings → return home
+
+**Critical issues:**
+
+1. **No actual implementation** — The PR only contains:
+   - A massive PRD document (`.squad/identity/prd-consult-mode.md`, 854 lines)
+   - Fenster's history entry claiming implementation is done
+   - Test stubs that import non-existent modules (`packages/squad-sdk/src/sharing/consult.ts`)
+   - NO ACTUAL CODE — zero SDK modules, zero CLI commands
+
+2. **Test-first without code** — Tests import functions that don't exist:
+   - `test/consult.test.ts` imports `enterConsultMode`, `extractLearnings`, `loadSessionHistory`
+   - None of these functions are implemented anywhere
+   - Tests will fail immediately
+
+3. **PRD-code mismatch** — PRD evolved during writing:
+   - Initially: copy entire personal squad to project (lines 29-50)
+   - Later: use remote mode pointing to personal squad (line 49: `"teamRoot": "<resolveGlobalSquadPath()>/.squad"`)
+   - Fenster's history claims SDK changes to `resolution.ts` adding `consult?: boolean` field
+   - **Actual SDK resolution.ts has no such changes** — SquadDirConfig interface is unchanged
+   - No `isConsultMode()` helper exists anywhere
+
+4. **Architectural misalignment:**
+   - PRD describes using existing `packages/squad-sdk/src/sharing/` infrastructure
+   - Existing sharing module is for export/import between squads, not session management
+   - `splitHistory()` and `mergeHistory()` work on agent history, not session learnings
+   - Conceptual mismatch: "learnings extraction" is not the same as "history splitting"
+
+5. **Missing integration points:**
+   - Fenster claims `cli-entry.ts` was updated to register `consult` command
+   - **No such changes in the diff** — CLI entry point unchanged
+   - No command file exists in `packages/squad-cli/src/cli/commands/`
+   - Help text not added to CLI help output
+
+**What's actually in the PR:**
+- `.squad/identity/prd-consult-mode.md` — 854-line PRD (well-written but belongs in `docs/proposals/`)
+- `.squad/agents/fenster/history.md` — history entry claiming work is done
+- `test/consult.test.ts` — 458 lines of tests for non-existent functions
+- `test/speed-gates.test.ts` — bumped help line count from 65→70 (but no help text added)
+
+**Assessment:**
+- **Do not merge** — This is a planning document masquerading as implementation
+- James wrote excellent PRD-quality documentation
+- Fenster's history entry is aspirational, not factual
+- Zero executable code shipped
+
+**Recommendation:**
+1. Extract PRD to `docs/proposals/consult-mode.md` (remove `.squad/identity/` location)
+2. Close this PR as "converted to proposal"
+3. Create proper implementation issues from PRD phases
+4. Phase 1 should be: add `consult` field to SquadDirConfig, implement `squad consult` command
+5. Tests come after implementation, not before
+
+**Architectural guidance for future implementation:**
+- `consult: true` flag in config.json is correct approach
+- Remote mode (`teamRoot` pointer) is better than copying entire squad
+- `.git/info/exclude` is right tool for invisibility (use `git rev-parse --git-path info/exclude`)
+- Extraction should be separate command (`squad extract`), not automatic
+- License checking (copyleft detection) is valuable but belongs in Phase 2+
+- Integration with existing `sharing/` module needs design work — don't force-fit
+
+**Files that would need changes (for actual implementation):**
+- `packages/squad-sdk/src/resolution.ts` — add `consult?: boolean` to SquadDirConfig
+- `packages/squad-sdk/src/index.ts` — export consult helpers
+- `packages/squad-cli/src/cli/commands/consult.ts` (NEW) — implement command
+- `packages/squad-cli/src/cli-entry.ts` — register command in routing
+- `packages/squad-sdk/src/sharing/` — new `consult.ts` module (but rethink architecture)
+
+**Pattern observations:**
+- James understands the vision clearly (PRD is coherent and well-structured)
+- Implementation approach needs review before coding
+- This connects to his #652 issue (Multiple Personal Squads) — broader feature set
+- Consult mode is stepping stone to multi-squad workflows
+
+**Next steps:**
+1. Acknowledge James's excellent design work
+2. Request PRD move to proposals/
+3. Discuss architecture before implementation (sharing/ module fit, session vs history, extraction strategy)
+4. Break into smaller implementation PRs with actual code

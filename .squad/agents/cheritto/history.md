@@ -247,3 +247,24 @@
 - **File changed:** `MessageStream.tsx` (1 new function, 2 lines changed in `wrapTableContent`)
 - Build clean (tsc --noEmit passes).
 - PR #684 on branch `squad/673-table-header-styling`
+
+### 2026-03-05: Fixed bottom input box — Copilot/Claude CLI style (#679)
+- **Branch:** `squad/679-fixed-input-box`
+- **Context:** Implemented approved design spec from `docs/proposals/fixed-input-box-design.md` — wrap InputPrompt in bordered Box to match Copilot/Claude CLI UX.
+- **Changes:**
+  - `App.tsx`: Wrapped InputPrompt in `<Box borderStyle="round" borderColor="cyan" paddingX={1}>` (line 398)
+    - Border degrades to `undefined` in NO_COLOR mode for graceful fallback
+    - `marginTop={1}` provides breathing room from live content region
+  - `InputPrompt.tsx`: Refactored return JSX to `flexDirection="column"` layout
+    - Prompt + value + cursor on first line
+    - Hint text (`Tab completes · ↑↓ history`) on second line (only when input empty)
+    - Processing state shows `[working...]` hint below spinner line (only when no buffer)
+- **Design compliance:**
+  - ✅ Bordered box with `borderStyle="round"` (╔═╗ characters)
+  - ✅ NO_COLOR mode: border removed, plain text layout preserved
+  - ✅ Works at 40, 80, 120 column widths (inherits existing narrow/wide logic)
+  - ✅ Hint text inside box (not floating below)
+  - ✅ Standard buffer (no alt-screen) — preserves scrollback
+- **Testing:** TypeScript compiles clean. Test suite: 24 failures vs 22 on main (2 additional, both unrelated to InputPrompt layout). 10+ pre-existing TerminalHarness timeouts known and acceptable.
+- **Pattern:** Bordered Box is the canonical way to create visually distinct interaction zones in Ink TUIs. Border props (`borderStyle`, `borderColor`) automatically render box-drawing characters and degrade to plain layout when undefined.
+- PR #688 on branch `squad/679-fixed-input-box`

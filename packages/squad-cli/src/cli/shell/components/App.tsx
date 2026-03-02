@@ -1,10 +1,3 @@
-/**
- * Main Ink shell application — composes AgentPanel, MessageStream, and InputPrompt.
- *
- * Exposes a ShellApi callback so the parent (runShell) can wire
- * StreamBridge events into React state.
- */
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, Static, useApp, useInput } from 'ink';
 import { AgentPanel } from './AgentPanel.js';
@@ -13,7 +6,7 @@ import { InputPrompt } from './InputPrompt.js';
 import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
 import { loadWelcomeData, getRoleEmoji } from '../lifecycle.js';
-import { isNoColor, useTerminalWidth, useTerminalHeight } from '../terminal.js';
+import { isNoColor, useTerminalWidth, useTerminalHeight, useLayoutTier } from '../terminal.js';
 import { Separator } from './Separator.js';
 import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
@@ -251,8 +244,9 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
   const noColor = isNoColor();
   const width = useTerminalWidth();
+  const tier = useLayoutTier();
   const terminalHeight = useTerminalHeight();
-  const contentWidth = Math.min(width, 80);
+  const contentWidth = tier === 'wide' ? Math.min(width, 120) : tier === 'normal' ? Math.min(width, 80) : width;
 
   // Budget live region height so InputPrompt is never pushed off-screen.
   // Reserve 3 rows for InputPrompt (prompt line + hint + padding).
@@ -291,14 +285,39 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
   const roleMap = useMemo(() => new Map((agents ?? []).map(a => [a.name, a.role])), [agents]);
 
   // Memoize the header box — rendered once into Static scroll buffer at the top.
-  const headerElement = useMemo(() => (
-    <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
-      <Text bold color={noColor ? undefined : 'cyan'}>{'  ___  ___  _   _  _   ___\n / __|/ _ \\| | | |/_\\ |   \\\n \\__ \\ (_) | |_| / _ \\| |) |\n |___/\\__\\_\\\\___/_/ \\_\\___/'}</Text>
-      <Text>{' '}</Text>
-      <Text dimColor>v{version} · Type naturally · <Text bold>@Agent</Text> to direct · <Text bold>/help</Text></Text>
-      <Text color={noColor ? undefined : 'yellow'} dimColor>⚠️  Experimental preview — file issues at github.com/bradygaster/squad-pr</Text>
-    </Box>
-  ), [noColor, version]);
+  const headerElement = useMemo(() => {
+    // Narrow: minimal header, no border
+    if (tier === 'narrow') {
+      return (
+        <Box flexDirection="column" paddingX={1}>
+          <Text bold color={noColor ? undefined : 'cyan'}>SQUAD</Text>
+          <Text dimColor>v{version}</Text>
+          <Text color={noColor ? undefined : 'yellow'} dimColor>⚠️  Experimental</Text>
+        </Box>
+      );
+    }
+
+    // Normal: abbreviated header
+    if (tier === 'normal') {
+      return (
+        <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
+          <Text bold color={noColor ? undefined : 'cyan'}>SQUAD v{version}</Text>
+          <Text dimColor>Type naturally · <Text bold>@Agent</Text> · <Text bold>/help</Text></Text>
+          <Text color={noColor ? undefined : 'yellow'} dimColor>⚠️  Experimental preview</Text>
+        </Box>
+      );
+    }
+
+    // Wide: full ASCII art header
+    return (
+      <Box flexDirection="column" borderStyle="round" borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
+        <Text bold color={noColor ? undefined : 'cyan'}>{'  ___  ___  _   _  _   ___\n / __|/ _ \\| | | |/_\\ |   \\\n \\__ \\ (_) | |_| / _ \\| |) |\n |___/\\__\\_\\\\___/_/ \\_\\___/'}</Text>
+        <Text>{' '}</Text>
+        <Text dimColor>v{version} · Type naturally · <Text bold>@Agent</Text> to direct · <Text bold>/help</Text></Text>
+        <Text color={noColor ? undefined : 'yellow'} dimColor>⚠️  Experimental preview — file issues at github.com/bradygaster/squad-pr</Text>
+      </Box>
+    );
+  }, [noColor, version, tier]);
 
   const firstRunElement = useMemo(() => {
     if (!welcome?.isFirstRun) return null;
@@ -359,7 +378,7 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
           }
           return (
             <Box key={item.key} flexDirection="column" width={contentWidth}>
-              {isNewTurn && <Separator marginTop={1} />}
+              {isNewTurn && tier !== 'narrow' && <Separator marginTop={1} />}
               <Box gap={1} paddingLeft={msg.role === 'user' ? 0 : 2}>
                 {msg.role === 'user' ? (
                   <Box flexDirection="column">
@@ -393,7 +412,10 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         <AgentPanel agents={agents} streamingContent={streamingContent} />
         <MessageStream messages={[]} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint || mentionHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
       </Box>
-      <InputPrompt onSubmit={handleSubmit} disabled={processing} agentNames={agents.map(a => a.name)} messageCount={messages.length} />
+      {/* Fixed input box at bottom — Copilot/Claude style */}
+      <Box marginTop={1} borderStyle={noColor ? undefined : 'round'} borderColor={noColor ? undefined : 'cyan'} paddingX={1}>
+        <InputPrompt onSubmit={handleSubmit} disabled={processing} agentNames={agents.map(a => a.name)} messageCount={messages.length} />
+      </Box>
     </Box>
   );
 };

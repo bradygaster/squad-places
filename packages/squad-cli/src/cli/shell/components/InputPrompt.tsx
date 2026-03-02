@@ -211,30 +211,35 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
 
   if (disabled) {
     return (
-      <Box marginTop={1}>
-        {noColor ? (
-          <>
-            <Text bold>{narrow ? 'sq ' : '◆ squad '}</Text>
-            <Text>[working...]</Text>
-            {bufferDisplay ? <Text> {bufferDisplay}</Text> : null}
-          </>
-        ) : (
-          <>
-            <Text color="cyan" bold>{narrow ? 'sq ' : '◆ squad '}</Text>
-            <Text color="cyan">{SPINNER_FRAMES[spinFrame]}</Text>
-            <Text color="cyan" bold>{'> '}</Text>
-            {bufferDisplay ? <Text dimColor>{bufferDisplay}</Text> : null}
-          </>
-        )}
+      <Box flexDirection="column">
+        <Box>
+          {noColor ? (
+            <>
+              <Text bold>{narrow ? 'sq ' : '◆ squad '}</Text>
+              <Text>[working...]</Text>
+              {bufferDisplay ? <Text> {bufferDisplay}</Text> : null}
+            </>
+          ) : (
+            <>
+              <Text color="cyan" bold>{narrow ? 'sq ' : '◆ squad '}</Text>
+              <Text color="cyan">{SPINNER_FRAMES[spinFrame]}</Text>
+              <Text color="cyan" bold>{'> '}</Text>
+              {bufferDisplay ? <Text dimColor>{bufferDisplay}</Text> : null}
+            </>
+          )}
+        </Box>
+        {!bufferDisplay && <Text dimColor>[working...]</Text>}
       </Box>
     );
   }
 
   return (
-    <Box marginTop={1}>
-      <Text color={noColor ? undefined : 'cyan'} bold>{narrow ? 'sq> ' : '◆ squad> '}</Text>
-      <Text>{value}</Text>
-      <Text color={noColor ? undefined : 'cyan'} bold>▌</Text>
+    <Box flexDirection="column">
+      <Box>
+        <Text color={noColor ? undefined : 'cyan'} bold>{narrow ? 'sq> ' : '◆ squad> '}</Text>
+        <Text>{value}</Text>
+        <Text color={noColor ? undefined : 'cyan'} bold>▌</Text>
+      </Box>
       {!value && (
         <Text dimColor>{getHintText(messageCount, narrow)}</Text>
       )}
