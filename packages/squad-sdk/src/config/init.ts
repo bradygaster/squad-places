@@ -3,15 +3,60 @@
  * 
  * Creates new Squad projects with typed configuration.
  * Generates squad.config.ts or squad.config.json with agent definitions.
+ * Scaffolds directory structure, templates, workflows, and agent files.
  * 
  * @module config/init
  */
 
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { mkdir, writeFile, readFile, copyFile, readdir, appendFile, unlink } from 'fs/promises';
+import { join, dirname } from 'path';
+import { existsSync, cpSync, statSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { MODELS } from '../runtime/constants.js';
 import type { SquadConfig, ModelSelectionConfig, RoutingConfig } from '../runtime/config.js';
+
+// ============================================================================
+// Template Resolution
+// ============================================================================
+
+/**
+ * Get the SDK templates directory path.
+ */
+export function getSDKTemplatesDir(): string | null {
+  // Try relative to this file (in dist/)
+  const distPath = join(dirname(new URL(import.meta.url).pathname), '../../templates');
+  if (existsSync(distPath)) {
+    return distPath;
+  }
+  
+  // Try relative to package root (for dev)
+  const pkgPath = join(dirname(new URL(import.meta.url).pathname), '../../../templates');
+  if (existsSync(pkgPath)) {
+    return pkgPath;
+  }
+  
+  return null;
+}
+
+/**
+ * Copy a directory recursively.
+ */
+function copyRecursiveSync(src: string, dest: string): void {
+  if (!existsSync(dest)) {
+    mkdirSync(dest, { recursive: true });
+  }
+  
+  const entries = readFileSync !== undefined ? undefined : undefined; // Type check
+  for (const entry of statSync(src).isDirectory() ? readdirSync(src) : []) {
+    const srcPath = join(src, entry);
+    const destPath = join(dest, entry);
+    
+    if (statSync(srcPath).isDirectory()) {
+      copyRecursiveSync(srcPath, destPath);
+    } else {
+      cpSync(srcPath, destPath);
+    }
+  }
+}
 
 // ============================================================================
 // Initialization Types
@@ -45,18 +90,38 @@ export interface InitOptions {
   configFormat?: 'typescript' | 'json';
   /** User name for initial history entries */
   userName?: string;
+  /** Skip files that already exist (default: true) */
+  skipExisting?: boolean;
+  /** Include GitHub workflows (default: true) */
+  includeWorkflows?: boolean;
+  /** Include .squad-templates/ copy (default: true) */
+  includeTemplates?: boolean;
+  /** Include sample MCP config (default: true) */
+  includeMcpConfig?: boolean;
+  /** Project type for workflow customization */
+  projectType?: 'node' | 'python' | 'go' | 'rust' | 'java' | 'csharp' | 'unknown';
+  /** Version to stamp in squad.agent.md */
+  version?: string;
+  /** Project description prompt — stored for REPL auto-casting. */
+  prompt?: string;
 }
 
 /**
  * Initialization result.
  */
 export interface InitResult {
-  /** List of created file paths */
+  /** List of created file paths (relative to teamRoot) */
   createdFiles: string[];
+  /** List of skipped file paths (already existed) */
+  skippedFiles: string[];
   /** Configuration file path */
   configPath: string;
   /** Agent directory paths */
   agentDirs: string[];
+  /** Path to squad.agent.md */
+  agentFile: string;
+  /** Path to .squad/ directory */
+  squadDir: string;
 }
 
 // ============================================================================
@@ -85,7 +150,7 @@ const AGENT_TEMPLATES: Record<string, { displayName: string; description: string
   },
   'ralph': {
     displayName: 'Ralph',
-    description: 'Work monitor that tracks the work queue and ensures the team never sits idle.'
+    description: 'Persistent memory agent that maintains context across sessions.'
   }
 };
 
@@ -340,13 +405,30 @@ function titleCase(str: string): string {
 // ============================================================================
 
 /**
+ * Stamp version into squad.agent.md content.
+ */
+function stampVersionInContent(content: string, version: string): string {
+  return content.replace(
+    /<!-- version: [^>]* -->/,
+    `<!-- version: ${version} -->`
+  );
+}
+
+/**
  * Initialize a new Squad project.
  * 
  * Creates:
- * - .squad/ directory structure
+ * - .squad/ directory structure (agents, casting, decisions, skills, identity, etc.)
  * - squad.config.ts or squad.config.json
  * - Agent directories with charter.md and history.md
  * - .gitattributes for merge drivers
+ * - .gitignore entries for logs
+ * - .github/agents/squad.agent.md
+ * - .github/workflows/ (optional)
+ * - .squad-templates/ (optional)
+ * - .copilot/mcp-config.json (optional)
+ * - Identity files (now.md, wisdom.md)
+ * - ceremonies.md
  * 
  * @param options - Initialization options
  * @returns Result with created file paths
@@ -358,10 +440,17 @@ export async function initSquad(options: InitOptions): Promise<InitResult> {
     projectDescription,
     agents,
     configFormat = 'typescript',
-    userName
+    userName,
+    skipExisting = true,
+    includeWorkflows = true,
+    includeTemplates = true,
+    includeMcpConfig = true,
+    projectType = 'unknown',
+    version = '0.0.0',
   } = options;
   
   const createdFiles: string[] = [];
+  const skippedFiles: string[] = [];
   const agentDirs: string[] = [];
   
   // Validate inputs
@@ -375,47 +464,73 @@ export async function initSquad(options: InitOptions): Promise<InitResult> {
     throw new Error('At least one agent is required');
   }
   
-  // Create .squad directory
+  // Get templates directory
+  const templatesDir = getSDKTemplatesDir();
+  
+  // Helper to write file (respects skipExisting)
+  const writeIfNotExists = async (filePath: string, content: string): Promise<boolean> => {
+    if (existsSync(filePath) && skipExisting) {
+      skippedFiles.push(filePath);
+      return false;
+    }
+    await mkdir(dirname(filePath), { recursive: true });
+    await writeFile(filePath, content, 'utf-8');
+    createdFiles.push(filePath);
+    return true;
+  };
+  
+  // Helper to copy file (respects skipExisting)
+  const copyIfNotExists = async (src: string, dest: string): Promise<boolean> => {
+    if (existsSync(dest) && skipExisting) {
+      skippedFiles.push(dest);
+      return false;
+    }
+    await mkdir(dirname(dest), { recursive: true });
+    cpSync(src, dest);
+    createdFiles.push(dest);
+    return true;
+  };
+  
+  // -------------------------------------------------------------------------
+  // Create .squad/ directory structure
+  // -------------------------------------------------------------------------
+  
   const squadDir = join(teamRoot, '.squad');
-  if (!existsSync(squadDir)) {
-    await mkdir(squadDir, { recursive: true });
+  const directories = [
+    join(squadDir, 'agents'),
+    join(squadDir, 'casting'),
+    join(squadDir, 'decisions'),
+    join(squadDir, 'decisions', 'inbox'),
+    join(squadDir, 'skills'),
+    join(squadDir, 'plugins'),
+    join(squadDir, 'identity'),
+    join(squadDir, 'orchestration-log'),
+    join(squadDir, 'log'),
+  ];
+  
+  for (const dir of directories) {
+    if (!existsSync(dir)) {
+      await mkdir(dir, { recursive: true });
+    }
   }
   
-  // Create agents directory
-  const agentsDir = join(squadDir, 'agents');
-  if (!existsSync(agentsDir)) {
-    await mkdir(agentsDir, { recursive: true });
-  }
+  // -------------------------------------------------------------------------
+  // Create configuration file
+  // -------------------------------------------------------------------------
   
-  // Create casting directory (for future casting system)
-  const castingDir = join(squadDir, 'casting');
-  if (!existsSync(castingDir)) {
-    await mkdir(castingDir, { recursive: true });
-  }
-  
-  // Create decisions directory
-  const decisionsDir = join(squadDir, 'decisions');
-  if (!existsSync(decisionsDir)) {
-    await mkdir(decisionsDir, { recursive: true });
-  }
-  
-  // Create skills directory
-  const skillsDir = join(squadDir, 'skills');
-  if (!existsSync(skillsDir)) {
-    await mkdir(skillsDir, { recursive: true });
-  }
-  
-  // Generate configuration file
   const configFileName = configFormat === 'typescript' ? 'squad.config.ts' : 'squad.config.json';
   const configPath = join(teamRoot, configFileName);
   const configContent = configFormat === 'typescript'
     ? generateTypeScriptConfig(options)
     : generateJsonConfig(options);
   
-  await writeFile(configPath, configContent, 'utf-8');
-  createdFiles.push(configPath);
+  await writeIfNotExists(configPath, configContent);
   
+  // -------------------------------------------------------------------------
   // Create agent directories and files
+  // -------------------------------------------------------------------------
+  
+  const agentsDir = join(squadDir, 'agents');
   for (const agent of agents) {
     const agentDir = join(agentsDir, agent.name);
     await mkdir(agentDir, { recursive: true });
@@ -424,27 +539,63 @@ export async function initSquad(options: InitOptions): Promise<InitResult> {
     // Create charter.md
     const charterPath = join(agentDir, 'charter.md');
     const charterContent = generateCharter(agent, projectName, projectDescription);
-    await writeFile(charterPath, charterContent, 'utf-8');
-    createdFiles.push(charterPath);
+    await writeIfNotExists(charterPath, charterContent);
     
     // Create history.md
     const historyPath = join(agentDir, 'history.md');
     const historyContent = generateInitialHistory(agent, projectName, projectDescription, userName);
-    await writeFile(historyPath, historyContent, 'utf-8');
-    createdFiles.push(historyPath);
+    await writeIfNotExists(historyPath, historyContent);
   }
   
-  // Create .gitattributes for merge drivers
-  const gitattributesPath = join(teamRoot, '.gitattributes');
-  const gitattributesContent = `.squad/agents/*/history.md merge=union
-.squad/decisions/*.md merge=union
+  // -------------------------------------------------------------------------
+  // Create identity files (now.md, wisdom.md)
+  // -------------------------------------------------------------------------
+  
+  const identityDir = join(squadDir, 'identity');
+  const nowMdPath = join(identityDir, 'now.md');
+  const wisdomMdPath = join(identityDir, 'wisdom.md');
+  
+  const nowContent = `---
+updated_at: ${new Date().toISOString()}
+focus_area: Initial setup
+active_issues: []
+---
+
+# What We're Focused On
+
+Getting started. Updated by coordinator at session start.
 `;
   
-  await writeFile(gitattributesPath, gitattributesContent, 'utf-8');
-  createdFiles.push(gitattributesPath);
+  const wisdomContent = `---
+last_updated: ${new Date().toISOString()}
+---
+
+# Team Wisdom
+
+Reusable patterns and heuristics learned through work. NOT transcripts — each entry is a distilled, actionable insight.
+
+## Patterns
+
+<!-- Append entries below. Format: **Pattern:** description. **Context:** when it applies. -->
+`;
   
-  // Create initial decisions.md
-  const decisionsPath = join(decisionsDir, 'decisions.md');
+  await writeIfNotExists(nowMdPath, nowContent);
+  await writeIfNotExists(wisdomMdPath, wisdomContent);
+  
+  // -------------------------------------------------------------------------
+  // Create ceremonies.md
+  // -------------------------------------------------------------------------
+  
+  const ceremoniesDest = join(squadDir, 'ceremonies.md');
+  if (templatesDir && existsSync(join(templatesDir, 'ceremonies.md'))) {
+    await copyIfNotExists(join(templatesDir, 'ceremonies.md'), ceremoniesDest);
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create decisions.md
+  // -------------------------------------------------------------------------
+  
+  const decisionsPath = join(squadDir, 'decisions', 'decisions.md');
   const decisionsContent = `# Squad Decisions
 
 ## Active Decisions
@@ -458,12 +609,193 @@ No decisions recorded yet.
 - Keep history focused on work, decisions focused on direction
 `;
   
-  await writeFile(decisionsPath, decisionsContent, 'utf-8');
-  createdFiles.push(decisionsPath);
+  await writeIfNotExists(decisionsPath, decisionsContent);
+  
+  // -------------------------------------------------------------------------
+  // Copy starter skills
+  // -------------------------------------------------------------------------
+  
+  const skillsDir = join(squadDir, 'skills');
+  if (templatesDir && existsSync(join(templatesDir, 'skills'))) {
+    const skillsSrc = join(templatesDir, 'skills');
+    const existingSkills = existsSync(skillsDir) ? readdirSync(skillsDir) : [];
+    if (existingSkills.length === 0) {
+      cpSync(skillsSrc, skillsDir, { recursive: true });
+      createdFiles.push(skillsDir);
+    }
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create .gitattributes for merge drivers
+  // -------------------------------------------------------------------------
+  
+  const gitattributesPath = join(teamRoot, '.gitattributes');
+  const unionRules = [
+    '.squad/decisions.md merge=union',
+    '.squad/agents/*/history.md merge=union',
+    '.squad/log/** merge=union',
+    '.squad/orchestration-log/** merge=union',
+  ];
+  
+  let existingAttrs = '';
+  if (existsSync(gitattributesPath)) {
+    existingAttrs = readFileSync(gitattributesPath, 'utf-8');
+  }
+  
+  const missingRules = unionRules.filter(rule => !existingAttrs.includes(rule));
+  if (missingRules.length > 0) {
+    const block = (existingAttrs && !existingAttrs.endsWith('\n') ? '\n' : '')
+      + '# Squad: union merge for append-only team state files\n'
+      + missingRules.join('\n') + '\n';
+    await appendFile(gitattributesPath, block);
+    createdFiles.push(gitattributesPath);
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create .gitignore entries for logs
+  // -------------------------------------------------------------------------
+  
+  const gitignorePath = join(teamRoot, '.gitignore');
+  const ignoreEntries = [
+    '.squad/orchestration-log/',
+    '.squad/log/',
+  ];
+  
+  let existingIgnore = '';
+  if (existsSync(gitignorePath)) {
+    existingIgnore = readFileSync(gitignorePath, 'utf-8');
+  }
+  
+  const missingIgnore = ignoreEntries.filter(entry => !existingIgnore.includes(entry));
+  if (missingIgnore.length > 0) {
+    const block = (existingIgnore && !existingIgnore.endsWith('\n') ? '\n' : '')
+      + '# Squad: ignore generated logs\n'
+      + missingIgnore.join('\n') + '\n';
+    await appendFile(gitignorePath, block);
+    createdFiles.push(gitignorePath);
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create .github/agents/squad.agent.md
+  // -------------------------------------------------------------------------
+  
+  const agentFile = join(teamRoot, '.github', 'agents', 'squad.agent.md');
+  if (!existsSync(agentFile) || !skipExisting) {
+    if (templatesDir && existsSync(join(templatesDir, 'squad.agent.md'))) {
+      let agentContent = readFileSync(join(templatesDir, 'squad.agent.md'), 'utf-8');
+      agentContent = stampVersionInContent(agentContent, version);
+      await mkdir(dirname(agentFile), { recursive: true });
+      await writeFile(agentFile, agentContent, 'utf-8');
+      createdFiles.push(agentFile);
+    }
+  } else {
+    skippedFiles.push(agentFile);
+  }
+  
+  // -------------------------------------------------------------------------
+  // Copy .squad-templates/ (optional)
+  // -------------------------------------------------------------------------
+  
+  if (includeTemplates && templatesDir) {
+    const templatesDest = join(teamRoot, '.squad-templates');
+    if (!existsSync(templatesDest)) {
+      cpSync(templatesDir, templatesDest, { recursive: true });
+      createdFiles.push(templatesDest);
+    } else {
+      skippedFiles.push(templatesDest);
+    }
+  }
+  
+  // -------------------------------------------------------------------------
+  // Copy workflows (optional)
+  // -------------------------------------------------------------------------
+  
+  if (includeWorkflows && templatesDir && existsSync(join(templatesDir, 'workflows'))) {
+    const workflowsSrc = join(templatesDir, 'workflows');
+    const workflowsDest = join(teamRoot, '.github', 'workflows');
+    
+    if (statSync(workflowsSrc).isDirectory()) {
+      const workflowFiles = readdirSync(workflowsSrc).filter(f => f.endsWith('.yml'));
+      await mkdir(workflowsDest, { recursive: true });
+      
+      for (const file of workflowFiles) {
+        const destFile = join(workflowsDest, file);
+        if (!existsSync(destFile) || !skipExisting) {
+          cpSync(join(workflowsSrc, file), destFile);
+          createdFiles.push(destFile);
+        } else {
+          skippedFiles.push(destFile);
+        }
+      }
+    }
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create sample MCP config (optional)
+  // -------------------------------------------------------------------------
+  
+  if (includeMcpConfig) {
+    const mcpConfigPath = join(teamRoot, '.copilot', 'mcp-config.json');
+    if (!existsSync(mcpConfigPath)) {
+      const mcpSample = {
+        mcpServers: {
+          "EXAMPLE-trello": {
+            command: "npx",
+            args: ["-y", "@trello/mcp-server"],
+            env: {
+              TRELLO_API_KEY: "${TRELLO_API_KEY}",
+              TRELLO_TOKEN: "${TRELLO_TOKEN}"
+            }
+          }
+        }
+      };
+      await mkdir(dirname(mcpConfigPath), { recursive: true });
+      await writeFile(mcpConfigPath, JSON.stringify(mcpSample, null, 2) + '\n', 'utf-8');
+      createdFiles.push(mcpConfigPath);
+    } else {
+      skippedFiles.push(mcpConfigPath);
+    }
+  }
+  
+  // -------------------------------------------------------------------------
+  // Create .first-run marker
+  // -------------------------------------------------------------------------
+  
+  const firstRunMarker = join(squadDir, '.first-run');
+  if (!existsSync(firstRunMarker)) {
+    await writeFile(firstRunMarker, new Date().toISOString() + '\n', 'utf-8');
+    createdFiles.push(firstRunMarker);
+  }
+  
+  // -------------------------------------------------------------------------
+  // Store init prompt for REPL auto-casting
+  // -------------------------------------------------------------------------
+  
+  if (options.prompt) {
+    const promptFile = join(squadDir, '.init-prompt');
+    await writeFile(promptFile, options.prompt, 'utf-8');
+    createdFiles.push(promptFile);
+  }
   
   return {
     createdFiles,
+    skippedFiles,
     configPath,
-    agentDirs
+    agentDirs,
+    agentFile,
+    squadDir,
   };
+}
+
+/**
+ * Clean up orphan .init-prompt file.
+ * Called by CLI on Ctrl+C abort to remove partial state.
+ * 
+ * @param squadDir - Path to the .squad directory
+ */
+export async function cleanupOrphanInitPrompt(squadDir: string): Promise<void> {
+  const promptFile = join(squadDir, '.init-prompt');
+  if (existsSync(promptFile)) {
+    await unlink(promptFile);
+  }
 }
