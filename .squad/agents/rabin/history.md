@@ -87,3 +87,6 @@ Fix: Added `"squad-cli": "./dist/cli-entry.js"` as a second bin entry alongside 
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### 📌 npm-only distribution sweep (2026-03-01)
+Brady directed: stop distributing via npx github:. All distribution is now npm-only (`npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`). Swept 34 files across source, templates, docs, tests, and workflows. Updated github-dist.ts default template from `npx github:{{owner}}/{{repo}}` to `npx @bradygaster/squad-cli`. Updated install-migration.ts paths. Updated all 4 copies of squad.agent.md (Ralph Watch Mode) and all 4 insider-release workflows. Updated rabin charter from "GitHub-native, never npmjs.com" to "npm-native, always npmjs.com". All 68 bundle tests pass. Distribution is GitHub-native: ~~WRONG~~. Distribution is npm-native: ✅ CORRECT.
