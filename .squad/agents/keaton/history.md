@@ -451,6 +451,24 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 - **Report Location:** `.squad/decisions/inbox/keaton-cleanup-audit.md`
 - **Next Step:** Brady/Keaton review, assign specific tasks to agents, create GitHub issues for each finding
 
+### 2026-03-02T[NOW]: Squad Aspire Status Investigation (Brady's question)
+- **Question:** "What happened to squad aspire? When did we deprecate it, and why?"
+- **Answer:** **Squad Aspire is ACTIVE — NOT deprecated.** Still a registered CLI command (`squad aspire`).
+- **Timeline:**
+  - Added 2026-02-22 via commit `992763e` (feat: squad aspire command + squad-observer file watcher)
+  - Part of Epic #253 (Observability), Wave 2 (Interactive Shell)
+  - Closed issues #265 (aspire command spec) + #268 (SquadObserver file watcher port)
+- **What it does:** Launches the .NET Aspire dashboard for Squad observability via Docker or dotnet workload. Auto-configures OTLP endpoint (`OTEL_EXPORTER_OTLP_ENDPOINT`). Shows Squad traces + metrics in dashboard.
+- **Current state:**
+  - Command file: `packages/squad-cli/src/cli/commands/aspire.ts` (175 lines, fully implemented)
+  - Wired into CLI entry point with help text
+  - 16 tests (14 observer, 2 aspire) — all passing
+  - SquadObserver class monitors `.squad/` directory and emits OTel spans + EventBus events
+  - Decision #2026-02-22 in decisions.md: Integration tests MUST launch Aspire dashboard + validate OTel telemetry shows up (Playwright, latest Aspire bits, aspire.dev reference)
+- **Reference usage:** PR #38 (MCP docs) and PR #116 (cold-path extraction) mention Aspire in sample MCP configs (Trello, GitHub, Azure, Aspire dashboard examples)
+- **Known issue:** #591 (aspire-integration.test.ts docker pull timeout — environmental, not code)
+- **Architecture insight:** Aspire is NOT a deprecated feature. It's a foundational observability integration that compounds with the OTel instrumentation work (#257–#260). File watcher + dashboard create closed-loop observability loop: runtime traces (internal) + file changes (external) = complete visibility.
+
 ### From Beta (carried forward)
 - Architecture patterns that compound — decisions that make future features easier
 - Silent success mitigation lessons: ~7-10% of background spawns return no text, mitigated by RESPONSE ORDER block + filesystem checks

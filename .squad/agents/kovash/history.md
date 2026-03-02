@@ -141,3 +141,12 @@
 - **Key insight:** Ink's `<Static>` renders into the terminal scroll buffer and doesn't occupy live region space. The live region (everything after Static) must fit within `process.stdout.rows`. Without explicit height budgeting, Ink has no way to know the live region is too tall — it just overflows.
 - **Pattern:** Always bound live region height to terminal rows. Use `overflow="hidden"` on content areas that can grow unboundedly (streaming content, agent panels). Keep anchored elements (InputPrompt) outside the bounded box.
 - **PR:** #685 on branch `squad/674-scroll-and-anchoring`
+
+### Issue #681 — Terminal adaptivity: graceful degradation 120→80→40 cols (2026-03-01)
+- **Root cause:** REPL had fixed 80-column layout that broke visual hierarchy at narrow widths (40 cols) and wasted space at wide widths (120+).
+- **Fix:** Implemented 3-tier responsive system: (1) Wide (120+ cols) — full ASCII header, complete tables, all chrome; (2) Normal (80-119 cols) — abbreviated header, compact tables, status lines; (3) Narrow (<80 cols) — minimal header, card layout for tables, minimal chrome.
+- **Implementation:** Added `getLayoutTier(width)` and `useLayoutTier()` hook in terminal.ts. Updated MessageStream with `tableToCardLayout()` for markdown-to-card conversion. Updated AgentPanel with three conditional branches. Updated App.tsx header chrome per tier.
+- **Key insight:** Width is a design constraint. At 40 cols, tables physically don't fit — cards are the only option. At 120 cols, 80-col constraint wastes space. Tier names ('narrow'/'normal'/'wide') communicate intent better than magic numbers.
+- **Pattern:** Use `useLayoutTier()` hook for width-aware rendering. Test at boundaries: 40, 79, 80, 119, 120 cols.
+- **Tests:** All 110 REPL UX tests pass. TypeScript compiles cleanly.
+- **PR:** Branch `squad/681-terminal-adaptivity`

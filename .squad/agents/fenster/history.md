@@ -718,6 +718,38 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 **Verified:** Build clean (SDK + CLI), 3240/3245 tests pass (4 pre-existing timing failures unrelated to changes).
 **Ref:** `docs/proposals/reliable-init-flow.md` (Keaton's proposal), `squad/640-auto-cast-polish` branch.
 
+## 2026-03-02: Squad Aspire Timeline & Deprecation Archaeology
+
+**Requested by:** Brady. "What happened to squad aspire? When did we deprecate it, and why?"
+
+**Task:** Complete git archaeology — all commits, PRs, issues, branches, deprecation markers, blog posts.
+
+**Findings:**
+
+**Timeline:**
+- **2026-02-22 (~c1d5c7c→992763e):** Feature introduced. PR #265 added `squad aspire` command (Issue #265) as the CLI entry point to launch .NET Aspire dashboard for Squad observability. Core file: `packages/squad-cli/src/cli/commands/aspire.ts` (175 lines).
+- **2026-02-22 (PR #307):** OTel Phase 4 consolidation — aspire command + file watcher + event payloads merged.
+- **2026-02-22 (PR #309):** Wave 2 merge added Aspire Playwright E2E tests, validating aspire.ts as a tested feature.
+- **2026-02-25 onwards:** Multiple PRs (PR #539, #540, #546, #533) reference aspire in docs + help text — still treated as stable command.
+- **Latest commit (c1d5c7c, Mar 2026):** `fix: make sendAndWait timeout configurable (#347)` — aspire tests still passing.
+
+**Deprecation Status:**
+- ❌ **NO git commits mentioning removal/deprecation** — searched `--all-match --grep="remove.*aspire|aspire.*remove|deprecat.*aspire|aspire.*deprecat"` — zero results.
+- ❌ **NO GitHub issues labeled "aspire" requesting removal** — all open/closed issues show aspire as stable, documented feature.
+- ❌ **NO GitHub PRs with deprecation plan** — PR #265 (aspire intro), PR #307 (OTel Phase 4), PR #309 (Wave 2) all finalize aspire as shipped feature.
+- ❌ **NO deprecation markers in code** — aspire.ts has no @deprecated JSDoc, no console.warn(), no alpha/beta flag.
+- ❌ **NO "planned removal" documentation** — docs/scenarios/aspire-dashboard.md (full guide, no sunset date), blog post 014-wave-1-otel-and-aspire.md (celebrates it as Wave 1 feature).
+
+**Current Status:**
+- ✅ **Fully wired:** Command routing at cli-entry.ts:822-829, help text at lines 396-416.
+- ✅ **Documented:** Help text ("Launch Aspire Dashboard"), per-command help, scenario docs, blog post.
+- ✅ **Tested:** Three test suites (aspire-command.test.ts, aspire-integration.test.ts, cli/aspire.test.ts) with passing tests.
+- ✅ **Active:** Latest commit (Mar 2) touches related test infrastructure; aspire command is a dependency for observability workflows.
+
+**Conclusion:** Squad aspire was **NEVER deprecated**. It is an actively maintained observability feature that shipped in Wave 1 (Feb 2026) and remains current and documented as of Mar 2026.
+
+**Key Learning:** Aspire is not a transient feature or experiment—it's a core observability tool for multi-agent debugging. Wave 1 established it as stable; Wave 2 validated it with E2E tests. It's part of the "watching agents work" story alongside EventBus, OTel metrics, and SquadObserver.
+
 ### Connection promise dedup in SquadClient (2026-03-02)
 
 **Task:** Fix race condition where concurrent `connect()` calls (eager warm-up + auto-cast) crash with "Connection already in progress" during `squad init "..."` with empty roster.

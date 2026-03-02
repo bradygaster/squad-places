@@ -618,3 +618,194 @@ SDK consumers (programmatic API users) still control their own handler. The SDK'
 - **SDK consumers:** Better error message if they forget to pass `onPermissionRequest`.
 - **Types:** `SquadPermissionHandler`, `SquadPermissionRequest`, `SquadPermissionRequestResult` are now exported from `@bradygaster/squad-sdk/client` for reuse.
 
+### 2026-03-01: Multi-Squad Global Config Layout
+**By:** Fenster (Core Dev)  
+**Date:** 2025-07-24  
+**Issue:** #652  
+**PR:** #691  
+
+## What
+
+Squad now supports a global `squads.json` registry at the platform config root (`%APPDATA%/squad/` on Windows, `~/.config/squad/` on Linux/macOS). Each named squad is registered with a name, path, and creation timestamp. Resolution follows a 5-step chain: explicit name → `SQUAD_NAME` env var → active in squads.json → "default" → legacy `~/.squad` fallback.
+
+## Why
+
+Users need to manage multiple squads (personal, work, experiments) without conflicts. A global registry decouples squad identity from the current working directory and enables future CLI commands (`squad list`, `squad switch`, etc.) in Phase 2.
+
+## Migration Strategy
+
+Migration is **non-destructive and registration-only**. When `resolveSquadPath()` detects a legacy `~/.squad` layout without an existing `squads.json`, it registers that path as the "default" squad. No files are moved, copied, or renamed. This eliminates data loss risk on first upgrade.
+
+## Impact
+
+- All future squad path resolution should go through `resolveSquadPath()` from `multi-squad.ts`
+- Existing `resolveSquad()` and `resolveSquadPaths()` in `resolution.ts` remain unchanged (project-local `.squad/` walk-up)
+- Phase 2 CLI commands will consume these SDK functions directly
+
+### 2026-03-01: PR #547 Remote Control Feature — Architectural Review
+**By:** Fenster  
+**Date:** 2026-03-01  
+**PR:** #547 "Squad Remote Control - PTY mirror + devtunnel for phone access" by tamirdresher (external)
+
+## Context
+
+External contributor Tamir Dresher submitted a PR adding `squad start --tunnel` command to run Copilot in a PTY and mirror terminal output to phone/browser via WebSocket + Microsoft Dev Tunnels.
+
+## Architectural Question
+
+Is remote terminal access via devtunnel + PTY mirroring in scope for Squad v1 core?
+
+## Technical Assessment
+
+**What works:**
+- RemoteBridge WebSocket server architecture is sound
+- PTY mirroring approach is technically correct
+- Session management dashboard is useful
+- Security headers and CSP are present
+- Test coverage exists (18 tests, though failing due to build issues)
+
+**Critical blockers:**
+1. **Build broken** — TypeScript errors in `start.ts`, all tests failing
+2. **Command injection vulnerability** — `execFileSync` with string interpolation in `rc-tunnel.ts`
+3. **Native dependency** — `node-pty` requires C++ compiler (install friction)
+4. **Windows-only effectively** — hardcoded paths, devtunnel CLI Windows-centric
+5. **No cross-platform strategy** — macOS/Linux support unclear
+
+**Architectural concerns:**
+1. **Not integrated with Squad runtime** — doesn't use EventBus, Coordinator, or agent orchestration. Isolated feature.
+2. **Two separate modes** — PTY mode (`start.ts`) vs. ACP passthrough mode (`rc.ts`). Why both?
+3. **New CLI paradigm** — "start" implies daemon/server, not interactive mirroring. Command naming collision risk.
+4. **External dependency** — requires `devtunnel` CLI installed + authenticated. Not bundled, not auto-installed.
+5. **Audit logs** — go to `~/.cli-tunnel/audit/` instead of `.squad/log/` (inconsistent with Squad state location).
+
+## Recommendation
+
+**Request Changes** — Do not merge until:
+1. TypeScript build errors fixed
+2. Command injection vulnerability patched (use array args, no interpolation)
+3. Tests passing (currently 18/18 failing)
+4. Cross-platform support documented or Windows-only label added
+5. Architectural decision on scope: Is this core or plugin?
+
+**If approved as core feature:**
+- Extract to plugin first, prove value, then consider core integration
+- Unify PTY vs. ACP modes (pick one)
+- Integrate with EventBus/Coordinator (or explain why isolated is correct)
+- Rename command to `squad remote` or `squad tunnel` (avoid `start` collision)
+- Move audit logs to `.squad/log/`
+
+**If approved as plugin:**
+- This is the right path — keeps core small, proves value independently
+- Still fix security issues before merge to plugin repo
+
+## For Brady
+
+You requested a runtime review. Here's the verdict:
+
+- **Concept is cool** — phone access to Copilot is a real use case.
+- **Implementation needs work** — build broken, security issues, Windows-only.
+- **Architectural fit unclear** — not in any Squad v1 PRD. No integration with agent orchestration.
+- **Native dependency risk** — `node-pty` adds install friction (C++ compiler required).
+
+**My take:** This belongs in a plugin, not core. External contributor did solid work on the WebSocket bridge, but Squad v1 needs to ship agent orchestration first. Remote access is a nice-to-have, not a v1 must-have.
+
+If you want this in v1, we need a proposal (docs/proposals/) first.
+
+### 2026-03-02: Multi-squad test contract — squads.json schema
+**By:** Hockney (Tester)
+**Date:** 2026-03-02
+**Issue:** #652
+
+## What
+
+Tests for multi-squad (PR #690) encode a specific squads.json contract:
+
+```typescript
+interface SquadsJson {
+  version: 1;
+  defaultSquad: string;
+  squads: Record<string, { description?: string; createdAt: string }>;
+}
+```
+
+Squad name validation regex: `^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$` (kebab-case, 1-40 chars).
+
+## Why
+
+Fenster's implementation should match this schema. If the schema changes, tests need updating. Recording so the team knows the contract is encoded in tests.
+
+## Impact
+
+Fenster: Align `multi-squad.ts` types with this schema, or flag if different — Hockney will adjust tests.
+
+### 2026-03-02: PR #582 Review — Consult Mode Implementation
+**By:** Keaton (Lead)  
+**Date:** 2026-03-01  
+**Context:** External contributor PR from James Sturtevant (jsturtevant)
+
+## Decision
+
+**Do not merge PR #582 in its current form.**
+
+This is a planning document (PRD) masquerading as implementation. The PR contains:
+- An excellent 854-line PRD for consult mode
+- Test stubs for non-existent functions
+- Zero actual implementation code
+- A history entry claiming work is done (aspirational, not factual)
+
+## Required Actions
+
+1. **Extract PRD to proper location:**
+   - Move `.squad/identity/prd-consult-mode.md` → `docs/proposals/consult-mode.md`
+   - PRDs belong in proposals/, not identity/
+
+2. **Close this PR with conversion label:**
+   - Label: "converted-to-proposal"
+   - Comment: Acknowledge excellent design work, explain missing implementation
+
+3. **Create implementation issues from PRD phases:**
+   - Phase 1: SDK changes (SquadDirConfig, resolution helpers)
+   - Phase 2: CLI command implementation
+   - Phase 3: Extraction workflow
+   - Each phase: discrete PR with actual code + tests
+
+4. **Architecture discussion needed before implementation:**
+   - How does consult mode integrate with existing sharing/ module?
+   - Session learnings vs agent history — conceptual model mismatch
+   - Remote mode (teamRoot pointer) vs copy approach — PRD contradicts itself
+
+## Architectural Guidance
+
+**What's right:**
+- `consult: true` flag in config.json ✅
+- `.git/info/exclude` for git invisibility ✅
+- `git rev-parse --git-path info/exclude` for worktree compatibility ✅
+- Separate extraction command (`squad extract`) ✅
+- License risk detection (copyleft) ✅
+
+**What needs rethinking:**
+- Reusing `sharing/` module (history split vs learnings extraction — different domains)
+- PRD flip-flops between "copy squad" and "remote mode teamRoot pointer"
+- No design for how learnings are structured or extracted
+- Tests before code (cart before horse)
+
+## Pattern Observed
+
+James Sturtevant is a thoughtful contributor who understands the product vision. The PRD is coherent and well-structured. This connects to his #652 issue (Multiple Personal Squads) — consult mode is a stepping stone to multi-squad workflows.
+
+**Recommendation:** Engage James in architecture discussion before he writes code. This feature has implications for the broader personal squad vision. Get alignment on:
+1. Sharing module fit (or new consult module?)
+2. Learnings structure and extraction strategy
+3. Phase boundaries and deliverables
+
+## Why This Matters
+
+External contributors are engaging with Squad's architecture. We need to guide them toward shippable PRs, not just accept aspirational work. Setting clear expectations now builds trust and avoids wasted effort.
+
+## Files Referenced
+
+- `.squad/identity/prd-consult-mode.md` (PRD, should move)
+- `test/consult.test.ts` (tests for non-existent code)
+- `.squad/agents/fenster/history.md` (claims work done)
+- `packages/squad-sdk/src/resolution.ts` (needs `consult` field, unchanged in PR)
+

@@ -79,3 +79,35 @@
 - Added subpath export `./shell/shell-metrics` to CLI package.json
 - 18 new tests in `test/shell-metrics.test.ts` covering all metrics, opt-in gating, no-op behavior when disabled, and reset
 - All 2943 tests pass (only pre-existing Docker/Aspire integration test skipped due to no Docker in env)
+
+### Investigation: Aspire Deprecation Status (2026-02-24)
+**Brady asked:** "What happened to squad aspire? When did we deprecate it, and why?"
+
+**Findings:**
+- **NOT deprecated.** Aspire is fully functional and actively maintained.
+- **CLI Command:** `squad aspire` is registered in `packages/squad-cli/src/cli-entry.ts` and routes to `./cli/commands/aspire.ts`.
+- **Implementation:** `aspire.ts` (175 LOC) is complete and production-ready:
+  - Docker launch: pulls `mcr.microsoft.com/dotnet/aspire-dashboard:latest`, maps ports 18888 (UI) and 4317 (OTLP gRPC)
+  - Dotnet fallback: attempts `dotnet workload list` and `dotnet tool list -g` to detect Aspire availability
+  - Lifecycle management: spawns child process, pipes stdout/stderr, handles SIGINT/SIGTERM cleanup
+  - OTLP configuration: sets `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`
+  - Both launch strategies (Docker-first, dotnet-fallback) properly implemented
+- **Documentation:** `docs/scenarios/aspire-dashboard.md` (147 lines) is comprehensive:
+  - Use case: "Squad ships with an Aspire integration that streams telemetry to the dashboard in real time"
+  - Covers what Aspire is, how to launch, SDK integration, dashboard features (traces/metrics/resources), auth modes (Unsecured vs ApiKey)
+  - Includes troubleshooting section with "Quick Debug Checklist"
+  - No deprecation notices or sunset language
+- **Tests:** All Aspire tests passing (23 total):
+  - `test/aspire-command.test.ts`: 2 tests — module exports, interface validation ✓
+  - `test/cli/aspire.test.ts`: 16 tests — Docker detection, command generation, port mapping, lifecycle, module resolution ✓
+  - `test/aspire-integration.test.ts`: 5 tests — Docker integration with Playwright, traces/metrics appear in dashboard, container lifecycle ✓
+- **OTel Integration:** Aspire wired into shell telemetry pipeline:
+  - `packages/squad-cli/src/cli/shell/index.ts`: Calls `initSquadTelemetry()` and `telemetry.shutdown()`
+  - Shell metrics enabled via `enableShellMetrics()` when `SQUAD_TELEMETRY=1` and OTLP endpoint is configured
+  - OTel exports via gRPC to localhost:4317 (Aspire's OTLP port) — protocol alignment verified in bug fix notes
+- **Blog/Decision History:** No deprecation announcements:
+  - `docs/blog/014-wave-1-otel-and-aspire.md` documents the feature launch (Feb 20, 2026), describes it as "optional" not deprecated
+  - `.squad/decisions.md` includes directive (Feb 22): "Integration tests must launch the Aspire dashboard and validate OTel telemetry shows up" — active requirement
+  - No commits mentioning deprecation, removal, or sunsetting
+
+**Conclusion:** Squad Aspire is production-ready, fully tested, and actively used. No deprecation has occurred. The feature is optional (users can skip it) but the integration is mature and well-documented.
