@@ -354,6 +354,19 @@ Type /help full for complete docs.
 **Tone applied:** Conversational, scannable, self-service (user asks for more → gets more). No hype. CTA is subtle and clear.
 - Each post ends with standard McManus attribution footer pointing to squad-pr repo
 
+### 2026-03-01: Demo voiceover script for divisional "top of mind" email
+**Status:** Complete.
+**Task:** Wrote a 3-minute voiceover / talk track script (~450 words) for Brady's demo video featured in the divisional "top of mind" email.
+**Script structure:**
+- Five video moments with timestamp markers for recording sync
+- Moment 1: Squad init + Tetris build (~0:00-0:25)
+- Moment 2: MCP Jokester + Sketch mermaid diagram live edit (~0:25-0:55)
+- Moment 3: .NET Terrarium upgrade story (~0:55-2:20) — legacy app upgraded to .NET 10, deployed to Azure, blogged autonomously
+- Moment 4: Tetris payoff (~2:20-2:45) — game finished building while other demos played
+- Moment 5: Close (~2:45-3:00) — github.com/bradygaster/squad, open source
+**Tone applied:** Conversational, colleague-to-colleague (not keynote). Confident but not salesy. Let the visuals do the heavy lifting. Included the "folks who use Squad are getting so much more done" message Brady specifically requested.
+**Outcome:** Script is ~450 words, timed for natural reading pace (150 wpm = 3 minutes). Brady can read it top-to-bottom while recording. No files created in the repo — delivered as response output per instructions.
+
 ---
 
 📌 Team update (2026-02-23T09:25Z): Personal Squad tutorial (docs/guide/personal-squad.md) + blog coverage complete. Streaming diagnostics infrastructure finished. Kovash added SQUAD_DEBUG logging. Hockney identified root cause. Kobayashi bumped version to 0.8.5.1. — decided by Scribe
