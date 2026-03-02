@@ -449,3 +449,58 @@ From the audits and fixes above, core UX principles for Squad CLI:
 - **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) — alpha ship when P0+P1 complete
 - **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
 - **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
+
+### 2026-03-05: Design Spec — Fixed Bottom Input Box (#679)
+
+**Task:** Brady request — "Input is a simple prompt line, not anchored in a squared-off box at bottom like Copilot CLI / Claude CLI." Design fixed-position input box per Copilot/Claude style.
+
+**Branch:** `squad/679-input-box-design`  
+**PR:** #686  
+**Deliverable:** `docs/proposals/fixed-input-box-design.md`
+
+**Spec Contents:**
+
+1. **ASCII Wireframes** at three terminal widths (120, 80, 40 columns):
+   - Idle state (prompt visible, cursor blinking)
+   - Typing state (text wrapping in box)
+   - Processing state (spinner + activity hint)
+   - Error state (system message above box)
+
+2. **Interaction States:**
+   - Idle: `◆ squad> [cursor]` with hint text below
+   - Typing: Text flows into box, hint hides
+   - Processing: Spinner visible, `[Agent thinking...]` hint, user can still type `/` commands
+   - Error: Appears as system message above, input remains interactive
+
+3. **Technical Feasibility Analysis:**
+   - **Alt-buffer (NOT recommended):** Ink can use ANSI `\x1B[?1049h` but breaks scrollback history, incompatible with streaming philosophy, fails on SSH clients
+   - **Recommended approach:** Render InputPrompt in bordered `<Box borderStyle="round">` within standard buffer (same linear model, users can still scroll)
+   - Status: ✅ Possible with current Ink 6 API
+
+4. **NO_COLOR & Accessibility:**
+   - Color mode: Uses rounded box-drawing characters (╔═╗╚═╝╠═╣)
+   - NO_COLOR mode: Plain text with ASCII dashes (─────)
+   - Terminal width adaptation: Prompt shortens at ≤60 columns (`sq>` vs `◆ squad>`)
+
+5. **Implementation Phasing:**
+   - Phase 1 (MVP, Week 1): Add `<Box borderStyle="round">` wrapper to InputPrompt, no behavior changes
+   - Phase 2 (Future): Static positioning if Ink adds height APIs
+   - Phase 3 (Advanced): Optional alt-buffer mode behind feature flag
+
+6. **Design Decisions Log:**
+   - Why no alt-buffer? Streaming-first philosophy, users value scrollback, breaks on constrained terminals
+   - Why `borderStyle="round"`? Matches header style (consistency), softer than `double`, clean NO_COLOR fallback
+   - Error placement: As system messages above box (not inline) — keeps InputPrompt simple, errors are historical
+
+7. **Success Metrics:**
+   - Visual clarity: Box is obviously a separate input zone
+   - Terminal compatibility: Works at 40/80/120 without layout breaks
+   - Accessibility: NO_COLOR degrades gracefully
+   - Performance: No frame drops vs. current InputPrompt
+   - User feedback: Testers report "input feels more grounded"
+
+**Key Insight:** Copilot/Claude's fixed-box UX doesn't require alt-buffer. A bordered container in the standard buffer delivers the same visual hierarchy and affordance (dedicated input zone) while preserving Squad's streaming architecture and scrollback history.
+
+**Files Touched:**
+- Created: `docs/proposals/fixed-input-box-design.md` (250 lines, 7 sections, 3 decision rationales)
+- No code changes (proposal-first workflow)

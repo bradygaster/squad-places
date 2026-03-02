@@ -127,3 +127,17 @@
 - **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) — alpha ship when P0+P1 complete
 - **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
 - **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
+
+### Issue #674/#675 — Viewport-aware layout with input anchoring
+- **Root cause:** App.tsx live region (AgentPanel + MessageStream + InputPrompt) had no height constraint. When AgentPanel or streaming content grew large, InputPrompt could be pushed below the visible terminal viewport.
+- **Fix:** Added `useTerminalHeight()` hook in `terminal.ts` (mirrors existing `useTerminalWidth()`). In App.tsx, wrapped AgentPanel + MessageStream in a height-bounded `<Box>` with `overflow="hidden"`. Height budget: `terminalHeight - 3` (3 rows reserved for InputPrompt). InputPrompt sits outside the bounded box so it always renders at the bottom.
+- **Key insight:** Ink's `<Static>` renders into the terminal scroll buffer and doesn't occupy live region space. The live region (everything after Static) must fit within `process.stdout.rows`. Without explicit height budgeting, Ink has no way to know the live region is too tall — it just overflows.
+- **Pattern:** Always bound live region height to terminal rows. Use `overflow="hidden"` on content areas that can grow unboundedly (streaming content, agent panels). Keep anchored elements (InputPrompt) outside the bounded box.
+- **PR:** #685 on branch `squad/674-scroll-and-anchoring`
+
+### Issue #674/#675 — Viewport-aware layout with input anchoring
+- **Root cause:** App.tsx live region (AgentPanel + MessageStream + InputPrompt) had no height constraint. When AgentPanel or streaming content grew large, InputPrompt could be pushed below the visible terminal viewport.
+- **Fix:** Added `useTerminalHeight()` hook in `terminal.ts` (mirrors existing `useTerminalWidth()`). In App.tsx, wrapped AgentPanel + MessageStream in a height-bounded `<Box>` with `overflow="hidden"`. Height budget: `terminalHeight - 3` (3 rows reserved for InputPrompt). InputPrompt sits outside the bounded box so it always renders at the bottom.
+- **Key insight:** Ink's `<Static>` renders into the terminal scroll buffer and doesn't occupy live region space. The live region (everything after Static) must fit within `process.stdout.rows`. Without explicit height budgeting, Ink has no way to know the live region is too tall — it just overflows.
+- **Pattern:** Always bound live region height to terminal rows. Use `overflow="hidden"` on content areas that can grow unboundedly (streaming content, agent panels). Keep anchored elements (InputPrompt) outside the bounded box.
+- **PR:** #685 on branch `squad/674-scroll-and-anchoring`
