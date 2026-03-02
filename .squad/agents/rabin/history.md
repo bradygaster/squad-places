@@ -90,3 +90,47 @@ Fix: Added `"squad-cli": "./dist/cli-entry.js"` as a second bin entry alongside 
 
 ### 📌 npm-only distribution sweep (2026-03-01)
 Brady directed: stop distributing via npx github:. All distribution is now npm-only (`npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`). Swept 34 files across source, templates, docs, tests, and workflows. Updated github-dist.ts default template from `npx github:{{owner}}/{{repo}}` to `npx @bradygaster/squad-cli`. Updated install-migration.ts paths. Updated all 4 copies of squad.agent.md (Ralph Watch Mode) and all 4 insider-release workflows. Updated rabin charter from "GitHub-native, never npmjs.com" to "npm-native, always npmjs.com". All 68 bundle tests pass. Distribution is GitHub-native: ~~WRONG~~. Distribution is npm-native: ✅ CORRECT.
+
+### 📌 Beta migration compatibility analysis (2026-03-01)
+**Requested by:** Brady — analyzing npx compatibility between beta repo (bradygaster/squad, GitHub-native) and origin repo (bradygaster/squad-pr, npm-native) for upcoming migration.
+
+**Problem:** Beta repo distributes via `npx github:bradygaster/squad` (single-file, root bin entry). Origin repo is npm-native monorepo with `"private": true` root (no root bin entry). After migration, `npx github:bradygaster/squad` will break.
+
+**Analysis:**
+- `npx github:` works by cloning repo → reading root package.json → running bin entry. Origin has no root bin entry → will error.
+- Upgrade path (beta v0.5.4 → origin v0.8.18) is ✅ **fully supported**. CLI handles `.ai-team/` → `.squad/`, runs migrations, refreshes templates. No data loss.
+- Package name change (`@bradygaster/create-squad` → `@bradygaster/squad-cli`) is a non-issue — CLI detects by directory structure, not package name.
+
+**Recommendation:** Error-only shim with clear guidance (Option 5):
+- Add root bin entry pointing to `cli.js` (for error handling only, not functionality)
+- `cli.js` prints bold error: "GitHub-native distribution removed. Use: npm install -g @bradygaster/squad-cli"
+- Exit immediately with code 1
+- Update beta README with migration guide
+- Remove shim in v1.0.0
+
+**Verdict:**
+- Distribution compatibility: 🔴 Breaking change required (aligns with npm-only decision)
+- Upgrade compatibility: 🟢 Fully supported (beta projects upgrade seamlessly)
+- User experience: 🟡 Clear error > cryptic npm error. Users get actionable guidance.
+
+**Decision written to:** `.squad/decisions/inbox/rabin-npx-compatibility.md`
+
+### 📌 Team update (2026-03-02T22:33:50Z): npx distribution migration strategy — error-only shim recommended (Option 5) — decided by Rabin
+- **Problem:** Beta repo (`npx github:bradygaster/squad`) will break after migration to npm-only origin repo (root `package.json` has `"private": true`, no bin entry).
+- **5-option analysis completed:** Evaluated all backwards compatibility approaches (keep working, print error, time-limited shim, just break, error-only shim).
+- **Recommendation:** Option 5 (error-only shim) — balances user experience + team decision compliance:
+  1. Add root bin entry pointing to cli.js (for error handling only)
+  2. cli.js prints bold, clear error: "GitHub-native distribution removed. Use: npm install -g @bradygaster/squad-cli"
+  3. Exit with code 1 (fail fast, no silent redirection)
+  4. Update beta README with migration guide
+  5. Remove shim in v1.0.0 when beta users have migrated
+- **Why Option 5:**
+  - ✅ User-first principle: Clear error message > cryptic npm error
+  - ✅ Aligns with npm-only team decision (no perpetuation of GitHub-native path)
+  - ✅ Low maintenance burden (simple error script, can be removed later)
+  - ✅ Clean break with clear migration path
+- **Upgrade path:** Beta projects (v0.5.4) upgrade seamlessly to origin (v0.8.17+) via `squad upgrade` command. CLI detects legacy `.ai-team/`, runs migrations, refreshes templates. No data loss.
+- **Distribution compatibility:** 🔴 Breaking change required (intended, aligns with npm-only decision)
+- **Upgrade compatibility:** 🟢 Fully supported (no issues upgrading from beta to origin)
+- **Decision merged to decisions.md.** Status: npx migration strategy finalized for implementation post-banana gate.
+- **Cross-agent sync:** Kobayashi's migration plan (separate decision) complements this distribution analysis. Both decisions now in merged decisions.md for coordinated beta → origin migration.

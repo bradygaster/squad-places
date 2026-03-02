@@ -1,51 +1,73 @@
-# Project Context
-
-- **Owner:** Brady
-- **Project:** squad-sdk — the programmable multi-agent runtime for GitHub Copilot (v1 replatform)
-- **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
-- **Created:** 2026-02-21
-
-## 📌 Core Context — Keaton's Focus Areas
-
-**Architectural Decisions:** Keaton owns proposal-first workflow, SDK/CLI split design, observability patterns, wave planning and readiness assessments, cleanup audits, public release decisions. Pattern: decisions that compound — each architectural choice makes future features easier.
-
-**Recent Work (Feb 2026):** 
-- SDK/CLI split executed (154 files migrated, clean DAG: CLI → SDK → Copilot SDK)
-- Waves A–D completion verified (30 issues closed, 2930→2931 tests)
-- Wave D readiness assessment + 6 issues filed (#488–#493)
-- Public release readiness verdict (🟡 ready with caveats: need dogfood closure #324, architecture docs)
-- Issue #306 cleanup audit (47 findings cataloged: 18 hardcoded, 16 code quality, 8 tests, 5 UX)
-- GitHub Pages publishing architecture reviewed (build.js is production-ready)
-- PR #300 (upstream inheritance) review: Request Changes (4 blockers: no proposal, weak types, no sanitization, undocumented fallback)
-- Ralph smart triage review: ✅ Approved
-
-**Known Blockers:**
-- #324: Dogfood CLI (only open issue, blocks Wave E + release confidence)
-- Root `src/` directory still exists (time bomb: parallel structure with workspace packages)
-- Observability (9 P0/P1 issues) needed before production release
-
-**Wave E Planning:** 28 issues just filed (2026-02-28) from parallel agent sprint: 4 CLI gaps, 10 test gaps, 10 doc gaps, 4 UX gaps. decisions.md trimmed 226KB→10.3KB. Ready for Wave E Batch 1 prioritization.
-
 ## Learnings
 
-### 2026-02-25T02:00:00Z: Issue #532 Analysis — REPL Dogfooding Gap
-- **Task:** Analyze issue #532 (Resolve dogfooding gap — test REPL against real-world repositories). Define concrete acceptance criteria, identify test coverage gaps, decompose into actionable sub-tasks.
-- **Finding:** REPL itself is complete (shipped Waves A–C). What's missing is **confidence** that it works on real diverse codebases — not test-fixtures. Current test suite covers: REPL UX rendering (✅), hostile inputs (✅ 95 strings), human journeys on mocks (✅), but zero testing against real Python/Node/Go/Rust/Java repos or monorepos.
-- **Test coverage audit:**
-  - ✅ e2e-shell.test.ts, repl-ux.test.ts, shell-integration.test.ts, cli-shell-comprehensive.test.ts: All mocked SDK + test-fixtures only. No real codebases.
-  - ✅ hostile-integration.test.ts: 95 nasty input strings, covers parseInput/executeCommand/rendering.
-  - ✅ human-journeys.test.ts: 6 real user scenarios, mocked SDK under hood.
-  - ❌ **Gap 1:** No real repository interaction (Python, Node, Go, Rust, monorepo, etc.)
-  - ❌ **Gap 2:** No large file handling (>10MB, nested >50 levels, 100+ files)
-  - ❌ **Gap 3:** No mixed-language repo testing (polyglot teams, tooling integration)
-  - ❌ **Gap 4:** No performance profiling (token usage, latency vs. mocks)
-  - ❌ **Gap 5:** No encoding/special char handling (non-UTF8, symlinks, Windows CRLF)
-- **Acceptance criteria defined:** (1) 5–8 real-world test scenarios implemented, (2) test harness created (repl-dogfood.test.ts), (3) manual dogfood session logs findings, (4) blockers filed as GitHub issues, (5) performance metrics captured, (6) Wave D launch confidence established.
-- **Punch list created:** 11 concrete work items — 4 for Waingro (dogfood repos definition, manual sessions, issue filing), 6 for Hockney (test harness, scenario tests, metrics, CI integration), 1 for Keaton (review + roadmap).
-- **Effort estimate:** 10–12 hours (2–3 people, 2–3 days).
-- **Decision:** Route to Waingro (primary dogfooder) + Hockney (test implementation). No feature work — pure research + infrastructure + triage.
-- **Output:** Decision file `.squad/decisions/inbox/keaton-532-scope.md` with full analysis, test scenarios (5–8 repos), implementation plan, and punch list.
-- **Pattern:** Dogfood is a distinct phase from feature shipping. For post-beta releases, always dogfood on real diverse codebases before Wave launch. Define upfront: repo diversity rationale, expected edge cases, metrics to capture, blocker triage process.
+### 📌 PRD: CLI UI Polish (2026-03-01T03:15:00Z): 20-issue roadmap from team image review
+- **Status:** Completed — comprehensive PRD written based on 5-agent visual review (Redfoot, Marquez, Cheritto, Kovash, Brady)
+- **Context:** Team analyzed 15 REPL screenshots, identified P0 blockers (blank screens, no spinner rotation, missing alpha banner), P1 friction (low contrast, verbose copy, weak hierarchy), P2 polish (layout, separators, tables), P3 future (fixed bottom input, alt screen buffer)
+- **PRD structure:** Overview, Goals, User Problems (image-referenced), Requirements (P0/P1/P2/P3 tiered), Technical Notes, Out of Scope, Success Metrics, Issue Breakdown (20 discrete issues with assignees)
+- **Key decisions:**
+  - P0 alpha blockers: dynamic spinner rotation (~5 line fix in App.tsx), alpha banner, blank screen prevention (never >500ms), timeout verification
+  - P1 quick wins: contrast ≥4.5:1, semantic color system, copy tightening, information hierarchy, whitespace
+  - P2 layout work: MessageStream refactor, input anchoring, responsive tables, separator consolidation, agent panel persistence
+  - P3 deferred: fixed bottom input (requires alt screen buffer), creative spinner phrases, terminal adaptivity
+  - Alpha shipment acceptable — no grand redesign today
+- **Issue routing:** Cheritto owns 11/20 (all TUI/Ink work), Kovash owns 4/20 (shell/REPL), Redfoot owns 2/20 (color/contrast), Marquez reviews copy (1 issue), Fenster verifies timeout (1 issue)
+- **Quick wins identified:** Spinner fix (5 lines), contrast (30min), separators (15min), table headers (30min)
+- **Architectural insight:** Layout is 80% there, needs 1-2 days focused work. Three separate separator implementations need consolidation. Ink's layout model fights bottom-anchored input (alt screen buffer would solve, deferred to P3).
+- **Success gate:** "Brady says it doesn't embarrass us"
+- **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) → Alpha ship with P0+P1 complete
+- **Files:** `docs/prd-cli-ui-polish.md` (PRD), `packages/squad-cli/src/ui/App.tsx` (spinner override), `packages/squad-cli/src/ui/components/ThinkingIndicator.tsx` (has rotation logic), `packages/squad-cli/src/ui/components/MessageStream.tsx` (layout issues)
+
+### 📌 Architecture analysis (2026-02-28T23:23:00Z): Init/onboarding flow audit — Brady's request
+- **Status:** Completed — comprehensive analysis of all 7 init entry paths across PRs #637–#640
+- **Key findings:**
+  - **Race condition bug:** `setTimeout(100)` auto-cast trigger in `shell/index.ts:905` fires before `shellApi` is guaranteed set. Silent failure.
+  - **Ctrl+C bug:** Init session (`handleInitCast` local var) not reachable by `handleCancel()`. Orphaned SDK session on abort.
+  - **Two divergent casting flows:** CLI `buildInitModePrompt()` (thin stub) vs `squad.agent.md` Init Mode (rich 2-phase with confirmation). Zero shared code.
+  - **`/init` REPL command is a no-op** — prints instructions instead of triggering casting.
+  - **Golden path works:** `squad init "prompt"` → `squad` → auto-cast → team created. Fails silently on other paths.
+- **Proposal:** `docs/proposals/reliable-init-flow.md` — P0 bug fixes (~2h), P1 empty-roster UX (~2h), P2 confirmation step (~3h), P3 casting alignment (separate PR)
+- **Key files:**
+  - `packages/squad-cli/src/cli/shell/index.ts` — runShell(), handleInitCast(), handleDispatch(), auto-cast trigger
+  - `packages/squad-cli/src/cli/shell/coordinator.ts` — buildInitModePrompt(), buildCoordinatorPrompt(), hasRosterEntries()
+  - `packages/squad-cli/src/cli/core/init.ts` — runInit(), .init-prompt/.first-run marker logic
+  - `packages/squad-cli/src/cli/core/cast.ts` — parseCastResponse() (4 parser strategies), createTeam()
+  - `packages/squad-cli/src/cli/shell/commands.ts` — /init REPL command
+  - `packages/squad-cli/src/cli-entry.ts` — CLI routing, no-squad welcome, init prompt extraction
+  - `templates/squad.agent.md` — agent-side Init Mode (separate from CLI flow)
+
+### 📌 Team update (2026-02-28T17:15:00Z): Backlog gap issues filed (8 items) — Brady's directive
+- **Status:** Completed — Keaton (lead) filed all 8 missing backlog items from `.squad/identity/now.md`
+- **Outcome:** 8 new issues filed and routed to owners:
+  - #583: Add homepage/bugs to package.json (squad:rabin, should-fix polish)
+  - #584: Document alpha→v1.0 breaking change policy (squad:mcmanus, should-fix polish)
+  - #585: Add noUncheckedIndexedAccess to tsconfig (squad:edie, post-M1 type safety)
+  - #586: Tighten ~26 any types in SDK (squad:edie, post-M1 type safety)
+  - #587: Add architecture overview doc (squad:mcmanus, post-M1 docs)
+  - #589: One real Copilot SDK integration test (squad:kujan, post-M1 testing)
+  - #590: npm audit fix for ReDoS warnings (squad:baer, post-M1 security hygiene)
+  - #591: Aspire dashboard docker pull test fails (squad:hockney, type:bug, post-M1)
+- **Impact:** All known backlog items now have explicit GitHub tracking. Team owns issue routing. Wave E planning complete with full backlog visibility.
+- **Decision record:** `.squad/decisions/inbox/keaton-backlog-gap-issues.md`
+
+### 📌 Team update (2026-02-28T15:34:36Z): 28 issues filed + decisions.md trimmed 226KB→10.3KB
+- **Status:** Completed — Keaton (lead), Hockney, McManus, Waingro coordinated parallel issue filing sprint
+- **Outcome:** 4 CLI critical gaps (#554–#557), 10 test gaps (#558–#567), 10 doc audit gaps (#568–#575, #577–#578), 4 dogfood UX gaps (#576, #579–#581) all filed and labeled for routing
+- **decisions.md cleanup:** Trimmed from 226KB (223 entries) to 10.3KB (35 entries); full history in decisions-archive.md
+- **Impact:** Team context bloat eliminated; CLI improvements have explicit GitHub tracking; Wave E planning ready with actionable issue list
+- **Session log:** `.squad/log/2026-02-28T15-34-36Z-issue-filing-sprint.md` — decided by Keaton, McManus, Hockney, Waingro
+
+### 📌 Team update (2026-03-01T02:04:00Z): Screenshot review session 2 — P0 blockers identified
+- **Status:** Completed — Brady requested full team review of 15 REPL screenshots from human testing. 5 UX-focused agents (Keaton, Kovash, Marquez, Cheritto, Waingro) spawned in parallel with vision models.
+- **P0 Blockers Found (2 cross-team):**
+  - Screen buffer/frame corruption (Kovash: static key collisions, missing terminal clear, no alt screen buffer in 008-010/015; Cheritto: overlapping UI frames in 015)
+  - Contradictory state messaging (Keaton: phantom team/contradictory roster; Marquez: @your lead placeholder confusion, orphaned period; Waingro: assembled vs empty roster contradiction)
+- **P1 Friction (4 points):**
+  - Phantom team / onboarding friction (Keaton)
+  - In-REPL command confusion (Waingro)
+  - Coordinator label, wall of text, duplicate header, redundant CTAs (Marquez)
+- **P2 Polish (6+ items):** Minor UI/UX refinements across all perspectives
+- **Impact:** P0 blockers require terminal lifecycle refactor (Kovash + Cheritto) and messaging/state coherence alignment (Keaton + Marquez + Waingro). High convergence on shared architectural concerns.
+- **Session log:** `.squad/log/2026-03-01T02-04-00Z-screenshot-review-2.md`
 
 ### 2026-02-24T18:42:00Z: Waves A–D Completion Assessment (Brady handoff catch-up)
 - **Task:** Brady's session crashed. Verify Wave A–D completion per PRD, check issue states, assess what remains.
@@ -88,18 +110,6 @@
 - **Status:** Awaiting Brady's approval before execution
 - **Next step:** If approved, assign merge work to agents (5 concept pages are biggest effort, ~2-3 hours each)
 
-### 2026-02-24T23:15:00Z: CLI Critical Gap Issues Filed (Brady request)
-- **Context:** Fenster and Hockney's CLI analysis found critical gaps in orchestration logs. Brady requested filing 4 GitHub issues to track them.
-- **Gaps identified:**
-  - Issue #554: `--preview` flag undocumented and untested (0% coverage, users can't discover)
-  - Issue #556: `--timeout` flag undocumented and untested (0% coverage, feature unusable)
-  - Issue #557: `upgrade --self` is dead code (0% coverage, creates confusion)
-  - Issue #555: `run` subcommand is a stub (0% coverage, non-functional)
-- **All issues filed** with labels: `squad:fenster`, `squad`, `type:bug`
-- **Assignment:** Fenster for CLI domain expertise
-- **Impact:** Team now has explicit GitHub tracking for Fenster's CLI improvements. Clear ownership and acceptance criteria.
-- **Decision memo:** `.squad/decisions/inbox/keaton-cli-gap-issues.md`
-
 ### 2026-02-23: Docs Site Engine & Beta Content (#185, #188)
 - **Task:** Build a minimal static site generator for markdown documentation + landing page with navigation sidebar
 - **Solution delivered:**
@@ -127,24 +137,6 @@
 - **Agent Assignment Recommendations:** Fenster (upstream.ts fix + tests), Edie (config extraction), Hockney (test coverage), Baer (error messages/UX)
 - **Report Location:** `.squad/decisions/inbox/keaton-cleanup-audit.md`
 - **Next Step:** Brady/Keaton review, assign specific tasks to agents, create GitHub issues for each finding
-
-### 2026-03-02T[NOW]: Squad Aspire Status Investigation (Brady's question)
-- **Question:** "What happened to squad aspire? When did we deprecate it, and why?"
-- **Answer:** **Squad Aspire is ACTIVE — NOT deprecated.** Still a registered CLI command (`squad aspire`).
-- **Timeline:**
-  - Added 2026-02-22 via commit `992763e` (feat: squad aspire command + squad-observer file watcher)
-  - Part of Epic #253 (Observability), Wave 2 (Interactive Shell)
-  - Closed issues #265 (aspire command spec) + #268 (SquadObserver file watcher port)
-- **What it does:** Launches the .NET Aspire dashboard for Squad observability via Docker or dotnet workload. Auto-configures OTLP endpoint (`OTEL_EXPORTER_OTLP_ENDPOINT`). Shows Squad traces + metrics in dashboard.
-- **Current state:**
-  - Command file: `packages/squad-cli/src/cli/commands/aspire.ts` (175 lines, fully implemented)
-  - Wired into CLI entry point with help text
-  - 16 tests (14 observer, 2 aspire) — all passing
-  - SquadObserver class monitors `.squad/` directory and emits OTel spans + EventBus events
-  - Decision #2026-02-22 in decisions.md: Integration tests MUST launch Aspire dashboard + validate OTel telemetry shows up (Playwright, latest Aspire bits, aspire.dev reference)
-- **Reference usage:** PR #38 (MCP docs) and PR #116 (cold-path extraction) mention Aspire in sample MCP configs (Trello, GitHub, Azure, Aspire dashboard examples)
-- **Known issue:** #591 (aspire-integration.test.ts docker pull timeout — environmental, not code)
-- **Architecture insight:** Aspire is NOT a deprecated feature. It's a foundational observability integration that compounds with the OTel instrumentation work (#257–#260). File watcher + dashboard create closed-loop observability loop: runtime traces (internal) + file changes (external) = complete visibility.
 
 ### From Beta (carried forward)
 - Architecture patterns that compound — decisions that make future features easier
@@ -181,6 +173,7 @@
 
 ### 📌 Team update (2026-02-22T041800Z): SDK/CLI split plan executed, versions aligned to 0.8.0, 1719 tests passing
 Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → SDK → @github/copilot-sdk). Fenster migrated 154 files across both packages. Edie fixed all 6 config files (tsconfigs with composite builds, package.json exports maps). Kobayashi aligned all versions to 0.8.0 (clear break from 0.7.0 stubs). Hockney verified build clean + all 1719 tests pass, deferred test import migration until root src/ removal. Rabin verified publish workflows ready. Coordinator published both packages to npm (0.8.0). Inbox merged to decisions.md. Ready for Phase 3 (root cleanup).
+
 
 ## Status Snapshot (2026-02-22T225951Z)
 
@@ -308,194 +301,25 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
 
-### 2026-02-27T23:30:00Z: Full Replatform Status Assessment (Brady handoff)
-- **Task:** Brady wants to "get this thing moved over" — comprehensive state of project pre-replatform launch
-- **Codebase State:** 
-  - **Build:** ✅ Clean. Both packages compile with zero errors. `npm run build -w packages/squad-sdk` passes in <3s.
-  - **Tests:** 2944 passing, 1 failing (aspire-integration.test.ts docker pull timeout — environmental, not code). 2 skipped, 1 todo. 51.39s total runtime. Test quality is high (57 test files, 2930+ relevant tests). One flaky Aspire test (docker dependency) not a blocker.
-  - **Packages:** v0.8.5.1 (both SDK and CLI). Clean monorepo with 2 packages, strict TypeScript, ESM-only. SDK exports 18+ subpaths. CLI bin entry points work.
-  - **Git:** HEAD=dev (same as origin/main). 6 recent commits all shipped (samples, docs merge, CLI help, ghost commands, OTel metrics, Ctrl+C cancellation). No open PRs in main. Workspace clean (only .squad/agents/kobayashi/history.md unstaged).
-- **Open Issues Assessment:**
-  - **#542 (GitHub Project Board automation)** — 🟡 P1-ish. Well-designed epic. Hockney assigned. Scope is correct (6 board columns, `squad board` CLI, `sync-board.yml` workflow, iteration support). Blocked on capacity, not blockers. Nice-to-have for Wave E, not critical path to replatform.
-  - **#532 (Dogfood REPL against real repos)** — 🔴 P0 BLOCKER. Waingro + Hockney assigned. This is the ONLY open issue in the backlog. Test against 4 repo types (fresh, existing squadded, monorepo, solo). Must close before replatform launch confidence.
-- **Open PRs Assessment (3 external contributors):**
-  - **#553 (Personal Squad Consult Mode — James Sturtevant)** — 🟡 NEEDS REVIEW. 850 additions, 3 files. PRD exists, concept solid. Not blocking replatform but adds value for isolated workflows. Needs squad member (Keaton/Kujan) review of SDK integration. Recommendation: queue for Wave E after replatform stabilizes.
-  - **#552 (Ralph Routing-Aware Triage — Shayne Boyer)** — 🟢 APPROVED BY KEATON. 12596 additions, 32 files changed (net -10061 deletions due to refactor). 57 tests across 3 files, all passing. Replaced keyword matching with routing.md-aware triage. Smart work. Ready to merge. This unblocks Ralph's ability to do real work (no more dumb matching).
-  - **#547 (Squad Remote Control — Tamir Dresher)** — 🟡 SHIP-WORTHY. 2885 additions, 19 files, 18 tests passing. PTY+WebSocket+devtunnel for phone access. Novel feature. Blog post published. Code quality is solid. Recommendation: merge AFTER replatform (Wave E feature). Not critical.
-- **Replatform Readiness:**
-  - **Architecture:** 🟢 MATURE. SDK/CLI split is clean, one-way dependency graph, strict TypeScript, 18 module exports, hook-based governance. Patterns compound. No architectural debt blocking replatform.
-  - **Distribution:** ✅ READY. Both packages published to npm (v0.8.5.1). CLI bin works. `npm install -g @bradygaster/squad-cli && squad init` path verified. Quick start guide clear in README.
-  - **Documentation:** ✅ ADEQUATE FOR ALPHA. README is strong (what is squad, quick start, status badge). docs/build.js already generates static HTML. Docs site at https://bradygaster.github.io/squad-pr/ is ready. Content is adequate (8 guides, good examples, architecture overview exists). No blockers.
-  - **Messaging:** ✅ CLEAR. Status badge says "alpha" on README. All experimental warnings in place. Breaking change policy documented (alpha → beta → stable). Contributor messaging solid.
-  - **Known Gaps:**
-    - #532 (dogfooding) still open — must close for confidence before launch
-    - POST-replatform: UX audit findings from Marquez + dogfooding findings (15-20 issues in queue)
-    - POST-replatform: Observability dashboard + advanced features (Wave E backlog)
-- **Blocker Analysis:** Only 1: #532. No technical blockers to replatform launch.
-- **What "Moved Over" Means:**
-  - Public alpha of Squad v1 from squad-pr repo (not squad-beta)
-  - Initial audience: GitHub Copilot users, early adopters, dev community
-  - Distribution: npm only (drop bradygaster/squad beta references)
-  - Support model: GitHub issues + discussion, no SLA (alpha messaging)
-- **Concrete Next Steps for Brady:**
-  1. **IMMEDIATE (today):** Close #532 with Waingro (dogfood 4 repos). This unlocks replatform confidence.
-  2. **TODAY-TOMORROW:** Merge #552 (Ralph triage). Ship #547 later (Wave E).
-  3. **REPLATFORM LAUNCH:** Update repo settings (star, description), push v0.8.5.1 tag, announce to beta users + GitHub Copilot team.
-  4. **POST-LAUNCH (Wave E):** Triage dogfood findings + community feedback (likely 15-20 issues). Marquez's UX audit + user feedback drives priorities. Cheritto/Kovash focus on UX polish.
-- **Risk Mitigation:**
-  - Dogfood #532 is CRITICAL. Don't launch without it.
-  - Ralph #552 merge is safe (tests pass, Keaton reviewed). Merge immediately.
-  - Remote Control #547 is a bonus feature — defer to Wave E.
-  - Observability (Saul/OTel) is NOT blocking replatform but IS needed for production. Plan for Wave F (post-alpha).
-- **Pattern Observed:** Team built a solid foundation (Waves A–D). External contributors are shipping quality PRs. Ecosystem growing (James + Shayne + Tamir). Dogfooding + community feedback will drive next wave priorities — this is healthy.
-- **Confidence Level:** 🟡 READY WITH CAVEATS. Ship after #532 closes. Messaging is clear. Architecture holds. Distribution proven. Next 2 weeks: stabilize with community, iterate on UX, plan Wave E based on real usage.
+### 2026-02-25: Ralph Smart Triage Module — Architecture Review
+- **Task:** Review routing-aware triage module (`triage.ts`), `gh-cli.ts` GhPullRequest additions, Ralph charter/description updates.
+- **Verdict:** ✅ APPROVED. Architecture is sound.
+- **Key findings:**
+  - `triage.ts` is pure functions with zero side effects — parsing + decision only, no I/O. Follows SDK pure-library pattern.
+  - Priority cascade (module ownership → routing rules → role keywords → lead fallback) is correct and matches real triage workflow.
+  - Regex patterns verified against actual routing.md format (unicode arrow `→`, emoji in agent names, em-dash in secondary column).
+  - `parseRoster` correctly handles team.md `## Members` format and excludes Scribe/Ralph from assignable roster.
+  - `normalizeEol` dependency confirmed at `utils/normalize-eol.ts`.
+  - GhPullRequest interface covers PR monitoring needs (author, reviewDecision, statusCheckRollup, isDraft).
+  - Interfaces are well-designed for extension — `TriageDecision.source` union, confidence levels, decoupled `TriageIssue`.
+- **Minor suggestions (non-blocking):** (1) Strip emoji from `RoutingRule.agentName` at parse time, (2) Add `createdAt`/`updatedAt` to `GhPullRequest` for staleness detection, (3) `findRoleKeywordMatch` takes first match among tied roles.
+- **Pattern learned:** Pure parsing modules that take markdown content as input and return typed decisions are highly testable and composable. This pattern should be used for any future `.squad/*.md` file parsing.
+- **Decision file:** `.squad/decisions/inbox/keaton-ralph-triage-review.md`
+# Project Context
 
----
+- **Owner:** Brady
+- **Project:** squad-sdk — the programmable multi-agent runtime for GitHub Copilot (v1 replatform)
+- **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
+- **Created:** 2026-02-21
 
-## 2026-02-28: decisions.md Cleanup — Context Window Relief
 
-**Requested by:** Brady (urgent, release push)
-**Action:** Aggressively trimmed decisions.md from 226KB (223 entries) to 10.3KB (35 entries) — 95% reduction.
-
-**What stayed (35 entries):**
-- Core architectural decisions (strict mode, ESM-only, Node 20+, hooks-over-prompts)
-- Active process rules (proposal-first, tone ceiling, merge drivers)
-- Active user directives (Brady's preferences, repo scope, docs pause, PR #547 hold)
-- Current UX conventions (status vocabulary, tagline, separators, version format)
-- Runtime patterns (EventBus, sendAndWait, extractDelta, coordinator routing)
-
-**What was archived (188 entries):**
-- Completed implementation details (OTel wiring, shell components, spawn infrastructure)
-- One-time setup decisions (version alignment, branch protection, changesets)
-- PR review findings (PR #300 upstream inheritance reviews)
-- Massive audit reports (cleanup audit, readiness assessment, UX audits)
-- Wave/phase planning documents (testing epic PRD, Wave D assessment)
-- Superseded decisions (GitHub-native distribution, old version alignments)
-- ~5 exact duplicates from merge=union duplication
-
-**Output:**
-- .squad/decisions.md — 10.3 KB, 35 active entries
-- .squad/decisions-archive.md — 230 KB, full original preserved as archive
-
-## 📋 SHIP PLAN (2026-02-28T23:45:00Z) — Battle Plan: 45 → 0 Open Issues
-
-**By:** Keaton  
-**Context:** Brady requested zero open issues for alpha ship. Created comprehensive battle plan.
-
-**Result:**
-- **Triage complete:** All 45 open issues categorized
-- **Execution plan created:** Wave 1–4 strategy with agent assignments
-- **Aggressiveness:** 28 issues strategically deferred post-alpha with clear labels (not abandoned)
-- **Blocking issues:** 3 must-ship blockers identified
-- **Quick-wins:** 8 issues <30min each, parallelizable
-- **Documentation:** Full plan in .squad/decisions/inbox/keaton-ship-plan.md
-
-**Key Decisions:**
-- Close liberally: 28 deferred items maintain user trust via deferred-post-alpha label
-- Parallel execution: 6+ agents work independently (no merge-order dependencies)
-- Brady's directive: PR #547 untouched per decisions.md directive
-- Target: 11 fixed + 34 closed = 45 → 0 open issues
-
-**Next:** Wave 1 execution (keaton dogfood + hockney UX fixes)
-
-### 📌 Team update (2026-03-01T20-24-57Z): CLI UI Polish PRD finalized — 20 issues created, team routing established
-- **Status:** Completed — Parallel spawn of Redfoot (Design), Marquez (UX), Cheritto (TUI), Kovash (REPL), Keaton (Lead) for image review synthesis
-- **Outcome:** Pragmatic alpha-first strategy adopted — fix P0 blockers + P1 quick wins, defer grand redesign to post-alpha
-- **PRD location:** docs/prd-cli-ui-polish.md (authoritative reference for alpha-1 release)
-- **Issues created:** GitHub #662–681 (20 discrete issues with priorities P0/P1/P2/P3, effort estimates, team routing)
-- **Key decisions merged:**
-  - Fenster: Cast confirmation required for freeform REPL casts
-  - Kovash: ShellApi.setProcessing() exposed to prevent spinner bugs in async paths
-  - Brady: Alpha shipment acceptable, experimental banner required, rotating spinner messages (every ~3s)
-- **Timeline:** P0 (1-2 days) → P1 (2-3 days) → P2 (1 week) — alpha ship when P0+P1 complete
-- **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
-- **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
-
-### 📌 Architecture Review: PR #582 — Consult Mode (2026-03-01)
-**Author:** James Sturtevant (external contributor, also filed #652 Multiple Personal Squads)
-**Status:** DRAFT PR — needs significant rework before merge
-**Context:** 18 files changed, 3256 additions, 64 deletions. Includes PRD, SDK changes, CLI command, tests.
-
-**What it does:**
-- Implements "Phase 1" of consult mode: allows personal squad to work on external projects invisibly
-- Adds `squad consult` command to set up local `.squad/` with `consult: true` flag
-- Uses `.git/info/exclude` for git invisibility (never committed)
-- PRD describes full vision: copy personal squad → work on project → extract learnings → return home
-
-**Critical issues:**
-
-1. **No actual implementation** — The PR only contains:
-   - A massive PRD document (`.squad/identity/prd-consult-mode.md`, 854 lines)
-   - Fenster's history entry claiming implementation is done
-   - Test stubs that import non-existent modules (`packages/squad-sdk/src/sharing/consult.ts`)
-   - NO ACTUAL CODE — zero SDK modules, zero CLI commands
-
-2. **Test-first without code** — Tests import functions that don't exist:
-   - `test/consult.test.ts` imports `enterConsultMode`, `extractLearnings`, `loadSessionHistory`
-   - None of these functions are implemented anywhere
-   - Tests will fail immediately
-
-3. **PRD-code mismatch** — PRD evolved during writing:
-   - Initially: copy entire personal squad to project (lines 29-50)
-   - Later: use remote mode pointing to personal squad (line 49: `"teamRoot": "<resolveGlobalSquadPath()>/.squad"`)
-   - Fenster's history claims SDK changes to `resolution.ts` adding `consult?: boolean` field
-   - **Actual SDK resolution.ts has no such changes** — SquadDirConfig interface is unchanged
-   - No `isConsultMode()` helper exists anywhere
-
-4. **Architectural misalignment:**
-   - PRD describes using existing `packages/squad-sdk/src/sharing/` infrastructure
-   - Existing sharing module is for export/import between squads, not session management
-   - `splitHistory()` and `mergeHistory()` work on agent history, not session learnings
-   - Conceptual mismatch: "learnings extraction" is not the same as "history splitting"
-
-5. **Missing integration points:**
-   - Fenster claims `cli-entry.ts` was updated to register `consult` command
-   - **No such changes in the diff** — CLI entry point unchanged
-   - No command file exists in `packages/squad-cli/src/cli/commands/`
-   - Help text not added to CLI help output
-
-**What's actually in the PR:**
-- `.squad/identity/prd-consult-mode.md` — 854-line PRD (well-written but belongs in `docs/proposals/`)
-- `.squad/agents/fenster/history.md` — history entry claiming work is done
-- `test/consult.test.ts` — 458 lines of tests for non-existent functions
-- `test/speed-gates.test.ts` — bumped help line count from 65→70 (but no help text added)
-
-**Assessment:**
-- **Do not merge** — This is a planning document masquerading as implementation
-- James wrote excellent PRD-quality documentation
-- Fenster's history entry is aspirational, not factual
-- Zero executable code shipped
-
-**Recommendation:**
-1. Extract PRD to `docs/proposals/consult-mode.md` (remove `.squad/identity/` location)
-2. Close this PR as "converted to proposal"
-3. Create proper implementation issues from PRD phases
-4. Phase 1 should be: add `consult` field to SquadDirConfig, implement `squad consult` command
-5. Tests come after implementation, not before
-
-**Architectural guidance for future implementation:**
-- `consult: true` flag in config.json is correct approach
-- Remote mode (`teamRoot` pointer) is better than copying entire squad
-- `.git/info/exclude` is right tool for invisibility (use `git rev-parse --git-path info/exclude`)
-- Extraction should be separate command (`squad extract`), not automatic
-- License checking (copyleft detection) is valuable but belongs in Phase 2+
-- Integration with existing `sharing/` module needs design work — don't force-fit
-
-**Files that would need changes (for actual implementation):**
-- `packages/squad-sdk/src/resolution.ts` — add `consult?: boolean` to SquadDirConfig
-- `packages/squad-sdk/src/index.ts` — export consult helpers
-- `packages/squad-cli/src/cli/commands/consult.ts` (NEW) — implement command
-- `packages/squad-cli/src/cli-entry.ts` — register command in routing
-- `packages/squad-sdk/src/sharing/` — new `consult.ts` module (but rethink architecture)
-
-**Pattern observations:**
-- James understands the vision clearly (PRD is coherent and well-structured)
-- Implementation approach needs review before coding
-- This connects to his #652 issue (Multiple Personal Squads) — broader feature set
-- Consult mode is stepping stone to multi-squad workflows
-
-**Next steps:**
-1. Acknowledge James's excellent design work
-2. Request PRD move to proposals/
-3. Discuss architecture before implementation (sharing/ module fit, session vs history, extraction strategy)
-4. Break into smaller implementation PRs with actual code

@@ -283,3 +283,58 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
   - Reset N to 1 on each minor/major bump for clean iteration tracking.
 - **Branch:** squad/692-fix-semver-versioning created and local changes committed.
 - **Outcome:** Release plan now documents both Brady's strategic decisions (npm-only distribution) and the tactical fix (semver compliance). Charter reflects corrected versioning sequence for future releases.
+
+### 2026-03-02: Migration Analysis — origin (squad-pr) → beta (squad) for v0.8.17
+**Status:** PLANNING (banana rule active — no git operations executed)
+- **Context:** Analyzed migration state between origin repo (bradygaster/squad-pr) at v0.8.18-preview and beta repo (bradygaster/squad) at v0.5.4.
+- **Critical finding:** Missing v0.8.17 tag on origin. Commit history shows:
+  - `5b57476`: "prep v0.8.16" — version set to 0.8.16 (clean)
+  - `6fdf9d5`: "bump to 0.8.17-preview" — jumped directly to 0.8.17-preview (no prep commit for clean 0.8.17)
+  - `96ef179`: "repo name change" — still at 0.8.17-preview
+  - `87e4f1c`: "bump to 0.8.18-preview after 0.8.17 release" — implies v0.8.17 was released but no tag exists
+- **Root cause:** Release workflow step skipped. Per release versioning sequence, should have been: (1) prep commit to clean version, (2) publish, (3) tag, (4) bump to {next}-preview. The prep step for v0.8.17 was omitted.
+- **Decision:** Retroactively tag commit `5b57476` as v0.8.17 (same commit as v0.8.16 prep). Treats v0.8.16 and v0.8.17 as identical codebase (acceptable — code is identical). Alternative (create new prep commit and rebase) rejected as too disruptive.
+
+**Repo structure comparison (origin vs beta):**
+- **Origin:** Monorepo (`@bradygaster/squad-sdk`, `@bradygaster/squad-cli`), npm distribution, `.squad/` directory, Node.js >=20, 13 workflows
+- **Beta:** Single-file structure (`@bradygaster/create-squad`), GitHub-native distribution (`npx github:`), `.ai-team/` directory, Node.js >=22, 11 workflows
+- **Breaking changes for beta users:** Distribution method (GitHub-native → npm), directory name (`.ai-team/` → `.squad/`), package name change, monorepo structure
+
+**Version path strategy:**
+- **Decision:** Jump directly from v0.5.4 to v0.8.17. Skip intermediate versions (0.6.x, 0.7.x, 0.8.0-0.8.16).
+- **Rationale:** Version numbers don't need to be contiguous. All intermediate work happened in origin (private). Beta users get one large upgrade with comprehensive migration guide. Avoids confusion from publishing "fake" versions never released publicly.
+
+**Package naming:**
+- **Decision:** Deprecate `@bradygaster/create-squad` on npm (if published). All future releases under `@bradygaster/squad-cli` + `@bradygaster/squad-sdk`.
+- **Rationale:** Origin's naming is more accurate (CLI vs SDK). Monorepo structure supports independent versioning if needed.
+
+**Deliverables created:**
+1. **Unified migration checklist:** `docs/migration-checklist.md` (overwrote outdated v0.6.0-preview checklist with v0.8.17 version). 14 phases covering: prerequisites → tag v0.8.17 → push to beta → merge → npm publish → GitHub release → beta user upgrade path → verification → closure. Includes rollback plans and final verification checklist.
+2. **Migration plan:** `.squad/decisions/inbox/kobayashi-migration-plan.md` — comprehensive analysis covering missing v0.8.17 tag, repo structure divergence, GitHub Actions differences, version jump strategy, package name strategy, beta user upgrade path, migration execution phases, risks & mitigations.
+3. **Version path plan:** `.squad/decisions/inbox/kobayashi-version-path.md` — detailed version gap analysis (v0.5.4 → v0.8.17), three upgrade options evaluated (direct jump, bridge version, full backfill), beta user migration impact, rollback strategy, success metrics.
+
+**Key learnings:**
+- **Release workflow integrity is critical.** Skipping the "prep v0.8.17" commit broke the versioning sequence and created a gap in the tag history. Must follow three-phase sequence strictly: prep → publish → post-publish bump.
+- **Retroactive tagging is valid but leaves artifacts.** Tagging `5b57476` as both v0.8.16 and v0.8.17 is technically correct (same code) but creates ambiguity in git history. Better to catch missing steps before they propagate.
+- **Version jumps are acceptable in migrations.** Semantic versioning spec doesn't require contiguous version numbers. v0.5.4 → v0.8.17 jump is valid as long as release notes explain the gap and breaking changes are documented.
+- **Repository structure matters for migration complexity.** Single-file (beta) → monorepo (origin) migration has user-facing impact: directory name change, package name change, distribution method change. Each is a breaking change requiring clear upgrade path documentation.
+- **GitHub Actions workflow sets differ between repos.** Origin has 13 workflows (mature CI/CD), beta has 11 (different set). Post-migration, beta should adopt origin's infrastructure (includes insider channel, preview validation, promotion workflow).
+
+**Next steps (post-banana gate):**
+1. Tag v0.8.17 on origin (retroactive, at commit `5b57476`)
+2. Push origin/migration to beta/migration
+3. Create PR: beta/migration → beta/main
+4. Merge PR
+5. Publish npm packages: `@bradygaster/squad-cli@0.8.17`, `@bradygaster/squad-sdk@0.8.17`
+6. Create GitHub Release v0.8.17 on beta repo
+7. Deprecate old package name (if published to npm)
+8. Update migration docs with v0.8.17 specifics
+
+### 📌 Team update (2026-03-02T22:33:50Z): Beta → Origin migration plan complete — v0.8.17 strategy, version jump, package naming, npm-only distribution — decided by Kobayashi
+- **Migration plan:** Comprehensive analysis of missing v0.8.17 tag (retroactively tag commit `5b57476`), repository structure divergence (beta single-file vs origin monorepo), GitHub Actions differences (origin's 13 workflows more mature than beta's 11).
+- **Version strategy:** Jump directly from v0.5.4 to v0.8.17 (skip intermediate versions 0.6.x, 0.7.x, 0.8.0-0.8.16 which were origin-only internal development). Semantic versioning allows version gaps; comprehensive changelog more valuable than contiguous numbers.
+- **Package naming:** Deprecate `@bradygaster/create-squad`, use `@bradygaster/squad-cli` + `@bradygaster/squad-sdk` (clearer separation, supports independent versioning).
+- **Distribution:** npm-only (aligned with origin). Beta users get clear upgrade path with `squad upgrade` command.
+- **Breaking changes for beta users:** (1) Distribution method (GitHub-native → npm), (2) Directory name (`.ai-team/` → `.squad/`), (3) Package name, (4) Node.js >=22 → >=20 (less restrictive).
+- **Deliverables:** Migration checklist (14 phases), migration-plan decision, version-path decision. Status: PLANNING (banana rule active — no git operations until Brady says "banana").
+- **Cross-agent sync:** Rabin analyzed npx distribution compatibility (separate decision merged to decisions.md). Both agents' decisions now in merged decisions.md for team coordination post-banana gate.

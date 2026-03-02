@@ -412,6 +412,117 @@ Scribe and Ralph are always injected if missing from the proposal. Casting state
 **Why:** Enables coordinator to propose and create teams from within the REPL session after `squad init`.
 **Implications:**
 
+### 2026-03-02: Beta → Origin Migration: Version Path (v0.5.4 → v0.8.17)
+
+**By:** Kobayashi (Git & Release)  
+**Date:** 2026-03-02  
+**Context:** Analyzed migration from beta repo (`bradygaster/squad`, v0.5.4) to origin repo (`bradygaster/squad-pr`, v0.8.18-preview). Version gap spans 0.6.x, 0.7.x, 0.8.0–0.8.16 (internal origin development only).
+
+**What:** Beta will jump directly from v0.5.4 to v0.8.17 (skip all intermediate versions). Rationale:
+1. **Semantic versioning allows gaps** — version numbers are labels, not counters
+2. **Users care about features, not numbers** — comprehensive changelog is more valuable than version sequence
+3. **Simplicity reduces risk** — single migration release is easier to execute and communicate
+4. **Precedent exists** — major refactors/rewrites commonly skip versions (Angular 2→4, etc)
+
+**Risks & Mitigations:**
+- Risk: Version jump confuses users. Mitigation: Clear release notes explaining the gap + comprehensive changelog
+- Risk: Intermediate versions were never public (no user expectations). Mitigation: This is actually a benefit — no backfill needed
+
+**Impact:** After merge, beta repo version jumps from v0.5.4 to v0.8.17. All intermediate work is included in the 0.8.17 release. Next release after v0.8.17 may be v0.8.18 or v0.9.0 (team decision post-merge).
+
+**Why:** Avoids maintenance burden of backfilling 12+ fake versions. Users get complete feature set in one migration release.
+
+### 2026-03-02: Beta → Origin Migration: Package Naming
+
+**By:** Kobayashi (Git & Release)  
+**Date:** 2026-03-02
+
+**What:** Deprecate `@bradygaster/create-squad` (beta's package name). All future releases use:
+- `@bradygaster/squad-cli` (user-facing CLI)
+- `@bradygaster/squad-sdk` (programmatic SDK for integrations)
+
+**Why:** Origin's naming is more accurate and supports independent versioning if needed. Monorepo structure benefits from clear package separation.
+
+**Action:** When v0.8.17 is ready to publish, release a final version of `@bradygaster/create-squad` with deprecation notice: "This package has been renamed to @bradygaster/squad-cli. Install with: npm install -g @bradygaster/squad-cli"
+
+**Impact:** Package ecosystem clarity. No breaking change for users upgrading (CLI handles detection and warnings).
+
+### 2026-03-02: Beta → Origin Migration: Retroactive v0.8.17 Tag
+
+**By:** Kobayashi (Git & Release)  
+**Date:** 2026-03-02
+
+**What:** Retroactively tag commit `5b57476` ("chore(release): prep v0.8.16 for npm publish") as v0.8.17. This commit and v0.8.16 have identical code.
+
+**Rationale:**
+- Commit `6fdf9d5` jumped directly to v0.8.17-preview (no v0.8.17 release tag exists)
+- Commit `87e4f1c` bumps to v0.8.18-preview "after 0.8.17 release" (implying v0.8.17 was released)
+- Retroactive tagging is less disruptive than creating a new prep commit and rebasing
+
+**Action:** When banana gate clears, tag origin commit `5b57476` as v0.8.17.
+
+**Why:** Completes the missing link in origin's tag history. Indicates to users which commit was released as v0.8.17.
+
+### 2026-03-02: npx Distribution Migration: Error-Only Shim Strategy
+
+**By:** Rabin (Distribution)  
+**Date:** 2026-03-02  
+**Context:** Beta repo currently uses GitHub-native distribution (`npx github:bradygaster/squad`). Origin uses npm distribution (`npm install -g @bradygaster/squad-cli`). After merge, old path will break.
+
+**Problem:** After migration, `npx github:bradygaster/squad` fails (root `package.json` has no `bin` entry). Users hitting the old path get cryptic npm error.
+
+**Solution — Option 5 (Error-only shim):**
+1. Add root `bin` entry pointing to `cli.js`
+2. `cli.js` detects GitHub-native invocation and prints **bold, clear error** with migration instructions
+3. Exit with code 1 (fail fast, no hidden redirection)
+
+**Implementation:**
+```json
+{
+  "bin": {
+    "squad": "./cli.js"
+  }
+}
+```
+
+Update `cli.js` to print error message with new install instructions:
+```
+npm install -g @bradygaster/squad-cli
+```
+
+**Pros:**
+- ✅ Clear, actionable error message (not cryptic npm error)
+- ✅ Aligns with npm-only team decision (no perpetuation of GitHub-native path)
+- ✅ Low maintenance burden (simple error script, no complex shim)
+- ✅ Can be removed in v1.0.0 when beta users have migrated
+
+**Cons:**
+- Immediate breakage (no grace period) — but users get clear guidance
+
+**Why This Over Others:**
+- Option 1 (keep working) contradicts npm-only decision
+- Option 2 (exit early) same as this, but explicit error format needed
+- Option 3 (time-limited) best UX but maintenance burden
+- Option 4 (just break) user-hostile without error message
+- **Option 5 balances user experience + team decision**
+
+**Related Decision:** See 2026-02-21 decision "Distribution is npm-only (GitHub-native removed)"
+
+**User Impact:**
+- Users running `npx github:bradygaster/squad` see bold error with `npm install -g @bradygaster/squad-cli` instruction
+- Existing projects running `squad upgrade` work seamlessly (upgrade logic built-in)
+- No data loss or silent breakage
+
+**Upgrade Path (existing beta users):**
+```bash
+npm install -g @bradygaster/squad-cli
+cd /path/to/project
+squad upgrade
+squad upgrade --migrate-directory  # Optional: .ai-team/ → .squad/
+```
+
+**Why:** Rabin's principle: "If users have to think about installation, install is broken." A clear error message respects users better than a cryptic npm error.
+
 ### 2026-02-28: Init flow reliability — proposal-first before code
 
 **By:** Keaton (Lead)
@@ -818,3 +929,97 @@ External contributors are engaging with Squad's architecture. We need to guide t
 **Why:** The old bundled cli.js was stale and missing commands added after the monorepo migration (e.g., `aspire`). A shim ensures `node cli.js` always runs the latest built CLI.  
 **Impact:** `node cli.js` now requires `npm run build` to have been run first (so `packages/squad-cli/dist/cli-entry.js` exists). This was already the case for any development workflow.
 
+
+### 2026-03-02T01-09-49Z: User directive
+**By:** Brady (via Copilot)
+**What:** Stop distributing the package via NPX and GitHub. Only distribute via NPM from now on. Go from the public version to whatever version we're in now in the private repo. Adopt the versioning scheme from issue #692.
+**Why:** User request — captured for team memory
+
+# Release Plan Update — npm-only Distribution & Semver Fix (#692)
+
+**Status:** DECIDED
+**Decided by:** Kobayashi (Git & Release)
+**Date:** 2026-03-01T14:22Z
+**Context:** Brady's two strategic decisions on distribution and versioning
+
+## Decisions
+
+### 1. NPM-Only Distribution
+- **What:** End GitHub-native distribution (`npx github:bradygaster/squad`). Install exclusively via npm registry.
+- **How:** Users install via `npm install -g @bradygaster/squad-cli` (global) or `npx @bradygaster/squad-cli` (per-project).
+- **Why:** Simplified distribution, centralized source of truth, standard npm tooling conventions.
+- **Scope:** Affects all future releases, all external documentation, and CI/CD publish workflows.
+- **Owners:** Rabin (docs), Fenster (scripts), all team members (update docs/sample references).
+
+### 2. Semantic Versioning Fix (#692)
+- **Problem:** Versions were `X.Y.Z.N-preview` (four-part with prerelease after), which violates semver spec.
+- **Solution:** Correct format is `X.Y.Z-preview.N` (prerelease identifier comes after patch, before any build metadata).
+- **Examples:**
+  - ❌ Invalid: `0.8.6.1-preview`, `0.8.6.16-preview`
+  - ✅ Valid: `0.8.6-preview.1`, `0.8.6-preview.16`
+- **Impact:** Affects all version strings going forward (package.json, CLI version constant, release tags).
+- **Release sequence:** 
+  1. Pre-release: `X.Y.Z-preview.1`, `X.Y.Z-preview.2`, ...
+  2. At publish: Bump to `X.Y.Z`
+  3. Post-publish: Bump to `{next}-preview.1` (reset counter)
+
+### 3. Version Continuity
+- **Transition:** Public repo ended at `0.8.5.1`. Private repo continues at `0.8.6-preview` (following semver format).
+- **Rationale:** Clear break between public (stable) and private (dev) codebases while maintaining version history continuity.
+
+## Implementation
+
+- ✅ **CHANGELOG.md:** Added "Changed" section documenting distribution channel and semver fix.
+- ✅ **Charter (Kobayashi):** Updated Release Versioning Sequence with corrected pattern and phase description.
+- ✅ **History (Kobayashi):** Logged decision with rationale and scope.
+
+## Dependent Work
+
+- **Fenster:** Ensure `bump-build.mjs` implements X.Y.Z-preview.N pattern (not X.Y.Z.N-preview).
+- **Rabin:** Update README, docs, and all install instructions to reflect npm-only distribution.
+- **All:** Use corrected version format in release commits, tags, and announcements.
+
+## Notes
+
+- Zero impact on functionality — this is purely distribution and versioning cleanup.
+- Merge drivers on `.squad/agents/kobayashi/history.md` ensure this decision appends safely across parallel branches.
+- If questions arise about versioning during releases, refer back to Charter § Release Versioning Sequence.
+
+# Decision: npm-only distribution (GitHub-native removed)
+
+**By:** Rabin (Distribution)
+**Date:** 2026-03-01
+**Requested by:** Brady
+
+## What Changed
+
+All distribution now goes through npm. The `npx github:bradygaster/squad` path has been fully removed from:
+- Source code (github-dist.ts default template, install-migration.ts, init.ts)
+- All 4 copies of squad.agent.md (Ralph Watch Mode commands)
+- All 4 copies of squad-insider-release.yml (release notes)
+- README.md, migration guides, blog posts, cookbook, installation docs
+- Test assertions (bundle.test.ts)
+- Rabin's own charter (flipped from "never npmjs.com" to "always npmjs.com")
+
+## Install Paths (the only paths)
+
+```bash
+# Global install
+npm install -g @bradygaster/squad-cli
+
+# Per-use (no install)
+npx @bradygaster/squad-cli
+
+# SDK for programmatic use
+npm install @bradygaster/squad-sdk
+```
+
+## Why
+
+One distribution channel means less confusion, fewer edge cases, and zero SSH-agent hang bugs. npm caching makes installs faster. Semantic versioning works properly. The root `cli.js` still exists with a deprecation notice for anyone who somehow hits the old path.
+
+## Impact
+
+- **All team members:** When writing docs or examples, use `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`. Never reference `npx github:`.
+- **CI/CD:** Insider release workflow now shows npm install commands in release notes.
+- **Tests:** bundle.test.ts assertions updated to match new default template.
