@@ -260,6 +260,13 @@
 
 **Verification:** `node cli.js aspire --help` works. `node cli.js help` shows all commands. Test suite: 3333 passed, 10 failed (all pre-existing).
 
+### 📌 Team update (2026-03-02T23:50:00Z): Knock-knock sample modernization complete
+- **Status:** Completed — Fenster rewrote samples/knock-knock with production Copilot SDK patterns
+- **Work:** SquadClientWithPool implementation, streaming deltas, system prompts, Dockerfile multi-stage build
+- **Files updated:** samples/knock-knock/index.ts (rewritten), Dockerfile (production build), samples/README.md (integration examples)
+- **Pattern established:** Connection pooling as reference implementation for SDK users
+- **Session log:** `.squad/log/2026-03-02T23-50-00Z-migration-v060-knock-knock.md`
+
 ## Learnings
 
 - Root package.json has `"type": "module"` — bare `import` works in cli.js (no dynamic import needed)

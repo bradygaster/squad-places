@@ -306,6 +306,13 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 
 **Package naming:**
 - **Decision:** Deprecate `@bradygaster/create-squad` on npm (if published). All future releases under `@bradygaster/squad-cli` + `@bradygaster/squad-sdk`.
+
+### 📌 Team update (2026-03-02T23:50:00Z): Public v0.6.0 migration docs complete
+- **Status:** Completed — Kobayashi updated all migration docs from v0.8.17 → v0.6.0 per Brady's directive
+- **Decisions merged:** Version target decision (Brady: v0.6.0 public release, not v0.8.17)
+- **Files updated:** docs/migration-checklist.md (14 phases), docs/migration-guide-private-to-public.md (45+ references)
+- **Key decision:** Public v0.5.4 → v0.6.0 (clean minor bump); origin continues 0.8.18-preview.x internally
+- **Session log:** `.squad/log/2026-03-02T23-50-00Z-migration-v060-knock-knock.md`
 - **Rationale:** Origin's naming is more accurate (CLI vs SDK). Monorepo structure supports independent versioning if needed.
 
 **Deliverables created:**

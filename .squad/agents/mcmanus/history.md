@@ -679,6 +679,14 @@ McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integr
 
 **Compliance:**
 - Tone ceiling enforced: no unsubstantiated claims (every feature claim maps to actual SDK API)
+
+### 📌 Team update (2026-03-02T23:50:00Z): Knock-knock sample docs complete
+- **Status:** Completed — McManus wrote comprehensive knock-knock/README.md tutorial
+- **Work:** Tutorial walkthrough, pooling configuration guide, streaming handling, customization section, troubleshooting
+- **Files created:** samples/knock-knock/README.md (new tutorial)
+- **Files updated:** samples/README.md (index featuring knock-knock)
+- **Documentation pattern:** Beginner-friendly, tone ceiling maintained, feature claims anchored to SDK APIs
+- **Session log:** `.squad/log/2026-03-02T23-50-00Z-migration-v060-knock-knock.md`
 - Experimental banner added (per decision #30: "Tone ceiling — always enforced")
 - ESM/Node.js 20+ assumed (per decision on runtime target)
 - Consistent terminology (CastingEngine, StreamingPipeline, EventBus, Session Pool) matching SDK API
