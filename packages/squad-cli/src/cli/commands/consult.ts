@@ -1,0 +1,87 @@
+/**
+ * squad consult — enter consult mode with your personal squad.
+ *
+ * Creates .squad/ with consult: true, pointing to your personal squad.
+ * The project's .squad/ is hidden via .git/info/exclude (never committed).
+ *
+ * @module cli/commands/consult
+ */
+
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve, basename } from 'node:path';
+import {
+  setupConsultMode,
+  getPersonalSquadRoot,
+  isConsultMode,
+  PersonalSquadNotFoundError,
+} from '@bradygaster/squad-sdk';
+import { fatal } from '../core/errors.js';
+
+/**
+ * Run the consult command.
+ *
+ * @param cwd - Current working directory (project root).
+ * @param args - Command-line arguments.
+ */
+export async function runConsult(cwd: string, args: string[]): Promise<void> {
+  const showStatus = args.includes('--status');
+  const dryRun = args.includes('--check');
+  const squadDir = resolve(cwd, '.squad');
+
+  // --status: show current consult mode status (query only, no setup)
+  if (showStatus) {
+    if (existsSync(squadDir)) {
+      try {
+        const config = JSON.parse(
+          readFileSync(resolve(squadDir, 'config.json'), 'utf-8'),
+        );
+        if (isConsultMode(config)) {
+          console.log('✅ Consult mode active');
+          console.log(`   Team root: ${config.teamRoot}`);
+          console.log(`   Project: ${basename(cwd)}`);
+        } else {
+          console.log('ℹ️  Project has .squad/ but not in consult mode');
+        }
+      } catch {
+        console.log('ℹ️  Project has .squad/ but config is invalid');
+      }
+    } else {
+      console.log('ℹ️  Not in consult mode (no .squad/ directory)');
+    }
+    return;
+  }
+
+  // Setup consult mode via SDK
+  try {
+    const result = await setupConsultMode({
+      projectRoot: cwd,
+      dryRun,
+    });
+
+    if (dryRun) {
+      console.log('📋 Dry-run: squad consult would:');
+      console.log(`   1. Create ${result.squadDir}/config.json with consult: true`);
+      console.log(`   2. Add .squad/ to ${result.gitExclude}`);
+      console.log(`   3. Link to personal squad at ${result.personalSquadRoot}`);
+    } else {
+      console.log('✅ Consult mode activated');
+      console.log(`   Team: ${result.personalSquadRoot}`);
+      console.log(`   Project: ${result.projectName}`);
+      console.log('');
+      console.log('   Your squad is now consulting on this project.');
+      console.log('   Run `squad extract` when done to bring learnings home.');
+    }
+  } catch (error) {
+    if (error instanceof PersonalSquadNotFoundError) {
+      fatal(
+        'No personal squad found.\n' +
+          '   Run `squad init --global` first to create your personal squad.',
+      );
+    }
+    // Re-throw other SDK errors with CLI-friendly formatting
+    if (error instanceof Error) {
+      fatal(error.message);
+    }
+    throw error;
+  }
+}

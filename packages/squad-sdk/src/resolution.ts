@@ -28,6 +28,8 @@ export interface SquadDirConfig {
   version: number;
   teamRoot: string;
   projectKey: string | null;
+  /** True when in consult mode (personal squad consulting on external project) */
+  consult?: boolean;
 }
 
 /**
@@ -131,7 +133,7 @@ function findSquadDir(startDir: string): { dir: string; name: '.squad' | '.ai-te
  * Try to read and parse `.squad/config.json` (or `.ai-team/config.json`).
  * Returns null for missing file, unreadable file, or malformed JSON.
  */
-function loadDirConfig(squadDir: string): SquadDirConfig | null {
+export function loadDirConfig(squadDir: string): SquadDirConfig | null {
   const configPath = path.join(squadDir, 'config.json');
   if (!fs.existsSync(configPath)) {
     return null;
@@ -149,12 +151,20 @@ function loadDirConfig(squadDir: string): SquadDirConfig | null {
         version: parsed.version,
         teamRoot: parsed.teamRoot,
         projectKey: typeof parsed.projectKey === 'string' ? parsed.projectKey : null,
+        consult: parsed.consult === true ? true : undefined,
       };
     }
     return null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Check if a config represents consult mode (personal squad consulting on external project).
+ */
+export function isConsultMode(config: SquadDirConfig | null): boolean {
+  return config?.consult === true;
 }
 
 /**
