@@ -271,3 +271,15 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Files Changed:** 29 files total across dev→main merge (workflow templates, docs, package versions, test additions for ralph triage & monitor)
 - **Learning:** Stash/pop workflow necessary when switching branches with uncommitted changes to .squad/agents/*/history.md (union merge driver active). Merge drivers preserve append-only state integrity during multi-branch sync.
 - **Key Point:** PR #547 untouched throughout (per directive). All work focused on #552 + #553 forward merge.
+
+### 📌 Team update (2026-03-01T14:22Z): Release plan updated for npm-only distribution & semver fix (#692) — decided by Kobayashi
+- **CHANGELOG.md updated:**
+  - Documented distribution change: npm-only (no GitHub-native npx). Install via `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`.
+  - Documented semver fix (#692): Version format corrected from `X.Y.Z.N-preview` (invalid) to `X.Y.Z-preview.N` (spec-compliant). Prerelease identifier now follows patch per semver spec.
+  - Documented version transition: Public repo final version was `0.8.5.1`. Private repo continues at `0.8.6-preview` during development.
+- **Charter updated:**
+  - Release Versioning Sequence now reflects three-phase pattern with incremental N: `X.Y.Z-preview.1`, `X.Y.Z-preview.2`, etc. during preview phase, then publish `X.Y.Z`, then bump to `{next}-preview.1`.
+  - Clarified that prerelease identifier must come after patch per semver spec, not before (fixes #692).
+  - Reset N to 1 on each minor/major bump for clean iteration tracking.
+- **Branch:** squad/692-fix-semver-versioning created and local changes committed.
+- **Outcome:** Release plan now documents both Brady's strategic decisions (npm-only distribution) and the tactical fix (semver compliance). Charter reflects corrected versioning sequence for future releases.

@@ -13,6 +13,11 @@ All notable changes to this project will be documented in this file.
 
 Thanks to **Shayne Boyer** ([@spboyer](https://github.com/spboyer)) for the original remote mode design.
 
+### Changed — Distribution & Versioning
+- **Distribution:** npm-only distribution channel. No more GitHub-native distribution (`npx github:bradygaster/squad`). Users now install via `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli` from npm registry.
+- **Semantic Versioning fix (#692):** Version format changed from `X.Y.Z.N-preview` to `X.Y.Z-preview.N` to comply with semantic versioning spec (prerelease identifier after patch, build metadata after prerelease). Example: `0.8.6-preview.1` instead of `0.8.6.1-preview`.
+- **Version transition:** Public repo final version was `0.8.5.1`. Private repo continues at `0.8.6-preview` during development, following semver prerelease convention.
+
 ## [0.6.0-alpha.0] - 2026-02-22
 
 ### Breaking Changes

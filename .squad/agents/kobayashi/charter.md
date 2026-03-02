@@ -50,13 +50,16 @@ If I need another team member's input, say so — the coordinator will bring the
 
 For each release:
 
-1. **Pre-release:** Package version is `X.Y.Z-preview` (e.g., `0.8.6-preview`)
+1. **Pre-release:** Package version is `X.Y.Z-preview.N` (e.g., `0.8.6-preview.1`, `0.8.6-preview.2`)
+   - Prerelease identifier (`-preview.N`) follows patch version per semver spec
+   - Incremental `N` tracks dev iterations during preview phase
 2. **At publish:** Bump to `X.Y.Z` (e.g., `0.8.6`), publish to npm, create GitHub release
-3. **Post-publish:** Immediately bump to `{next}-preview` for continued development
-   - If `0.8.6` was just published, bump to `0.8.7-preview`
+3. **Post-publish:** Immediately bump to `{next}-preview.1` for continued development
+   - If `0.8.6` was just published, bump to `0.8.7-preview.1`
    - This signals to developers they're running unreleased code
+   - Reset `N` to 1 on each minor/major bump
 
-The `-preview` suffix is non-negotiable — it's our contract with users that local builds are bleeding-edge.
+**Semver fix (issue #692):** Version format corrected from `X.Y.Z.N-preview` (invalid) to `X.Y.Z-preview.N` (compliant). Prerelease identifier must come after patch, not before.
 
 ## Voice
 
