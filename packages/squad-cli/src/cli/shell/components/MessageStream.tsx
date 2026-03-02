@@ -87,9 +87,39 @@ function truncateTableColumns(tableLines: string[], maxWidth: number): string[] 
   });
 }
 
+/** Bold the header row of a markdown table (the row above the separator). */
+function boldTableHeader(tableLines: string[]): string[] {
+  const sepIndex = tableLines.findIndex(line => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
+    const inner = trimmed.slice(1, -1);
+    const cells = inner.split('|').map(c => c.trim());
+    return cells.length > 0 && cells.every(cell => /^[-:]+$/.test(cell));
+  });
+
+  if (sepIndex <= 0) return tableLines;
+
+  const headerIndex = sepIndex - 1;
+  const headerLine = tableLines[headerIndex]!;
+  const leadingWS = headerLine.match(/^(\s*)/)?.[1] ?? '';
+  const trimmed = headerLine.trim();
+  const inner = trimmed.slice(1, -1);
+  const cells = inner.split('|');
+  const boldCells = cells.map(cell => {
+    const content = cell.trim();
+    if (content.length === 0) return cell;
+    return cell.replace(content, `**${content}**`);
+  });
+
+  const result = [...tableLines];
+  result[headerIndex] = leadingWS + '|' + boldCells.join('|') + '|';
+  return result;
+}
+
 /**
  * Reformat markdown tables that exceed maxWidth by truncating columns.
  * Table rows are detected as consecutive lines starting and ending with |.
+ * Header rows (above separator) are bolded for visual distinction.
  */
 export function wrapTableContent(content: string, maxWidth: number): string {
   const lines = content.split('\n');
@@ -106,9 +136,9 @@ export function wrapTableContent(content: string, maxWidth: number): string {
       }
       const maxLineLen = Math.max(...tableLines.map(l => l.length));
       if (maxLineLen <= maxWidth) {
-        result.push(...tableLines);
+        result.push(...boldTableHeader(tableLines));
       } else {
-        result.push(...truncateTableColumns(tableLines, maxWidth));
+        result.push(...boldTableHeader(truncateTableColumns(tableLines, maxWidth)));
       }
     } else {
       result.push(line);

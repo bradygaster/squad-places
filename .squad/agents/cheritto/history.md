@@ -237,3 +237,13 @@
 - **Files changed:** `Separator.tsx` (new), `App.tsx`, `AgentPanel.tsx`, `MessageStream.tsx`, `first-run-gating.test.ts`
 - Build clean (tsc --noEmit), 293/293 shell tests pass.
 - **Pattern:** `Separator` component is the canonical way to render horizontal rules — no more inline box char repetition.
+
+### 2026-03-01: Visual table header styling (#673)
+- **Branch:** `squad/673-table-header-styling`
+- **Problem:** Table headers looked identical to data rows — hard to scan tables quickly.
+- **Fix:** Added `boldTableHeader()` helper in `MessageStream.tsx` that detects separator rows (cells matching `/^[-:]+$/`), identifies the header row above, and wraps cell contents in `**...**` markdown. `renderMarkdownInline()` then renders these as `<Text bold>`.
+- **NO_COLOR:** Bold is terminal weight, not color — works regardless of NO_COLOR setting.
+- **Integration:** Called from `wrapTableContent()` on both original and truncated table lines, before pushing to result.
+- **File changed:** `MessageStream.tsx` (1 new function, 2 lines changed in `wrapTableContent`)
+- Build clean (tsc --noEmit passes).
+- PR #684 on branch `squad/673-table-header-styling`
