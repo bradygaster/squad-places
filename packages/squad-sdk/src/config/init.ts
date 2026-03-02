@@ -470,27 +470,40 @@ export async function initSquad(options: InitOptions): Promise<InitResult> {
   // Get templates directory
   const templatesDir = getSDKTemplatesDir();
   
+  // Helper to convert absolute path to relative
+  const toRelativePath = (absolutePath: string): string => {
+    // Use path separator-agnostic approach
+    if (absolutePath.startsWith(teamRoot)) {
+      const relative = absolutePath.slice(teamRoot.length);
+      // Remove leading separator if present
+      return relative.startsWith('/') || relative.startsWith('\\') 
+        ? relative.slice(1) 
+        : relative;
+    }
+    return absolutePath;
+  };
+
   // Helper to write file (respects skipExisting)
   const writeIfNotExists = async (filePath: string, content: string): Promise<boolean> => {
     if (existsSync(filePath) && skipExisting) {
-      skippedFiles.push(filePath);
+      skippedFiles.push(toRelativePath(filePath));
       return false;
     }
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, content, 'utf-8');
-    createdFiles.push(filePath);
+    createdFiles.push(toRelativePath(filePath));
     return true;
   };
   
   // Helper to copy file (respects skipExisting)
   const copyIfNotExists = async (src: string, dest: string): Promise<boolean> => {
     if (existsSync(dest) && skipExisting) {
-      skippedFiles.push(dest);
+      skippedFiles.push(toRelativePath(dest));
       return false;
     }
     await mkdir(dirname(dest), { recursive: true });
     cpSync(src, dest);
-    createdFiles.push(dest);
+    createdFiles.push(toRelativePath(dest));
     return true;
   };
   
@@ -615,6 +628,57 @@ No decisions recorded yet.
   await writeIfNotExists(decisionsPath, decisionsContent);
   
   // -------------------------------------------------------------------------
+  // Create team.md (required by shell lifecycle)
+  // -------------------------------------------------------------------------
+  
+  const teamPath = join(squadDir, 'team.md');
+  const teamContent = `# Squad Team
+
+> ${projectDescription || projectName}
+
+## Coordinator
+
+| Name | Role | Notes |
+|------|------|-------|
+| Squad | Coordinator | Routes work, enforces handoffs and reviewer gates. |
+
+## Members
+
+| Name | Role | Charter | Status |
+|------|------|---------|--------|
+
+## Project Context
+
+- **Project:** ${projectName}
+${projectDescription ? `- **Description:** ${projectDescription}\n` : ''}- **Created:** ${new Date().toISOString().split('T')[0]}
+`;
+
+  await writeIfNotExists(teamPath, teamContent);
+  
+  // -------------------------------------------------------------------------
+  // Create routing.md
+  // -------------------------------------------------------------------------
+  
+  const routingPath = join(squadDir, 'routing.md');
+  if (templatesDir && existsSync(join(templatesDir, 'routing.md'))) {
+    await copyIfNotExists(join(templatesDir, 'routing.md'), routingPath);
+  } else {
+    const routingContent = `# Squad Routing
+
+## Work Type Rules
+
+| Work Type | Primary Agent | Fallback |
+|-----------|---------------|----------|
+
+## Governance
+
+- Route based on work type and agent expertise
+- Update this file as team capabilities evolve
+`;
+    await writeIfNotExists(routingPath, routingContent);
+  }
+  
+  // -------------------------------------------------------------------------
   // Copy starter skills
   // -------------------------------------------------------------------------
   
@@ -624,7 +688,7 @@ No decisions recorded yet.
     const existingSkills = existsSync(skillsDir) ? readdirSync(skillsDir) : [];
     if (existingSkills.length === 0) {
       cpSync(skillsSrc, skillsDir, { recursive: true });
-      createdFiles.push(skillsDir);
+      createdFiles.push('.squad/skills');
     }
   }
   
@@ -651,7 +715,7 @@ No decisions recorded yet.
       + '# Squad: union merge for append-only team state files\n'
       + missingRules.join('\n') + '\n';
     await appendFile(gitattributesPath, block);
-    createdFiles.push(gitattributesPath);
+    createdFiles.push(toRelativePath(gitattributesPath));
   }
   
   // -------------------------------------------------------------------------
@@ -675,7 +739,7 @@ No decisions recorded yet.
       + '# Squad: ignore generated logs\n'
       + missingIgnore.join('\n') + '\n';
     await appendFile(gitignorePath, block);
-    createdFiles.push(gitignorePath);
+    createdFiles.push(toRelativePath(gitignorePath));
   }
   
   // -------------------------------------------------------------------------
@@ -689,10 +753,10 @@ No decisions recorded yet.
       agentContent = stampVersionInContent(agentContent, version);
       await mkdir(dirname(agentFile), { recursive: true });
       await writeFile(agentFile, agentContent, 'utf-8');
-      createdFiles.push(agentFile);
+      createdFiles.push(toRelativePath(agentFile));
     }
   } else {
-    skippedFiles.push(agentFile);
+    skippedFiles.push(toRelativePath(agentFile));
   }
   
   // -------------------------------------------------------------------------
@@ -703,9 +767,9 @@ No decisions recorded yet.
     const templatesDest = join(teamRoot, '.squad-templates');
     if (!existsSync(templatesDest)) {
       cpSync(templatesDir, templatesDest, { recursive: true });
-      createdFiles.push(templatesDest);
+      createdFiles.push(toRelativePath(templatesDest));
     } else {
-      skippedFiles.push(templatesDest);
+      skippedFiles.push(toRelativePath(templatesDest));
     }
   }
   
@@ -725,9 +789,9 @@ No decisions recorded yet.
         const destFile = join(workflowsDest, file);
         if (!existsSync(destFile) || !skipExisting) {
           cpSync(join(workflowsSrc, file), destFile);
-          createdFiles.push(destFile);
+          createdFiles.push(toRelativePath(destFile));
         } else {
-          skippedFiles.push(destFile);
+          skippedFiles.push(toRelativePath(destFile));
         }
       }
     }
@@ -754,9 +818,9 @@ No decisions recorded yet.
       };
       await mkdir(dirname(mcpConfigPath), { recursive: true });
       await writeFile(mcpConfigPath, JSON.stringify(mcpSample, null, 2) + '\n', 'utf-8');
-      createdFiles.push(mcpConfigPath);
+      createdFiles.push(toRelativePath(mcpConfigPath));
     } else {
-      skippedFiles.push(mcpConfigPath);
+      skippedFiles.push(toRelativePath(mcpConfigPath));
     }
   }
   
@@ -767,7 +831,7 @@ No decisions recorded yet.
   const firstRunMarker = join(squadDir, '.first-run');
   if (!existsSync(firstRunMarker)) {
     await writeFile(firstRunMarker, new Date().toISOString() + '\n', 'utf-8');
-    createdFiles.push(firstRunMarker);
+    createdFiles.push(toRelativePath(firstRunMarker));
   }
   
   // -------------------------------------------------------------------------
@@ -777,7 +841,7 @@ No decisions recorded yet.
   if (options.prompt) {
     const promptFile = join(squadDir, '.init-prompt');
     await writeFile(promptFile, options.prompt, 'utf-8');
-    createdFiles.push(promptFile);
+    createdFiles.push(toRelativePath(promptFile));
   }
   
   return {

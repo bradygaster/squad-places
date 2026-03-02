@@ -262,9 +262,9 @@ describe('Squad Initialization', () => {
       // Should include: config, 2 charters, 2 histories, gitattributes, decisions
       expect(result.createdFiles.length).toBeGreaterThanOrEqual(7);
 
-      // Verify all files exist
+      // Verify all files exist (paths are relative to teamRoot)
       for (const filePath of result.createdFiles) {
-        expect(existsSync(filePath)).toBe(true);
+        expect(existsSync(join(TEST_ROOT, filePath))).toBe(true);
       }
     });
   });
