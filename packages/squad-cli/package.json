@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/squad-cli",
-  "version": "0.8.16-preview.1",
+  "version": "0.8.16",
   "description": "Squad CLI — Command-line interface for the Squad multi-agent runtime",
   "type": "module",
   "bin": {
@@ -144,9 +144,9 @@
     "cli"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/bradygaster/squad-pr#readme",
+  "homepage": "https://github.com/bradygaster/squad#readme",
   "bugs": {
-    "url": "https://github.com/bradygaster/squad-pr/issues"
+    "url": "https://github.com/bradygaster/squad/issues"
   },
   "repository": {
     "type": "git",
