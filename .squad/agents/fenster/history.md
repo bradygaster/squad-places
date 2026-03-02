@@ -951,3 +951,19 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - Root package.json has `"type": "module"` — bare `import` works in cli.js (no dynamic import needed)
 - `packages/squad-cli/dist/cli-entry.js` auto-executes `main().catch(...)` at module level — importing it is sufficient to run the CLI
 - `process.env.npm_execpath` is set when running via npm/npx but absent for direct `node` invocation — good signal for conditional deprecation notices
+
+---
+
+## 2025-07: Fix semver prerelease format in bump-build (#692)
+
+**Task:** `scripts/bump-build.mjs` produced invalid semver like `0.8.16.1-preview` (build number before prerelease tag). Fixed to produce `0.8.16-preview.1` (build as dot-separated prerelease identifier, per semver spec).
+
+**What changed:**
+- `parseVersion` split into two regex paths: prerelease-first (`1.2.3-tag.N`) and non-prerelease (`1.2.3.N`)
+- `formatVersion` places build number after the prerelease tag when one exists
+- All 5 tests updated to use new format, all passing
+
+## Learnings
+
+- Semver prerelease identifiers are dot-separated after the hyphen: `1.2.3-preview.1` is valid, `1.2.3.1-preview` is not
+- The bump-build test suite copies the real script to a temp dir and patches `__dirname` — any regex changes must not break the patching mechanism
