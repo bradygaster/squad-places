@@ -7,6 +7,9 @@ source: "manual"
 ---
 
 ## Context
+
+> **Note:** This is a starter template. Update the patterns below to reflect your actual codebase conventions before using in production.
+
 These conventions apply to all work on the Squad CLI tool (`create-squad`). Squad is a zero-dependency Node.js package that adds AI agent teams to any project. Understanding these patterns is essential before modifying any Squad source code.
 
 ## Patterns

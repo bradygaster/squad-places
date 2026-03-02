@@ -16,6 +16,7 @@ import {
   loadStagedLearnings,
   logConsultation,
   mergeToPersonalSquad,
+  getPersonalSquadRoot,
   type SquadDirConfig,
   type LicenseInfo,
   type StagedLearning,
@@ -143,6 +144,18 @@ export async function runExtract(cwd: string, args: string[]): Promise<void> {
   const sourceSquad = config.sourceSquad;
   if (!sourceSquad) {
     fatal('Missing sourceSquad in config.json — cannot determine personal squad location.');
+  }
+
+  // Validate sourceSquad points to the expected personal squad root
+  // This prevents malicious configs from writing to arbitrary paths
+  const expectedPersonalSquad = getPersonalSquadRoot();
+  if (resolve(sourceSquad) !== resolve(expectedPersonalSquad)) {
+    fatal(
+      `sourceSquad path mismatch.\n` +
+        `   Config points to: ${sourceSquad}\n` +
+        `   Expected: ${expectedPersonalSquad}\n` +
+        `   This may indicate a tampered config. Aborting for safety.`,
+    );
   }
 
   // Check license

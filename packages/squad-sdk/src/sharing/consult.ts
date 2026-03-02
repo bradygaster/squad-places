@@ -343,7 +343,11 @@ export async function setupConsultMode(
   }
 
   // Resolve exclude path via git rev-parse (handles worktrees/submodules)
-  const gitExclude = resolveGitExcludePath(projectRoot);
+  // Normalize to absolute path in case it's relative
+  const gitExclude = (() => {
+    const excludePath = resolveGitExcludePath(projectRoot);
+    return path.isAbsolute(excludePath) ? excludePath : path.resolve(projectRoot, excludePath);
+  })();
 
   // Check if personal squad exists
   if (!fs.existsSync(personalSquadRoot)) {
@@ -367,8 +371,9 @@ export async function setupConsultMode(
 
     // Write/overwrite config.json with consult: true
     // Include SquadDirConfig fields so loadDirConfig() can read it
+    // Note: version must be numeric for loadDirConfig() compatibility
     const config = {
-      version: '1.0.0',
+      version: 1,
       teamRoot: personalSquadRoot,
       consult: true,
       sourceSquad: personalSquadRoot,
