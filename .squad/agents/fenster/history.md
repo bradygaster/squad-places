@@ -930,3 +930,24 @@ The upstream.ts command was fully implemented but never wired into cli-entry.ts.
 - No changes to CLI entry point or existing resolution chain
 
 **Verification:** tsc --noEmit clean. vitest run: 3217 passed, 126 failed (all pre-existing).
+
+---
+
+## 2025-07: cli.js shim replacement
+
+**Task:** Replace the stale ~2000-line bundled `cli.js` with a thin ESM shim that forwards to the built CLI at `packages/squad-cli/dist/cli-entry.js`.
+
+**What changed:**
+- `cli.js` reduced from 1982 lines to 14 lines
+- Shim imports `./packages/squad-cli/dist/cli-entry.js` which auto-executes `main()`
+- Deprecation notice only shows when invoked via npm/npx (checks `process.env.npm_execpath`), silent for `node cli.js`
+
+**Why:** The bundled cli.js was from the old GitHub-native distribution and was missing commands added after the monorepo migration (e.g., `aspire`). Running `node cli.js aspire` failed. Now it forwards to the real CLI entry point.
+
+**Verification:** `node cli.js aspire --help` works. `node cli.js help` shows all commands. Test suite: 3333 passed, 10 failed (all pre-existing).
+
+## Learnings
+
+- Root package.json has `"type": "module"` — bare `import` works in cli.js (no dynamic import needed)
+- `packages/squad-cli/dist/cli-entry.js` auto-executes `main().catch(...)` at module level — importing it is sufficient to run the CLI
+- `process.env.npm_execpath` is set when running via npm/npx but absent for direct `node` invocation — good signal for conditional deprecation notices
