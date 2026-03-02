@@ -36,6 +36,28 @@ export function useTerminalWidth(): number {
   return width;
 }
 
+/** Current terminal height, clamped to a minimum of 10. */
+export function getTerminalHeight(): number {
+  return Math.max(process.stdout.rows || 24, 10);
+}
+
+/** React hook — returns live terminal height, updates on resize. */
+export function useTerminalHeight(): number {
+  const [height, setHeight] = useState(getTerminalHeight());
+
+  useEffect(() => {
+    const onResize = () => setHeight(getTerminalHeight());
+    const prev = process.stdout.getMaxListeners?.() ?? 10;
+    if (prev <= 20) process.stdout.setMaxListeners?.(prev + 10);
+    process.stdout.on('resize', onResize);
+    return () => {
+      process.stdout.off('resize', onResize);
+    };
+  }, []);
+
+  return height;
+}
+
 /**
  * Detect terminal capabilities for cross-platform compatibility.
  */

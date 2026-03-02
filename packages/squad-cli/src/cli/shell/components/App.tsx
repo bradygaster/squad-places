@@ -13,7 +13,7 @@ import { InputPrompt } from './InputPrompt.js';
 import { parseInput, type ParsedInput } from '../router.js';
 import { executeCommand } from '../commands.js';
 import { loadWelcomeData, getRoleEmoji } from '../lifecycle.js';
-import { isNoColor, useTerminalWidth } from '../terminal.js';
+import { isNoColor, useTerminalWidth, useTerminalHeight } from '../terminal.js';
 import { Separator } from './Separator.js';
 import type { WelcomeData } from '../lifecycle.js';
 import type { SessionRegistry } from '../sessions.js';
@@ -251,7 +251,13 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
 
   const noColor = isNoColor();
   const width = useTerminalWidth();
+  const terminalHeight = useTerminalHeight();
   const contentWidth = Math.min(width, 80);
+
+  // Budget live region height so InputPrompt is never pushed off-screen.
+  // Reserve 3 rows for InputPrompt (prompt line + hint + padding).
+  const INPUT_RESERVED_ROWS = 3;
+  const liveContentHeight = Math.max(terminalHeight - INPUT_RESERVED_ROWS, 4);
 
   // Prefer lead/coordinator for first-run hint, fall back to first agent
   const leadAgent = welcome?.agents.find(a =>
@@ -382,8 +388,11 @@ export const App: React.FC<AppProps> = ({ registry, renderer, teamRoot, version,
         }}
       </Static>
 
-      <AgentPanel agents={agents} streamingContent={streamingContent} />
-      <MessageStream messages={[]} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint || mentionHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
+      {/* Live region: bounded height so InputPrompt stays in viewport */}
+      <Box flexDirection="column" height={liveContentHeight} overflow="hidden">
+        <AgentPanel agents={agents} streamingContent={streamingContent} />
+        <MessageStream messages={[]} agents={agents} streamingContent={streamingContent} processing={processing} activityHint={activityHint || mentionHint} agentActivities={agentActivities} thinkingPhase={thinkingPhase} />
+      </Box>
       <InputPrompt onSubmit={handleSubmit} disabled={processing} agentNames={agents.map(a => a.name)} messageCount={messages.length} />
     </Box>
   );
