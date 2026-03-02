@@ -26,6 +26,14 @@
 
 ## Learnings
 
+### Multi-squad resolution tests — Issue #652 (2026-03-02)
+**Status:** Complete — 48 proactive tests in `test/multi-squad.test.ts`, all passing. PR #690 (draft).
+- **Categories:** getSquadRoot (3), resolveSquadPath resolution chain (9), listSquads (5), createSquad (5), deleteSquad (4), switchSquad (4), migrateIfNeeded (5), edge cases + lifecycle (13).
+- **Written proactively** from PRD spec while Fenster implements `packages/squad-sdk/src/multi-squad.ts`. Tests validate expected data structures (squads.json schema, directory layout) using real filesystem fixtures via `mkdtempSync`.
+- **Key decisions:** Tests currently don't import from the implementation module — they validate the contract (squads.json shape, directory structure, name validation regex `^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$`). Import path wiring needed once Fenster's code lands.
+- **Edge cases covered:** Corrupted/empty/missing squads.json, path traversal in squad names, orphaned entries (JSON lists squad that has no directory), concurrent create/delete races, platform separator safety.
+- **Test strategy:** Isolated temp dirs via `mkdtempSync`, per-test fixtures, cleanup in `afterEach`. Same patterns as `nap.test.ts` and `resolution.test.ts`. No mocked fs — all real filesystem operations against tmp dirs.
+
 ### 📌 Team update (2026-03-01T23:07:00): Issue audit completed — Cheritto + Hockney parallel TUI audit (#673–#681)
 - **Agents:** Cheritto (TUI code audit), Hockney (test verification)
 - **Result:** 3 OPEN (#673, #675, #679), 2 PARTIAL (#674, #681)
