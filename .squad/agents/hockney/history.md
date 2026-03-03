@@ -92,22 +92,7 @@
 - **Kovash conflict resolved:** Components were modified mid-task (InputPrompt now hardcodes `◆ squad>` prompt with spinner when disabled, AgentPanel now shows pulsing dot + "streaming"/"working" text instead of old "responding" label). Tests adapted to match current rendered output.
 - **Strategy:** Tests assert on TEXT content in rendered frames (what the user sees), not internal state. This makes them resilient to Kovash's implementation changes as long as the visual contract holds.
 
-### 📌 Core Context: Test Foundation & Beta Learnings
-
-**From Beta (carried forward):**
-Multi-agent concurrency testing is critical — spawning is the heart of the system. Casting overflow edge cases (universe exhaustion, diegetic expansion, thematic promotion) need coverage. 80% coverage floor, 100% on critical paths (casting, spawning, coordinator routing). 1551 baseline tests across 45 files. Vitest is the standard test runner.
-
-**Phase 1-2 Test Expansion (2026-02-21→2026-02-22):**
-- Issue #214: Added 14 resolution & CLI global/status tests (1592→1616). Windows symlink tests skipped.
-- Issue #248: Created shell.test.ts with 47 tests (SessionRegistry, spawn infrastructure, Coordinator, ShellLifecycle, StreamBridge). Used real test-fixtures for integration confidence.
-- Issue #228: Added 13 CRLF-specific tests validating Windows line ending handling across all 5 parsers.
-- Issue #230: Created consumer-imports.test.ts (6 tests) validating barrel exports from library consumer perspective.
-- Post-restructure: All 1719 tests passing post-SDK/CLI migration. Test import migration deferred until root src/ deletion (exports maps expansion needed).
-
-### 📌 Team update (2026-02-22T10:03Z): PR #300 test coverage review completed — BLOCKED, PR #300 does not exist in repository — spec written for when PR materializes (37+ tests needed) — decided by Hockney
-- Coverage: Installed @vitest/coverage-v8, configured v8 provider with text/text-summary/html reporters.
-
----
+[CORRECTED: Removed duplicate "📌 Core Context: Test Foundation & Beta Learnings" section (lines 460-475) that was copied verbatim from lines 95-110. This was an intermediate state capture rather than new learning.]
 
 ### Issue #214: Resolution & CLI global/status tests (2026-02-21)
 - Added 14 new tests to resolution.test.ts: deeply nested dirs, nearest .squad/ wins, symlink support
@@ -163,8 +148,7 @@ Created test/consumer-imports.test.ts (6 tests): main barrel, parsers barrel, ty
 - **Recommendation:** Migration should happen as a dedicated task when root `src/` is actually removed. Attempting it now risks breaking 1719 passing tests for no immediate benefit.
 - **Flaky test observed:** One run showed 1 failure / 1718 pass in CLI export-import tests (timing-sensitive fs operations). Not reproducible on immediate re-run — pre-existing flake.
 
-### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
-Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewriting (6 cross-package imports) verified correct. Test import migration deferred until root `src/` deletion blocks (lazy approach reduces risk). Tests remain on old `../src/` paths for now — migration requires expanding exports maps or vitest alias config, both non-trivial. Exports map gap + CLI no exports + barrel divergence make premature migration risky. Decision merged to decisions.md (hockney-test-import-migration.md).
+[CORRECTED: Removed two duplicate entries of "SDK/CLI split verified" team update that were captured as both a full version (lines 129-149) AND a summary version (line 151) AND then repeated completely again (lines 469-491). Kept the detailed version and removed all duplicates.]
 
 ### Test infrastructure: coverage config + package exports test (2026-02-22)
 - **Coverage:** Installed `@vitest/coverage-v8@^3.2.0`, configured vitest with `v8` provider and `text`, `text-summary`, `html` reporters. Coverage output goes to `./coverage/` (already in `.gitignore`). Include patterns cover `src/**/*.ts` and `packages/*/src/**/*.ts`.
@@ -430,14 +414,7 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 ### 2026-02-28: CLI command test coverage analysis — 4 critical, 10 moderate gaps
 📌 Team update (2026-02-28T01:05:24Z): Exhaustive CLI command test coverage analysis complete. 25 total commands analyzed. Critical undocumented flags: --preview (undocumented, untested), --timeout (undocumented, untested), upgrade --self (dead code path), run subcommand (stub). Moderate gaps: untested aliases, missing per-command help, flag parsing edge cases, shell integration flags untested, agent spawn flags undocumented. Documented in .squad/orchestration-log/2026-02-28T01-05-24-fenster.md.
 
-# Project Context
-
-- **Owner:** Brady
-- **Project:** squad-sdk — the programmable multi-agent runtime for GitHub Copilot (v1 replatform)
-- **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
-- **Created:** 2026-02-21
-
-## Learnings
+[CORRECTED: Removed duplicate "# Project Context" header (lines 433-438) and "## Learnings" header (line 440) that were appended as intermediate state markers rather than organizational structure. The actual Project Context and Learnings sections begin at line 1.]
 
 ### Ralph triage parity guard (2026-02-27)
 - Added `describe('triage parity')` in `test/ralph-triage.test.ts` to lock the routing priority contract (`module-ownership` > `routing-rule` > `role-keyword` > `lead-fallback`) expected to match `templates/ralph-triage.js`.
@@ -456,49 +433,18 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - Added event-bus behavior tests for `session:created`, `session:destroyed`, `session:error`, `agent:milestone`, stale detection in `healthCheck()`, and independent multi-agent tracking.
 - Verified with `npx vitest run test/ralph-monitor.test.ts` (25 passing).
 
-### REPL UX visual test suite (2026-02-23)
-**Status:** Complete — 40 tests, all passing across 6 test categories.
-- Created `test/repl-ux.test.ts` using ink-testing-library v4 + Ink v6 components.
-- **Categories:** ThinkingIndicator visibility (5), AgentPanel status display (7), MessageStream formatting (8), InputPrompt behavior (8), Welcome experience (3), Never-feels-dead lifecycle (5).
-- **Key finding:** ink-testing-library v4 stdin.write() does NOT synchronously trigger Ink v6's useInput hook. Requires `await setTimeout(50)` after each write for React reconciler to flush. This is a compatibility gap that should be watched for in future ink-testing-library releases.
-- **Kovash conflict resolved:** Components were modified mid-task (InputPrompt now hardcodes `◆ squad>` prompt with spinner when disabled, AgentPanel now shows pulsing dot + "streaming"/"working" text instead of old "responding" label). Tests adapted to match current rendered output.
-- **Strategy:** Tests assert on TEXT content in rendered frames (what the user sees), not internal state. This makes them resilient to Kovash's implementation changes as long as the visual contract holds.
+[CORRECTED: Removed duplicate entries from lines 436-451 that repeated Issue #214-#230 tests. These should only appear once in the history at lines 97-110.]
 
-### 📌 Core Context: Test Foundation & Beta Learnings
+### Issue #532: REPL dogfood test suite (2026-02-27)
+**Status:** Complete — 72 tests, all passing across 9 describe blocks.
+- Created `test/repl-dogfood.test.ts` — comprehensive dogfood suite testing shell modules against realistic repo structures.
+- **Fixtures:** Small Python project (3 agents), Node.js monorepo (5 agents), Large mixed-language Go+Python+TS (7 agents), Edge cases (22 agents, 50-level nesting, large files, special filenames), Minimal repo (1 agent), No .squad/ directory.
+- **Modules tested:** ShellLifecycle.initialize(), parseInput, executeCommand, parseCoordinatorResponse, loadWelcomeData, SessionRegistry.
+- **Coverage categories:** Lifecycle init (per fixture), loadWelcomeData (per fixture), parseInput with realistic NL queries, executeCommand (/status /help /agents /history /exit + unknown), parseCoordinatorResponse (ROUTE/DIRECT/MULTI/fallback), SessionRegistry state transitions, first-run ceremony detection, performance gates (<2s init, <500ms welcome).
+- **Key decision:** No network access. All fixtures built from scratch in temp dirs using `mkdtempSync`. Each fixture scaffolds a `.squad/` dir with team.md and agent charters so the shell can discover agents.
+- **Performance:** All 5 fixtures initialize in <250ms. Edge-case fixture (22 agents + 50-level deep nesting) stays well under the 2s gate.
 
-**From Beta (carried forward):**
-Multi-agent concurrency testing is critical — spawning is the heart of the system. Casting overflow edge cases (universe exhaustion, diegetic expansion, thematic promotion) need coverage. 80% coverage floor, 100% on critical paths (casting, spawning, coordinator routing). 1551 baseline tests across 45 files. Vitest is the standard test runner.
-
-**Phase 1-2 Test Expansion (2026-02-21→2026-02-22):**
-- Issue #214: Added 14 resolution & CLI global/status tests (1592→1616). Windows symlink tests skipped.
-- Issue #248: Created shell.test.ts with 47 tests (SessionRegistry, spawn infrastructure, Coordinator, ShellLifecycle, StreamBridge). Used real test-fixtures for integration confidence.
-- Issue #228: Added 13 CRLF-specific tests validating Windows line ending handling across all 5 parsers.
-- Issue #230: Created consumer-imports.test.ts (6 tests) validating barrel exports from library consumer perspective.
-- Post-restructure: All 1719 tests passing post-SDK/CLI migration. Test import migration deferred until root src/ deletion (exports maps expansion needed).
-
-### 📌 Team update (2026-02-22T10:03Z): PR #300 test coverage review completed — BLOCKED, PR #300 does not exist in repository — spec written for when PR materializes (37+ tests needed) — decided by Hockney
-- Coverage: Installed @vitest/coverage-v8, configured v8 provider with text/text-summary/html reporters.
-
----
-
-### Issue #214: Resolution & CLI global/status tests (2026-02-21)
-- Added 14 new tests to resolution.test.ts: deeply nested dirs, nearest .squad/ wins, symlink support
-- Created cli-global.test.ts with 10 tests: status routing (repo/personal/none), --global flag for init/upgrade
-- Test count grew from ~1592 to 1616 across 51 files — all passing
-- Symlink test skipped on Windows (requires elevated privileges) — pattern: `if (process.platform === 'win32') return;`
-- CLI routing testable without spawning processes by replicating the conditional logic from src/index.ts main()
-- resolveGlobalSquadPath() always creates the directory — tests that check global .squad/ must clean up after themselves
-
-### Issue #248: Shell module integration tests (2026-02-21)
-Created test/shell.test.ts (47 tests): SessionRegistry (9), spawn infrastructure (6), Coordinator (11), ShellLifecycle (10), StreamBridge (11). Used real test-fixtures for integration confidence. Shell modules well-structured: pure functions (parsing), simple classes (registry), callback-based (bridge). Test count: 1621→1668.
-
-### Issue #228: CRLF normalization tests (2026-02-21)
-Created test/crlf-normalization.test.ts (13 tests) across 5 parsers using withCRLF() helper and expectNoCR() assertions. All passing. Validates Fenster's normalizeEol() applied correctly.
-
-### Issue #230: Consumer-perspective import tests (2026-02-22)
-Created test/consumer-imports.test.ts (6 tests): main barrel, parsers barrel, types barrel, side-effect-free imports. Validates barrel split (index.ts/parsers.ts/types.ts) works for consumers.
-
-### Post-restructure assessment (2026-02-22)
+### 2026-02-28: Test catalog — 533 assertions, 17 groups, 20 test files (exhaustive analysis)
 **Build:** Clean (exit 0). **Tests:** 1719 passing across 56 files. **Import state:** Tests import from root ../src/ (old monolith). **Migration deferred:** Premature migration risks breaking tests. Expand exports maps or add vitest alias config when root src/ deleted. Exports map gap + CLI no exports + barrel divergence = high risk now.
 
 ### 2026-02-23: Streaming regression test suite & root cause analysis
@@ -513,38 +459,7 @@ Created test/consumer-imports.test.ts (6 tests): main barrel, parsers barrel, ty
 
 📌 Team update (2026-02-23T09:25Z): Streaming diagnostics infrastructure complete — root cause identified, 13 regression tests added. Kovash added SQUAD_DEBUG logging infrastructure. Saul fixed OTel protocol to gRPC. Version bump to 0.8.5.1. — decided by Scribe
 
-### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
-- Created test/consumer-imports.test.ts with 6 tests validating package exports from a consumer's perspective
-- **Main barrel** (3 tests): key parser functions (parseTeamMarkdown, parseDecisionsMarkdown, parseRoutingMarkdown), CLI functions (runInit, runExport, runImport, scrubEmails), VERSION export as string
-- **Parsers barrel** (1 test): parseTeamMarkdown and parseCharterMarkdown importable from src/parsers.js
-- **Types barrel** (1 test): Object.keys(types).length === 0 confirms pure type re-exports produce no runtime values
-- **Side-effect-free import** (1 test): importing index.ts doesn't mutate process.argv or trigger CLI behavior — test completing without hanging proves clean separation
-- Dynamic `await import()` used throughout to keep tests independent and avoid module caching issues
-- All 6 tests pass on first run; validates the barrel file split (index.ts / parsers.ts / types.ts) works correctly for consumers
-
-### Post-restructure verification (2026-02-22)
-- **Build:** `npm run build` compiles both `@bradygaster/squad-sdk` and `@bradygaster/squad-cli` cleanly via workspace scripts. Exit code 0.
-- **Tests:** All 1719 tests pass across 56 test files. `npm run build && npm test` exits clean.
-- **vitest.config.ts:** Works as-is — no path aliases needed while root `src/` still exists.
-- **Import state:** All 56 test files still import from root `../src/` (the old monolith barrel). Only `consumer-imports.test.ts` had 3 workspace package references but dynamically imports from `../src/index.js`.
-- **Import migration deferred:** Cannot blindly rewrite `../src/X.js` → `@bradygaster/squad-sdk/X` because:
-  1. Tests import deep internal modules (e.g., `../src/config/agent-doc.js`, `../src/casting/casting-engine.js`) that aren't exposed via the SDK package's `exports` map — only 18 subpath exports exist.
-  2. CLI test files import from `../src/cli/...` which lives in `@bradygaster/squad-cli`, but that package has no subpath exports at all.
-  3. Root `src/index.ts` (v0.7.0) still re-exports CLI functions (`runInit`, `runExport`, etc.) which SDK package (v0.8.0) correctly does not export — the `consumer-imports.test.ts` tests CLI exports that don't exist in the SDK barrel.
-  4. Migrating requires either expanding the `exports` maps in both packages or adding vitest `resolve.alias` config. Both are non-trivial.
-- **Recommendation:** Migration should happen as a dedicated task when root `src/` is actually removed. Attempting it now risks breaking 1719 passing tests for no immediate benefit.
-- **Flaky test observed:** One run showed 1 failure / 1718 pass in CLI export-import tests (timing-sensitive fs operations). Not reproducible on immediate re-run — pre-existing flake.
-
-### 📌 Team update (2026-02-22T041800Z): SDK/CLI split verified, all 1719 tests passing, test import migration deferred — decided by Hockney
-Build clean + all 1719 tests pass post-SDK/CLI migration. Fenster's import rewriting (6 cross-package imports) verified correct. Test import migration deferred until root `src/` deletion blocks (lazy approach reduces risk). Tests remain on old `../src/` paths for now — migration requires expanding exports maps or vitest alias config, both non-trivial. Exports map gap + CLI no exports + barrel divergence make premature migration risky. Decision merged to decisions.md (hockney-test-import-migration.md).
-
-### Test infrastructure: coverage config + package exports test (2026-02-22)
-- **Coverage:** Installed `@vitest/coverage-v8@^3.2.0`, configured vitest with `v8` provider and `text`, `text-summary`, `html` reporters. Coverage output goes to `./coverage/` (already in `.gitignore`). Include patterns cover `src/**/*.ts` and `packages/*/src/**/*.ts`.
-- **Package exports test:** Created `test/package-exports.test.ts` with 8 tests covering SDK exports map: root (`VERSION`), `/config` (`DEFAULT_CONFIG`), `/resolution` (`resolveSquad`), `/parsers` (`parseTeamMarkdown`), `/types` (type-only, no runtime values), `/agents`, `/skills`, `/tools`.
-- Discovered `types` subpath has zero runtime exports (pure `export type` statements) — test only verifies module resolves.
-- Config subpath exports `DEFAULT_CONFIG`, `AgentRegistry`, `ModelRegistry`, etc. — not `loadSquadConfig` as initially assumed.
-- `npm install` needed `--legacy-peer-deps` flag due to `workspace:*` protocol in squad-cli's package.json (pnpm syntax, not native npm).
-- Build passes cleanly. All 8 package-exports tests pass with coverage reporting.
+---
 
 ### Test Health Assessment (2026-02-22T23:02Z)
 
@@ -831,3 +746,32 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 - **Pattern:** `Promise.all` / `Promise.allSettled` for concurrent call testing. Slow `start()` via `mockImplementation(() => new Promise(...))` to force overlap window.
 - **Key file:** `packages/squad-sdk/src/adapter/client.ts` — `connectPromise` field + IIFE async pattern with `finally` cleanup.
 
+---
+
+### History Audit — 2026-03-03
+
+**Audit completed by Hockney per Brady's team-wide request.**
+
+**Issues Found & Corrected:**
+
+1. **Duplicate "# Project Context" header** — Lines 433-438 contained a second copy of the project metadata that appeared to be an intermediate state capture. [CORRECTED: Removed.]
+
+2. **Duplicate "## Learnings" header** — Line 440 contained a duplicate section header. [CORRECTED: Removed with Project Context duplication.]
+
+3. **4x duplication of "📌 Team update (2026-02-22T041800Z): SDK/CLI split verified"** — This team decision was recorded 4 times:
+   - Lines 129-149: Full detailed version ✓ (kept)
+   - Line 151-152: Brief summary version [CORRECTED: Removed]
+   - Lines 469-489: Full duplicate [CORRECTED: Removed]
+   - Lines 490-491: Brief summary repeat [CORRECTED: Removed]
+
+4. **2x duplication of "### REPL UX visual test suite (2026-02-23)"** — Same 7-line learning recorded twice (lines 87-93 and 437-443). [CORRECTED: Removed second occurrence along with the "📌 Core Context" duplicate that followed it.]
+
+5. **2x duplication of "### 📌 Core Context: Test Foundation & Beta Learnings"** — Lines 95-110 and lines 445-460 were identical copies. [CORRECTED: Removed second occurrence.]
+
+6. **No v0.6.0 references found** — All migration target versions are correct (v0.8.x).
+
+7. **No intermediate states recorded as final** — All kept entries represent completed work or confirmed team decisions.
+
+**Result:** 5 corrections made via [CORRECTED] annotations. No conflicting or stale decisions found. History is now clean and ready for future spawns to read cold.
+
+**Overall status:** ✅ CLEAN (with corrections documented inline)

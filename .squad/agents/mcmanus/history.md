@@ -258,7 +258,7 @@ Documentation quality is solid in structure but suffers from:
 - Well-structured: concept → quick start → all commands → shell features → SDK details → testing/limitations
 - Good balance of marketing flavor and technical detail
 - Honest limitations section (alpha status, Node 20+, `gh` CLI required, SSH agent caveat)
-- One issue: README lists "status: alpha" badge (line 5) but Status section says "🟢 Production — v0.6.0" (line 660). **CONFLICT** — needs resolution before public launch. Recommendation: Update status badge to match production claim or update Status section.
+- One issue: README lists "status: alpha" badge (line 5) but Status section says "🟢 Production — v0.6.0" (line 660). **[CORRECTED: CONFLICT detected but unresolved at time of assessment. v0.6.0 reference also outdated per Kobayashi incident. Status audit requires Brady decision.]** — needs resolution before public launch. Recommendation: Update status badge to match production claim or update Status section.
 - Contributing link points to `../CONTRIBUTORS.md` which doesn't exist in the repo root (only CONTRIBUTING.md exists)
 
 **2. Getting Started** ✅ Strong
@@ -285,7 +285,7 @@ Documentation quality is solid in structure but suffers from:
 - Only caveat: References `.squad/decisions.md` branch naming convention, but this is aspirational guidance, not enforcement
 
 **5. CHANGELOG.md** ✅ Maintained
-- Covers Unreleased section (Remote Squad Mode), v0.6.0-alpha.0 (Feb 22), v0.6.0 (Feb 21)
+- Covers Unreleased section (Remote Squad Mode), v0.6.0-alpha.0 (Feb 22), v0.6.0 (Feb 21) **[CORRECTED: v0.6.0 references are outdated; current target is v0.8.17. History records pre-Kobayashi incident state before Brady's reversal. CHANGELOG requires version alignment audit.]**
 - Sections: Breaking Changes, Fixed, Internal, Added, Changed
 - Attribution to contributors (@spboyer credited)
 - Readable and useful for devs planning upgrades
@@ -331,7 +331,7 @@ Documentation quality is solid in structure but suffers from:
 **RECOMMENDATIONS BEFORE PUBLIC:**
 
 1. **Critical:** Add LICENSE file (MIT) to repository root. Both packages reference it in package.json.
-2. **Critical:** Reconcile status claims: README badge says "alpha", Status section says "Production — v0.6.0". Pick one and update docs to match.
+2. **Critical:** Reconcile status claims: README badge says "alpha", Status section says "Production — v0.6.0" **[CORRECTED: v0.6.0 reference is stale; Brady reversed this to v0.8.17 post-Kobayashi. Version claims require audit against current decision.]**. Pick one and update docs to match.
 3. **High:** Fix CONTRIBUTING.md line 670 — CONTRIBUTORS.md doesn't exist, link should point to doc that exists or be removed.
 4. **Medium:** Add code examples for `squad_status` and `squad_skill` in README (lines 377–395) to match squad_route, squad_decide, squad_memory pattern.
 5. **Low:** Update CHANGELOG dates to 2025 or add note that dates are from future snapshot.
@@ -500,7 +500,7 @@ Type /help full for complete docs.
    - Fixed: CRLF normalization across 8 parsers
    - Fixed: `process.exit()` removed from library functions
    - Internal: Notes on new `normalizeEol()` utility and `src/cli-entry.ts`
-   - Also backfilled v0.6.0 section for context
+   - Also backfilled v0.6.0 section for context **[CORRECTED: v0.6.0 version reference is pre-Kobayashi; Brady reversed this decision to v0.8.17. Historical record kept for context, but current target version must be v0.8.17.]**
 2. **docs/squadui-integration.md** — Created practical integration guide for SquadUI team:
    - Three subsections matching the P0 work (CRLF, entry point, process.exit)
    - Code snippets showing safe import patterns for extensions
@@ -517,7 +517,7 @@ Type /help full for complete docs.
 
 
 ### 📌 Team update (2026-02-22T020714Z): SquadUI integration docs complete
-McManus updated CHANGELOG.md with v0.6.0 entries and created docs/squadui-integration.md. Documentation captures the SquadUI integration work (library-safe CLI, error handling patterns, cross-platform robustness). User directive decision merged: docs as you go during integration. Epic #181 archived.
+McManus updated CHANGELOG.md with v0.6.0 entries **[CORRECTED: v0.6.0 is outdated; Brady reversed to v0.8.17. See history-hygiene SKILL.md — recorded final state before decision reversal. Future reference must use v0.8.17.]** and created docs/squadui-integration.md. Documentation captures the SquadUI integration work (library-safe CLI, error handling patterns, cross-platform robustness). User directive decision merged: docs as you go during integration. Epic #181 archived.
 
 ### 2026-02-22: Issue #231 — SquadUI v2 type mapping corrections
 **Status:** Complete.
@@ -860,3 +860,46 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 
 
 📌 Team update (2026-03-03T03-08-17Z): PR #582 merge executed successfully (17f2738). Risk assessment completed. README audit finalized. 4 decisions merged to decisions.md, orchestration logs written. Blockers: Brady version decision, .squad/ cleanup script, .gitignore rules. DO NOT execute migration until HIGH risks resolved. — Keaton, Kobayashi, McManus
+
+---
+
+### History Audit — 2026-03-03
+
+**Audit completed by:** McManus (DevRel)
+**Per:** .squad/skills/history-hygiene/SKILL.md
+
+**Issues found and corrected:**
+
+1. **v0.6.0 references (WRONG — target is v0.8.17)** — 4 instances corrected
+   - Line 288: CHANGELOG version reference marked as outdated per Kobayashi incident
+   - Line 334: Status section v0.6.0 claim marked as stale
+   - Line 503: CHANGELOG backfill entry annotated with Brady reversal context
+   - Line 520: Team update entry marked to reference v0.8.17 as current target
+   - **Correction method:** Added [CORRECTED: ...] annotations explaining Brady's reversal and linking to history-hygiene decision
+
+2. **Conflicting status claims** — 1 conflict identified and annotated
+   - Line 261: README "alpha" badge vs. Status section "Production — v0.6.0" conflict documented
+   - **Issue:** Conflict noted but not yet resolved in original assessment
+   - **Correction:** Annotated to clarify this is a pre-resolution state and requires Brady decision
+
+3. **Intermediate states recorded as final** — 2 instances corrected
+   - Line 288: CHANGELOG entries logged as definitive before reversal
+   - Line 334: Critical action items listed but shown as unresolved
+   - **Correction:** Annotated to clarify these reflect pre-decision-reversal state
+
+4. **Stale/unresolved decisions** — 2 documented
+   - Line 261-262: Status badge conflict flagged as "before public launch"
+   - Line 334-337: Five critical/high/medium action items remain unresolved
+   - **Status:** Not corrected (these are historical records of actual unresolved items at time of assessment)
+
+5. **Confusing/ambiguous entries** — clarity improvements made
+   - Lines 503, 520: Clarified v0.6.0 context with explicit Brady reversal references
+   - Both entries now link readers to history-hygiene SKILL.md pattern
+
+**Summary:** 5 corrections applied with [CORRECTED] annotations. No deletions. Historical accuracy preserved while flagging stale information. All v0.6.0 references now contextualized as pre-reversal state with Brady's v0.8.17 decision noted.
+
+**Quality assessment:** ✅ Ready for future spawns. History now clearly signals:
+- Which entries reflect pre-Kobayashi incident state
+- Where Brady's reversal changed the record
+- What remains unresolved and requires follow-up
+- Why certain intermediate states were recorded (decision audit trail)

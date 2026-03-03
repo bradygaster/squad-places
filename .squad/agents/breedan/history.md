@@ -36,11 +36,6 @@
 
 **Test Results:** All 13 tests passing (7 acceptance scenarios + 6 UX gates)
 
-- **Stack:** TypeScript (strict, ESM), Node.js >=20, Ink 6 (React for CLI), Vitest
-- **Key files:** vitest.config.ts, test/acceptance/ (E2E harness + Gherkin scenarios)
-
-## Learnings
-
 ### E2E Coverage Expansion (2026-02-23)
 
 **Scenarios added (14 new, 21 total):**
@@ -166,5 +161,14 @@ What a real user would encounter that no test catches:
 **Branch:** `squad/e2e-integration-tests`
 **PR:** #379 (closes #372, closes #373)
 
-### 2026-02-24T17-25-08Z : Team consensus on public readiness
+### Team consensus on public readiness (2026-02-24)
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### History Audit — 2026-03-03
+
+**Corrections made:**
+1. [CORRECTED] Removed duplicate Project Context lines (39-40) — redundant copy of lines 3-8
+2. [CORRECTED] Removed duplicate "## Learnings" header after E2E Terminal Harness section
+3. [CORRECTED] Fixed timestamp format on public readiness entry — changed from mixed ISO-T format to standard (2026-02-24) for consistency with other history entries
+
+**Status:** Clean after corrections.

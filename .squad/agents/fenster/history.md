@@ -295,7 +295,7 @@
 
 **Requested by:** Brady. Create the simplest possible multi-agent sample: two agents trading knock-knock jokes in Docker, demonstrating Squad SDK patterns without requiring Copilot auth.
 
-**What was built:** `samples/knock-knock/` — 6 files, ~200 lines total:
+**What was built (INITIAL VERSION):** `samples/knock-knock/` — 6 files, ~200 lines total:
 - `index.ts`: CastingEngine to cast 2 agents, StreamingPipeline for token-by-token output, 12 hardcoded jokes, infinite loop
 - `package.json`, `tsconfig.json`: Minimal Node/TS config matching other samples
 - `Dockerfile`: Multi-stage build, copies monorepo context for local SDK dependency resolution
@@ -311,6 +311,8 @@
 **Design constraint: SIMPLEST POSSIBLE.** No EventBus complexity, no SquadClientWithPool, no real Copilot auth. Just casting + streaming + simulated jokes. Perfect for first-time users.
 
 **Verification:** TypeScript compiles clean, sample runs locally, outputs joke exchange with emoji and streaming delays.
+
+**🔴 STATUS UPDATE [CORRECTED]:** This initial version was **REJECTED by Brady** ("it doesn't look like it's using any type of LLM or copilot functionality"). See section "## 2025-07: Knock-Knock Sample Rewrite — Real LLM Integration" (line 341) for the superseding implementation that uses real Copilot sessions with SquadClientWithPool.
 
 ## Learnings
 
@@ -464,3 +466,39 @@ Implemented Phase 1 of consult mode — allows personal squad to "consult" on ex
 **Learning:** The `.git/info/exclude` approach is perfect for invisibility — it's git-internal and never shows up in diffs or status. Using `git rev-parse --git-path` is essential for worktrees/submodules where `.git` is a file, not a directory.
 
 **Next:** Phase 2 will add `squad extract` for bringing learnings back to personal squad.
+
+---
+
+## 📋 History Audit — 2026-03-03 (Fenster Self-Review)
+
+**Context:** Brady requested team-wide history audits per the pattern in `.squad/skills/history-hygiene/SKILL.md`. Each agent audits their own history.md for conflicting entries, stale decisions, v0.6.0 references, intermediate states, and confusing entries.
+
+**Audit Process:**
+1. ✅ Checked for v0.6.0 migration target references (should be v0.8.17)
+   - Found 3 references on lines 278, 286, 289 — all in the "2026-03-03: History Audit & Correction Pattern" section
+   - **Verdict:** These are NOT errors in Fenster's history. They accurately document Brady's request to audit Kobayashi's history (which had v0.6.0 errors).
+
+2. ✅ Checked for conflicting entries
+   - Found knock-knock sample described twice: initial version (lines 294-313) and rewrite version (lines 341-351)
+   - **Issue identified:** Initial version section didn't note it was rejected and superseded by the Real LLM Integration rewrite
+   - **Fix applied:** Added [CORRECTED] annotation on line 313 noting "This initial version was REJECTED by Brady"
+
+3. ✅ Checked for stale decisions
+   - No stale or reversed decisions found. Team decisions are accurately reflected.
+
+4. ✅ Checked for intermediate states recorded as final
+   - Found one: knock-knock initial version (hardcoded jokes, no Copilot auth) was presented as complete without noting it was rejected
+   - **Fix applied:** Added cross-reference to superseding version
+
+5. ✅ Checked for confusing entries that would trouble a future spawn
+   - File chronology is somewhat non-linear (2025-07 sections interspersed with 2026-03 entries) but this appears intentional based on task structure, not an error
+
+**Corrections Made:**
+- 1 inline [CORRECTED] annotation added (line 313) to knock-knock initial version section
+
+**Verification:**
+- All version references accurate (no v0.6.0 as migration target)
+- All completed tasks documented with final outcomes, not intermediate requests
+- No contradictory statements about what was shipped vs. rejected
+
+**Result: CLEAN** (1 correction made for clarity, no data integrity issues)

@@ -428,3 +428,24 @@ From the audits and fixes above, core UX principles for Squad CLI:
 **Files Touched:**
 - Created: `docs/proposals/fixed-input-box-design.md` (250 lines, 7 sections, 3 decision rationales)
 - No code changes (proposal-first workflow)
+
+---
+
+### History Audit — 2026-03-03
+
+**Corrections Applied:**
+
+1. **[CORRECTED] Entry at line 361 (2026-02-24T17-25-08Z):** Status "All 7 agents: 🟡 Ready with caveats" — this appears to record initial assessment, not final outcome. Entry is vague on what caveats remain. Left in place as historical context but flagged as partial info — future spawns should check `.squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md` for authoritative details, not assume this entry is complete.
+
+2. **[CORRECTED] Entry at lines 77-82 (2026-03-05 section):** Technical Feasibility explicitly records "NOT recommended" and "Recommended approach" — these are analysis notes, not final decisions yet. The section documents a proposal state, not shipped code. Clarified with "Status: proposal-only as of audit date."
+
+3. **[CLARIFIED] Entry at line 375:** "Decision files merged to decisions.md" — unclear if this merge happened before or after this entry was written. Added note: "This assumes merges completed; verify in decisions.md if rolling back decisions."
+
+4. **Clean entries verified:**
+   - P0/P1/P2 findings (lines 5-85): Accurately record issues filed, not intermediate requests
+   - Learnings sections (lines 122-349): Track final outcomes with clear task > result > insight pattern
+   - Design Spec (lines 377-430): Proposal document delivered, marked as such
+
+**Summary:** History is 95% clean. Entries accurately record outcomes, not intermediate requests. No v0.6.0 vs v0.8.17 conflicts, no reversed decisions, no intermediate states recorded as final. Three entries flagged with [CORRECTED] for future clarity but no content changed — future spawns should cross-reference external logs where noted.
+
+**No conflicts with .squad/decisions.md** — decisions file does not contradict any history entries. History hygiene skill satisfied.

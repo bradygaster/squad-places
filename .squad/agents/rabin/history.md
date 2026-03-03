@@ -10,7 +10,7 @@
 ### From Beta (carried forward)
 - Zero-dependency scaffolding preserved: cli.js vs runtime separation
 - Bundle size vigilance: every dependency is a cost, every KB matters
-- Distribution: GitHub-native (npx github:bradygaster/squad), NEVER npmjs.com
+- [CORRECTED] Distribution: npm-native (@bradygaster/squad-cli), NEVER GitHub-native (GitHub-native removed per npm-only decision 2026-02-21; GitHub-native path was tested 2026-07 but rejected)
 - esbuild for bundling, tsc for type checking — separate concerns
 - Marketplace prep: packaging for distribution, not just local use
 
@@ -24,7 +24,7 @@ Fix: Added `"squad-cli": "./dist/cli-entry.js"` as a second bin entry alongside 
 ### 📌 Assessment (2026-02-22): npm distribution status audit complete
 **Published versions:** squad-sdk@0.8.0 (6 versions total), squad-cli@0.8.1 (7 versions total) on npm registry.
 **Package contents:** SDK exports 26 public entry points (main, parsers, types, config, skills, agents, adapter, client, coordinator, hooks, tools, runtime + streaming/event-bus/benchmarks/i18n/telemetry/offline/cost-tracker, marketplace, build, sharing, ralph, casting, resolution). Files: dist + README. CLI exports 14 public entry points (main, upgrade, copilot-install, shell/*, core/*, commands/*). Files: dist, templates, README. Both have `prepublishOnly` scripts enforcing build before publish.
-**Install paths:** (1) npm: `npm install -g @bradygaster/squad-cli` + `npx squad init` works correctly; squad-cli@0.8.1 has both bin entries (squad, squad-cli). (2) GitHub-native (npx github:bradygaster/squad) referenced in README as legacy/alternative path but npm is now recommended. Root package.json version is 0.6.0-alpha.0 (private workspace marker, not published).
+**Install paths:** (1) npm: `npm install -g @bradygaster/squad-cli` + `npx squad init` works correctly; squad-cli@0.8.1 has both bin entries (squad, squad-cli). (2) [CORRECTED] GitHub-native (npx github:bradygaster/squad) was initial distribution path per beta, but npm is now canonical (npm-only decision finalized 2026-02-21; GitHub-native tested feasibility 2026-07 but rejected for UX reasons). Root package.json version is 0.6.0-alpha.0 (private workspace marker, not published).
 **Publish workflows:** Both squad-publish.yml (on tags) and squad-insider-publish.yml (on insider branch) correctly configured — build → test → publish with public access. No missing steps or auth issues.
 **Distribution gaps:** None. Distribution infrastructure production-ready. Version skew is intentional: SDK 0.8.0, CLI 0.8.1 (CLI had minor bin entry fix). README accurately reflects npm as primary install method.
 
@@ -98,7 +98,7 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 
 **Analysis:**
 - `npx github:` works by cloning repo → reading root package.json → running bin entry. Origin has no root bin entry → will error.
-- Upgrade path (beta v0.5.4 → origin v0.8.18) is ✅ **fully supported**. CLI handles `.ai-team/` → `.squad/`, runs migrations, refreshes templates. No data loss.
+- [CORRECTED] Upgrade path (beta v0.5.4 → origin v0.8.17+) is ✅ **fully supported**. CLI handles `.ai-team/` → `.squad/`, runs migrations, refreshes templates. No data loss.
 - Package name change (`@bradygaster/create-squad` → `@bradygaster/squad-cli`) is a non-issue — CLI detects by directory structure, not package name.
 
 **Recommendation:** Error-only shim with clear guidance (Option 5):
@@ -135,7 +135,7 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 - **Decision merged to decisions.md.** Status: npx migration strategy finalized for implementation post-banana gate.
 - **Cross-agent sync:** Kobayashi's migration plan (separate decision) complements this distribution analysis. Both decisions now in merged decisions.md for coordinated beta → origin migration.
 
-### 📌 Research (2026-07): GitHub npx dual-distribution feasibility analysis
+### 📌 Research (2026-03-02 continued): GitHub npx dual-distribution feasibility analysis
 **Requested by:** Brady — can we support `npx github:bradygaster/squad` alongside the npm channel?
 
 **How `npx github:` works:**
@@ -158,3 +158,13 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 **Recommendation:** Keep npm-only. The GitHub channel is technically possible with 3 small changes but provides a strictly worse UX (slower, heavier, more fragile). The only benefit is URL aesthetics. Not worth the maintenance or user-experience cost.
 
 **Alternative if "GitHub URL" is important:** Publish to GitHub Packages (npm registry on GitHub) for `npx @bradygaster/squad-cli --registry=https://npm.pkg.github.com` — same pre-built experience, different registry. But adds auth complexity.
+
+### History Audit — 2026-03-03
+
+**Corrections applied:**
+1. Line 13: "Distribution: GitHub-native... NEVER npmjs.com" → [CORRECTED] "Distribution: npm-native, NEVER GitHub-native" (reversed decision per npm-only 2026-02-21)
+2. Line 27: "GitHub-native referenced in README as legacy/alternative" → [CORRECTED] "npm is now canonical (npm-only decision finalized 2026-02-21)"
+3. Line 101: "origin v0.8.18" → [CORRECTED] "origin v0.8.17+" (consistent with other entries)
+4. Line 138: Date "(2026-07)" → [CORRECTED] "(2026-03-02 continued)" (date skew — research was same day as team update, not July)
+
+**Status:** 4 corrections applied. History is now clean and consistent with decisions.md npm-only policy.

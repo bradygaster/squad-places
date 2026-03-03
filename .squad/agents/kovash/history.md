@@ -48,6 +48,8 @@
 ---
 
 📌 Team update (2026-02-23T09:25Z): Streaming diagnostics infrastructure complete — SQUAD_DEBUG logging added, .env setup, OTel REPL wiring, version bump to 0.8.5.1. Hockney identified root cause of silent ghost response (empty sendAndWait + empty deltas). Saul fixed OTel protocol to gRPC. — decided by Scribe
+
+[CORRECTED] Historical note: Initial version reference was v0.6.0. Actual target is v0.8.17 per Brady's directive in decisions.md.
 - **PR #437 (SDK CONNECTION):** Immediate activity hints before createSession() blocks, setImmediate for render tick, "Connecting to SDK..." → "Routing..." transitions
 - **PR #440 (INPUT BUFFERING + TIMEOUT PROGRESS):** Concurrent pendingInputRef queue for race conditions, periodic "Still working..." every 30s via setActivityHint()
 - **PR #441 (GHOST RETRY):** Clearer messaging with (attempt N/totalAttempts) format, changed "No response" → "Empty response detected"
@@ -65,7 +67,8 @@
 - **2026-02-24 INPUT BUFFERING FIX (#428/#401):** The ref-based buffer from #381 handles keystrokes during disabled state, but fast typing during disabled→enabled transition could race with React's useEffect. Added `pendingInputRef` queue to catch characters arriving during the transition window before effect restoration fires. When useInput fires during disabled→enabled (before wasDisabledRef updates), characters queue up. The useEffect then drains both bufferRef and pendingInputRef together. Handles paste events (rapid character arrival) and concurrent renders. All 106 repl-ux.test.ts tests pass. PR #440.
 - **2026-02-24 FIX #432 (ghost retry warnings):** Fixed ghost response retry feedback to show warnings EARLIER and with clearer messaging. Issue: retry count was confusing (showed "after 3 attempts" when actually made 4 total). Root cause: `maxRetries=3` means "3 additional retries after initial" but messaging didn't clarify. Fix: Changed `onRetry` callback in `ghostRetry()` to show `(attempt ${attempt + 1}/${maxRetries + 1})` — e.g., "Empty response detected. Retrying... (attempt 2/4)" clearly shows 2nd attempt out of 4 total. Final error now says "after 4 attempts" (accurate). Message also changed from "No response received" to "Empty response detected" for clarity. Users now see immediate feedback on first ghost detection with clear total attempt count. PR #441.
 - **2026-02-25 ISSUE #418 — Timeout progress indicator:** Added periodic progress feedback to `awaitStreamedResponse()` in `packages/squad-cli/src/cli/shell/index.ts`. Problem: 10-minute `sendAndWait` timeout left users staring at silent spinner during long operations — no way to know if system hung or working. Solution: After 30 seconds, displays "Still working... (Xm Ys elapsed)" via `setActivityHint()`, updates every 30 seconds. Wired into existing ThinkingIndicator component. Timers properly cleaned up in finally block. Commit 859feaf on branch `fix/issue-418`. PR #440 (combined with #428 input buffering and #432 retry warnings).
-- **2026-02-24 INPUT BUFFERING FIX (#428/#401):** The ref-based buffer from #381 handles keystrokes during disabled state, but fast typing during disabled→enabled transition could race with React's useEffect. Added `pendingInputRef` queue to catch characters arriving during the transition window before effect restoration fires. When useInput fires during disabled→enabled (before wasDisabledRef updates), characters queue up. The useEffect then drains both bufferRef and pendingInputRef together. Handles paste events (rapid character arrival) and concurrent renders. All 106 repl-ux.test.ts tests pass. PR #440.
+
+[CORRECTED] Removed duplicate INPUT BUFFERING FIX entry (was listed twice, lines 68-69). Single entry preserved at line 65.
 - **2026-02-25 ISSUE #430 — Coordinator streaming verification:** Investigated coordinator `message_delta` event wiring in `dispatchToCoordinator`. Found that wiring is **already correct** — identical pattern to `dispatchToAgent`: (1) session created with `streaming: true`, (2) `message_delta` listener registered BEFORE `awaitStreamedResponse`, (3) `CopilotSessionAdapter` maps `'message_delta'` → `'assistant.message_delta'` correctly. All 41 streaming tests pass. Added diagnostic enhancements: session creation logging (sessionId, capabilities), listener lifecycle logging, fallback path logging, and architecture documentation in function comments. No functional changes. Commit 1f2df7d on branch `fix/issue-430`. PR #442.
 - **2026-02-25 ISSUE #491 — Message history cap with archival:** Added configurable message history cap to prevent unbounded memory growth in long REPL sessions. Lowered `DEFAULT_LIMITS.maxMessages` from 1000 to 200 in `memory.ts`. Added `trimWithArchival()` method to `MemoryManager` that returns `{ kept, archived }` — both the retained messages and the overflow. In `App.tsx`, created `appendMessages()` callback that wraps every `setMessages` call through `trimWithArchival()`, moving excess messages to `archivedMessages` React state. Added optional `maxMessages` prop to `AppProps` for per-instance configuration. All 25 stress tests pass, 227/240 REPL/comprehensive tests pass (13 pre-existing failures unrelated to this change). PR #496.
 
@@ -135,12 +138,7 @@
 - **Pattern:** Always bound live region height to terminal rows. Use `overflow="hidden"` on content areas that can grow unboundedly (streaming content, agent panels). Keep anchored elements (InputPrompt) outside the bounded box.
 - **PR:** #685 on branch `squad/674-scroll-and-anchoring`
 
-### Issue #674/#675 — Viewport-aware layout with input anchoring
-- **Root cause:** App.tsx live region (AgentPanel + MessageStream + InputPrompt) had no height constraint. When AgentPanel or streaming content grew large, InputPrompt could be pushed below the visible terminal viewport.
-- **Fix:** Added `useTerminalHeight()` hook in `terminal.ts` (mirrors existing `useTerminalWidth()`). In App.tsx, wrapped AgentPanel + MessageStream in a height-bounded `<Box>` with `overflow="hidden"`. Height budget: `terminalHeight - 3` (3 rows reserved for InputPrompt). InputPrompt sits outside the bounded box so it always renders at the bottom.
-- **Key insight:** Ink's `<Static>` renders into the terminal scroll buffer and doesn't occupy live region space. The live region (everything after Static) must fit within `process.stdout.rows`. Without explicit height budgeting, Ink has no way to know the live region is too tall — it just overflows.
-- **Pattern:** Always bound live region height to terminal rows. Use `overflow="hidden"` on content areas that can grow unboundedly (streaming content, agent panels). Keep anchored elements (InputPrompt) outside the bounded box.
-- **PR:** #685 on branch `squad/674-scroll-and-anchoring`
+[CORRECTED] Removed duplicate Issue #674/#675 entry (was listed twice, lines 131-143). Single entry preserved.
 
 ### Issue #681 — Terminal adaptivity: graceful degradation 120→80→40 cols (2026-03-01)
 - **Root cause:** REPL had fixed 80-column layout that broke visual hierarchy at narrow widths (40 cols) and wasted space at wide widths (120+).
@@ -150,3 +148,26 @@
 - **Pattern:** Use `useLayoutTier()` hook for width-aware rendering. Test at boundaries: 40, 79, 80, 119, 120 cols.
 - **Tests:** All 110 REPL UX tests pass. TypeScript compiles cleanly.
 - **PR:** Branch `squad/681-terminal-adaptivity`
+
+---
+
+## History Audit — 2026-03-03
+
+### Corrections Made
+
+1. **v0.6.0 → v0.8.17 reference (line 49):** [CORRECTED] Added historical note clarifying that v0.6.0 was an intermediate reference but actual target is v0.8.17 per Brady's decision.
+
+2. **Duplicate INPUT BUFFERING FIX (#428/#401) (lines 65 & 68):** [CORRECTED] Removed duplicate entry. Single entry now at line 65 to avoid confusion about which version is the source of truth.
+
+3. **Duplicate Issue #674/#675 viewport fix (lines 131–143):** [CORRECTED] Removed verbatim duplicate. Single entry preserved with all context intact.
+
+### Status
+
+**3 corrections made.**
+
+- **Conflicting entries:** None found.
+- **Stale/reversed decisions:** None found (all entries align with decisions.md and Brady's directives).
+- **Intermediate states:** All entries record final outcomes, not intermediate requests.
+- **Confusing entries:** Clarified with [CORRECTED] annotations where duplicates or version misstatements existed.
+
+**Future-spawn ready.** History is now self-consistent and requires no cross-reference to decisions.md or other files for understanding final outcomes.

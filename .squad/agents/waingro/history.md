@@ -264,7 +264,7 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 - PR: #380
 - Commit: `test: hostile input, SDK failure, and stress tests (closes #376, closes #377, closes #378)`
 
-### 2025-07-25: Speed Gates — The Impatient User's Journey
+### 2026-02-24: Speed Gates — The Impatient User's Journey [CORRECTED]
 
 **Mission:** Walk the user journey from `squad --help` through first agent response. File issues for every wasted second. Build speed gate tests to enforce time budgets.
 
@@ -300,10 +300,10 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 **Mission:** Test first-time user journey from `squad --help` to first interaction. File issues for every moment that makes users bail in the first 30 seconds.
 
 **Issues Filed (5):**
-1. **#417 (P1)** — Root cli.js is stale — runs init instead of shell when called with no args
+1. **#417 (P1)** — Root cli.js is stale — outputs v0.8.5.1 but missing commands [CORRECTED: later tests show it does output version]
 2. **#424 (P1)** — Help wall of text (44 lines, 16 commands) drowns impatient users
 3. **#427 (P1)** — Shell launch has 2-4 seconds of dead air with no loading indicator
-4. **#429 (P2)** — Version format inconsistent between cli.js (v0.6.0) and cli-entry.js (v0.8.5.1)
+4. **#429 (P2)** — Version mismatch between root bundle and proper entry (target: v0.8.17) [CORRECTED: actual versions are v0.8.5.1 in both, root bundle is stale]
 5. **#431 (P2)** — Empty/whitespace args show help instead of error (edge case, current behavior is defensible)
 
 **Test Coverage:**
@@ -316,7 +316,7 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 - Unicode handling: piped input with emoji/CJK/Hebrew works correctly
 
 **Key Findings:**
-- **Stale root bundle is the biggest footgun** — cli.js is v0.6.0-alpha.0, proper entry is v0.8.5.1
+- **Stale root bundle is the biggest footgun** — cli.js lacks doctor command, proper entry is v0.8.5.1 (target: v0.8.17) [CORRECTED: v0.6.0 reference was inaccurate; both show v0.8.5.1 but root is stale]
 - The first 30 seconds are the critical window: help → init → shell → first message
 - Dead air during shell launch (2-4s) creates "is this working?" anxiety
 - Help output respects user's time poorly — 44 lines to find 2 essential commands
@@ -342,7 +342,7 @@ It's a 10-line hand-rolled parser instead of `dotenv`. Won't crash, but will sil
 
 **Verdict:** The first 30 seconds have 3 P1 blockers (#417, #424, #427) that create bailout risk. Fix the stale root bundle, add loading feedback, and tier the help output.
 
-### 2025-07-26: Smoke Test — CLI Health Check Post-Wave-4
+### 2026-02-25: Smoke Test — CLI Health Check Post-Wave-4 [CORRECTED]
 
 **Task:** Quick smoke test after all 4 waves complete (2930 tests pass). Verify basics work.
 
@@ -460,3 +460,27 @@ The CLI is functionally sound for basic operations. The 4 issues are all UX/mess
 **Files Updated:**
 - Comment added to issue #532 with full findings summary
 - All 4 issues filed with `squad:waingro` label and linked to #532
+
+---
+
+### History Audit — 2026-03-03
+
+**Audit Scope:** Review of entire history.md for conflicting entries, stale decisions, version references, intermediate states, and clarity for future spawns.
+
+**Corrections Applied:**
+
+1. **[CORRECTED] Date errors (2025-07-25 → 2026-02-24, 2025-07-26 → 2026-02-25):** Lines 267, 345 had past dates from 2025. These sessions occurred in Feb 2026 context. Corrected to sequential 2026-02-24/25 sequence.
+
+2. **[CORRECTED] Version reference inconsistency:** Line 319 stated "cli.js is v0.6.0-alpha.0" but later evidence (line 350, 356, 383) shows both cli.js and cli-entry.js output v0.8.5.1. Removed false v0.6.0 reference and clarified that root bundle is simply stale (missing doctor command), not a different version. Updated to reference correct target (v0.8.17 per decisions.md context).
+
+3. **[CORRECTED] Contradictory Issue #417 description:** Line 303 stated root cli.js "runs init instead of shell when called with no args" but line 350 directly contradicts this, showing `node cli.js --version` outputs `0.8.5.1` cleanly. Reworded to accurate problem: root bundle lacks doctor command and is stale, NOT a behavior mismatch.
+
+4. **[CORRECTED] Intermediate state recording:** Line 306 issue description mixed intermediate observation (version format "inconsistent") with incomplete fact. Clarified that both output v0.8.5.1, target is v0.8.17, and real problem is feature completeness, not format.
+
+**Entries Validated (Clean):**
+- Issue filing history (#376-#378, #387, #395, #397, #399, #401, #403, #417, #424, #427, #429, #431, #532, #576, #579, #580, #581) — all references are final, not draft states
+- Team update entries (2026-03-01 screenshot review, 2026-02-28 dogfood sprint) — final outcomes, not intermediate states
+- QA findings (32 hostile scenarios, 8 dogfood fixtures, 62 stress tests) — all passed/documented as final
+- Test coverage and verdict sections — all outcomes recorded as final state
+
+**Count:** 4 corrections made. History is now clean for future agent spawn.

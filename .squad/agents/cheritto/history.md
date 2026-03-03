@@ -94,12 +94,11 @@
 ### 2026-02-23: Product love — first-time user experience polish
 - Walked through complete first-time user journey: `squad init` → REPL launch → welcome → first command
 - Filed 6 issues (#400, #402, #404, #405, #406, #407), closed #406 (ErrorBoundary doesn't exist on disk)
-- Fixed 5 issues in one PR:
+- Fixed 4 issues in one PR (NOTE: #405 exit message was refined later in PR #446):
   - **`/clear` was broken** (#400): ANSI escape code was added as message content (no-op in Ink). Added `clear?: boolean` to `CommandResult`, `handleClear()` returns `{ clear: true }`, App.tsx resets `messages` state to `[]`.
   - **Natural language routing hidden** (#402): Coordinator auto-routing is the killer feature but was invisible. Updated welcome hints to "Just type · @Agent to direct", `/help` explains routing, first-run shows "Or just type naturally", input placeholder changed to "Type anything or @agent..."
-  - **First-run hint breaks on narrow terminals** (#404): Changed from horizontal Box to `flexDirection="column"` with breathing room
-  - **Exit emoji inconsistency** (#405): `👋 Squad out.` → `◆ Squad out.` (matches P2 emoji removal)
-  - **Roster wraps mid-name** (#407): Replaced single dense string with per-agent `<Text>` elements in `<Box flexWrap="wrap">` for clean word-boundary wrapping
+  - **First-run hint breaks on narrow terminals** (#404): Changed from horizontal Box to `flexDirection="column"` with breathing room [CORRECTED: refined again in PR #446 with compact mode logic]
+  - **Roster wraps mid-name** (#407): Replaced single dense string with per-agent `<Text>` elements in `<Box flexWrap="wrap">` for clean word-boundary wrapping [CORRECTED: refined in PR #446]
 - Files changed: `commands.ts`, `App.tsx`, `InputPrompt.tsx`, `index.ts`, `cli-shell-comprehensive.test.ts`
 - Pattern: `CommandResult.clear` flag for shell-level state resets (vs output strings)
 - 125/125 tests pass, build clean
@@ -113,7 +112,7 @@
 - ANSI clear sequence: `\r` (carriage return) + `\x1b[K` (clear line from cursor to end)
 - File: `packages/squad-cli/src/cli/shell/index.ts` lines 108, 436
 - PR #435 on branch `fix/issue-427`
-### 2026-02-23: Welcome typewriter blocking input (#423, #399)
+### 2026-02-26: Welcome typewriter blocking input (#423, #399)
 - Fixed 500-800ms input blocking during shell launch caused by typewriter animation
 - Removed `useTypewriter()` and `useFadeIn()` calls from `App.tsx` welcome banner rendering (lines 165-167)
 - Welcome banner now displays instantly: `bannerReady = true`, `bannerDim = false`, `titleRevealed = '◆ SQUAD'`
@@ -214,7 +213,7 @@
 - **Session log:** .squad/log/2026-03-01T20-13-00Z-ui-polish-prd.md
 - **Decision files merged to decisions.md:** keaton-prd-ui-polish.md, fenster-cast-confirmation-ux.md, kovash-processing-spinner.md, copilot directives
 
-### P1/P2 TUI Batch — Separator consolidation, empty space fix, info hierarchy, whitespace (#655, #670, #671, #677)
+### 2026-03-01: P1/P2 TUI Batch — Separator consolidation, empty space fix, info hierarchy, whitespace (#655, #670, #671, #677)
 - **Branch:** `squad/cheritto-p1-tui-fixes`
 - **Issues:** #655 (empty space above content), #670 (information hierarchy), #671 (whitespace breathing room), #677 (separator consolidation)
 - **Fix #677 — Separator component:**
@@ -268,3 +267,14 @@
 - **Testing:** TypeScript compiles clean. Test suite: 24 failures vs 22 on main (2 additional, both unrelated to InputPrompt layout). 10+ pre-existing TerminalHarness timeouts known and acceptable.
 - **Pattern:** Bordered Box is the canonical way to create visually distinct interaction zones in Ink TUIs. Border props (`borderStyle`, `borderColor`) automatically render box-drawing characters and degrade to plain layout when undefined.
 - PR #688 on branch `squad/679-fixed-input-box`
+
+---
+
+### History Audit — 2026-03-03
+**Corrections applied:**
+1. [CORRECTED] Line ~101: Removed intermediate state for #405 (first recorded as `👋 Squad out.` → `◆ Squad out.`) since final implementation (line 127, PR #446) shows `◆ Squad out.` → `-- Squad out.` (ANSI-colored ASCII). Exit path evolution: emoji → symbol → ASCII. Only final state recorded now.
+2. [CORRECTED] Line ~116: Date corrected from 2026-02-23 to 2026-02-26 (chronological ordering: this section comes after line 108's 2026-02-26 entry).
+3. [CORRECTED] Line ~217: Added missing date to P1/P2 TUI Batch section header — now `### 2026-03-01: P1/P2 TUI Batch...` (consistent with surrounding entries).
+4. [CORRECTED] Line ~94-102: Annotated #404 and #407 as refined in PR #446 to avoid confusion between initial and final implementations.
+
+**Status:** 4 corrections applied. No stale reversed decisions, no v0.6.0 references, no confusing intermediate states remaining.

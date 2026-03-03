@@ -32,7 +32,7 @@ The `file:../copilot-sdk/nodejs` reference can be upgraded to `"@github/copilot-
 - Added `"workspaces": ["packages/*"]` to root package.json
 - Created `packages/squad-sdk/package.json` — `@bradygaster/squad-sdk`, ESM-only, exports map with types-first condition, `@github/copilot-sdk` as real dependency (not optional — SDK owns this dep now)
 - Created `packages/squad-cli/package.json` — `@bradygaster/squad-cli`, bin entry, workspace dep on SDK
-- npm uses version-string workspace references (`"0.6.0-alpha.0"`) not `workspace:*` protocol (that's pnpm/Yarn)
+- npm uses version-string workspace references (current: `"0.8.18-preview"`) not `workspace:*` protocol (that's pnpm/Yarn) [CORRECTED: was `"0.6.0-alpha.0"`, stale reference to intermediate dev version]
 - Build clean, 1592/1592 tests still pass — no source files moved, scaffold only
 - PR #274, branch `squad/197-monorepo-scaffold`, closes #197, #198, #200
 
@@ -165,3 +165,13 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+
+### History Audit — 2026-03-03
+**Audit performed by:** Edie (mirror moment - team-wide history hygiene check)
+**Findings:**
+- 1 stale version reference corrected: Line 35 M1 Monorepo section recorded intermediate version `"0.6.0-alpha.0"` instead of current final version `"0.8.18-preview"` (target: v0.8.17+ per decisions). This violated history-hygiene SKILL (record final outcomes, not intermediate requests).
+- No conflicting entries detected.
+- No reversed decisions detected.
+- No intermediate states recorded as final (except the above version ref).
+- All decisions match .squad/decisions.md consensus.
+- Confidence: High. History now reflects ground truth for future spawns.

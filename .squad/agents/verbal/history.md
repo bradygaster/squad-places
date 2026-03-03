@@ -5,6 +5,8 @@
 - **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
 - **Created:** 2026-02-21
 
+
+
 ## Learnings
 
 ### From Beta (carried forward)
@@ -51,4 +53,21 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 
 ### Skill: history-hygiene (2026-03-04)
 Created `.squad/skills/history-hygiene/SKILL.md` to codify lesson from Kobayashi v0.6.0 incident. Core rule: record final outcomes to history, not intermediate requests or reversed decisions. One read = one truth. No cross-referencing required. Team learned hard way that stale history entries poison future spawns. Formal intervention: Keaton rewrote charter guardrails, Fenster corrected 19 entries.
+
+---
+
+## History Audit — 2026-03-03
+
+**Audit Results:** 0 corrections. File is clean.
+
+**Checked for:**
+- ✓ No conflicting entries
+- ✓ No stale or reversed decisions
+- ✓ No v0.6.0 target references (v0.6.0 appears only as historical incident context, which is correct)
+- ✓ No intermediate states recorded as final (all entries document outcomes)
+- ✓ All future-spawn-readable: no cross-reference dependencies
+
+**Timeline integrity:** Forward-moving (2026-02-21 → 2026-03-04), no reversals.
+
+**Note:** v0.6.0 reference in history-hygiene entry is correct as-written — it documents the *Kobayashi incident* that taught the team the skill itself. No change needed.
 

@@ -35,7 +35,7 @@
   - Tone: action-oriented, welcoming, prompt-first (matching existing Squad docs)
   - Referenced `packages/squad-sdk/src/runtime/otel-*.ts` and `test/aspire-integration.test.ts` for implementation details
   - Docs build verified — 39 pages generated, aspire-dashboard.html confirmed in dist
-- **Critical bug fix (2026-02-XX): Telemetry not appearing in Aspire dashboard.** Root cause analysis:
+- **Critical bug fix (2026-02-XX): Telemetry not appearing in Aspire dashboard.** [CORRECTED: Date context missing, but timeline consistent with wave 2 work] Root cause analysis:
   1. **Protocol mismatch** — SDK was using OTLP/HTTP exporters (`exporter-trace-otlp-http`), Aspire only accepts OTLP/gRPC on port 18889. Switched to `exporter-trace-otlp-grpc` / `exporter-metrics-otlp-grpc`.
   2. **Wrong endpoint in `squad aspire`** — `ASPIRE_OTLP_ENDPOINT` was `http://localhost:18888` (the dashboard UI port). Fixed to `http://localhost:4317` (host-mapped gRPC port).
   3. **OTLP auth mode was `ApiKey`** — Docker command set `DASHBOARD__OTLP__AUTHMODE=ApiKey` but SDK sent no API key header. Changed to `Unsecured` for local dev.
@@ -43,7 +43,7 @@
   5. Added "Quick Debug Checklist" to `docs/scenarios/aspire-dashboard.md` for future troubleshooting.
   - gRPC packages (`@opentelemetry/exporter-trace-otlp-grpc`, `@grpc/grpc-js`) were already in node_modules transitively via `@opentelemetry/sdk-node`.
   - All 84 OTel/Aspire tests pass after fix.
-- **OTEL pipeline silent failure diagnosis (2026-02-XX):** Brady reported "telemetry pump not working" — REPL printed telemetry-active message but nothing appeared in Aspire.
+- **OTEL pipeline silent failure diagnosis (2026-02-XX):** [CORRECTED: Date context missing, related to telemetry not appearing bug; may be same incident] Brady reported "telemetry pump not working" — REPL printed telemetry-active message but nothing appeared in Aspire.
   - **Root cause:** Aspire container started without `DASHBOARD__OTLP__AUTHMODE=Unsecured`, gRPC exporter got `16 UNAUTHENTICATED (HTTP 401)` on every export attempt. Error was completely invisible — swallowed by OTel's internal error handling.
   - **Fix 1:** `ensureSDK()` in `otel.ts` now auto-enables OTel `DiagConsoleLogger` at WARN level when `SQUAD_DEBUG=1` is set. This surfaces gRPC transport errors (401, ECONNREFUSED, etc.) to stderr. When `debug: true` is passed explicitly, full DEBUG level is enabled.
   - **Fix 2:** `ensureSDK()` now resets `_sdk = undefined` if `start()` throws, preventing the "initialized but broken" state where the SDK thinks it's running but providers were never registered.
@@ -62,7 +62,7 @@
 
 ---
 
-📌 Team update (2026-02-23T09:25Z): OTel gRPC protocol fix completed, Aspire dashboard working. Streaming diagnostics infrastructure finished by Kovash (SQUAD_DEBUG logging), 13 regression tests added by Hockney. Version bump to 0.8.5.1. — decided by Scribe
+📌 Team update (2026-02-23T09:25Z): OTel gRPC protocol fix completed, Aspire dashboard working. Streaming diagnostics infrastructure finished by Kovash (SQUAD_DEBUG logging), 13 regression tests added by Hockney. Version bump to 0.8.5.1 (target: v0.8.17). — decided by Scribe [CORRECTED: Clarified v0.8.17 is the target version; 0.8.5.1 is an intermediate milestone]
 
 ### 2026-02-24T17-25-08Z : Team consensus on public readiness
 📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
@@ -111,3 +111,16 @@
   - No commits mentioning deprecation, removal, or sunsetting
 
 **Conclusion:** Squad Aspire is production-ready, fully tested, and actively used. No deprecation has occurred. The feature is optional (users can skip it) but the integration is mature and well-documented.
+
+---
+
+### History Audit — 2026-03-03
+
+**Corrections Made:**
+1. **Line 38:** Added date context notation to telemetry bug fix entry — timestamp vague (2026-02-XX), cross-referenced with wave 2 work.
+2. **Line 46:** Added date context notation to OTel silent failure diagnosis — timestamp vague (2026-02-XX), noted possible correlation with telemetry bug.
+3. **Line 65:** Clarified version target: v0.8.17 is final target; 0.8.5.1 is intermediate milestone to prevent future spawns from treating version bumps as final state.
+
+**No critical conflicts found.** History is consistent with decisions.md (Aspire is active, not deprecated). All OTel phases and test counts align. Shell metrics (opt-in via SQUAD_TELEMETRY) properly documented.
+
+**Total corrections: 3 [CORRECTED] annotations added.**

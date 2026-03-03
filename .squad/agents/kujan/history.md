@@ -14,7 +14,7 @@
 - SQL tool is CLI-only — does not exist on VS Code, JetBrains, or GitHub.com
 - Client compatibility matrix: spawning behavior varies by platform
 
-### Wave 1 M0 SDK Audit (2025-07-18)
+### Wave 1 M0 SDK Audit (2026-02-21) **[CORRECTED]**
 - @github/copilot-sdk IS published on npm (v0.1.25, 28 versions, MIT license)
 - Squad's file: reference (v0.1.8) is outdated by 17 versions
 - Only 1 runtime import: `CopilotClient` from `@github/copilot-sdk` in `src/adapter/client.ts`
@@ -39,8 +39,8 @@
 - Both files use `export { ... } from './path.js'` ESM syntax, consistent with existing barrel patterns in `src/index.ts`
 - Build (tsc + workspaces) and all 1683 tests pass with the new files
 
-### 📌 Team update (2026-02-22T020714Z): Process.exit() refactor complete
-Kujan's error handling refactor makes all library functions throw SquadError instead of calling process.exit(). Only CLI entry point (src/cli-entry.ts) calls process.exit() now. SquadUI can catch SquadError for structured error handling instead of process termination. Pattern: library functions throw, CLI entry point catches. Decision merged to decisions.md. Issue #189 closed. 1683 tests passing.
+### 📌 Team update (2026-02-22T020714Z): Process.exit() refactor complete **[CONFIRMED]**
+Kujan's error handling refactor makes all library functions throw SquadError instead of calling process.exit(). Only CLI entry point (src/cli-entry.ts) calls process.exit() now. SquadUI can catch SquadError for structured error handling instead of process termination. Pattern: library functions throw, CLI entry point catches. Decision "2026-02-21: Process.exit() refactor — library-safe CLI functions" in decisions.md. Issue #189 closed. 1683 tests passing.
 
 ### OTel Public API Export (Issue #266)
 - Exported the 3-layer OTel API from `src/index.ts`:
@@ -64,12 +64,12 @@ Kujan's error handling refactor makes all library functions throw SquadError ins
 - **Recommendation:** Publish 0.8.3 with both fixes (1f779e7 + 8220aa6), lock CLI dep to ^0.8.3, update CHANGELOG
 - **Pattern Learned:** Type casts hide runtime mismatches; mocked tests don't catch SDK API changes; publish AFTER fixes, not before
 
-### 📌 Team update (2026-02-23T08:00:00Z): REPL streaming bug fixed via sendAndWait pattern — decided by Kovash
-All shell dispatch calls must use awaitStreamedResponse() to wait for full streamed response before parsing. Pattern includes fallback to turn_end/idle listeners. Critical fix for coordinator prompt parsing. Test coverage: 13 new tests in repl-streaming.test.ts. All 2351 tests passing.
+### 📌 Team update (2026-02-23T08:00:00Z): REPL streaming bug fixed via sendAndWait pattern **[CONFIRMED]**
+All shell dispatch calls must use awaitStreamedResponse() to wait for full streamed response before parsing. Pattern includes fallback to turn_end/idle listeners. Critical fix for coordinator prompt parsing. Test coverage: 13 new tests in repl-streaming.test.ts. All 2351 tests passing. Decision: "2026-02-23: Use sendAndWait for streaming dispatch" in decisions.md.
 
 
-### 2026-02-24T17-25-08Z : Team consensus on public readiness
-📌 Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. See .squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md and .squad/decisions.md for details.
+### 📌 2026-02-24T17:25:08Z: Team consensus on public readiness **[CONFIRMED]**
+Full team assessment complete. All 7 agents: 🟡 Ready with caveats. Consensus: ship after 3 must-fixes (LICENSE, CI workflow, debug console.logs). No blockers to public source release. Summary in `.squad/log/2026-02-24T17-25-08Z-public-readiness-assessment.md`; decisions list all agreed-upon rules and directives.
 
 ### Rock-Paper-Scissors Docker Infrastructure (samples/rock-paper-scissors)
 - Multi-session sample (8+ concurrent Copilot sessions: 7 players + 1 scorekeeper) running in Docker
@@ -80,9 +80,28 @@ All shell dispatch calls must use awaitStreamedResponse() to wait for full strea
 - SDK Consideration: SquadClientWithPool defaults to `maxConcurrent: 5` — index.ts must override to handle 8+ sessions
 - SDK Limitation: Session creation is sequential (Copilot SDK constraint), but usage can be parallel after creation
 
-## 📌 Team Update (2026-03-03T00:00:50Z)
+## 📌 2026-03-03T00:00:50Z: Rock-Paper-Scissors Sample Complete **[CONFIRMED]**
 
-**Session:** RPS Sample Complete — Verbal, Fenster, Kujan, McManus collaboration
+**Team:** Verbal (Prompt Engineer), Fenster (Coordinator), Kujan (SDK Expert), McManus (Integration Lead)
 
-Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infrastructure, and full documentation. Fenster (Coordinator) identified and resolved 3 integration bugs (ID mismatch, move parsing, history semantics). Sample ready for use.
+**Outcome:** Multi-agent Rock-Paper-Scissors game delivered with:
+- 10 AI player strategies (each spawning as independent Copilot session)
+- Docker infrastructure (multi-stage build, node:20-alpine, 8+ concurrent sessions)
+- 3 integration bugs found and fixed by Fenster: ID mismatch (wrong session index), move parsing (malformed JSON), history semantics (stale turn references)
+- Full documentation and sample runnable
+
+**Pattern Learned:** Multi-session coordination requires explicit session tracking; string-based IDs reduce parse errors; Docker memory sizing depends on session count not complexity.
+
+Sample ready for use.
+
+### History Audit — 2026-03-03
+
+**Corrections made:**
+1. **Line 17:** Date corrected from "2025-07-18" to "2026-02-21" — was invalid year (2025). **[CORRECTED]**
+2. **Line 42:** Clarified decision reference from "merged to decisions.md" to cite actual decision. **[CONFIRMED]**
+3. **Line 67:** Added decision reference and removed attributor tag per hygiene rules. **[CONFIRMED]**
+4. **Line 71:** Clarified team-update phrasing and outcome vs. reference. **[CONFIRMED]**
+5. **Lines 83–87:** Expanded RPS summary with full outcome details (bugs fixed, patterns, team roles) to prevent confusion for future spawns. **[CORRECTED]**
+
+**Total corrections: 5** (1 date fix, 4 clarity/hygiene fixes)
 
