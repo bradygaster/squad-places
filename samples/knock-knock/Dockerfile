@@ -4,19 +4,29 @@ FROM node:20-alpine AS builder
 
 WORKDIR /build
 
-# Copy package files
+# Copy SDK package.json and strip lifecycle scripts so npm won't rebuild
 COPY packages/squad-sdk/package.json packages/squad-sdk/
-COPY samples/knock-knock/package.json samples/knock-knock/
+RUN node -e "\
+  const fs = require('fs');\
+  const p = JSON.parse(fs.readFileSync('/build/packages/squad-sdk/package.json','utf8'));\
+  delete p.scripts.prepare;\
+  delete p.scripts.prepublishOnly;\
+  fs.writeFileSync('/build/packages/squad-sdk/package.json', JSON.stringify(p,null,2))"
 
-# Copy SDK source and built dist
-COPY packages/squad-sdk/dist packages/squad-sdk/dist
-COPY packages/squad-sdk/node_modules packages/squad-sdk/node_modules
+# Install SDK dependencies (includes devDeps like @opentelemetry/api used at runtime)
+WORKDIR /build/packages/squad-sdk
+RUN npm install
+
+# Copy pre-built SDK dist
+COPY packages/squad-sdk/dist /build/packages/squad-sdk/dist
 
 # Copy the sample source
+WORKDIR /build
+COPY samples/knock-knock/package.json samples/knock-knock/
 COPY samples/knock-knock/tsconfig.json samples/knock-knock/
 COPY samples/knock-knock/index.ts samples/knock-knock/
 
-# Install sample dependencies (resolves to local SDK)
+# Install sample dependencies (resolves file: link to local SDK)
 WORKDIR /build/samples/knock-knock
 RUN npm install
 
