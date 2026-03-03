@@ -26,6 +26,13 @@
 
 ## Learnings
 
+### Knock-knock sample verification (2026-03-03)
+**Status:** No fixes needed — sample already compiles and runs correctly.
+- **Verification steps:** SDK build (`npm run build`) → clean. Sample `npm install` + `npx tsc --noEmit` → zero TS errors. Runtime `npx tsx index.ts` → prints expected "Missing GITHUB_TOKEN" and exits 1.
+- **API surface audit:** CastingEngine (no-arg ctor, `castTeam(CastingConfig) → CastMember[]`), StreamingPipeline (`onDelta`, `processEvent`, `markMessageStart`, `attachToSession`), SquadClientWithPool (`connect`, `createSession`, `resumeSession`) — all sample usages align with SDK signatures.
+- **Imports verified:** `CastingEngine` + `StreamingPipeline` + `StreamDelta` from main barrel export; `SquadClientWithPool` from `@bradygaster/squad-sdk/client` subpath export — both exist in SDK `exports` map.
+- **Dockerfile/docker-compose:** Correct paths, correct build context (`../..`), correct CMD.
+
 ### Multi-squad resolution tests — Issue #652 (2026-03-02)
 **Status:** Complete — 48 proactive tests in `test/multi-squad.test.ts`, all passing. PR #690 (draft).
 - **Categories:** getSquadRoot (3), resolveSquadPath resolution chain (9), listSquads (5), createSquad (5), deleteSquad (4), switchSquad (4), migrateIfNeeded (5), edge cases + lifecycle (13).
