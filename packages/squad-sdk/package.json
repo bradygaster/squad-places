@@ -149,9 +149,11 @@
   },
   "files": [
     "dist",
+    "templates",
     "README.md"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json"
   },
@@ -159,7 +161,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.1.25"
+    "@github/copilot-sdk": "^0.1.29"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.9.0"
