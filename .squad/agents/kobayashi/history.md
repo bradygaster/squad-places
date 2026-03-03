@@ -372,3 +372,20 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Decision document:** `.squad/decisions/inbox/kobayashi-v060-version-target.md` created documenting Brady's direction, rationale, and full list of updated docs.
 - **Key insight:** Supersedes previous v0.8.17 recommendation. Brady's decision prioritizes clean public version numbering (v0.5.4 → v0.6.0 standard bump) over internal development milestone versioning.
 - **Cross-agent sync:** Rabin analyzed npx distribution compatibility (separate decision merged to decisions.md). Both agents' decisions now in merged decisions.md for team coordination post-banana gate.
+
+### 2026-02-24: PR #582 (Consult Mode) Merge Planning — Brady requested
+**Status:** DOCUMENTED — Phase 2.5 added to migration checklist, decision filed.
+- **Task:** Merge PR #582 ("Consult mode implementation" by James Sturtevant) into origin/migration LOCALLY before pushing to beta (Phase 3).
+- **Context:** 57 files changed across SDK, CLI, templates, tests, configs. Adds consult mode feature and new SDK exports.
+- **Risk profile:** Version conflicts expected in package.json files (ALL must remain at 0.8.18-preview — NOT 0.6.0). SDK exports (index.ts) may conflict. Test files may have parallel additions.
+- **Merge strategy documented:**
+  1. `git fetch origin consult-mode-impl && git checkout migration && git merge origin/consult-mode-impl --no-ff -m "Merge PR #582: Consult mode implementation"`
+  2. Version conflicts: use `--ours` strategy (keep 0.8.18-preview everywhere)
+  3. SDK exports: manual merge required (both old and new exports must be retained)
+  4. package-lock.json: regenerate via `npm install` post-merge
+  5. Validation: `npm run build` and `npm test` must pass
+- **Deliverables:**
+  1. **docs/migration-checklist.md** — New Phase 2.5 inserted between Phase 2 and Phase 3 with full conflict resolution playbook
+  2. **.squad/decisions/inbox/kobayashi-pr582-merge.md** — Decision document covering rationale, conflict types, resolution strategy, rollback plan, timing
+- **Key lesson:** Large feature merges into migration branches need explicit conflict prediction and resolution strategy documented BEFORE execution. Version safety (never 0.6.0) is non-negotiable. This prevents last-minute surprises during critical release gate.
+- **Status pending:** Execution awaits Brady's "banana" authorization (BANANA RULE in migration-checklist.md)

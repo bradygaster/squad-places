@@ -98,6 +98,36 @@
 - **All issues filed** with labels: `squad:fenster`, `squad`, `type:bug`
 - **Assignment:** Fenster for CLI domain expertise
 - **Impact:** Team now has explicit GitHub tracking for Fenster's CLI improvements. Clear ownership and acceptance criteria.
+
+### 2026-03-03T00:00:00Z: Migration Risk Assessment (Brady request)
+- **Task:** Assess migration plan for risks, gaps, and ordering issues. Focus on PR #582 merge, version number alignment, .squad/ directory cleanup, prebuild script behavior, and phase ordering.
+- **Context:** Migration from bradygaster/squad-pr (private) → bradygaster/squad (public). npm packages at 0.8.17 on npm, dev branch at 0.8.18-preview, public repo at v0.5.4. Target jump to v0.8.17. PR #582 (consult mode, 57 files, 11 commits) must merge locally before migration.
+- **Findings:** **5 HIGH risks, 3 MEDIUM gaps** identified:
+  - **🔴 CRITICAL:** PR #582 has CONFLICTING merge status — 57 files, key conflicts expected in package.json, SDK exports, tests. Merge simulation required before execution.
+  - **🔴 CRITICAL:** Version number mismatch — package.jsons say 0.8.18-preview, checklist says "publish 0.8.18", but Phase 5 says "target is 0.8.17". Already published 0.8.17 to npm. Cannot publish 0.8.17 over 0.8.18-preview. **Brady decision needed:** Is migration target 0.8.17 (skip npm publish) or 0.8.18 (downgrade from -preview and publish)?
+  - **🔴 CRITICAL:** Prebuild script (scripts/bump-build.mjs) auto-increments version on every build. Will convert 0.8.18-preview → 0.8.18-preview.1 during Phase 8, creating version drift mid-migration. Must disable or control.
+  - **🔴 CRITICAL:** .squad/ directory contains 21 agent histories (47KB+), session logs, orchestration-log.md, draft PRDs, internal decisions (67KB), catalogs, assessments. Should NOT be in public repo. **Missing cleanup phase.**
+  - **🔴 HIGH:** PR #582 merge not in checklist as numbered phase — jumps from Phase 2 to Phase 3. Kobayashi has decision file but it's not integrated. **Phase 2.6 needed.**
+  - 🟡 No .gitignore for .squad/ session state (will leak again)
+  - 🟡 Migration branch 9 commits ahead of main (includes version confusion commits, "crashed session" commit)
+  - 🟡 No npm publish permission validation (dry-run needed)
+- **Gaps identified:**
+  - No .squad/ cleanup phase (should remove histories, PRDs, session logs, keep only public config)
+  - No communication plan (who announces? where? when?)
+  - Phase 13 smoke tests not structured as validation gate
+  - Phase 2 title misleading ("Tag v0.8.17 on Origin" but note says skip it)
+  - Phase 6 (package name reconciliation) undecided (Option A vs B)
+  - Phase 11 already done but marked as TODO
+- **Recommended execution order:** Fixed 18-phase sequence with new phases: 1.5 (npm dry-run), 2.5 (.squad/ cleanup), 2.6 (PR #582 merge), 14 (communication), 15 (monitoring)
+- **Conflict resolution strategy:** For PR #582: merge simulation first, version validation gate, build/test validation, rollback plan, James Sturtevant escalation if non-trivial
+- **Version alignment strategy:** Two scenarios presented to Brady:
+  - Scenario A: Migration IS 0.8.17 (match npm, skip publish, tag public repo v0.8.17)
+  - Scenario B: Migration IS 0.8.18 (downgrade from -preview, publish 0.8.18, tag public repo v0.8.18, bump to 0.8.19-preview.1 post-release)
+- **Decision file:** `.squad/decisions/inbox/keaton-migration-risks.md` (19.5KB, 5 HIGH, 3 MEDIUM, full risk register format)
+- **Recommendation:** **DO NOT EXECUTE** until all 🔴 HIGH risks resolved. Estimated 4-6 hours: PR merge simulation (2h), .squad/ cleanup (1h), version alignment (1h), prebuild handling (30m), checklist updates (30m).
+- **Pattern learned:** Migration plans need **explicit conflict resolution simulation phases** before point-of-no-return pushes. Version number alignment must be decided FIRST (not discovered mid-execution). Session state cleanup is NOT optional for public releases — .squad/ histories/logs expose internal process. Prebuild hooks that mutate versions are migration hazards. PR merges must be numbered phases with validation gates, not "assumed to work".
+- **Architectural insight:** **Risk register format works well for migration assessments** — severity (🔴/🟡/🟢), description, impact, mitigation, phase impact. Makes executive summary crisp ("5 HIGH, 3 MEDIUM, do not proceed"). For future migrations: always simulate merge conflicts, always validate version alignment before execution, always clean session state for public repos.
+- **Next action:** Brady reviews, decides version target (0.8.17 vs 0.8.18), then Kobayashi executes mitigations (cleanup script, PR merge simulation, checklist updates).
 - **Decision memo:** `.squad/decisions/inbox/keaton-cli-gap-issues.md`
 
 ### 2026-02-23: Docs Site Engine & Beta Content (#185, #188)

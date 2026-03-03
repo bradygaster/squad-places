@@ -134,3 +134,27 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 - **Upgrade compatibility:** 🟢 Fully supported (no issues upgrading from beta to origin)
 - **Decision merged to decisions.md.** Status: npx migration strategy finalized for implementation post-banana gate.
 - **Cross-agent sync:** Kobayashi's migration plan (separate decision) complements this distribution analysis. Both decisions now in merged decisions.md for coordinated beta → origin migration.
+
+### 📌 Research (2026-07): GitHub npx dual-distribution feasibility analysis
+**Requested by:** Brady — can we support `npx github:bradygaster/squad` alongside the npm channel?
+
+**How `npx github:` works:**
+- npx clones the repo via git → runs `npm install` (including devDependencies for git sources) → runs `prepare` script → executes root `bin` entry.
+- Only reads the **root** `package.json` bin field. Does NOT traverse into workspace packages.
+
+**What would be needed (3 changes):**
+1. Add `"bin": { "squad": "./cli.js" }` to root `package.json`
+2. Add `"prepare": "npm run build"` to root scripts (so TypeScript compiles after clone)
+3. Update `cli.js` to forward without deprecation notice
+
+**Why it's not worth it:**
+- **Speed:** GitHub path clones entire repo, installs ALL devDeps (TS, esbuild, Vitest, Playwright — hundreds of MB), builds from source. ~30+ seconds vs ~3 seconds for npm tarball.
+- **Fragility:** Any build failure = broken distribution. npm tarball is pre-built and tested.
+- **No caching:** Git clones aren't cached by npm the way registry packages are.
+- **Version pinning:** Uses `#tag` syntax, not semver-aware like `@version`.
+- **devDependencies:** All of them get installed (unlike npm registry which only installs production deps).
+- **Workspaces:** npm install respects them, but npx only sees root bin — requires root bin entry as redirect.
+
+**Recommendation:** Keep npm-only. The GitHub channel is technically possible with 3 small changes but provides a strictly worse UX (slower, heavier, more fragile). The only benefit is URL aesthetics. Not worth the maintenance or user-experience cost.
+
+**Alternative if "GitHub URL" is important:** Publish to GitHub Packages (npm registry on GitHub) for `npx @bradygaster/squad-cli --registry=https://npm.pkg.github.com` — same pre-built experience, different registry. But adds auth complexity.

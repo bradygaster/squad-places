@@ -28,6 +28,30 @@
 
 ## Learnings
 
+### 2026-03-06: CLI help vs README audit — command reference corrected
+
+**Status:** Complete. README.md "All Commands" section updated to match CLI --help output.
+
+**Key fixes applied:**
+1. **Removed `squad run <agent> [prompt]`** — Listed in README but NOT in CLI --help; investigation found no "run" command registered in `packages/squad-cli/src/cli-entry.ts`; deletion confirms it's not implemented
+2. **Added `squad nap`** — Present in CLI --help under Utilities section but missing from README entirely; now documented with --deep and --dry-run flags
+3. **Added alias documentation:**
+   - `squad init` → alias: `hire` (registered in cli-entry.ts line 501)
+   - `squad doctor` → alias: `heartbeat` (registered in cli-entry.ts line 502)
+   - `squad triage` → aliases: `watch`, `loop` (registered in cli-entry.ts lines 500, 561)
+4. **Corrected command descriptions** — Enhanced flag documentation for copilot, triage, and plugin subcommands for clarity
+5. **Verified command count** — 15 commands remains accurate after corrections (was off-by-one due to non-existent run command)
+
+**Source of truth applied:** CLI --help output from `node cli.js --help` is definitive; README now mirrors it exactly.
+
+**Audit method:**
+- Ran `node cli.js --help` and captured full output
+- Cross-referenced with `packages/squad-cli/src/cli-entry.ts` getCommandHelp() and main() dispatch logic (lines 166–495, 538–606)
+- Verified aliases via command registration (aliases object, lines 498–503)
+- Spot-check: searched for "run" command definition — found none
+
+**Tone & style preserved:** Kept existing README structure, descriptions, and tone ceiling (no hype, substantiated claims).
+
 ### 2026-03-01: Rock Paper Scissors sample documentation
 
 **Status:** Complete. Sample README and samples index updated.

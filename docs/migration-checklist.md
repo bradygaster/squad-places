@@ -26,6 +26,44 @@ If NOT checked, STOP. Do not proceed.
 
 ---
 
+## Phase 2.5: Merge PR #582 (Consult Mode) into origin/migration
+
+**Context:** PR #582 ("Consult mode implementation" by James Sturtevant) must be merged into the local migration branch BEFORE pushing to beta. This consolidates the consult mode feature into the migration payload.
+
+**Risk Profile:**
+- 57 files changed (touching package.json, SDK, CLI, templates, tests)
+- Possible merge conflicts in:
+  - `package.json` (version strings — keep 0.8.18-preview)
+  - `packages/squad-cli/package.json` (version strings — keep 0.8.18-preview)
+  - `packages/squad-sdk/package.json` (version strings — keep 0.8.18-preview)
+  - `packages/squad-sdk/src/index.ts` (exports may conflict)
+  - `packages/squad-sdk/src/resolution.ts` (core SDK logic)
+  - `squad.config.ts` (config structure)
+  - Test files may have parallel changes
+
+**Merge Strategy:**
+1. Fetch PR #582 branch: `git fetch origin consult-mode-impl`
+2. Ensure on migration branch: `git checkout migration`
+3. Merge with no-ff (preserves PR history): `git merge origin/consult-mode-impl --no-ff -m "Merge PR #582: Consult mode implementation"`
+4. **Conflict Resolution:**
+   - Version conflicts: Use ours (`--ours`) — ALWAYS keep 0.8.18-preview
+   - SDK exports/index.ts: Manual merge required — both new exports must be retained
+   - package-lock.json: Regenerate after merge: `npm install` then `git add package-lock.json`
+   - Test conflicts: Manual merge required — ensure both old and new tests are included
+5. Verify merge: `git log migration --oneline -5` (should show merge commit at top)
+6. Verify no version corruption: `grep '"version"' package.json packages/*/package.json` → all must be 0.8.18-preview (NOT 0.6.0)
+
+**If merge fails:**
+- [ ] Abort merge: `git merge --abort`
+- [ ] Escalate to Brady and James Sturtevant for resolution
+- [ ] Do NOT proceed to Phase 3 until merge succeeds
+
+**If merge succeeds:**
+- [ ] Mark Phase 2.5 as COMPLETE
+- [ ] Proceed to Phase 3
+
+---
+
 ## Phase 3: Push origin/migration to beta/migration
 - [ ] Verify migration branch HEAD: `git rev-parse migration` → `87e4f1c`
 - [ ] Ensure beta remote exists: `git remote -v | grep beta`

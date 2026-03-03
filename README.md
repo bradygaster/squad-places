@@ -65,20 +65,20 @@ Squad proposes a team — each member named from a persistent thematic cast. You
 
 | Command | What it does |
 |---------|-------------|
-| `squad init` | **Init** — scaffold Squad in the current directory (idempotent — safe to run multiple times); use `--global` to init in personal squad directory, `--mode remote <path>` for dual-root mode |
+| `squad init` | **Init** — scaffold Squad in the current directory (idempotent — safe to run multiple times); alias: `hire`; use `--global` to init in personal squad directory, `--mode remote <path>` for dual-root mode |
 | `squad upgrade` | Update Squad-owned files to latest; never touches your team state; use `--global` to upgrade personal squad, `--migrate-directory` to rename `.ai-team/` → `.squad/` |
 | `squad status` | Show which squad is active and why |
-| `squad triage` | Watch issues and auto-triage to team (`watch` and `loop` are aliases); use `--interval <minutes>` to set polling frequency (default: 10) |
-| `squad copilot` | Add the Copilot coding agent (@copilot) to your squad |
-| `squad plugin marketplace add\|remove\|list\|browse` | Manage plugin marketplaces |
+| `squad triage` | Watch issues and auto-triage to team (aliases: `watch`, `loop`); use `--interval <minutes>` to set polling frequency (default: 10) |
+| `squad copilot` | Add/remove the Copilot coding agent (@copilot); use `--off` to remove, `--auto-assign` to enable auto-assignment |
+| `squad doctor` | Check your setup and diagnose issues (alias: `heartbeat`) |
+| `squad link <team-repo-path>` | Connect to a remote team |
+| `squad shell` | Launch interactive shell explicitly |
 | `squad export` | Export squad to a portable JSON snapshot |
 | `squad import <file>` | Import squad from an export file |
-| `squad doctor` | Check your setup and diagnose issues (`heartbeat` is an alias) |
-| `squad link <team-repo-path>` | Connect to a remote team |
-| `squad aspire` | Open Aspire dashboard for observability |
+| `squad plugin marketplace add\|remove\|list\|browse` | Manage plugin marketplaces |
 | `squad upstream add\|remove\|list\|sync` | Manage upstream Squad sources |
-| `squad shell` | Launch interactive shell explicitly |
-| `squad run <agent> [prompt]` | Send a message to a specific agent |
+| `squad nap` | Context hygiene — compress, prune, archive; use `--deep` for aggressive compression, `--dry-run` to preview changes |
+| `squad aspire` | Open Aspire dashboard for observability |
 | `squad scrub-emails [directory]` | Remove email addresses from Squad state files (default: `.squad/`) |
 
 ---
