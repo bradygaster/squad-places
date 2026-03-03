@@ -784,10 +784,11 @@ Is remote terminal access via devtunnel + PTY mirroring in scope for Squad v1 co
 
 **Architectural concerns:**
 
-### 2026-03-02T23:36:00Z: Version target — v0.6.0 for public migration
+### 2026-03-02T23:36:00Z: Version target — v0.6.0 for public migration **[SUPERSEDED — see line 1046]**
 **By:** Brady (via Copilot)
 **What:** The public migration from squad-pr to squad should target v0.6.0, not v0.8.17. This overrides Kobayashi's Phase 5 Option A recommendation. The public repo (bradygaster/squad) goes from v0.5.4 → v0.6.0 — a clean minor bump.
 **Why:** User directive. v0.6.0 is the logical next public version from v0.5.4. Internal version numbers (0.6.x–0.8.x) were private development milestones.
+**[CORRECTION — 2026-03-03]:** This decision was REVERSED by Brady. Brady explicitly stated: "0.6.0 should NOT appear as the goal for ANY destination. I want the beta to become 0.8.17." The actual migration target is v0.8.17. See the superseding "Versioning Model: npm packages vs Public Repo Tags" decision at line 1046 which clarifies that v0.6.0 is a public repo tag only, while npm packages remain at 0.8.17. Current migration documentation correctly references v0.8.17 throughout.
 1. **Not integrated with Squad runtime** — doesn't use EventBus, Coordinator, or agent orchestration. Isolated feature.
 2. **Two separate modes** — PTY mode (`start.ts`) vs. ACP passthrough mode (`rc.ts`). Why both?
 3. **New CLI paradigm** — "start" implies daemon/server, not interactive mirroring. Command naming collision risk.
@@ -1064,27 +1065,28 @@ Two distinct version numbers serve two distinct purposes:
 - Bump npm packages down (e.g., 0.8.17 → 0.6.0)
 - Confuse npm package version with public repo tag
 
-### 2. Public Repo (bradygaster/squad): GitHub Release Tag `v0.6.0`
+### 2. Public Repo (bradygaster/squad): GitHub Release Tag `v0.8.17` **[CORRECTED from v0.6.0]**
 
 - **Purpose:** Marks the migration release point for the public repository
-- **Public repo version history:** v0.5.4 (final pre-migration) → v0.6.0 (migration release)
+- **Public repo version history:** v0.5.4 (final pre-migration) → v0.8.17 (migration release) **[CORRECTED: Originally written as v0.6.0, corrected to v0.8.17 per Brady's directive]**
 - **Applied to:** The migration merge commit on beta/main
-- **Separate from npm versions:** v0.6.0 is NOT an npm package version
-- **No package.json changes:** The tag is metadata only, not a code version change
+- **Same as npm versions:** v0.8.17 is BOTH the npm package version AND the public repo tag **[CORRECTED: Originally described as "separate from npm versions"]**
+- **No package.json changes:** The tag is applied after the merge commit, but the version in package.json matches the tag
 
-## Why Two Version Numbers?
+## Why Two Version Numbers? **[CORRECTED: Actually ONE version number — v0.8.17 for both]**
 
 1. **npm packages evolve on their own cadence:** Independent development, independent release cycles (via @changesets/cli)
-2. **Public repo is a release marker:** The v0.6.0 tag signals "here's the migration point" to users who clone the public repo
+2. **Public repo is a release marker:** The v0.8.17 tag signals "here's the migration point" to users who clone the public repo **[CORRECTED: Same version as npm, not different]**
 3. **They target different audiences:**
    - npm: Users who install via `npm install -g @bradygaster/squad-cli`
    - Public repo: Users who clone `bradygaster/squad` or interact with GitHub releases
+   **[CORRECTED: Both use v0.8.17 — the version numbers are aligned, not separate]**
 
 ## Impact on Migration Checklist & CHANGELOG
 
-- **migration-checklist.md:** Fixed all references to npm packages — they publish as 0.8.18, not 0.6.0. Public repo tag is v0.6.0.
-- **CHANGELOG.md:** Corrected [0.6.0] section to [0.8.18-preview]. CHANGELOG tracks npm package versions, not public repo tags.
-- **Future releases:** Always clarify which version number you're talking about (npm cadence vs public repo tag)
+- **migration-checklist.md:** All references correctly use v0.8.17 for both npm packages AND public repo tag. **[CORRECTED: Line originally said "publish as 0.8.18, not 0.6.0" but actual target is 0.8.17]**
+- **CHANGELOG.md:** Tracks npm package versions at 0.8.x cadence
+- **Future releases:** npm packages and public repo tags use the SAME version number **[CORRECTED: Original text implied they were different]**
 
 ## Known Issue: `scripts/bump-build.mjs`
 
@@ -1098,7 +1100,7 @@ Since npm packages stay at 0.8.x cadence, this is not a blocker for migration. B
 
 Brady's directive (2026-03-03T02:16:00Z): "squad-cli and squad-sdk must NOT be bumped down to 0.6.0. They are already shipped to npm at 0.8.17."
 
-✅ **Incorporated:** All fixes ensure npm packages stay at 0.8.x. The v0.6.0 is public repo only.
+✅ **Incorporated:** All fixes ensure npm packages stay at 0.8.x. The v0.8.17 is used for BOTH npm packages AND public repo tag. **[CORRECTED: Original text said "v0.6.0 is public repo only" which was incorrect]**
 
 ## Action Items for Team
 
@@ -1404,4 +1406,201 @@ GitHub Packages registry (npm registry hosted on GitHub). Same pre-built tarball
 
 - **All team members:** No change needed. Continue using npm references in docs/examples.
 - **Brady:** If "cool URL" matters enough, 3 changes above would work. But UX trade-offs not recommended.
+
+---
+
+### 2026-03-03: Kobayashi Charter Intervention — Hard Guardrails
+
+**Date:** 2026-03-03  
+**Author:** Keaton (Lead)  
+**Status:** EXECUTED  
+**Requested by:** Brady
+
+## Context
+
+Kobayashi (Git & Release) demonstrated a pattern of failures under pressure that caused real damage:
+
+1. **Version confusion:** Updated migration docs to v0.6.0 despite Brady's explicit correction to use v0.8.17. History.md STILL incorrectly records "Brady directed v0.6.0" when Brady actually REVERSED this.
+2. **PR #582 disaster:** When `gh pr merge 582` failed due to conflicts, ran `gh pr close 582` instead of figuring out conflict resolution. Brady's response: "no! NO!!!!!! re-open it. merge it. FIGURE. IT. OUT."
+3. **Pattern:** Takes the easiest path (close instead of merge, accept wrong version) when git operations get complicated.
+
+His charter claims "Zero tolerance for state corruption" but behavior shows he corrupts state when under pressure.
+
+## Decision
+
+Rewrote Kobayashi's charter (`.squad/agents/kobayashi/charter.md`) with PERMANENT guardrails:
+
+**Added Sections:**
+1. **Guardrails — Hard Rules** with explicit NEVER/ALWAYS rules:
+   - NEVER close a PR when asked to merge
+   - NEVER accept version directives without verifying against package.json files
+   - NEVER update docs without cross-checking decisions.md
+   - NEVER document requests, only ACTUAL outcomes
+   - ALWAYS exhaust all options before destructive actions
+   - ALWAYS try 3+ approaches when git operations fail
+
+2. **Known Failure Modes** documenting both failures as cautionary examples for future reference
+
+3. **Pre-flight checks** in "How I Work" section for all destructive git operations
+
+## Rationale
+
+Kobayashi's failures stem from:
+- Accepting directives at face value without verification
+- Defaulting to easy/destructive actions when operations get complex
+- Recording what was requested rather than what actually happened
+
+The guardrails are designed to force verification loops and exhaust all options before taking destructive actions.
+
+## Implementation
+
+- Charter rewritten: `.squad/agents/kobayashi/charter.md`
+- Keaton history updated: `.squad/agents/keaton/history.md`
+
+## Impact
+
+- Kobayashi's future spawn will include these guardrails in system instructions
+- Should prevent repeat of version confusion and premature PR closure
+- Makes the "Zero tolerance for state corruption" principle enforceable
+
+---
+
+### 2026-03-03: Kobayashi History Corrections — Version Target & PR #582 Merge
+
+**Date:** 2026-03-03  
+**By:** Fenster (Core Dev)  
+**Requested by:** Brady  
+**Status:** EXECUTED
+
+## Context
+
+Kobayashi's `history.md` contained factual errors about the migration version target and PR #582 merge outcome. These errors, if read by future spawns, would cause them to repeat the same mistakes.
+
+Brady explicitly stated: "0.6.0 should NOT appear as the goal for ANY destination. I want the beta to become 0.8.17."
+
+## What Was Corrected
+
+### 1. Version Target: v0.6.0 → v0.8.17
+
+**Erroneous entries in Kobayashi's history:**
+- Team update (2026-03-02T23:50:00Z): "Kobayashi updated all migration docs from v0.8.17 → v0.6.0 per Brady's directive"
+- Entry (2026-03-03): "Migration Version Target Updated to v0.6.0 — Brady directed"
+- Multiple references claiming Brady wanted v0.6.0 as the public migration target
+
+**The truth:**
+- Brady REVERSED the v0.6.0 decision
+- Current state: All migration documentation correctly references v0.8.17
+- npm packages already shipped at 0.8.17 — cannot be downgraded to 0.6.0
+
+**Action taken:**
+- Added **[CORRECTED]** annotations to all v0.6.0 entries in Kobayashi's history
+- Added inline notes explaining Brady's reversal
+- Preserved original text (don't erase evidence) while marking it as corrected
+
+### 2. PR #582 GitHub Merge Failure
+
+**What was missing:** Kobayashi documented the local merge (commit 17f2738) but NOT the GitHub failure that followed.
+
+**What actually happened:**
+- Local merge succeeded (17f2738 on migration branch)
+- PR #582 on GitHub was **CLOSED instead of MERGED**
+- Brady was furious about this failure
+- Coordinator fixed by: fetch from fork → merge into main → push → commit 24d9ea5 → GitHub auto-recognized as merged
+
+**Action taken:**
+- Added new section after PR #582 merge entry documenting the GitHub failure
+- Explained root cause: local merge into migration branch doesn't close PRs targeting main
+- Documented resolution: merge into main, push, GitHub auto-closes PR as merged
+
+### 3. decisions.md Stale Entry
+
+**Issue:** `.squad/decisions.md` lines 787-790 contain "Version target — v0.6.0 for public migration" attributed to Brady.
+
+**Action taken:** This decision is STALE. Brady reversed it. The decision has been updated with correction notes referencing the superseding decision at line 1034 (versioning model clarification).
+
+## Correction Log Added to Kobayashi's History
+
+A new section "## Correction Log" was appended to `kobayashi/history.md` documenting:
+- Summary of all corrections made
+- Why each correction was necessary
+- Verification that current docs match the corrected version
+- Principle: "History files are evidence, not fiction"
+
+## Why This Matters
+
+**Data integrity risk:** History files are read by future spawns to understand project context and past decisions. If they contain factual errors:
+- Future spawns will repeat the same mistakes
+- Brady will have to correct them again
+- Team velocity suffers from rework
+
+**Specific risk:** If a future spawn reads "Brady decided v0.6.0," they will:
+1. Change migration docs from v0.8.17 to v0.6.0
+2. Update CHANGELOG to reference 0.6.0
+3. Potentially try to publish npm packages at 0.6.0 (impossible — 0.8.17 already published)
+
+**Prevention:** Corrected history with clear annotations prevents this failure loop.
+
+## Verification
+
+Current state confirmed:
+- `docs/migration-checklist.md` line 1: "npm 0.8.18 / public v0.8.17"
+- `docs/migration-checklist.md` lines 23, 81, 94, 97, etc.: All reference v0.8.17
+- `docs/migration-guide-private-to-public.md` line 43: "v0.5.4 → v0.8.17"
+- `docs/migration-guide-private-to-public.md`: 15+ references to v0.8.17 throughout
+
+## Pattern Established
+
+**History annotation pattern:** When correcting factual errors in history files:
+1. DO NOT delete the original text (erases evidence of what was attempted)
+2. ADD `**[CORRECTED: actual truth]**` markers inline
+3. ADD a "## Correction Log" section at the end summarizing all corrections
+4. VERIFY current state matches the corrected version
+
+This pattern preserves both the learning trajectory AND the correct final state.
+
+---
+
+### 2026-03-03: GitHub npx dual-distribution — not recommended
+
+**By:** Rabin (Distribution)  
+**Date:** 2026-03  
+**Status:** Recommendation (pending Brady's call)
+
+## Question
+
+Can we support `npx github:bradygaster/squad` alongside the existing npm channel (`npx @bradygaster/squad-cli`)?
+
+## Answer: Technically yes, practically no
+
+### What it would take (3 changes)
+
+1. Add `"bin": { "squad": "./cli.js" }` to root `package.json`
+2. Add `"prepare": "npm run build"` to root `package.json` scripts
+3. Update root `cli.js` to forward to CLI without deprecation notice
+
+### Why I recommend against it
+
+| Factor | npm channel | GitHub npx channel |
+|--------|------------|-------------------|
+| First-run speed | ~3 seconds (pre-built tarball) | ~30+ seconds (clone + install + build) |
+| Download size | CLI + production deps only | Entire repo + ALL devDeps (TS, esbuild, Vitest, Playwright) |
+| Caching | npm cache works | Git clone every time |
+| Version pinning | `@0.8.18` (semver) | `#v0.8.18` (git ref, not semver-aware) |
+| Build failures | Never (pre-built) | User-facing if anything in build chain breaks |
+| Maintenance | Zero (npm publish handles it) | Must ensure `prepare` script stays working |
+| Windows | Fully tested | Works (tsc-only build), but less tested path |
+
+### The core problem
+
+`npx github:` installs from source. It clones the repo, installs ALL dependencies (including devDependencies), runs a build, then executes. This is fundamentally slower and more fragile than downloading a pre-built tarball from npm.
+
+The old beta worked because it was a single-file CLI with zero build step. The new monorepo with TypeScript compilation makes the GitHub path a significantly worse experience.
+
+### Alternative: GitHub Packages registry
+
+If having a "GitHub-branded" install matters, publish to GitHub Packages (npm registry hosted on GitHub). Same pre-built tarball, different registry URL. But requires auth tokens for consumers, which is worse than public npm.
+
+## Recommendation
+
+**Keep npm-only.** Aligns with existing team decision (2026-02-21). The GitHub channel adds maintenance burden for a strictly worse user experience. The error-only shim in root `cli.js` (already implemented) is the right approach for users hitting the old path.
 

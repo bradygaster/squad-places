@@ -273,6 +273,22 @@
 - `packages/squad-cli/dist/cli-entry.js` auto-executes `main().catch(...)` at module level — importing it is sufficient to run the CLI
 - `process.env.npm_execpath` is set when running via npm/npx but absent for direct `node` invocation — good signal for conditional deprecation notices
 
+### 2026-03-03: History Audit & Correction Pattern
+
+**Context:** Brady requested correction of Kobayashi's history.md due to factual errors about version targets (v0.6.0 vs v0.8.17) and missing documentation of PR #582 GitHub merge failure.
+
+**Pattern established:** When correcting history files:
+1. **Never delete** — History is evidence, not fiction. Preserve what was attempted, even if wrong.
+2. **Annotate inline** — Add `**[CORRECTED: actual truth]**` markers next to erroneous text
+3. **Add Correction Log** — Append section documenting what was corrected, why, and verification of current state
+4. **Explain the failure** — Future spawns need to understand WHY the mistake happened to avoid repeating it
+
+**Key insight:** History file errors are data integrity bugs. If a spawn reads "Brady decided v0.6.0" when Brady actually decided v0.8.17, the spawn will propagate that error into code/docs. Corrections prevent error loops.
+
+**Files corrected:**
+- `.squad/agents/kobayashi/history.md` — 3 sections corrected (v0.6.0 references), 1 section added (PR #582 GitHub failure), Correction Log appended
+- `.squad/decisions/inbox/fenster-kobayashi-history-corrections.md` — Decision documenting the corrections and audit findings
+
 ---
 
 ## 2025-07: Knock-Knock Multi-Agent Sample

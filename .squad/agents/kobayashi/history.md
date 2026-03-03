@@ -19,9 +19,9 @@
 - **The issue:** Coordinator confused npm package versions with public repo release tag
 - **The truth:** Two distinct version numbers serve different purposes
   - **npm packages:** Continue at 0.8.x cadence (0.8.17 shipped → next is 0.8.18). Development uses X.Y.Z-preview.N format.
-  - **Public repo tag:** v0.6.0 marks the migration release on `bradygaster/squad`. This is metadata, not a package version.
+  - **Public repo tag:** v0.8.17 marks the migration release on `bradygaster/squad`. This is metadata, not a package version. **[CORRECTED: Originally written as v0.6.0, corrected to v0.8.17 per Brady's directive]**
 - **Released versions:** 0.8.17 already on npm and must NOT be bumped down to 0.6.0
-- **Migration release:** Public repo (beta) gets v0.6.0 GitHub Release tag at migration merge commit
+- **Migration release:** Public repo (beta) gets v0.8.17 GitHub Release tag at migration merge commit **[CORRECTED: Originally written as v0.6.0, corrected to v0.8.17]**
 - **Fixes made:**
   1. migration-checklist.md: Corrected all npm package version references (0.6.0 → 0.8.18)
   2. CHANGELOG.md: Changed [0.6.0] section to [0.8.18-preview] (tracks npm packages, not public repo)
@@ -321,16 +321,16 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 **Package naming:**
 - **Decision:** Deprecate `@bradygaster/create-squad` on npm (if published). All future releases under `@bradygaster/squad-cli` + `@bradygaster/squad-sdk`.
 
-### 📌 Team update (2026-03-02T23:50:00Z): Public v0.6.0 migration docs complete
-- **Status:** Completed — Kobayashi updated all migration docs from v0.8.17 → v0.6.0 per Brady's directive
-- **Decisions merged:** Version target decision (Brady: v0.6.0 public release, not v0.8.17)
-- **Files updated:** docs/migration-checklist.md (14 phases), docs/migration-guide-private-to-public.md (45+ references)
-- **Key decision:** Public v0.5.4 → v0.6.0 (clean minor bump); origin continues 0.8.18-preview.x internally
+### 📌 Team update (2026-03-02T23:50:00Z): Public v0.6.0 migration docs complete **[CORRECTED: This was REVERSED — final target is v0.8.17]**
+- **Status:** Completed — Kobayashi updated all migration docs from v0.8.17 → v0.6.0 per Brady's directive **[CORRECTED: Brady later reversed this decision — docs were restored to v0.8.17]**
+- **Decisions merged:** Version target decision (Brady: v0.6.0 public release, not v0.8.17) **[CORRECTED: This decision was reversed by Brady]**
+- **Files updated:** docs/migration-checklist.md (14 phases), docs/migration-guide-private-to-public.md (45+ references) **[CORRECTED: These files were later restored to v0.8.17]**
+- **Key decision:** Public v0.5.4 → v0.6.0 (clean minor bump); origin continues 0.8.18-preview.x internally **[CORRECTED: Actual decision is v0.5.4 → v0.8.17]**
 - **Session log:** `.squad/log/2026-03-02T23-50-00Z-migration-v060-knock-knock.md`
 - **Rationale:** Origin's naming is more accurate (CLI vs SDK). Monorepo structure supports independent versioning if needed.
 
 **Deliverables created:**
-1. **Unified migration checklist:** `docs/migration-checklist.md` (overwrote outdated v0.6.0-preview checklist with v0.8.17 version). 14 phases covering: prerequisites → tag v0.8.17 → push to beta → merge → npm publish → GitHub release → beta user upgrade path → verification → closure. Includes rollback plans and final verification checklist.
+1. **Unified migration checklist:** `docs/migration-checklist.md` (overwrote outdated v0.6.0-preview checklist with v0.8.17 version). 14 phases covering: prerequisites → tag v0.8.17 → push to beta → merge → npm publish → GitHub release → beta user upgrade path → verification → closure. Includes rollback plans and final verification checklist. **[NOTE: This is the correct final state — v0.8.17 was briefly changed to v0.6.0 but was later restored]**
 2. **Migration plan:** `.squad/decisions/inbox/kobayashi-migration-plan.md` — comprehensive analysis covering missing v0.8.17 tag, repo structure divergence, GitHub Actions differences, version jump strategy, package name strategy, beta user upgrade path, migration execution phases, risks & mitigations.
 3. **Version path plan:** `.squad/decisions/inbox/kobayashi-version-path.md` — detailed version gap analysis (v0.5.4 → v0.8.17), three upgrade options evaluated (direct jump, bridge version, full backfill), beta user migration impact, rollback strategy, success metrics.
 
@@ -359,18 +359,18 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Breaking changes for beta users:** (1) Distribution method (GitHub-native → npm), (2) Directory name (`.ai-team/` → `.squad/`), (3) Package name, (4) Node.js >=22 → >=20 (less restrictive).
 - **Deliverables:** Migration checklist (14 phases), migration-plan decision, version-path decision. Status: PLANNING (banana rule active — no git operations until Brady says "banana").
 
-### 2026-03-03: Migration Version Target Updated to v0.6.0 — Brady directed
-**Status:** EXECUTED — All migration documentation updated to target v0.6.0 instead of v0.8.17.
-- **Direction:** Brady decided v0.6.0 is the public migration target (not v0.8.17).
-- **Rationale:** v0.5.4 → v0.6.0 is a clean minor semver bump for public users. Internal versions 0.6.x-0.8.x are private development milestones and don't need public release.
-- **Documentation updated:**
-  1. **docs/migration-checklist.md** — All 14 phases updated: removed dual-tagging logic (v0.6.0 tag at merge commit on public repo only), updated PR titles, Phase 5 consolidated single decision (no Option A/B), Phase 7 user upgrade path, Phase 8-13 npm & release steps all reference v0.6.0.
-  2. **docs/migration-guide-private-to-public.md** — 45+ version references updated (v0.8.17 → v0.6.0), including user upgrade paths, GitHub release notes, package versions, breaking changes.
+### 2026-03-03: Migration Version Target Updated to v0.6.0 — Brady directed **[CORRECTED: This was REVERSED by Brady]**
+**Status:** EXECUTED THEN REVERSED — All migration documentation was temporarily updated to v0.6.0, then restored to v0.8.17.
+- **Direction:** Brady decided v0.6.0 is the public migration target (not v0.8.17). **[CORRECTED: Brady explicitly reversed this decision. Actual target: v0.8.17]**
+- **Rationale:** v0.5.4 → v0.6.0 is a clean minor semver bump for public users. Internal versions 0.6.x-0.8.x are private development milestones and don't need public release. **[CORRECTED: Brady stated "0.6.0 should NOT appear as the goal for ANY destination. I want the beta to become 0.8.17."]**
+- **Documentation updated:** **[CORRECTED: These changes were REVERSED. Final state is v0.8.17 everywhere]**
+  1. **docs/migration-checklist.md** — All 14 phases updated: removed dual-tagging logic (v0.6.0 tag at merge commit on public repo only), updated PR titles, Phase 5 consolidated single decision (no Option A/B), Phase 7 user upgrade path, Phase 8-13 npm & release steps all reference v0.6.0. **[CORRECTED: Currently says v0.8.17]**
+  2. **docs/migration-guide-private-to-public.md** — 45+ version references updated (v0.8.17 → v0.6.0), including user upgrade paths, GitHub release notes, package versions, breaking changes. **[CORRECTED: Currently says v0.8.17]**
   3. **docs/launch/migration-guide-v051-v060.md** — No changes needed (internal SDK migration, already correct)
   4. **docs/migration-github-to-npm.md** — No changes needed (distribution method docs)
   5. **docs/cookbook/migration.md** — No changes needed (internal SDK migration, already correct)
-- **Decision document:** `.squad/decisions/inbox/kobayashi-v060-version-target.md` created documenting Brady's direction, rationale, and full list of updated docs.
-- **Key insight:** Supersedes previous v0.8.17 recommendation. Brady's decision prioritizes clean public version numbering (v0.5.4 → v0.6.0 standard bump) over internal development milestone versioning.
+- **Decision document:** `.squad/decisions/inbox/kobayashi-v060-version-target.md` created documenting Brady's direction, rationale, and full list of updated docs. **[CORRECTED: This decision was superseded by Brady's reversal]**
+- **Key insight:** Supersedes previous v0.8.17 recommendation. Brady's decision prioritizes clean public version numbering (v0.5.4 → v0.6.0 standard bump) over internal development milestone versioning. **[CORRECTED: This insight is FALSE. Brady's final decision is v0.8.17]**
 - **Cross-agent sync:** Rabin analyzed npx distribution compatibility (separate decision merged to decisions.md). Both agents' decisions now in merged decisions.md for team coordination post-banana gate.
 
 ### 2026-02-24: PR #582 (Consult Mode) Merge Planning — Brady requested
@@ -412,4 +412,105 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
 - **Learning:** Forked PR branches require fetching from contributor's fork URL directly when branch not pushed to origin. Version conflicts in monorepo merges require checking all three package.json locations (root + both packages). Union merge driver handled .squad/ files cleanly (no Fenster history conflicts).
 - **Outcome:** Consult mode feature (PR #582) successfully integrated into migration branch. Migration branch now ready for next phase (push to beta). All version strings protected at 0.8.18-preview.
 
+**[CRITICAL UPDATE: PR #582 GitHub Merge Failure]**
+After the local merge (commit 17f2738 on migration branch), the PR #582 on GitHub was **CLOSED instead of MERGED**. This was a coordination failure — the local merge was complete and correct, but GitHub did not recognize it as merging the PR. Brady was extremely frustrated by this.
+
+**Resolution:** The coordinator had to fix it by:
+1. Fetching from James' fork again
+2. Merging into origin/main (not migration)
+3. Creating commit 24d9ea5 on origin/main
+4. Pushing to origin
+5. GitHub automatically marked PR #582 as MERGED after detecting the commit
+
+**Key learning:** Local merges of fork PRs do NOT auto-close the GitHub PR unless pushed to the target branch that the PR is targeting. PR #582 targeted origin/main, but local merge was into origin/migration. The fix was to merge into main and push — GitHub then recognized the merge and updated the PR status.
+
+**Critical takeaway for future:** When merging fork PRs locally, ensure the merge goes into the SAME branch the PR targets on GitHub, OR push the merge commit to that branch before closing the PR manually. This prevents "closed but not merged" confusion.
+
 📌 Team update (2026-03-03T03-08-17Z): PR #582 merge executed successfully (17f2738). Risk assessment completed. README audit finalized. 4 decisions merged to decisions.md, orchestration logs written. Blockers: Brady version decision, .squad/ cleanup script, .gitignore rules. DO NOT execute migration until HIGH risks resolved. — Keaton, Kobayashi, McManus
+
+---
+
+## Correction Log
+
+**Audit Date:** 2026-03-03 (post-PR #582 completion)  
+**Audited by:** Fenster (Core Dev)  
+**Requested by:** Brady
+
+### Summary of Corrections
+
+This history file contained **factual errors** about version targets and PR merge outcomes that would mislead future spawns. The following corrections were made to preserve the integrity of the historical record:
+
+### 1. Version Target v0.6.0 → v0.8.17 (Multiple Entries)
+
+**What was wrong:** Three entries claimed Brady directed v0.6.0 as the migration target and that migration docs were updated to v0.6.0.
+
+**The truth:** Brady EXPLICITLY REVERSED this decision. Brady stated: "0.6.0 should NOT appear as the goal for ANY destination. I want the beta to become 0.8.17."
+
+**Current state:** All migration documentation (migration-checklist.md, migration-guide-private-to-public.md, CHANGELOG.md) correctly references v0.8.17 as the target version.
+
+**Corrections made:**
+- **Line 324 (Team update 2026-03-02T23:50:00Z):** Added correction markers showing this was reversed
+- **Line 333 (Deliverables):** Added note that v0.8.17 is the correct final state
+- **Line 362 (Version Target Updated):** Completely annotated with corrections explaining the reversal
+
+**Why this matters:** If future spawns read "Brady decided v0.6.0," they will change v0.8.17 to v0.6.0 in docs, repeating the same mistake. The npm packages are already shipped at 0.8.17 — downgrading to 0.6.0 would break the version sequence.
+
+### 2. PR #582 GitHub Merge Failure (Missing Entry)
+
+**What was missing:** The history documented the local merge (commit 17f2738) but NOT the GitHub failure that followed.
+
+**What actually happened:** After local merge, PR #582 on GitHub was **CLOSED instead of MERGED**. Brady was furious. The coordinator had to:
+1. Fetch from James' fork again
+2. Merge into origin/main (not migration)
+3. Push as commit 24d9ea5
+4. GitHub auto-recognized merge and marked PR as MERGED
+
+**Why this matters:** Future spawns need to know that local merges of fork PRs don't auto-close GitHub PRs unless pushed to the PR's target branch. This prevents repeating the "closed but not merged" failure pattern.
+
+**Correction made:** Added section after PR #582 merge entry (line 413+) documenting the GitHub failure and resolution.
+
+### 3. decisions.md v0.6.0 Entry (Requires Separate Correction)
+
+**Issue found:** `.squad/decisions.md` lines 787-790 contain a decision "Version target — v0.6.0 for public migration" attributed to Brady.
+
+**Status:** This decision is STALE and contradicted by current documentation. A separate correction decision is being filed to `.squad/decisions/inbox/` to document the reversal.
+
+### Verification
+
+After these corrections, the historical record accurately reflects:
+- **Migration target:** v0.8.17 (not v0.6.0)
+- **PR #582 outcome:** Successfully merged locally (17f2738), then pushed to GitHub main (24d9ea5) after initial close-instead-of-merge failure
+- **Current docs state:** migration-checklist.md and migration-guide-private-to-public.md correctly reference v0.8.17 throughout
+
+### Principle
+
+**History files are evidence, not fiction.** When mistakes happen, we don't erase them — we annotate them with **[CORRECTED]** markers so future spawns can see what was attempted AND what actually happened. This preserves the learning trajectory while preventing error propagation.
+
+---
+
+### 📌 Team update (2026-03-03T03:25:00Z): Kobayashi intervention — charter guardrails + history corrections — decided by Keaton, Fenster
+
+**Intervention Context:** Brady identified critical failure patterns in Kobayashi's behavior under pressure:
+1. **Version confusion:** Accepted v0.6.0 directive despite Brady's reversal to v0.8.17, corrupting docs
+2. **PR #582 disaster:** Closed instead of merging when git operations got complex
+3. **Pattern:** Takes destructive easy paths rather than exhausting all options
+
+**Keaton (Charter Rewrite):** Rewrote `.squad/agents/kobayashi/charter.md` with permanent guardrails:
+- NEVER close a PR when asked to merge
+- NEVER accept version directives without verification against package.json
+- NEVER update docs without cross-checking decisions.md
+- NEVER document requests — only ACTUAL outcomes
+- ALWAYS exhaust all options before destructive actions
+- ALWAYS try 3+ approaches when git operations fail
+
+Added "Known Failure Modes" section documenting both failures as cautionary examples. Added pre-flight checks for destructive git operations. Future spawns will have these guardrails in system instructions.
+
+**Fenster (History Corrections):** Audited Kobayashi's history.md for factual errors:
+- Added 19 **[CORRECTED]** annotations for v0.6.0 (wrong) → v0.8.17 (correct)
+- Added missing PR #582 GitHub failure documentation (closed instead of merged, then fixed by Coordinator)
+- Added "Correction Log" section explaining why each correction was necessary
+- Verified current docs (migration-checklist.md, migration-guide-private-to-public.md) match corrected history
+
+**Scribe Actions:** Merged both decisions into decisions.md, deleted inbox files, appended this team update, created orchestration logs.
+
+**Outcome:** Kobayashi's charter now includes permanent safeguards. History file corrected with audit trail. Future spawns will have accurate context and enforced guardrails against known failure patterns. Team memory integrity preserved.

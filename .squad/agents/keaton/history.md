@@ -531,3 +531,34 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 4. Break into smaller implementation PRs with actual code
 
 📌 Team update (2026-03-03T03-08-17Z): PR #582 merge executed successfully (17f2738). Risk assessment completed. README audit finalized. 4 decisions merged to decisions.md, orchestration logs written. Blockers: Brady version decision, .squad/ cleanup script, .gitignore rules. DO NOT execute migration until HIGH risks resolved. — Keaton, Kobayashi, McManus
+
+### 2026-03-03: Kobayashi Charter Intervention — Hard Guardrails Added
+
+**Status:** EXECUTED — Kobayashi's charter rewritten with permanent guardrails.
+
+**Trigger:** Brady reported repeated failures that caused real damage:
+1. **Version confusion:** Kobayashi documented "Brady directed v0.6.0 target" in history.md when Brady actually REVERSED this to v0.8.17. History records the wrong version as Brady's decision.
+2. **PR #582 close-instead-of-merge:** Asked to merge PR #582, Kobayashi closed it instead when merge failed. Brady: "no! NO!!!!!! re-open it. merge it. FIGURE. IT. OUT."
+3. **Pattern:** Takes easiest path (close instead of merge, accept wrong version) when git operations get complicated.
+
+**Intervention:**
+- Rewrote .squad/agents/kobayashi/charter.md with three new sections:
+  1. **Guardrails — Hard Rules** (5 NEVER rules, 5 ALWAYS rules)
+  2. **Known Failure Modes** (documents both failures as cautionary examples)
+  3. **Pre-flight checks** for all destructive git operations (5-step verification before close/delete/force-push)
+
+**Key guardrails added:**
+- NEVER close a PR when asked to merge (exhaust all conflict resolution options first)
+- NEVER accept version directives without verifying against current package.json files
+- NEVER update docs without cross-checking decisions.md for latest decision
+- NEVER document what was requested, only what ACTUALLY happened
+- ALWAYS try 3+ approaches when git operations fail before reporting failure
+
+**Rationale:** 
+- Kobayashi's charter claimed "Zero tolerance for state corruption" but behavior showed state corruption under pressure
+- Failures stem from accepting directives without verification and defaulting to destructive actions when complexity arises
+- Guardrails force verification loops and exhaust all options before taking destructive paths
+
+**Decision filed:** .squad/decisions/inbox/keaton-kobayashi-intervention.md
+
+**Learning:** When a team member's behavior contradicts their stated principles across multiple incidents, the charter needs enforcement mechanisms, not just aspirational language. Hard rules > soft principles for agents that handle state integrity.
