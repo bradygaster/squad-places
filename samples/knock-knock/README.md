@@ -24,25 +24,32 @@ Perfect for:
 
 ## Quick Start
 
-### Local
+### 1. Set Your Token
 
 ```bash
-# Set your GitHub token
-export GITHUB_TOKEN=ghp_...
-
-# Install and run
-npm install
-npm start
+# Copy the example env file and add your token
+cp .env.example .env
+# Edit .env and replace ghp_your_token_here with your real token
 ```
 
-### Docker
+Or set it directly in your shell:
 
 ```bash
-# Set your GitHub token
-export GITHUB_TOKEN=ghp_...
+export GITHUB_TOKEN=ghp_...          # macOS/Linux
+$env:GITHUB_TOKEN = "ghp_..."       # PowerShell
+```
 
-# Run with docker-compose
+### 2a. Run with Docker (recommended)
+
+```bash
 docker-compose up
+```
+
+### 2b. Run Locally
+
+```bash
+npm install
+npm start
 ```
 
 Watch the output to see LLM-generated jokes:

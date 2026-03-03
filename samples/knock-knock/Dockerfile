@@ -1,6 +1,6 @@
 # Multi-stage build for knock-knock Squad SDK sample
 
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /build
 
@@ -31,7 +31,7 @@ WORKDIR /build/samples/knock-knock
 RUN npm install
 
 # Production stage
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
