@@ -389,3 +389,25 @@ Kobayashi aligned all version strings to 0.8.0 (SDK package, CLI package, VERSIO
   2. **.squad/decisions/inbox/kobayashi-pr582-merge.md** — Decision document covering rationale, conflict types, resolution strategy, rollback plan, timing
 - **Key lesson:** Large feature merges into migration branches need explicit conflict prediction and resolution strategy documented BEFORE execution. Version safety (never 0.6.0) is non-negotiable. This prevents last-minute surprises during critical release gate.
 - **Status pending:** Execution awaits Brady's "banana" authorization (BANANA RULE in migration-checklist.md)
+
+### 2026-03-03: PR #582 Merge Executed — Consult mode implementation merged into migration branch
+**Status:** EXECUTED — Merge completed successfully with version conflicts resolved.
+- **Source branch:** consult-mode-impl (from jsturtevant/squad-pr fork, SHA 548a43be)
+- **Target branch:** migration (commit 3be0fb5)
+- **Merge commit:** 17f2738
+- **Fetch method:** Direct fetch from James' fork (consult-mode-impl not on origin, fetched via `git fetch https://github.com/jsturtevant/squad-pr.git`)
+- **Conflicts encountered:** 3 version conflicts in package.json files (root, squad-cli, squad-sdk)
+  - **James' version:** 0.8.16.4-preview.1
+  - **Migration version:** 0.8.18-preview (KEPT)
+  - **Resolution:** Manual edit to keep 0.8.18-preview in all three package.json files (root, packages/squad-cli, packages/squad-sdk)
+- **Files changed:** 58 files, +12,791 insertions, -6,850 deletions
+- **Key additions:**
+  - Consult mode implementation: packages/squad-sdk/src/sharing/consult.ts (1,116 lines)
+  - CLI commands: packages/squad-cli/src/cli/commands/consult.ts, extract.ts
+  - SDK templates (26 new files): squad-sdk/templates/* (charters, ceremonies, workflows, skills, agent format)
+  - Config changes: squad.config.ts, init.ts refactor (1,357 line changes)
+  - Tests: test/sdk/consult.test.ts (767 lines), test/cli/consult.test.ts (181 lines)
+- **TypeScript check:** Passed (npx tsc --noEmit executed successfully)
+- **Version integrity verified:** All three package.json files correctly at 0.8.18-preview post-merge (root, squad-cli, squad-sdk)
+- **Learning:** Forked PR branches require fetching from contributor's fork URL directly when branch not pushed to origin. Version conflicts in monorepo merges require checking all three package.json locations (root + both packages). Union merge driver handled .squad/ files cleanly (no Fenster history conflicts).
+- **Outcome:** Consult mode feature (PR #582) successfully integrated into migration branch. Migration branch now ready for next phase (push to beta). All version strings protected at 0.8.18-preview.
