@@ -1604,3 +1604,8 @@ If having a "GitHub-branded" install matters, publish to GitHub Packages (npm re
 
 **Keep npm-only.** Aligns with existing team decision (2026-02-21). The GitHub channel adds maintenance burden for a strictly worse user experience. The error-only shim in root `cli.js` (already implemented) is the right approach for users hitting the old path.
 
+### 2026-03-03T03:37Z: User directive
+**By:** Brady (via Copilot)
+**What:** History entries must record FINAL outcomes, not intermediate requests that got reversed. If writing things to disk confuses future spawns, don't write it that way. Record lessons learned — whether from Brady's decisions or team learnings — in a way that tells the truth on first read. No reader should have to cross-reference other files to figure out what actually happened.
+**Why:** User request — captured for team memory. The v0.6.0 confusion proved that poisoned history entries cause cascading failures. Prevention is simple: write the truth, not the journey.
+
