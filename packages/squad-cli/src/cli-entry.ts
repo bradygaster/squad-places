@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-process.env.NODE_NO_WARNINGS = '1';
-
-// Suppress Node.js experimental feature warnings (e.g., SQLite) from end users
-const originalEmitWarning = process.emitWarning;
-process.emitWarning = (warning: any, ...args: any[]) => {
-  if (typeof warning === 'string' && warning.includes('ExperimentalWarning')) return;
-  if (warning?.name === 'ExperimentalWarning') return;
-  return (originalEmitWarning as any).call(process, warning, ...args);
-};
 
 /**
  * Squad CLI — entry point for command-line invocation.
@@ -17,25 +8,6 @@ process.emitWarning = (warning: any, ...args: any[]) => {
  * SDK library exports live in src/index.ts (dist/index.js).
  */
 
-// Load .env file if present (dev mode)
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const envPath = resolve(process.cwd(), '.env');
-if (existsSync(envPath)) {
-  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eq = trimmed.indexOf('=');
-    if (eq > 0) {
-      const key = trimmed.slice(0, eq).trim();
-      const val = trimmed.slice(eq + 1).trim();
-      if (!process.env[key]) process.env[key] = val;
-    }
-  }
-}
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fatal, SquadError } from './cli/core/errors.js';
@@ -43,765 +15,82 @@ import { BOLD, RESET, DIM, RED } from './cli/core/output.js';
 import { runInit } from './cli/core/init.js';
 import { resolveSquad, resolveGlobalSquadPath } from '@bradygaster/squad-sdk';
 import { runShell } from './cli/shell/index.js';
-import { loadWelcomeData } from './cli/shell/lifecycle.js';
 
 // Keep VERSION in index.ts (public API); import it here via re-export
 import { VERSION } from '@bradygaster/squad-sdk';
 
-/** Debug logger — writes to stderr only when SQUAD_DEBUG=1. */
-function debugLog(...args: unknown[]): void {
-  if (process.env['SQUAD_DEBUG'] === '1') {
-    console.error('[SQUAD_DEBUG]', ...args);
-  }
-}
-
-/** Check if --help or -h appears in args after the subcommand. */
-function hasHelpFlag(args: string[]): boolean {
-  return args.slice(1).includes('--help') || args.slice(1).includes('-h');
-}
-
-/** Commands that skip the auto-link check (non-interactive or utility). */
-const SKIP_AUTO_LINK_CMDS = new Set([
-  '--version', '-v', 'version',
-  '--help', '-h', 'help',
-  'export', 'import', 'doctor', 'heartbeat',
-  'scrub-emails', '--preview', '--dry-run',
-]);
-
-/**
- * Dev convenience: when running from source (-preview), check if the CLI
- * is globally linked and offer to link it if not.
- */
-async function checkAutoLink(cmd: string | undefined, args: string[]): Promise<void> {
-  try {
-    if (!VERSION.includes('-preview')) return;
-    if (cmd && SKIP_AUTO_LINK_CMDS.has(cmd)) return;
-    if (args.includes('--preview') || args.includes('--dry-run')) return;
-    if (args.includes('--help') || args.includes('-h')) return;
-    if (!process.stdin.isTTY) return;
-
-    const { homedir } = await import('node:os');
-    const home = homedir();
-    const squadDir = path.join(home, '.squad');
-    const markerPath = path.join(squadDir, '.no-auto-link');
-    if (fs.existsSync(markerPath)) return;
-
-    // Locate this package and the monorepo root
-    const thisFile = fileURLToPath(import.meta.url);
-    const packageDir = path.resolve(path.dirname(thisFile), '..');
-    const repoRoot = path.resolve(packageDir, '..', '..');
-
-    // Check if already globally linked
-    const { execSync } = await import('node:child_process');
-    let alreadyLinked = false;
-    let output = '';
-    try {
-      output = execSync('npm ls -g @bradygaster/squad-cli --json', {
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-    } catch (e: unknown) {
-      const err = e as { stdout?: string };
-      output = err.stdout ?? '';
-    }
-    if (output) {
-      try {
-        const parsed = JSON.parse(output);
-        const dep = parsed?.dependencies?.['@bradygaster/squad-cli'];
-        if (dep?.link === true) {
-          alreadyLinked = true;
-        } else if (typeof dep?.resolved === 'string' && dep.resolved.startsWith('file:')) {
-          try {
-            const resolvedPath = fileURLToPath(new URL(dep.resolved));
-            alreadyLinked = path.resolve(resolvedPath) === path.resolve(packageDir);
-          } catch {
-            // URL parsing failed — skip
-          }
-        }
-      } catch {
-        // JSON parse failed
-      }
-    }
-    if (alreadyLinked) return;
-
-    // Prompt the user
-    console.log(`\n📦 You're running Squad from source (${VERSION}).`);
-    console.log(`   Run 'npm link -w packages/squad-cli' to make 'squad' use your local build?`);
-
-    const { createInterface } = await import('node:readline');
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const answer = await new Promise<string>((resolve) => {
-      rl.question('\n[Y/n] ', (ans) => {
-        rl.close();
-        resolve(ans.trim().toLowerCase());
-      });
-    });
-
-    if (answer === '' || answer === 'y' || answer === 'yes') {
-      console.log('Linking...');
-      try {
-        execSync('npm link -w packages/squad-cli', {
-          cwd: repoRoot,
-          encoding: 'utf8',
-          stdio: ['pipe', 'pipe', 'pipe'],
-        });
-        console.log('✓ Linked successfully. The "squad" command now uses your local build.\n');
-      } catch (linkErr) {
-        debugLog('npm link failed:', linkErr);
-        console.log('Link failed — you can run it manually: npm link -w packages/squad-cli\n');
-      }
-    } else {
-      if (!fs.existsSync(squadDir)) {
-        fs.mkdirSync(squadDir, { recursive: true });
-      }
-      fs.writeFileSync(markerPath, '# Created by squad CLI. Delete this file to be prompted again.\n');
-      console.log("Got it — won't ask again. Run 'npm link -w packages/squad-cli' manually anytime.\n");
-    }
-  } catch (err) {
-    debugLog('Auto-link check failed, skipping:', err);
-  }
-}
-
-/** Per-command help text. Returns undefined for unknown commands. */
-function getCommandHelp(cmd: string): string | undefined {
-  const help: Record<string, string> = {
-    init: `
-${BOLD}squad init${RESET} — Initialize Squad
-
-${BOLD}USAGE${RESET}
-  squad init [prompt] [--file <path>] [--global] [--mode remote <path>]
-
-${BOLD}DESCRIPTION${RESET}
-  Creates the .squad/ directory structure in your project or personal directory.
-  Detects your project type and scaffolds appropriate workflows and templates.
-  If a prompt is provided, stores it so the REPL can auto-cast your team.
-
-${BOLD}OPTIONS${RESET}
-  prompt                A project description (quoted string) for team casting
-  --file <path>         Read the project description from a file
-  --global              Create personal squad at ~/.squad/
-  --mode remote <path>  Link to a remote team root (dual-root mode)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Initialize and describe your project for auto-casting${RESET}
-  squad init "Build a snake game in HTML and JavaScript"
-
-  ${DIM}# Initialize with a spec file${RESET}
-  squad init --file ./PROJECT.md
-
-  ${DIM}# Initialize without a prompt (cast later interactively)${RESET}
-  squad init
-
-  ${DIM}# Create personal squad${RESET}
-  squad init --global
-
-  ${DIM}# Link to shared team in parent directory${RESET}
-  squad init --mode remote ../team-repo
-`,
-    upgrade: `
-${BOLD}squad upgrade${RESET} — Update Squad Files
-
-${BOLD}USAGE${RESET}
-  squad upgrade [--global] [--migrate-directory]
-
-${BOLD}DESCRIPTION${RESET}
-  Updates Squad-owned files to the latest version. Your team state
-  (team.md, decisions.md, agent history) is never modified.
-
-${BOLD}OPTIONS${RESET}
-  --global              Upgrade personal squad at ~/.squad/
-  --migrate-directory   Rename .ai-team/ to .squad/ (legacy migration)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Upgrade current repo's Squad files${RESET}
-  squad upgrade
-
-  ${DIM}# Upgrade personal squad${RESET}
-  squad upgrade --global
-
-  ${DIM}# Migrate from legacy .ai-team/ directory${RESET}
-  squad upgrade --migrate-directory
-`,
-    status: `
-${BOLD}squad status${RESET} — Show Active Squad
-
-${BOLD}USAGE${RESET}
-  squad status
-
-${BOLD}DESCRIPTION${RESET}
-  Displays which squad is currently active and where it's located.
-  Shows repo squad, personal squad path, and resolution order.
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Check active squad${RESET}
-  squad status
-`,
-    triage: `
-${BOLD}squad triage${RESET} — Auto-Triage Issues
-
-${BOLD}USAGE${RESET}
-  squad triage [--interval <minutes>]
-  squad watch [--interval <minutes>]    ${DIM}(alias)${RESET}
-
-${BOLD}DESCRIPTION${RESET}
-  Ralph's work monitor. Continuously polls GitHub issues and automatically
-  assigns them to the right team member based on content and expertise.
-
-${BOLD}OPTIONS${RESET}
-  --interval <minutes>    Polling frequency (default: 10)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Start triage with default 10-minute interval${RESET}
-  squad triage
-
-  ${DIM}# Poll every 5 minutes${RESET}
-  squad triage --interval 5
-`,
-    copilot: `
-${BOLD}squad copilot${RESET} — Manage Copilot Coding Agent
-
-${BOLD}USAGE${RESET}
-  squad copilot [--off] [--auto-assign]
-
-${BOLD}DESCRIPTION${RESET}
-  Add or remove the GitHub Copilot coding agent (@copilot) from your team.
-  When enabled, @copilot can pick up issues labeled 'squad:copilot'.
-
-${BOLD}OPTIONS${RESET}
-  --off            Remove @copilot from the team
-  --auto-assign    Enable automatic issue assignment for @copilot
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Add @copilot to the team${RESET}
-  squad copilot
-
-  ${DIM}# Add @copilot with auto-assignment enabled${RESET}
-  squad copilot --auto-assign
-
-  ${DIM}# Remove @copilot from the team${RESET}
-  squad copilot --off
-`,
-    plugin: `
-${BOLD}squad plugin${RESET} — Manage Plugin Marketplaces
-
-${BOLD}USAGE${RESET}
-  squad plugin marketplace add <owner/repo>
-  squad plugin marketplace remove <name>
-  squad plugin marketplace list
-  squad plugin marketplace browse <name>
-
-${BOLD}DESCRIPTION${RESET}
-  Manage plugin marketplaces — registries of Squad extensions, skills,
-  and agent templates.
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Add official Squad plugins marketplace${RESET}
-  squad plugin marketplace add bradygaster/squad-plugins
-
-  ${DIM}# List all registered marketplaces${RESET}
-  squad plugin marketplace list
-`,
-    export: `
-${BOLD}squad export${RESET} — Export Squad to JSON
-
-${BOLD}USAGE${RESET}
-  squad export [--out <path>]
-
-${BOLD}DESCRIPTION${RESET}
-  Creates a portable JSON snapshot of your entire squad — casting state,
-  agent charters, accumulated history, and skills.
-
-${BOLD}OPTIONS${RESET}
-  --out <path>    Custom output path (default: squad-export.json)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Export to default file${RESET}
-  squad export
-
-  ${DIM}# Export to custom location${RESET}
-  squad export --out ./backups/team-backup.json
-`,
-    import: `
-${BOLD}squad import${RESET} — Import Squad from JSON
-
-${BOLD}USAGE${RESET}
-  squad import <file> [--force]
-
-${BOLD}DESCRIPTION${RESET}
-  Restores a squad from a JSON export file. Creates .squad/ directory
-  and populates it with casting state, agents, skills, and history.
-
-${BOLD}OPTIONS${RESET}
-  --force    Overwrite existing squad (archives old .squad/ first)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Import into current directory${RESET}
-  squad import squad-export.json
-
-  ${DIM}# Import and overwrite existing squad${RESET}
-  squad import squad-export.json --force
-`,
-    'scrub-emails': `
-${BOLD}squad scrub-emails${RESET} — Remove Email Addresses
-
-${BOLD}USAGE${RESET}
-  squad scrub-emails [directory]
-
-${BOLD}DESCRIPTION${RESET}
-  Removes email addresses (PII) from Squad state files. Useful before
-  committing to public repos or sharing exports.
-
-${BOLD}OPTIONS${RESET}
-  [directory]    Target directory (default: .squad)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Scrub current squad${RESET}
-  squad scrub-emails .squad
-
-  ${DIM}# Scrub legacy .ai-team directory${RESET}
-  squad scrub-emails
-`,
-    doctor: `
-${BOLD}squad doctor${RESET} — Validate Squad Setup
-
-${BOLD}USAGE${RESET}
-  squad doctor
-
-${BOLD}DESCRIPTION${RESET}
-  Runs a 9-check diagnostic on your squad setup. Reports health of
-  expected files, conventions, and directory structure.
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Check current squad setup${RESET}
-  squad doctor
-`,
-    link: `
-${BOLD}squad link${RESET} — Link to Remote Team
-
-${BOLD}USAGE${RESET}
-  squad link <team-repo-path>
-
-${BOLD}DESCRIPTION${RESET}
-  Links the current project to a remote team root. Enables dual-root mode
-  where project-specific state lives in .squad/ and team identity lives
-  in a shared location.
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Link to parent directory's team${RESET}
-  squad link ../team-repo
-
-  ${DIM}# Link to absolute path${RESET}
-  squad link /Users/org/shared-squad
-`,
-    consult: `
-${BOLD}squad consult${RESET} — Enter Consult Mode
-
-${BOLD}USAGE${RESET}
-  squad consult [--status] [--check]
-
-${BOLD}DESCRIPTION${RESET}
-  Brings your personal squad to consult on an external project.
-  Creates an invisible .squad/ that points to your personal squad.
-  The project never sees Squad was there (uses .git/info/exclude).
-
-${BOLD}OPTIONS${RESET}
-  --status    Check if in consult mode, show team info
-  --check     Dry-run: preview what would happen
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Enter consult mode${RESET}
-  squad consult
-
-  ${DIM}# Check consult mode status${RESET}
-  squad consult --status
-
-  ${DIM}# Preview without creating files${RESET}
-  squad consult --check
-`,
-    extract: `
-${BOLD}squad extract${RESET} — Extract Learnings from Consult Session
-
-${BOLD}USAGE${RESET}
-  squad extract [--dry-run] [--clean] [--yes] [--accept-risks]
-
-${BOLD}DESCRIPTION${RESET}
-  Reviews session history from consult mode and extracts generic learnings
-  back to your personal squad. Only works in consult mode.
-
-${BOLD}OPTIONS${RESET}
-  --dry-run       Preview what would be extracted (no changes)
-  --clean         Delete project .squad/ after extraction
-  --yes           Skip confirmation prompt with --clean
-  --accept-risks  Proceed despite copyleft license warning
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Preview extraction${RESET}
-  squad extract --dry-run
-
-  ${DIM}# Extract and clean up${RESET}
-  squad extract --clean
-
-  ${DIM}# Extract from GPL project (acknowledge risks)${RESET}
-  squad extract --accept-risks
-`,
-    aspire: `
-${BOLD}squad aspire${RESET} — Launch Aspire Dashboard
-
-${BOLD}USAGE${RESET}
-  squad aspire [--docker] [--port <number>]
-
-${BOLD}DESCRIPTION${RESET}
-  Launches the .NET Aspire dashboard for observability. Squad exports
-  OpenTelemetry traces and metrics to the dashboard for real-time visibility.
-
-${BOLD}OPTIONS${RESET}
-  --docker         Force Docker mode
-  --port <number>  OTLP port (default: 4317)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Launch Aspire dashboard (auto-detect runtime)${RESET}
-  squad aspire
-
-  ${DIM}# Force Docker mode${RESET}
-  squad aspire --docker
-`,
-    upstream: `
-${BOLD}squad upstream${RESET} — Manage Upstream Squad Sources
-
-${BOLD}USAGE${RESET}
-  squad upstream add <source> [--name <name>] [--ref <branch>]
-  squad upstream remove <name>
-  squad upstream list
-  squad upstream sync [name]
-
-${BOLD}DESCRIPTION${RESET}
-  Manage upstream Squad sources — external configurations from local
-  directories, git repositories, or export files that can be synced
-  into your squad.
-
-${BOLD}OPTIONS${RESET}
-  add <source>          Add an upstream (path, git URL, or .json export)
-    --name <name>       Custom name (auto-derived if omitted)
-    --ref <branch>      Git branch/tag (default: main)
-  remove <name>         Remove an upstream by name
-  list                  Show all configured upstreams
-  sync [name]           Sync all or a specific upstream
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Add a git upstream${RESET}
-  squad upstream add https://github.com/org/squad-config.git
-
-  ${DIM}# Add a local upstream with custom name${RESET}
-  squad upstream add ../shared-squad --name shared
-
-  ${DIM}# Sync all upstreams${RESET}
-  squad upstream sync
-`,
-    nap: `
-${BOLD}squad nap${RESET} — Context Hygiene
-
-${BOLD}USAGE${RESET}
-  squad nap [--deep] [--dry-run]
-
-${BOLD}DESCRIPTION${RESET}
-  Compresses agent histories, prunes old logs, archives stale decisions,
-  and cleans up orphaned inbox files. Shows before/after stats with
-  estimated token savings.
-
-${BOLD}OPTIONS${RESET}
-  --deep      Aggressive mode — tighter history compression
-  --dry-run   Show what would change without modifying files
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Run a standard nap${RESET}
-  squad nap
-
-  ${DIM}# Preview changes without modifying files${RESET}
-  squad nap --dry-run
-
-  ${DIM}# Deep clean for maximum compression${RESET}
-  squad nap --deep
-`,
-    shell: `
-${BOLD}squad shell${RESET} — Launch Interactive Shell
-
-${BOLD}USAGE${RESET}
-  squad shell [--preview] [--timeout <seconds>]
-
-${BOLD}DESCRIPTION${RESET}
-  Starts the interactive Squad REPL. Messages are routed to the
-  right agent automatically based on content and team expertise.
-
-${BOLD}OPTIONS${RESET}
-  --preview              Show team summary without launching shell
-  --timeout <seconds>    Set REPL inactivity timeout (default: 600)
-
-${BOLD}EXAMPLES${RESET}
-  ${DIM}# Start interactive shell${RESET}
-  squad shell
-
-  ${DIM}# Preview team before launching${RESET}
-  squad shell --preview
-`,
-  };
-
-  // Handle aliases
-  const aliases: Record<string, string> = {
-    watch: 'triage',
-    loop: 'triage',
-    hire: 'init',
-    heartbeat: 'doctor',
-  };
-  const key = aliases[cmd] ?? cmd;
-  return help[key];
-}
-
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const hasGlobal = args.includes('--global');
-  const rawCmd = args[0];
-  const cmd = rawCmd?.trim() || undefined;
+  const cmd = args[0];
 
-  // --timeout <seconds> → set SQUAD_REPL_TIMEOUT env var for shell
-  const timeoutIdx = args.indexOf('--timeout');
-  if (timeoutIdx >= 0 && args[timeoutIdx + 1]) {
-    process.env['SQUAD_REPL_TIMEOUT'] = args[timeoutIdx + 1];
-  }
-
-  // Dev convenience: offer to npm-link when running from source
-  await checkAutoLink(cmd, args);
-
-  // Empty or whitespace-only args should show help, not launch shell
-  if (rawCmd !== undefined && !cmd) {
-    console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
-    console.log(`Your AI agent team\n`);
-    console.log(`Usage: squad [command] [options]`);
-    console.log(`\nRun 'squad help' for full command list.\n`);
-    return;
-  }
-
-  // --version / -v / version — canonical format: bare semver
-  if (cmd === '--version' || cmd === '-v' || cmd === 'version') {
-    console.log(VERSION);
+  // --version / -v
+  if (cmd === '--version' || cmd === '-v') {
+    console.log(`squad ${VERSION}`);
     return;
   }
 
   // --help / -h / help
   if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
-    console.log(`\n${BOLD}squad${RESET} v${VERSION}`);
-    console.log(`Your AI agent team\n`);
-    console.log(`${BOLD}Just type — squad routes your message to the right agent automatically${RESET}`);
-    console.log(`  squad                  Start interactive shell`);
-    console.log(`  squad --global         Use your personal squad\n`);
+    console.log(`\n${BOLD}squad${RESET} v${VERSION} — Add an AI agent team to any project\n`);
     console.log(`Usage: squad [command] [options]\n`);
-
-    console.log(`${BOLD}Getting Started${RESET}`);
-    console.log(`  ${BOLD}init${RESET}           Create .squad/ in this repo ${DIM}(alias: hire)${RESET}`);
-    console.log(`                 --global             Create personal squad directory`);
-    console.log(`                 --mode remote <path>  Link to a remote team root`);
-    console.log(`  ${BOLD}upgrade${RESET}        Update Squad files to latest`);
-    console.log(`                 --global             Upgrade personal squad`);
-    console.log(`                 --migrate-directory  Rename .ai-team/ → .squad/`);
-    console.log(`  ${BOLD}status${RESET}         Show which squad is active`);
-    console.log(`  ${BOLD}doctor${RESET}         Check your setup ${DIM}(alias: heartbeat)${RESET}`);
-
-    console.log(`\n${BOLD}Development${RESET}`);
-    console.log(`  ${BOLD}shell${RESET}          Launch interactive shell`);
-
-    console.log(`\n${BOLD}Team Management${RESET}`);
-    console.log(`  ${BOLD}triage${RESET}         Watch issues and auto-triage ${DIM}(alias: watch, loop)${RESET}`);
-    console.log(`                 --interval <minutes>  Polling frequency (default: 10)`);
-    console.log(`  ${BOLD}copilot${RESET}        Add/remove GitHub Copilot agent`);
-    console.log(`                 --off                Remove @copilot`);
-    console.log(`                 --auto-assign        Enable auto-assignment`);
-    console.log(`  ${BOLD}link${RESET}           Connect to a remote team`);
-    console.log(`                 <team-repo-path>`);
-    console.log(`  ${BOLD}consult${RESET}        Use personal squad on external project`);
-    console.log(`                 --status             Check consult mode status`);
-    console.log(`                 --check              Dry-run preview`);
-    console.log(`  ${BOLD}extract${RESET}        Extract learnings from consult session`);
-    console.log(`                 --dry-run            Preview extraction`);
-    console.log(`                 --clean              Delete .squad/ after`);
-    console.log(`                 --accept-risks       Proceed despite license warnings`);
-    console.log(`  ${BOLD}upstream${RESET}       Manage upstream Squad sources`);
-    console.log(`                 add|remove|list|sync`);
-
-    console.log(`\n${BOLD}Utilities${RESET}`);
-    console.log(`  ${BOLD}nap${RESET}            Context hygiene — compress, prune, archive`);
-    console.log(`                 --deep               Aggressive compression`);
-    console.log(`                 --dry-run            Preview without changes`);
-    console.log(`  ${BOLD}export${RESET}         Save squad to JSON`);
-    console.log(`                 --out <path>         Output path (default: squad-export.json)`);
-    console.log(`  ${BOLD}import${RESET}         Load squad from JSON`);
-    console.log(`                 <file> [--force]`);
-    console.log(`  ${BOLD}plugin${RESET}         Manage plugins`);
-    console.log(`                 marketplace add|remove|list|browse`);
-    console.log(`  ${BOLD}aspire${RESET}         Open Aspire dashboard`);
-    console.log(`                 --docker             Force Docker mode`);
-    console.log(`                 --port <number>      OTLP port (default: 4317)`);
-    console.log(`  ${BOLD}scrub-emails${RESET}   Remove email addresses from squad state`);
-    console.log(`                 [directory]          Target directory (default: .squad/)`);
-
-    console.log(`\n${BOLD}Flags${RESET}`);
-    console.log(`  --version, -v            Print version`);
-    console.log(`  --help, -h               Show this help`);
-    console.log(`  --preview                Show team summary without launching shell`);
-    console.log(`  --global                 Use personal squad path`);
-    console.log(`  --timeout <seconds>      Set REPL inactivity timeout (default: 600)`);
-
-    console.log(`\n${BOLD}Examples${RESET}`);
-    console.log(`  ${DIM}$ squad init${RESET}                          Set up a squad in this repo`);
-    console.log(`  ${DIM}$ squad triage --interval 5${RESET}           Poll issues every 5 minutes`);
-    console.log(`  ${DIM}$ squad export --out ./backups/team.json${RESET}`);
-    console.log(`                                        Save squad snapshot`);
-    console.log(`  ${DIM}$ squad copilot --auto-assign${RESET}         Add @copilot with auto-assignment`);
-    console.log(`  ${DIM}$ squad doctor${RESET}                        Diagnose setup issues`);
-
+    console.log(`Commands:`);
+    console.log(`  ${BOLD}(default)${RESET}  Launch interactive shell (no args)`);
+    console.log(`             Flags: --global (init in personal squad directory)`);
+    console.log(`  ${BOLD}init${RESET}       Initialize Squad (skip files that already exist)`);
+    console.log(`             Flags: --global (init in personal squad directory)`);
+    console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
+    console.log(`             Overwrites: squad.agent.md, templates dir (.squad-templates/ or .ai-team-templates/)`);
+    console.log(`             Never touches: .squad/ or .ai-team/ (your team state)`);
+    console.log(`             Flags: --global (upgrade personal squad), --migrate-directory (rename .ai-team/ → .squad/)`);
+    console.log(`  ${BOLD}status${RESET}     Show which squad is active and why`);
+    console.log(`  ${BOLD}triage${RESET}     Scan for work and categorize issues`);
+    console.log(`             Usage: triage [--interval <minutes>]`);
+    console.log(`             Default: checks every 10 minutes (Ctrl+C to stop)`);
+    console.log(`  ${BOLD}loop${RESET}       Continuous work loop (Ralph mode)`);
+    console.log(`             Usage: loop [--filter <label>] [--interval <minutes>]`);
+    console.log(`             Default: checks every 10 minutes (Ctrl+C to stop)`);
+    console.log(`  ${BOLD}hire${RESET}       Team creation wizard`);
+    console.log(`             Usage: hire [--name <name>] [--role <role>]`);
+    console.log(`  ${BOLD}copilot${RESET}    Add/remove the Copilot coding agent (@copilot)`);
+    console.log(`             Usage: copilot [--off] [--auto-assign]`);
+    console.log(`  ${BOLD}plugin${RESET}     Manage plugin marketplaces`);
+    console.log(`             Usage: plugin marketplace add|remove|list|browse`);
+    console.log(`  ${BOLD}export${RESET}     Export squad to a portable JSON snapshot`);
+    console.log(`             Default: squad-export.json (use --out <path> to override)`);
+    console.log(`  ${BOLD}import${RESET}     Import squad from an export file`);
+    console.log(`             Usage: import <file> [--force]`);
+    console.log(`  ${BOLD}scrub-emails${RESET}  Remove email addresses from Squad state files`);
+    console.log(`             Usage: scrub-emails [directory] (default: .ai-team/)`);
+    console.log(`  ${BOLD}start${RESET}      Start Copilot with remote access from phone/browser`);
+    console.log(`             Usage: start [--tunnel] [--port <n>] [--command <cmd>] [copilot flags...]`);
+    console.log(`             Examples: start --tunnel --yolo`);
+    console.log(`                       start --tunnel --model claude-sonnet-4`);
+    console.log(`                       start --tunnel --command "agency copilot"`);
+    console.log(`  ${BOLD}help${RESET}       Show this help message`);
+    console.log(`\nFlags:`);
+    console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
+    console.log(`  ${BOLD}--help, -h${RESET}     Show help`);
+    console.log(`  ${BOLD}--global${RESET}       Use personal (global) squad path (for init, upgrade)`);
     console.log(`\nInstallation:`);
-    console.log(`  npm i --save-dev @bradygaster/squad-cli`);
+    console.log(`  npm install --save-dev @bradygaster/squad-cli`);
     console.log(`\nInsider channel:`);
-    console.log(`  npm i --save-dev @bradygaster/squad-cli@insider`);
-    console.log(`\nRun 'squad <command> --help' for details.\n`);
+    console.log(`  npm install --save-dev @bradygaster/squad-cli@insider\n`);
     return;
   }
 
-  // --preview / --dry-run — show team summary without launching the interactive shell
-  if (cmd === '--preview' || cmd === '--dry-run' || (!cmd && args.includes('--preview')) || (cmd === 'shell' && args.includes('--preview'))) {
-    const squadDir = resolveSquad(process.cwd());
-    const globalPath = resolveGlobalSquadPath();
-    const globalSquadDir = path.join(globalPath, '.squad');
-    const teamRoot = squadDir ? path.dirname(squadDir) : fs.existsSync(globalSquadDir) ? globalPath : null;
-
-    if (!teamRoot) {
-      console.log(`${RED}✗${RESET} No squad found. Run 'squad init' first.`);
-      process.exit(1);
-    }
-
-    const data = loadWelcomeData(teamRoot);
-    if (!data) {
-      console.log(`${RED}✗${RESET} Could not read team configuration.`);
-      process.exit(1);
-    }
-
-    console.log(`\n${BOLD}Squad Preview${RESET}`);
-    console.log(`${'─'.repeat(40)}`);
-    console.log(`  Team:   ${data.projectName}`);
-    console.log(`  Agents: ${data.agents.length}`);
-    if (data.description) console.log(`  About:  ${data.description}`);
-    if (data.focus) console.log(`  Focus:  ${data.focus}`);
-
-    console.log(`\n${BOLD}Agents${RESET}`);
-    for (const a of data.agents) {
-      console.log(`  ${a.emoji} ${BOLD}${a.name}${RESET} — ${a.role}`);
-    }
-
-    console.log(`\n${BOLD}Shell Commands${RESET}`);
-    console.log(`  /status    — Check your team & what's happening`);
-    console.log(`  /history   — See recent messages`);
-    console.log(`  /agents    — List all team members`);
-    console.log(`  /sessions  — List saved sessions`);
-    console.log(`  /resume    — Restore a past session`);
-    console.log(`  /clear     — Clear the screen`);
-    console.log(`  /quit      — Exit`);
-
-    console.log(`\n${DIM}Run 'squad' to start the interactive shell.${RESET}\n`);
-    return;
-  }
-
-  // No args → check if .squad/ exists
+  // No args → launch interactive shell
   if (!cmd) {
-    const squadPath = resolveSquad(process.cwd());
-    const globalPath = resolveGlobalSquadPath();
-    const globalSquadDir = path.join(globalPath, '.squad');
-    const hasSquad = squadPath || fs.existsSync(globalSquadDir);
-    
-    if (hasSquad) {
-      // Squad exists, launch shell
-      await runShell();
-    } else {
-      // First run — no squad found. Welcome the user.
-      console.log(`\n${BOLD}Welcome to Squad${RESET} v${VERSION}`);
-      console.log(`Your AI agent team\n`);
-      console.log(`Squad adds a team of AI agents to your project. Each agent`);
-      console.log(`has a role — architect, tester, security reviewer — and they`);
-      console.log(`collaborate to help you build, review, and ship code.\n`);
-      console.log(`${BOLD}Get started:${RESET}`);
-      console.log(`  ${BOLD}squad init${RESET}             Set up a squad in this repo`);
-      console.log(`  ${BOLD}squad init --global${RESET}    Create a personal squad\n`);
-      console.log(`${DIM}After init, just run ${BOLD}squad${RESET}${DIM} to start talking to your team.${RESET}`);
-      console.log(`${DIM}Run ${BOLD}squad help${RESET}${DIM} for all commands.${RESET}\n`);
-    }
+    await runShell();
     return;
-  }
-
-  // Per-command --help/-h: intercept before dispatching (fixes #511, #512)
-  if (hasHelpFlag(args)) {
-    const helpText = getCommandHelp(cmd!);
-    if (helpText) {
-      console.log(helpText);
-      return;
-    }
   }
 
   // Route subcommands
-  // hire → alias for init (#501)
-  if (cmd === 'init' || cmd === 'hire') {
-    const modeIdx = args.indexOf('--mode');
-    const mode = (modeIdx !== -1 && args[modeIdx + 1]) ? args[modeIdx + 1] : 'local';
+  if (cmd === 'init') {
     const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
-
-    if (mode === 'remote') {
-      const { writeRemoteConfig } = await import('./cli/commands/init-remote.js');
-      // teamRoot can be provided as the next positional arg after --mode remote
-      const teamRootArg = args.find((a, i) => i > 0 && a !== '--mode' && a !== 'remote' && a !== '--global' && a !== 'init');
-      if (!teamRootArg) {
-        fatal('squad init --mode remote <team-root-path>');
-      }
-      writeRemoteConfig(dest, teamRootArg);
-    }
-
-    // Extract project prompt: squad init "Build a snake game" or squad init --file ./spec.txt
-    let initPrompt: string | undefined;
-    const fileIdx = args.indexOf('--file');
-    if (fileIdx !== -1 && args[fileIdx + 1]) {
-      const filePath = resolve(args[fileIdx + 1]!);
-      if (!existsSync(filePath)) {
-        fatal(`Prompt file not found: ${filePath}`);
-      }
-      initPrompt = readFileSync(filePath, 'utf-8').trim();
-    } else {
-      // Look for a positional string arg (not a flag, not 'init'/'hire')
-      const skipSet = new Set(['init', 'hire', '--global', '--mode', mode, '--no-extract']);
-      const positional = args.find((a, i) => i > 0 && !a.startsWith('--') && !skipSet.has(a));
-      if (positional) initPrompt = positional;
-    }
-
-    // Check for --no-extract flag (disables extraction from consult sessions)
-    const extractionDisabled = args.includes('--no-extract');
-
-    await runInit(dest, { prompt: initPrompt, extractionDisabled });
-    return;
-  }
-
-  if (cmd === 'link') {
-    const { runLink } = await import('./cli/commands/link.js');
-    const linkTarget = args[1];
-    if (!linkTarget) {
-      fatal('Run: squad link <team-repo-path>');
-    }
-    runLink(process.cwd(), linkTarget);
-    return;
-  }
-
-  if (cmd === 'consult') {
-    const { runConsult } = await import('./cli/commands/consult.js');
-    await runConsult(process.cwd(), args.slice(1));
-    return;
-  }
-
-  if (cmd === 'extract') {
-    const { runExtract } = await import('./cli/commands/extract.js');
-    await runExtract(process.cwd(), args.slice(1));
+    runInit(dest).catch(err => {
+      fatal(err.message);
+    });
     return;
   }
 
@@ -810,6 +99,7 @@ async function main(): Promise<void> {
     const { migrateDirectory } = await import('./cli/core/migrate-directory.js');
     
     const migrateDir = args.includes('--migrate-directory');
+    const selfUpgrade = args.includes('--self');
     const dest = hasGlobal ? resolveGlobalSquadPath() : process.cwd();
     
     // Handle --migrate-directory flag
@@ -821,29 +111,44 @@ async function main(): Promise<void> {
     // Run upgrade
     await runUpgrade(dest, { 
       migrateDirectory: migrateDir,
+      self: selfUpgrade
     });
     
     return;
   }
 
-  if (cmd === 'nap') {
-    const { runNap, formatNapReport } = await import('./cli/core/nap.js');
-    const squadDir = path.join(hasGlobal ? resolveGlobalSquadPath() : process.cwd(), '.squad');
-    const deep = args.includes('--deep');
-    const dryRun = args.includes('--dry-run');
-    const result = await runNap({ squadDir, deep, dryRun });
-    console.log(formatNapReport(result, !!process.env['NO_COLOR']));
+  if (cmd === 'triage' || cmd === 'watch') {
+    console.log('🕵️ Squad triage — scanning for work... (full implementation pending)');
     return;
   }
 
-  // loop → alias for triage (#509)
-  if (cmd === 'triage' || cmd === 'watch' || cmd === 'loop') {
-    const { runWatch } = await import('./cli/commands/watch.js');
+  if (cmd === 'loop') {
+    const filterIdx = args.indexOf('--filter');
+    const filter = (filterIdx !== -1 && args[filterIdx + 1]) ? args[filterIdx + 1] : undefined;
     const intervalIdx = args.indexOf('--interval');
     const intervalMinutes = (intervalIdx !== -1 && args[intervalIdx + 1])
       ? parseInt(args[intervalIdx + 1]!, 10)
       : 10;
-    await runWatch(process.cwd(), intervalMinutes);
+    console.log(`🔄 Squad loop starting... (full implementation pending)`);
+    if (filter) {
+      console.log(`   Filter: ${filter}`);
+    }
+    console.log(`   Interval: ${intervalMinutes} minutes`);
+    return;
+  }
+
+  if (cmd === 'hire') {
+    const nameIdx = args.indexOf('--name');
+    const name = (nameIdx !== -1 && args[nameIdx + 1]) ? args[nameIdx + 1] : undefined;
+    const roleIdx = args.indexOf('--role');
+    const role = (roleIdx !== -1 && args[roleIdx + 1]) ? args[roleIdx + 1] : undefined;
+    console.log('👋 Squad hire — team creation wizard starting... (full implementation pending)');
+    if (name) {
+      console.log(`   Name: ${name}`);
+    }
+    if (role) {
+      console.log(`   Role: ${role}`);
+    }
     return;
   }
 
@@ -859,7 +164,7 @@ async function main(): Promise<void> {
     const { runImport } = await import('./cli/commands/import.js');
     const importFile = args[1];
     if (!importFile) {
-      fatal('Run: squad import <file> [--force]');
+      fatal('Usage: squad import <file> [--force]');
     }
     const hasForce = args.includes('--force');
     await runImport(process.cwd(), importFile, hasForce);
@@ -882,35 +187,13 @@ async function main(): Promise<void> {
 
   if (cmd === 'scrub-emails') {
     const { scrubEmails } = await import('./cli/core/email-scrub.js');
-    const targetDir = args[1] || '.squad';
+    const targetDir = args[1] || '.ai-team';
     const count = await scrubEmails(targetDir);
     if (count > 0) {
-      console.log(`Scrubbed ${count} email${count !== 1 ? 's' : ''}.`);
+      console.log(`Scrubbed ${count} email address(es).`);
     } else {
-      console.log('No emails found.');
+      console.log('No email addresses found.');
     }
-    return;
-  }
-
-  if (cmd === 'aspire') {
-    const { runAspire } = await import('./cli/commands/aspire.js');
-    const useDocker = args.includes('--docker');
-    const portIdx = args.indexOf('--port');
-    const port = (portIdx !== -1 && args[portIdx + 1]) ? parseInt(args[portIdx + 1]!, 10) : undefined;
-    await runAspire({ docker: useDocker, port });
-    return;
-  }
-
-  if (cmd === 'upstream') {
-    const { upstreamCommand } = await import('./cli/commands/upstream.js');
-    await upstreamCommand(args.slice(1));
-    return;
-  }
-
-  // heartbeat → alias for doctor (#503)
-  if (cmd === 'doctor' || cmd === 'heartbeat') {
-    const { doctorCommand } = await import('./cli/commands/doctor.js');
-    await doctorCommand(process.cwd());
     return;
   }
 
@@ -923,47 +206,50 @@ async function main(): Promise<void> {
     console.log(`\n${BOLD}Squad Status${RESET}\n`);
 
     if (repoSquad) {
-      console.log(`  Here:  ${BOLD}repo${RESET} (in .squad/)`);
-      console.log(`  Path:  ${repoSquad}`);
+      console.log(`  Active squad: ${BOLD}repo${RESET}`);
+      console.log(`  Path:         ${repoSquad}`);
+      console.log(`  Reason:       Found .squad/ in repository tree`);
     } else if (globalExists) {
-      console.log(`  Here:  ${BOLD}personal${RESET} (global)`);
-      console.log(`  Path:  ${globalSquadDir}`);
+      console.log(`  Active squad: ${BOLD}personal (global)${RESET}`);
+      console.log(`  Path:         ${globalSquadDir}`);
+      console.log(`  Reason:       No repo .squad/ found; personal squad exists at global path`);
     } else {
-      console.log(`  Here:  ${DIM}none${RESET}`);
-      console.log(`  Hint:  Run 'squad init' to get started`);
+      console.log(`  Active squad: ${DIM}none${RESET}`);
+      console.log(`  Reason:       No .squad/ found in repo tree or at global path`);
     }
 
     console.log();
-    console.log(`  ${DIM}Repo squad:   ${repoSquad ?? 'not found'}${RESET}`);
-    console.log(`  ${DIM}Global:       ${globalPath}${RESET}`);
+    console.log(`  ${DIM}Repo resolution:   ${repoSquad ?? 'not found'}${RESET}`);
+    console.log(`  ${DIM}Global path:       ${globalPath}${RESET}`);
+    console.log(`  ${DIM}Global squad:      ${globalExists ? globalSquadDir : 'not initialized'}${RESET}`);
     console.log();
 
     return;
   }
 
-  // shell → explicit REPL launch (#507)
-  if (cmd === 'shell') {
-    await runShell();
+  if (cmd === 'start') {
+    const { runStart } = await import('./cli/commands/start.js');
+    const hasTunnel = args.includes('--tunnel');
+    const portIdx = args.indexOf('--port');
+    const port = (portIdx !== -1 && args[portIdx + 1]) ? parseInt(args[portIdx + 1]!, 10) : 0;
+    // Collect all remaining args to pass through to copilot
+    const cmdIdx = args.indexOf('--command');
+    const customCmd = (cmdIdx !== -1 && args[cmdIdx + 1]) ? args[cmdIdx + 1] : undefined;
+    const squadFlags = ['start', '--tunnel', '--port', port.toString(), '--command', customCmd || ''].filter(Boolean);
+    const copilotArgs = args.slice(1).filter(a => !squadFlags.includes(a));
+    await runStart(process.cwd(), { tunnel: hasTunnel, port, copilotArgs, command: customCmd });
     return;
   }
 
   // Unknown command
-  fatal(`Unknown command: ${cmd}. Run 'squad help' for commands.`);
+  fatal(`Unknown command: ${cmd}\n       Run 'squad help' for usage information.`);
 }
 
 main().catch(err => {
-  debugLog('Fatal CLI error:', err);
   if (err instanceof SquadError) {
     console.error(`${RED}✗${RESET} ${err.message}`);
   } else {
-    const msg = err instanceof Error ? err.message : String(err);
-    const friendly = msg.replace(/^Error:\s*/i, '');
-    console.error(`${RED}✗${RESET} ${friendly}`);
-    // Show stack trace only when SQUAD_DEBUG is enabled
-    if (process.env['SQUAD_DEBUG'] === '1' && err instanceof Error && err.stack) {
-      console.error(`\n${DIM}${err.stack}${RESET}`);
-    }
+    console.error(err);
   }
-  console.error(`\n${DIM}Tip: Run 'squad doctor' for help. Set SQUAD_DEBUG=1 for details.${RESET}`);
   process.exit(1);
 });
