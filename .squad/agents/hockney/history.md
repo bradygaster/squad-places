@@ -26,6 +26,13 @@
 
 ## Learnings
 
+### Knock-knock Docker fix (2026-03-03)
+**Status:** Fixed — docker-compose build + up now works. Committed to `migration` branch.
+- **Root cause 1:** SDK `package.json` has `"prepare": "npm run build"` which runs `tsc` during `npm install` of the `file:` dependency. Alpine container doesn't have `tsc`. Fix: strip `prepare`/`prepublishOnly` from SDK package.json inside Dockerfile before `npm install`.
+- **Root cause 2:** npm workspace hoisting puts `@opentelemetry/api` in repo root `node_modules`, not in `packages/squad-sdk/node_modules`. Old Dockerfile copied host `node_modules` which were incomplete. Fix: run `npm install` for the SDK inside the container to get a complete dependency tree, then copy pre-built `dist` on top.
+- **Key insight:** Never copy workspace-hoisted `node_modules` into Docker. Always install deps fresh inside the container.
+- **Verification:** `docker-compose build` succeeds, `docker-compose up` prints expected "Missing GITHUB_TOKEN" and exits 1 (correct behavior without token).
+
 ### Knock-knock sample verification (2026-03-03)
 **Status:** No fixes needed — sample already compiles and runs correctly.
 - **Verification steps:** SDK build (`npm run build`) → clean. Sample `npm install` + `npx tsc --noEmit` → zero TS errors. Runtime `npx tsx index.ts` → prints expected "Missing GITHUB_TOKEN" and exits 1.
