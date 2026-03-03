@@ -1,4 +1,4 @@
-# Migration Checklist: origin (squad-pr) → beta (squad) — npm 0.8.18 / public v0.8.17
+# Migration Checklist: origin (squad-pr) → beta (squad) — v0.8.18 Migration Release
 
 **⚠️ BANANA RULE IS ACTIVE.** Do NOT execute ANY steps until Brady says "banana".
 
@@ -20,52 +20,25 @@ If NOT checked, STOP. Do not proceed.
 
 ---
 
-## Phase 2: Tag v0.8.17 on Origin
+## Phase 2: Tag v0.8.18 on Origin
 
-**Note:** Public repo (bradygaster/squad) is at v0.5.4. v0.8.17 is the target version for the public release. The v0.8.17 tag will be created at the migration merge commit on the public repo (not retroactively on origin).
+**Note:** Public repo (bradygaster/squad) is at v0.5.4. v0.8.18 is the target version for the public release. The v0.8.18 tag will be created at the migration merge commit on the public repo (not retroactively on origin).
 
 ---
 
 ## Phase 2.5: Merge PR #582 (Consult Mode) into origin/migration
 
-**Context:** PR #582 ("Consult mode implementation" by James Sturtevant) must be merged into the local migration branch BEFORE pushing to beta. This consolidates the consult mode feature into the migration payload.
+✅ **COMPLETE.** PR #582 was merged in a prior session (commit 24d9ea5 on origin/main, then cherry-picked/merged into migration branch on beta/main). This step is for historical documentation only.
 
-**Risk Profile:**
-- 57 files changed (touching package.json, SDK, CLI, templates, tests)
-- Possible merge conflicts in:
-  - `package.json` (version strings — keep 0.8.18-preview)
-  - `packages/squad-cli/package.json` (version strings — keep 0.8.18-preview)
-  - `packages/squad-sdk/package.json` (version strings — keep 0.8.18-preview)
-  - `packages/squad-sdk/src/index.ts` (exports may conflict)
-  - `packages/squad-sdk/src/resolution.ts` (core SDK logic)
-  - `squad.config.ts` (config structure)
-  - Test files may have parallel changes
+**What happened:** James Sturtevant's "Consult mode implementation" (57 files) was integrated into the migration payload. All merge conflicts were resolved with 0.8.18-preview versions retained.
 
-**Merge Strategy:**
-1. Fetch PR #582 branch: `git fetch origin consult-mode-impl`
-2. Ensure on migration branch: `git checkout migration`
-3. Merge with no-ff (preserves PR history): `git merge origin/consult-mode-impl --no-ff -m "Merge PR #582: Consult mode implementation"`
-4. **Conflict Resolution:**
-   - Version conflicts: Use ours (`--ours`) — ALWAYS keep 0.8.18-preview
-   - SDK exports/index.ts: Manual merge required — both new exports must be retained
-   - package-lock.json: Regenerate after merge: `npm install` then `git add package-lock.json`
-   - Test conflicts: Manual merge required — ensure both old and new tests are included
-5. Verify merge: `git log migration --oneline -5` (should show merge commit at top)
-6. Verify no version corruption: `grep '"version"' package.json packages/*/package.json` → all must be 0.8.18-preview (NOT 0.6.0)
+**Verification:** Consult mode is now part of the public release at v0.8.18. No additional action required.
 
-**If merge fails:**
-- [ ] Abort merge: `git merge --abort`
-- [ ] Escalate to Brady and James Sturtevant for resolution
-- [ ] Do NOT proceed to Phase 3 until merge succeeds
-
-**If merge succeeds:**
-- [ ] Mark Phase 2.5 as COMPLETE
-- [ ] Proceed to Phase 3
-
+**Note:** The original PR #582 branch references (consult-mode-impl) may no longer exist — these are for reference only.
 ---
 
 ## Phase 3: Push origin/migration to beta/migration
-- [ ] Verify migration branch HEAD: `git rev-parse migration` → `87e4f1c`
+- [ ] Verify migration branch HEAD: `git rev-parse migration` → `b3a39bc`
 - [ ] Ensure beta remote exists: `git remote -v | grep beta`
 - [ ] If missing: `git remote add beta https://github.com/bradygaster/squad.git`
 - [ ] Fetch beta: `git fetch beta`
@@ -78,7 +51,7 @@ If NOT checked, STOP. Do not proceed.
 - [ ] Navigate to beta repo (or switch remote context)
 - [ ] Create PR: `gh pr create --repo bradygaster/squad --base main --head migration --title "Migration: squad-pr → squad" --body "..."`
 - [ ] PR body should include:
-  - [ ] Version jump: v0.5.4 → v0.8.17
+  - [ ] Version jump: v0.5.4 → v0.8.18
   - [ ] Breaking changes (monorepo, npm distribution, .squad/ vs .ai-team/)
   - [ ] User upgrade path (GitHub-native → npm)
   - [ ] Distribution change (npx github: → npm install -g)
@@ -89,14 +62,14 @@ If NOT checked, STOP. Do not proceed.
 ---
 
 ## Phase 5: Version Alignment on Beta
-**IMPORTANT CLARIFICATION:** Same version everywhere — npm packages and public repo are both 0.8.17:
-- **npm packages** (`@bradygaster/squad-cli`, `@bradygaster/squad-sdk`): 0.8.17 (released)
-- **Public repo tag** (`bradygaster/squad`): The v0.8.17 GitHub Release tag marks this migration commit.
+**IMPORTANT CLARIFICATION:** All versions target 0.8.18:
+- **Package.json files** (`package.json`, `packages/squad-cli/package.json`, `packages/squad-sdk/package.json`): Currently at 0.8.18-preview. Will be bumped to 0.8.18 at publish time (Phase 7.5).
+- **Public repo tag** (`bradygaster/squad`): The v0.8.18 GitHub Release tag marks this migration commit (Phase 9).
 
-- [ ] **Do NOT** change npm package.json versions — they are already at 0.8.17
-- [ ] Create **v0.8.17 tag at migration merge commit** on beta/main (public repo marker, same as npm version)
+- [ ] **Do NOT** change npm package.json versions yet — they are currently at 0.8.18-preview. Version bump happens in Phase 7.5 before npm publish.
+- [ ] Create **v0.8.18 tag at migration merge commit** on beta/main (public repo marker, same as npm version)
 - [ ] Document as "Migration release: GitHub-native → npm distribution, monorepo structure"
-- [ ] Rationale: Beta's public version jump (0.5.4 → 0.8.17) aligns with npm packages already at 0.8.17
+- [ ] Rationale: Beta's public version jump (0.5.4 → v0.8.18) aligns with npm packages publishing as 0.8.18
 
 ---
 
@@ -128,7 +101,7 @@ If NOT checked, STOP. Do not proceed.
    - [ ] Or: `npx @bradygaster/squad-cli`
 
 3. **Migrate `.ai-team/` to `.squad/`:**
-   - [ ] Squad v0.8.17 uses `.squad/` directory (not `.ai-team/`)
+   - [ ] Squad v0.8.18 uses `.squad/` directory (not `.ai-team/`)
    - [ ] User must manually rename: `mv .ai-team .squad` (if project has one)
    - [ ] ⚠️ Format may be incompatible — see migration guide
 
@@ -137,8 +110,21 @@ If NOT checked, STOP. Do not proceed.
    - [ ] Update version pinning strategy (npm tags instead of git SHAs)
 
 5. **Test new version:**
-   - [ ] `squad --version` → v0.8.17
+   - [ ] `squad --version` → v0.8.18
    - [ ] `squad doctor` (if available)
+
+---
+
+## Phase 7.5: Bump Versions for Release
+
+**Before npm publish:** Bump all package.json versions from 0.8.18-preview → 0.8.18.
+
+- [ ] Update root `package.json`: `"version": "0.8.18-preview"` → `"version": "0.8.18"`
+- [ ] Update `packages/squad-cli/package.json`: `"version": "0.8.18-preview"` → `"version": "0.8.18"`
+- [ ] Update `packages/squad-sdk/package.json`: `"version": "0.8.18-preview"` → `"version": "0.8.18"`
+- [ ] Run npm install to update package-lock.json: `npm install`
+- [ ] Commit version bump: `git add package.json packages/*/package.json package-lock.json && git commit -m "chore: bump version to 0.8.18 for release"`
+- [ ] **CRITICAL:** Do NOT push yet. Proceed directly to Phase 8.
 
 ---
 
@@ -146,8 +132,8 @@ If NOT checked, STOP. Do not proceed.
 - [ ] Verify npm credentials: `npm whoami`
 - [ ] Build packages: `npm run build` (exit code 0)
 - [ ] Test packages: `npm test` (all pass)
-- [ ] Publish SDK: `npm publish -w packages/squad-sdk --access public` (publishes 0.8.18 from current package.json)
-- [ ] Publish CLI: `npm publish -w packages/squad-cli --access public` (publishes 0.8.18 from current package.json)
+- [ ] Publish SDK: `npm publish -w packages/squad-sdk --access public` (publishes 0.8.18)
+- [ ] Publish CLI: `npm publish -w packages/squad-cli --access public` (publishes 0.8.18)
 - [ ] Verify on npm: `npm view @bradygaster/squad-cli@0.8.18`
 - [ ] Verify on npm: `npm view @bradygaster/squad-sdk@0.8.18`
 
@@ -155,14 +141,14 @@ If NOT checked, STOP. Do not proceed.
 
 ## Phase 9: GitHub Release (Beta Repo)
 - [ ] Fetch latest beta/main: `git fetch beta && git log beta/main -1`
-- [ ] Tag beta at merge commit: `git tag v0.8.17 <merge-commit-sha>` (public repo release marker, matches npm version)
-- [ ] Push tag: `git push beta v0.8.17`
-- [ ] Create GitHub Release: `gh release create v0.8.17 --repo bradygaster/squad --title "v0.8.17 — Migration: GitHub-native → npm Distribution"`
+- [ ] Tag beta at merge commit: `git tag v0.8.18 <merge-commit-sha>` (public repo release marker, matches npm version)
+- [ ] Push tag: `git push beta v0.8.18`
+- [ ] Create GitHub Release: `gh release create v0.8.18 --repo bradygaster/squad --title "v0.8.18 — Migration: GitHub-native → npm Distribution"`
 - [ ] Release body includes:
   - [ ] **Breaking Changes:** GitHub-native → npm, `.ai-team/` → `.squad/`, monorepo structure
   - [ ] **New Distribution:** `npm install -g @bradygaster/squad-cli` or `npx @bradygaster/squad-cli`
   - [ ] **Upgrade Guide:** Link to migration docs
-  - [ ] **Version Jump:** v0.5.4 → v0.8.17 (intermediate versions skipped)
+  - [ ] **Version Jump:** v0.5.4 → v0.8.18 (intermediate versions skipped)
 - [ ] Mark as "Latest" release (not prerelease)
 
 ---
@@ -175,28 +161,31 @@ If NOT checked, STOP. Do not proceed.
 ---
 
 ## Phase 11: Post-Release Bump (Origin)
-**Per release versioning sequence:** After publishing v0.8.17, immediately bump to v0.8.18-preview.1 for continued development.
+**Per release versioning sequence:** After publishing v0.8.18, immediately bump to v0.8.19-preview.1 for continued development.
 
-- [ ] Already done: commit `87e4f1c` bumped to `0.8.18-preview`
-- [ ] Verify: `git show 87e4f1c:package.json | grep version` → `0.8.18-preview`
-- [ ] Note: Should be `0.8.18-preview.1` per new semver format (fix if needed)
+- [ ] Update root `package.json`: `"version": "0.8.18"` → `"version": "0.8.19-preview.1"`
+- [ ] Update `packages/squad-cli/package.json`: `"version": "0.8.18"` → `"version": "0.8.19-preview.1"`
+- [ ] Update `packages/squad-sdk/package.json`: `"version": "0.8.18"` → `"version": "0.8.19-preview.1"`
+- [ ] Run npm install to update package-lock.json: `npm install`
+- [ ] Commit: `git add package.json packages/*/package.json package-lock.json && git commit -m "chore: bump version to 0.8.19-preview.1 for continued development"`
+- [ ] Push to origin: `git push origin HEAD` (or appropriate branch)
 
 ---
 
 ## Phase 12: Update Migration Docs
-- [ ] Update `docs/migration-github-to-npm.md` with v0.8.17 specifics
+- [ ] Update `docs/migration-github-to-npm.md` with v0.8.18 specifics
 - [ ] Update `docs/migration-guide-private-to-public.md` with actual version numbers
 - [ ] Link to this checklist from main migration guide
-- [ ] Commit: "docs: update migration guides for v0.8.17 execution"
+- [ ] Commit: "docs: update migration guides for v0.8.18 execution"
 
 ---
 
 ## Phase 13: Verification
-- [ ] Origin packages on npm: `npm view @bradygaster/squad-cli@0.8.17` ✅
-- [ ] Origin packages on npm: `npm view @bradygaster/squad-sdk@0.8.17` ✅
-- [ ] Beta release on GitHub: `gh release view v0.8.17 --repo bradygaster/squad` ✅
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-cli@0.8.18` ✅
+- [ ] Origin packages on npm: `npm view @bradygaster/squad-sdk@0.8.18` ✅
+- [ ] Beta release on GitHub: `gh release view v0.8.18 --repo bradygaster/squad` ✅
 - [ ] Beta main branch HEAD includes migration: `git log beta/main --oneline -5` shows merge ✅
-- [ ] Test install: `npm install -g @bradygaster/squad-cli@0.8.17 && squad --version` → 0.8.17 ✅
+- [ ] Test install: `npm install -g @bradygaster/squad-cli@0.8.18 && squad --version` → 0.8.18 ✅
 
 ---
 
@@ -217,25 +206,25 @@ If NOT checked, STOP. Do not proceed.
 - [ ] Origin remains unaffected (no changes pushed)
 
 ### If npm publish fails:
-- [ ] Unpublish within 72 hours (npm policy): `npm unpublish @bradygaster/squad-cli@0.8.17`
-- [ ] Fix issue, re-publish with patch version (v0.8.18)
+- [ ] Unpublish within 72 hours (npm policy): `npm unpublish @bradygaster/squad-cli@0.8.18`
+- [ ] Fix issue, re-publish with patch version (v0.8.19)
 
 ### If beta users report critical issues:
-- [ ] Publish hotfix as v0.8.18 with fix
+- [ ] Publish hotfix as v0.8.19 with fix
 - [ ] Update GitHub Release notes with workaround
-- [ ] Consider yanking v0.8.17 from npm (use `npm deprecate` instead of unpublish)
+- [ ] Consider yanking v0.8.18 from npm (use `npm deprecate` instead of unpublish)
 
 ---
 
 ## Final Checklist
-- [ ] **v0.8.17 tag exists on beta** (public repo migration marker at merge commit)
+- [ ] **v0.8.18 tag exists on beta** (public repo migration marker at merge commit)
 - [ ] **origin/migration pushed to beta/migration**
 - [ ] **beta/migration merged to beta/main**
-- [ ] **Both npm packages published: squad-cli@0.8.17, squad-sdk@0.8.17**
-- [ ] **GitHub Release v0.8.17 created on beta repo** (public release marker)
-- [ ] **Beta users have upgrade path documented** (npm 0.8.17 installation)
-- [ ] **Origin bumped to 0.8.18-preview.1 for continued development** (next dev version)
-- [ ] **All docs updated with correct versioning (npm 0.8.17 everywhere)**
+- [ ] **Both npm packages published: squad-cli@0.8.18, squad-sdk@0.8.18**
+- [ ] **GitHub Release v0.8.18 created on beta repo** (public release marker)
+- [ ] **Beta users have upgrade path documented** (npm 0.8.18 installation)
+- [ ] **Origin bumped to 0.8.19-preview.1 for continued development** (next dev version)
+- [ ] **All docs updated with correct versioning (npm 0.8.18 everywhere)**
 
 ---
 

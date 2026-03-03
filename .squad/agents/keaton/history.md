@@ -28,6 +28,24 @@
 
 ## Learnings
 
+### 2026-03-02T15:00:00Z: Migration Checklist Strategic Review — Brady's "Hell Review" Request
+- **Task:** Brady asked: "Have we reviewed the HELL out of the release checklist?" Keaton conducted comprehensive strategic review of docs/migration-checklist.md focusing on version coherence, missing steps, phase ordering, rollback adequacy, stale references, and scope completeness.
+- **Context:** Checklist was prepared by Kobayashi (Git & Release). Brady is pre-execution, seeking final gate validation. Current state: migration branch (HEAD: b3a39bc), npm last published: 0.8.17, all package.json: 0.8.18-preview, PR #582 already merged to main and into migration.
+- **Findings:** 3 critical BLOCKERS, 6 medium WARNINGs, 2 minor NOTES.
+- **Blocker #1 — Title Contradiction:** Title says "npm 0.8.18 / public v0.8.17" but phases only publish 0.8.17 everywhere. Executor doesn't know which version to publish. Fix: Title should be "npm 0.8.17 / public v0.8.17".
+- **Blocker #2 — Missing Version Bump Step (CRITICAL):** Phase 8 publishes "0.8.18 from current package.json" but package.json is 0.8.18-preview. There is NO step to bump preview → 0.8.17 before publishing. Would ship 0.8.18-preview (broken semver) to npm. Fix: Add Phase 7.5 to bump all versions + npm install before Phase 8 publish.
+- **Blocker #3 — Verification Mismatch:** Phase 8 publishes 0.8.18, Phase 13 verifies 0.8.17. Won't find packages. Resolves when Blocker #1 is fixed.
+- **Stale Reference #4 — Phase 3 SHA:** Phase 3 expects migration HEAD at 87e4f1c, but actual is b3a39bc (team-wide history audit happened 10 commits after 87e4f1c). Executor sees mismatch, may abort incorrectly. Fix: Update to b3a39bc or just verify "valid SHA" without hardcoding.
+- **Stale Reference #5 — Phase 11 Old Commit:** References 87e4f1c for version check, but by execution time it will be many commits old. Check HEAD instead.
+- **Missing Step #6:** No explicit capture of merge commit SHA in Phase 4. Phase 5 says "tag migration merge commit" — which SHA? Fix: Add Phase 4 command to capture it.
+- **Missing Step #7:** No test after npm publish that installation actually works. Phase 13 verifies packages exist, but not that they're usable. Fix: Add `npm install -g @bradygaster/squad-cli@0.8.17 && squad --version`.
+- **Missing Step #8:** No team notification before Phase 1. Team continues pushing to origin/migration, conflicts with push. Fix: Add Phase 0.5 for team notification.
+- **Pattern learned:** Release checklists must DISTINGUISH between (A) what to verify, (B) what to do. Phase 2 says "Tag v0.8.17 on Origin" but body says the tag goes on beta (not origin). Confusing. Avoid this by being explicit: "Do NOT tag origin. We will tag beta after merge."
+- **Rollback adequacy:** PR #582 merge blocker path is weak. If conflicts can't be resolved, no unblock. Contingency added: revert to pre-582 SHA, file issue, contact Brady.
+- **Decision file:** .squad/decisions/inbox/keaton-checklist-review.md — Full detailed findings with fix timings (~30 min to fix all blockers + warnings).
+- **Verdict:** GATE CLOSED. Do NOT execute. Fix blockers #1, #2, #3 (related group), stale refs #4, #5, and missing steps before re-review. Blockers are non-negotiable: Blocker #2 especially would ship broken semver to npm.
+- **Next action:** Brady fixes Blocker #2 (add Phase 7.5 version bump step), updates title, updates stale SHAs, re-submits. Keaton re-reviews (quick 10 min). Then execution can proceed.
+
 ### 2026-02-25T02:00:00Z: Issue #532 Analysis — REPL Dogfooding Gap
 - **Task:** Analyze issue #532 (Resolve dogfooding gap — test REPL against real-world repositories). Define concrete acceptance criteria, identify test coverage gaps, decompose into actionable sub-tasks.
 - **Finding:** REPL itself is complete (shipped Waves A–C). What's missing is **confidence** that it works on real diverse codebases — not test-fixtures. Current test suite covers: REPL UX rendering (✅), hostile inputs (✅ 95 strings), human journeys on mocks (✅), but zero testing against real Python/Node/Go/Rust/Java repos or monorepos.

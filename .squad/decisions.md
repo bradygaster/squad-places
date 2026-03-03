@@ -1609,3 +1609,23 @@ If having a "GitHub-branded" install matters, publish to GitHub Packages (npm re
 **What:** History entries must record FINAL outcomes, not intermediate requests that got reversed. If writing things to disk confuses future spawns, don't write it that way. Record lessons learned — whether from Brady's decisions or team learnings — in a way that tells the truth on first read. No reader should have to cross-reference other files to figure out what actually happened.
 **Why:** User request — captured for team memory. The v0.6.0 confusion proved that poisoned history entries cause cascading failures. Prevention is simple: write the truth, not the journey.
 
+
+
+### 2026-03-03: Migration Checklist Blockers Review
+**By:** Keaton (Lead)
+**What:** Strategic review of docs/migration-checklist.md identified 3 blockers: title/version contradiction, missing Phase 7.5 version bump, Phase 13 verification mismatch. 6 warnings (stale SHAs, weak contingency paths) and 2 notes.
+**Why:** Checklist was unexecutable as written. Version story broken (title says 0.8.18, phases say 0.8.17). No version bump step before npm publish. Phase 13 checks wrong version.
+**Impact:** GATE CLOSED pending fixes. All issues documented for Kobayashi's mechanical implementation.
+
+### 2026-03-03: Version Alignment — 0.8.18 Unified Release
+**By:** Kobayashi (Git & Release)
+**What:** All versions unified to 0.8.18 across migration checklist. npm packages bump from 0.8.18-preview → 0.8.18 at Phase 7.5. GitHub Release tag is v0.8.18 (not v0.8.17). All stale SHAs updated.
+**Why:** Eliminates confusion between npm packages, GitHub Release tags, and public repo version markers. npm already has 0.8.17 published and cannot be republished.
+**Implementation:**
+- Title: "v0.8.18 Migration Release"
+- Phase 7.5 ADDED: Explicit version bump + npm install + commit
+- Phase 3 SHA: b3a39bc (was 87e4f1c)
+- Phase 11: Checks current HEAD (not old commit)
+- All verify commands target 0.8.18
+- Post-release: 0.8.19-preview.1
+**Status:** All blockers fixed. Checklist ready for execution.

@@ -7,6 +7,17 @@
 
 ## Learnings
 
+### 2026-03-XX: Version Alignment 0.8.18 — Migration Checklist Fixed
+**Status:** COMPLETED. All blockers and warnings in docs/migration-checklist.md fixed per coordinator decision.
+- **Decision:** Everything is 0.8.18 (unified version eliminates confusion)
+  - npm publish target: 0.8.18 (bump from 0.8.18-preview → 0.8.18 at Phase 7.5)
+  - GitHub Release tag on beta: v0.8.18 (not v0.8.17)
+  - Public repo tag: v0.8.18 (matches npm version)
+  - Rationale: npm already has 0.8.17, can't republish. Unified version eliminates confusion.
+- **Fixes applied:** Title updated; Phase 2.5 marked complete; Phase 3 SHA corrected (87e4f1c → b3a39bc); Phase 4-14 version references 0.8.17 → 0.8.18; Phase 7.5 added for explicit version bump (0.8.18-preview → 0.8.18); Phase 11 bump target 0.8.19-preview.1 (not 0.8.18-preview.1); rollback plans and final checklist updated.
+- **Decision recorded:** `.squad/decisions/inbox/kobayashi-version-0818.md`
+- **Learning:** When coordinator revises scope, apply decision uniformly across all instances. Document final state, not intermediate request.
+
 ### From Beta (carried forward)
 - Preview branch workflow: two-phase (preview → ship) for safe releases
 - State integrity via merge drivers: union strategy for .squad/ append-only files
