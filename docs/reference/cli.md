@@ -30,6 +30,7 @@ squad init
 | `squad init` | Initialize Squad in the current repo (idempotent — safe to run multiple times) | No |
 | `squad init --global` | Create a personal squad at `~/.squad/` | No |
 | `squad init --mode remote <path>` | Initialize linked to a remote team root (dual-root mode) | No |
+| `squad start [--tunnel] [--port N] [--command cmd]` | Start Copilot with remote phone access via PTY and WebSocket | No |
 | `squad status` | Show which squad is active and why | Yes |
 | `squad doctor` | Validate squad setup integrity and diagnose issues (alias: `heartbeat`) | Yes |
 | `squad upgrade` | Upgrade Squad-owned files to latest version | Yes |
@@ -61,6 +62,42 @@ squad init --mode remote ../team-repo
 ```
 
 In dual-root mode, project-specific state lives in your local `.squad/` while team identity (casting, charters, shared decisions) lives in the remote location. This is useful for monorepos or organizations with a shared team definition.
+
+---
+
+### squad start
+
+Start Copilot with optional remote access via phone. Spawns Copilot in a PTY and mirrors to your phone via WebSocket + devtunnel.
+
+**Flags:**
+
+- `--tunnel` — Create a devtunnel for remote access (shows QR code for phone scanning). Requires `devtunnel` CLI installed and authenticated (`devtunnel user login`).
+- `--port <N>` — Specific WebSocket port (default: random). Example: `--port 3456`
+- `--command <cmd>` — Run a custom command instead of copilot. Example: `--command powershell`
+- All copilot flags pass through. Example: `squad start --tunnel --yolo` or `squad start --tunnel --model gpt-4`
+
+**Examples:**
+
+```bash
+# Basic local PTY (no phone access)
+squad start
+
+# With phone access + devtunnel
+squad start --tunnel
+# Output: QR Code, URL, Session ID
+
+# Custom port, local only
+squad start --port 3456
+
+# Custom command with tunnel
+squad start --tunnel --command powershell
+
+# Copilot flags pass through
+squad start --tunnel --yolo
+squad start --tunnel --model gpt-4 --no-config
+```
+
+For details on architecture, security, mobile keyboard, and troubleshooting, see [Remote Control Guide](../features/remote-control.md).
 
 ---
 
