@@ -550,3 +550,27 @@ Added "Known Failure Modes" section documenting both failures as cautionary exam
 **Scribe Actions:** Merged both decisions into decisions.md, deleted inbox files, appended this team update, created orchestration logs.
 
 **Outcome:** Kobayashi's charter now includes permanent safeguards. History file corrected with audit trail. Future spawns will have accurate context and enforced guardrails against known failure patterns. Team memory integrity preserved.
+
+### 2026-03-XX: Banana Gate Opened — Migration Phases 1-2.5 Verification Complete
+**Status:** COMPLETED. Brady said "banana" — migration gate is OPEN.
+
+**Phase 1: Prerequisites — All Verified:**
+- ✅ Both remotes accessible: `origin` (bradygaster/squad-pr) and `beta` (bradygaster/squad)
+- ✅ Working directory: C:\src\squad-pr
+- ✅ Clean tree: No uncommitted changes
+- ✅ Node.js ≥20: v22.16.0 ✓
+- ✅ npm ≥10: 11.11.0 ✓
+
+**Phase 2: Tag v0.8.18 on Origin — Acknowledged:**
+- ✅ All package.json versions at 0.8.18-preview (root, squad-cli, squad-sdk)
+- ✅ Note recorded: v0.8.18 tag will be created at migration merge commit on public repo (not retroactively on origin)
+
+**Phase 2.5: Merge PR #582 (Consult Mode) — Verified Complete:**
+- ✅ Consult mode code exists in migration branch
+- ✅ Commit 24d9ea5 "Merge pull request #582 from jsturtevant/consult-mode-impl" present in history
+- ✅ Source files verified: packages/squad-cli/src/cli/commands/consult.ts and packages/squad-sdk/src/sharing/consult.ts
+- ✅ All merge conflicts already resolved with 0.8.18-preview versions retained
+
+**Decision:** Phases 1-2.5 are verified complete. Awaiting Brady's signal for Phase 3 (beta push) after the "ONE more PR" mentioned arrives.
+
+**Checklist updated:** docs/migration-checklist.md — banana gate checked, all Phase 1 boxes checked, Phase 2 acknowledged, Phase 2.5 remains marked complete.
