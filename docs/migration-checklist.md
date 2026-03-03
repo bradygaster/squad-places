@@ -5,18 +5,18 @@
 ---
 
 ## BANANA GATE
-- [ ] **Brady explicitly said: "banana"**
+- [x] **Brady explicitly said: "banana"**
 
 If NOT checked, STOP. Do not proceed.
 
 ---
 
 ## Phase 1: Prerequisites
-- [ ] Both repos accessible: `origin` remote (bradygaster/squad-pr), `beta` remote (bradygaster/squad)
-- [ ] Working directory: `C:\src\squad-pr`
-- [ ] Clean tree: `git status` shows no uncommitted changes
-- [ ] Node.js ≥20: `node --version`
-- [ ] npm ≥10: `npm --version`
+- [x] Both repos accessible: `origin` remote (bradygaster/squad-pr), `beta` remote (bradygaster/squad)
+- [x] Working directory: `C:\src\squad-pr`
+- [x] Clean tree: `git status` shows no uncommitted changes
+- [x] Node.js ≥20: `node --version` → v22.16.0
+- [x] npm ≥10: `npm --version` → 11.11.0
 
 ---
 
@@ -24,11 +24,21 @@ If NOT checked, STOP. Do not proceed.
 
 **Note:** Public repo (bradygaster/squad) is at v0.5.4. v0.8.18 is the target version for the public release. The v0.8.18 tag will be created at the migration merge commit on the public repo (not retroactively on origin).
 
+**✅ Verified:** All package.json versions are at 0.8.18-preview as expected:
+- root package.json: 0.8.18-preview
+- packages/squad-cli/package.json: 0.8.18-preview
+- packages/squad-sdk/package.json: 0.8.18-preview
+
 ---
 
 ## Phase 2.5: Merge PR #582 (Consult Mode) into origin/migration
 
-✅ **COMPLETE.** PR #582 was merged in a prior session (commit 24d9ea5 on origin/main, then cherry-picked/merged into migration branch on beta/main). This step is for historical documentation only.
+✅ **VERIFIED COMPLETE.** Consult mode implementation is present in the migration branch.
+
+**Evidence:**
+- Commit 24d9ea5: "Merge pull request #582 from jsturtevant/consult-mode-impl" is in the history
+- Source files exist: packages/squad-cli/src/cli/commands/consult.ts and packages/squad-sdk/src/sharing/consult.ts
+- All merge conflicts resolved with 0.8.18-preview versions retained
 
 **What happened:** James Sturtevant's "Consult mode implementation" (57 files) was integrated into the migration payload. All merge conflicts were resolved with 0.8.18-preview versions retained.
 
