@@ -28,7 +28,7 @@ We proved what intuition suggested: **Squad works identically on VS Code as it d
 
 **Workarounds documented:** `runSubagent` has no `model` or `background` parameters. Workaround: spawn multiple subagents in one turn for parallelism; batch Scribe last (tolerable cost since Scribe is Haiku-tier work).
 
-**See:** [docs/scenarios/client-compatibility.md](../scenarios/client-compatibility.md) — full investigation results, platform comparison table, degradation plan, and platform adaptation guide.
+<!-- TODO: Document client compatibility matrix in scenarios when complete -->
 
 ### 2. Client Compatibility Matrix Shipped
 
@@ -77,7 +77,7 @@ Coordinator:
 
 **For v0.5.0+:** Customizable polling cadence, emoji matching to agent persona, milestone filtering for quiet mode.
 
-**See:** [team-docs/proposals/022a-agent-progress-updates.md](../../team-docs/proposals/022a-agent-progress-updates.md) — full design, UX mockups, success criteria, risk assessment.
+<!-- TODO: Link to agent progress updates proposal when documentation is complete -->
 
 ### 4. SSH Bug Documented and Closed (#30)
 

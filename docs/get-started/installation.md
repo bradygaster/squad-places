@@ -81,7 +81,7 @@ Then import what you need:
 import { defineConfig, loadConfig, resolveSquad } from '@bradygaster/squad-sdk';
 ```
 
-The SDK gives you typed configuration, routing, model selection, and the full agent lifecycle API. See the [SDK Reference](../reference/index.md) for details.
+The SDK gives you typed configuration, routing, model selection, and the full agent lifecycle API. See the [SDK Reference](../reference/sdk.md) for details.
 
 ---
 
@@ -93,7 +93,7 @@ Want the same agents across all your projects?
 squad init --global
 ```
 
-This creates `~/.squad/` — a personal team root that any project can inherit from. See [Configuration](../reference/index.md) for details on upstream inheritance.
+This creates `~/.squad/` — a personal team root that any project can inherit from. See [Upstream Inheritance](../features/upstream-inheritance.md) for details.
 
 ---
 

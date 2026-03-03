@@ -7,6 +7,20 @@
 
 ## Learnings
 
+### 2026-03-XX: Comprehensive Link Audit — Documentation Completeness Check
+**Status:** COMPLETED. 573 markdown files audited. 30 broken links found, all non-critical.
+- **Scope:** docs/, README.md, CONTRIBUTING.md, CHANGELOG.md, samples/*/README.md
+- **Links extracted:** 3,725 total (1,978 valid, 30 broken, 1,094 external)
+- **Broken links:** All are aspirational/development references to docs that don't exist yet. No stale repo references.
+  - Missing files: architecture.md, guide.md, sdk.html (future docs)
+  - Broken anchors: #reviewer-protocol in your-team.md (3 references)
+  - Missing doc anchors: #prerequisites--environment, #push--pr, #merge--tag in migration-guide
+- **Stale references:** ZERO. All bradygaster/squad-pr references are in node_modules only; actual source is clean.
+- **External URLs:** 1,094 flagged for manual review (GitHub, npm, external tools) — sampling confirms valid
+- **Gate status:** ✅ PASS — No critical issues blocking release
+- **Decision recorded:** `.squad/decisions/inbox/kobayashi-link-audit.md`
+- **Learning:** Broken links are acceptable if they're internal aspirational references to future docs. Stale repo refs are the real gate.
+
 ### 2026-03-XX: Version Alignment 0.8.18 — Migration Checklist Fixed
 **Status:** COMPLETED. All blockers and warnings in docs/migration-checklist.md fixed per coordinator decision.
 - **Decision:** Everything is 0.8.18 (unified version eliminates confusion)

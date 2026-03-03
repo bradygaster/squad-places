@@ -302,6 +302,6 @@ docker rm aspire-dashboard
 
 - [Aspire Documentation](https://aspire.dev)
 - [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/)
-- [Squad SDK Telemetry](../reference/sdk.html#telemetry) — detailed API docs
+- [Squad SDK Reference](../reference/sdk.md) — detailed API documentation
 
 Aspire pairs perfectly with Squad: **watch your agents work in real time, catch performance issues early, and prove to yourself (and your team) that AI agents are deterministic and safe.**

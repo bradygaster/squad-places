@@ -481,7 +481,7 @@ Your endpoint receives POST requests with agent name, message, and context.
 
 - [MCP Setup Guide](./mcp.md) — detailed MCP configuration walkthrough
 - [Skills System](./skills.md) — learn how skills encode reusable knowledge
-- [Copilot Environment Setup](../guide.md) — how to configure MCP
+- [MCP Documentation](./mcp.md) — how to configure Model Context Protocol
 - [Model Selection](./model-selection.md) — customize agent behavior per role
 
 ## Sample Prompts

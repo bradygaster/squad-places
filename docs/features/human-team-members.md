@@ -55,7 +55,7 @@ If the human hasn't responded after a while, Squad sends **stale reminders** pro
 
 ## Humans as Reviewers
 
-Human team members can serve as reviewers in the [reviewer protocol](../guide.md). This is useful when you want a real person to sign off before work is considered done.
+Human team members can serve as reviewers in the [reviewer protocol](../concepts/your-team.md#reviewer-protocol). This is useful when you want a real person to sign off before work is considered done.
 
 ```
 > Add Jordan as security reviewer

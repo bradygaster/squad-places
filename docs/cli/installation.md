@@ -319,4 +319,4 @@ npm install -g @bradygaster/squad-cli@insider
 
 - **Getting Started:** See [README](../../README.md) for your first squad
 - **Command Reference:** See individual command docs in `docs/guide/`
-- **Architecture:** See [Architecture Overview](./architecture.md) to understand how CLI and SDK fit together
+- **SDK API:** See [SDK Reference](../reference/sdk.md) to understand the programmatic API

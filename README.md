@@ -33,7 +33,7 @@ npm install --save-dev @bradygaster/squad-cli
 npx squad init
 ```
 
-**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/migration-github-to-npm.md) if upgrading from the old GitHub-native distribution.
+**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/migration-github-to-npm.md) if upgrading from the old GitHub-native distribution, or [comprehensive v0.8.18+ migration guide](docs/migration-guide-private-to-public.md).
 
 ### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
 
@@ -137,7 +137,13 @@ The coordinator routes messages to the right agents. Multiple agents can work in
 - **Session persistence:** If an agent crashes, it resumes from checkpoint; you never lose context
 - **Decision logging:** Every decision is recorded in `.squad/decisions.md` for the whole team to see
 
-For a comprehensive guide, see [docs/guide/shell.md](docs/guide/shell.md).
+For more details on shell usage, see the commands table above.
+
+## Samples
+
+Eight working examples from beginner to advanced — casting, governance, streaming, Docker. See [samples/README.md](samples/README.md).
+
+---
 
 ### Insider Channel
 
@@ -153,7 +159,7 @@ For insider builds:
 npm install -g @bradygaster/squad-cli@insider
 ```
 
-> **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed. All distribution is now via npm. See [Migration Guide](docs/migration-github-to-npm.md) if upgrading from the old path.
+> **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed. All distribution is now via npm (see [Migration Guide](docs/migration-github-to-npm.md) for v0.8.18+ migration details).
 
 ---
 

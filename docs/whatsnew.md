@@ -13,8 +13,8 @@ Full release history for Squad — from beta through the v1 TypeScript replatfor
 - **Published to npm** — `@bradygaster/squad-sdk@0.8.2` and `@bradygaster/squad-cli@0.8.2`
 - **Remote squad mode** (ported from @spboyer's [PR #131](https://github.com/bradygaster/squad/pull/131)):
   - `resolveSquadPaths()` dual-root resolver for project-local vs team identity directories (#311)
-  - [`squad doctor` command](reference/index.md) — 9-check setup validation with emoji output (#312)
-  - [`squad link` command](reference/index.md) — link a project to a remote team root (#313)
+  - [`squad doctor` command](reference/cli.md) — 9-check setup validation with emoji output (#312)
+  - [`squad link` command](reference/cli.md) — link a project to a remote team root (#313)
   - `squad init --mode remote` — initialize with remote team config (#313)
   - `ensureSquadPathDual()` and `ensureSquadPathResolved()` dual-root write guards (#314)
 - **CopilotSessionAdapter** (#315) — Wraps `@github/copilot-sdk` CopilotSession to map `sendMessage`→`send`, `on`→unsubscribe tracking, `destroy`→`close`. Fixed P0 "sendMessage is not a function" Codespace bug.

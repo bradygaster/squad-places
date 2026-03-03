@@ -401,6 +401,6 @@ Use the barrel export from `@bradygaster/squad-sdk`.
 
 ## Next Steps
 
-- **Architecture:** See [Architecture Overview](./architecture.md) to understand SDK modules
-- **SDK API Reference:** See [SDK API Reference](./sdk-api-reference.md) for all public exports
+- **SDK API:** See [SDK Reference](../reference/sdk.md) to understand SDK modules
+- **SDK Reference:** See [SDK Reference](../reference/sdk.md) for all public exports
 - **Example Extension:** Check the Squad team's SquadUI extension source for reference implementation

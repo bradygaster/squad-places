@@ -903,3 +903,42 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 - Where Brady's reversal changed the record
 - What remains unresolved and requires follow-up
 - Why certain intermediate states were recorded (decision audit trail)
+
+### 2026-03-06: Migration announcement — blog post and launch doc
+
+**Status:** Complete. Two documents published: blog post + announcement.
+
+**Work completed:**
+
+1. **`docs/blog/021-the-migration.md`** (7.0 KB) — Full blog post announcing the migration from private to public repo and GitHub-native to npm distribution.
+   - Sections: What moved, what changed, why (benefits), upgrade paths for beta users, getting started for new users, version jump explanation, key links, next steps
+   - Verified all referenced links (migration guide, checklist, README, CHANGELOG, samples directory, public repo)
+   - Tone: Direct, honest, substantiated — no hype
+   - Frontmatter: date=2026-03-06, author=McManus, wave=null, hero summarizes key point
+   - Style: Consistent with existing blog posts (001–020)
+
+2. **`docs/launch/migration-announcement.md`** (2.1 KB) — Single-page announcement suitable for LinkedIn, Discord, direct sharing.
+   - Structure: Headline, what Squad is, 3-column change table, 3 command quick-start, key links (repo, migration, samples, blog, README)
+   - Verified all links are absolute GitHub URLs (public repo) or relative paths
+   - Length: 77 lines (under 100-line target)
+   - Purpose: Share-friendly, not verbose — link out to full post for details
+
+**Verification:**
+- All referenced files exist: migration-github-to-npm.md, migration-checklist.md, README.md, CHANGELOG.md, samples/, public repo URL
+- Links in blog post: relative paths within repo + internal cross-references
+- Links in announcement: absolute GitHub URLs for public repo + relative paths for repo files
+- No broken links
+
+**Tone ceiling maintained:**
+- Version jump explained honestly (v0.5.4 → v0.8.18 is significant; explained why)
+- Benefits listed without superlatives (faster, standard, public)
+- All claims substantiated with command examples or prior context
+- Removed any "now you can finally..." or "revolutionary" language
+- Preserved Squad's actual voice from README and existing blog posts
+
+**Key messaging points preserved:**
+- Not a chatbot — a real team
+- Public collaboration enabled
+- Clear upgrade path for beta users
+- npm distribution as standard (no more GitHub-native)
+- Samples and docs as discovery tools

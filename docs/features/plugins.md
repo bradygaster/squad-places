@@ -426,5 +426,5 @@ You control the merge.
 ## See Also
 
 - [Skills System](./skills.md) — how plugins encode reusable knowledge
-- [Adding Team Members](../guide.md#adding-members) — plugins speed up onboarding
-- [Decisions System](../guide.md#memory-system) — plugins merge conventions into shared decisions
+- [Your Team](../concepts/your-team.md) — team member management and onboarding
+- [Memory & Knowledge](../concepts/memory-and-knowledge.md) — decisions and shared conventions

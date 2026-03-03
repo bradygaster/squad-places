@@ -28,6 +28,37 @@
 
 ## Learnings
 
+### 2026-03-03T[NOW]: Comprehensive Migration Readiness Review — UX Assessment for v0.5.4 → v0.8.18
+- **Task:** Brady requested comprehensive review of migration readiness focusing on USER EXPERIENCE. Review 7 docs: migration-checklist.md, migration-guide-private-to-public.md, migration-github-to-npm.md, README.md, installation.md, first-session.md, CHANGELOG.md (first 100 lines), and samples/README.md. Assess version consistency, upgrade path clarity, sample discoverability, and user confusion vectors.
+- **Context:** Migration is imminent. v0.5.4 users will upgrade to v0.8.18. Need to ensure docs are crystal clear and version numbers align everywhere.
+- **Findings Summary:** 17 total findings — **3 BLOCKERS, 7 WARNINGS, 7 STRENGTHS**
+  - **🔴 BLOCKER #1 — Stale version in migration-guide-private-to-public.md line 43:** Table cell states `v0.5.4 → v0.8.17 (after migration)` but team decision is v0.8.18. Direct conflict with migration-checklist.md and release notes. Users will be confused about target version.
+  - **🔴 BLOCKER #2 — Systematic v0.8.17 references throughout migration-guide-private-to-public.md:** Document appears to be outdated template predating v0.8.18 decision. ALL v0.8.17 → v0.8.18 replacements needed (lines 47, 70, 75, 78, etc. — ~30+ total). This doc is marked "superseded" in header but contains 200+ lines of detailed instructions, creating contradiction.
+  - **🔴 BLOCKER #3 — Missing version clarity in README.md quick-start:** Installation docs don't specify which version users will install. No version pinning (`npm install --save-dev @bradygaster/squad-cli` could resolve to older version), no verification step (`squad --version`). Users may silently install v0.8.17 or earlier and report bugs against v0.8.18.
+  - **🟡 WARNING — migration-guide-private-to-public.md status unclear:** Header says "superseded" but body contains full migration instructions. Either consolidate into migration-checklist.md (the authoritative source per line 1) or remove the "superseded" header and clarify that this is a companion guide.
+  - **🟡 WARNING — README points to incomplete migration reference:** README lines 36, 156 direct to `docs/migration-github-to-npm.md` (distribution change only, 65 lines), but users upgrading from v0.5.4 also need directory migration (`.ai-team/` → `.squad/`) and breaking changes. Information is split across two docs with no clear integration.
+  - **🟡 WARNING — samples/README.md not linked from main README:** Describes 8 working examples (hello-squad through autonomous-pipeline, beginner to advanced), but not discoverable from main README. Users have to stumble onto `samples/` via directory browsing.
+  - **🟡 WARNING — CLI commands lack examples in README:** 15 commands listed (table lines 64–83) but no examples or pointer to where detailed docs live. Users can see command names but not what they do or how to use them.
+  - **🟡 WARNING — Installation.md mentions `.github/agents/` but other docs reference `.squad/agents/`:** Terminology inconsistency suggests either wrong directory or docs don't explain the distinction (SDK gets `.squad/`, Copilot agent gets `.github/agents/`).
+  - **🟡 WARNING — CHANGELOG.md doesn't summarize user-facing changes for v0.5.4 → v0.8.18:** Sections describe what's coming but don't surface what users GAIN or what BREAKS. Should include summary block: "For users upgrading from v0.5.4: Directory migration, distribution change, monorepo structure, new features X/Y/Z."
+  - **🟡 WARNING — Inconsistent package naming:** Mix of `squad-cli` and `@bradygaster/squad-cli` in docs. Scoped name is correct; short names in user-facing docs confuse beginners (they'll try `npm install squad-cli` with no scope).
+- **Strengths Identified:**
+  - migration-checklist.md is comprehensive, authoritative, 14 phases with clear version targets (v0.8.18 everywhere)
+  - README.md clearly states GitHub-native distribution is removed
+  - CLI commands are well-organized with aliases shown
+  - Quick Start section (README lines 20–60) is discoverable, actionable, real example
+  - SDK samples are diverse, well-leveled, with LOC estimates
+  - Changelog structure correct ([Unreleased] first, [0.8.18-preview] next)
+  - Breaking changes explicitly called out across docs
+- **Execution Path Provided:**
+  - **IMMEDIATE (before release):** Fix blockers #1, #2 (search/replace v0.8.17 → v0.8.18 in migration-guide-private-to-public.md), fix blocker #3 (pin versions + add verification to README quick-start)
+  - **Before public announcement:** Clarify migration-guide-private-to-public.md status, add samples reference to README, standardize @bradygaster/squad-cli naming
+  - **Post-launch (nice-to-have):** Add CHANGELOG summary block, consolidate migration docs, verify directory terminology consistency
+- **Questions for Brady:** (1) Keep migration-guide-private-to-public.md or consolidate into migration-checklist.md? (2) Pin versions in quick-start examples (e.g., @0.8.18) or use @latest? (3) Pre-launch smoke tests needed (install, `squad --version`, `squad init`, verify `.squad/` structure)?
+- **Verdict:** 🟡 **READY FOR FIXES** — All blockers identified, no ambiguities. Recommend fixing blockers before launch, warnings after.
+- **Output file:** `.squad/decisions/inbox/keaton-migration-review-r2.md` (17 findings, structured report, 11.4KB)
+- **Pattern learned:** Migration reviews need to evaluate THREE layers: (1) Information consistency (versions, terminology, references), (2) Information completeness (all breaking changes documented?), (3) Information discoverability (will users find what they need?). User experience review catches issues that technical checklists miss (e.g., "users might install wrong version" vs. "checklist says to publish X version").
+
 ### 2026-03-02T15:00:00Z: Migration Checklist Strategic Review — Brady's "Hell Review" Request
 - **Task:** Brady asked: "Have we reviewed the HELL out of the release checklist?" Keaton conducted comprehensive strategic review of docs/migration-checklist.md focusing on version coherence, missing steps, phase ordering, rollback adequacy, stale references, and scope completeness.
 - **Context:** Checklist was prepared by Kobayashi (Git & Release). Brady is pre-execution, seeking final gate validation. Current state: migration branch (HEAD: b3a39bc), npm last published: 0.8.17, all package.json: 0.8.18-preview, PR #582 already merged to main and into migration.

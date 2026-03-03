@@ -241,7 +241,7 @@ squad import squad-backup.json         # Restore from backup
 squad status   # Check available models
 ```
 
-Update model references in agent charters or `squad.config.ts` to match the [model catalog](../scenarios/switching-models.md).
+Update model references in agent charters or `squad.config.ts`. See [Features documentation](../features/model-selection.md) for model selection guidance.
 
 ---
 
@@ -276,4 +276,4 @@ git commit -m "chore: ensure .squad/ is untracked on this branch"
 - [CLI Reference](../reference/cli.md) — Commands and config
 - [SDK Reference](../reference/sdk.md) — Programmatic API
 - [Recipes & Advanced Scenarios](./recipes.md) — Prompt-driven cookbook
-- [Upgrading Squad](../scenarios/upgrading.md) — Detailed upgrade walkthrough
+- [Upgrading Squad](../launch/migration-guide-v051-v060.md) — Migration and upgrade guidance

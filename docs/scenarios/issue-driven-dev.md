@@ -8,7 +8,7 @@
 Connect to myorg/recipe-app
 ```
 
-End-to-end workflow: connect to a repo, pick issues from backlog, let agents create branches, implement, open PRs, handle review feedback, and close issues. See also the [GitHub Issues Walkthrough](../guide/github-issues-tour.md) for a step-by-step tour.
+End-to-end workflow: connect to a repo, pick issues from backlog, let agents create branches, implement, open PRs, handle review feedback, and close issues. See also [GitHub Issues Mode](../features/github-issues.md) for detailed guidance.
 
 **Prerequisite:** The `gh` CLI must be installed and authenticated (`gh auth login`).
 

@@ -108,13 +108,13 @@ Check the model picker at top of chat if agents seem slow or expensive — switc
 - **GitHub.com (web)** — Untested. Copilot Chat on GitHub.com doesn't support Squad.
 - **Custom agent model selection** — Phase 2 future feature.
 
-See [Client Compatibility Matrix](../scenarios/client-compatibility.md) for full platform comparison.
+See [Getting Started](../get-started/first-session.md) for your first VS Code session.
 
 ---
 
 ## See Also
 
-- [Client Compatibility Matrix](../scenarios/client-compatibility.md) — Feature comparison: CLI, VS Code, JetBrains, GitHub.com
+- [Getting Started](../get-started/installation.md) — Installation and setup guide
 - [Parallel Execution](parallel-execution.md) — How Squadron fan-outs agents
 - [Model Selection](model-selection.md) — Cost-first routing strategy
-- [First Session Walkthrough](../tour-first-session.md) — Getting started with Squad
+- [CLI Shell Commands](../cli/shell.md) — Shell commands and features

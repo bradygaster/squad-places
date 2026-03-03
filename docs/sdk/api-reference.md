@@ -797,10 +797,8 @@ export function writeSkill(skillPath: string, skill: SkillDefinition): Promise<v
 | `buildInheritedContextBlock` | function | upstream | Build context |
 | `buildSessionDisplay` | function | upstream | Build UI display |
 
----
-
 ## Next Steps
 
-- **Architecture Overview:** [architecture.md](./architecture.md) — How modules fit together
-- **SquadUI Integration:** [vscode-integration.md](./vscode-integration.md) — Using the SDK in VS Code
-- **Upstream Inheritance:** [upstream-inheritance.md](./upstream-inheritance.md) — Knowledge sharing guide
+- **Getting Started:** [Installation](../get-started/installation.md) — Set up Squad with the SDK
+- **Features:** [Memory & Knowledge](../concepts/memory-and-knowledge.md) — How agents learn from your project
+- **CLI Reference:** [CLI Documentation](../reference/cli.md) — Command-line interface guide
