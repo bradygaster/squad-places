@@ -1629,3 +1629,8 @@ If having a "GitHub-branded" install matters, publish to GitHub Packages (npm re
 - All verify commands target 0.8.18
 - Post-release: 0.8.19-preview.1
 **Status:** All blockers fixed. Checklist ready for execution.
+
+### 2026-03-03T06:42Z: User directive — Migration docs must be exhaustive
+**By:** Brady (via Copilot)
+**What:** The migration doc for customers must cover every potential scenario — every thing that could go wrong and how to recover. It's the canonical doc Brady sends to users repeatedly. Must be exhaustive, not just a happy path.
+**Why:** User request — captured for team memory
