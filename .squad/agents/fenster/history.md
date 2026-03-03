@@ -434,6 +434,43 @@
 Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infrastructure, and full documentation. Fenster (Coordinator) identified and resolved 3 integration bugs (ID mismatch, move parsing, history semantics). Sample ready for use.
 
 **Verification:** tsc --noEmit clean. vitest run: 3217 passed, 126 failed (all pre-existing).
+
+---
+
+## 2025-07: cli.js shim replacement
+
+**Task:** Replace the stale ~2000-line bundled `cli.js` with a thin ESM shim that forwards to the built CLI at `packages/squad-cli/dist/cli-entry.js`.
+
+**What changed:**
+- `cli.js` reduced from 1982 lines to 14 lines
+- Shim imports `./packages/squad-cli/dist/cli-entry.js` which auto-executes `main()`
+- Deprecation notice only shows when invoked via npm/npx (checks `process.env.npm_execpath`), silent for `node cli.js`
+
+**Why:** The bundled cli.js was from the old GitHub-native distribution and was missing commands added after the monorepo migration (e.g., `aspire`). Running `node cli.js aspire` failed. Now it forwards to the real CLI entry point.
+
+**Verification:** `node cli.js aspire --help` works. `node cli.js help` shows all commands. Test suite: 3333 passed, 10 failed (all pre-existing).
+
+## Learnings
+
+- Root package.json has `"type": "module"` — bare `import` works in cli.js (no dynamic import needed)
+- `packages/squad-cli/dist/cli-entry.js` auto-executes `main().catch(...)` at module level — importing it is sufficient to run the CLI
+- `process.env.npm_execpath` is set when running via npm/npx but absent for direct `node` invocation — good signal for conditional deprecation notices
+
+---
+
+## 2025-07: Fix semver prerelease format in bump-build (#692)
+
+**Task:** `scripts/bump-build.mjs` produced invalid semver like `0.8.16.1-preview` (build number before prerelease tag). Fixed to produce `0.8.16-preview.1` (build as dot-separated prerelease identifier, per semver spec).
+
+**What changed:**
+- `parseVersion` split into two regex paths: prerelease-first (`1.2.3-tag.N`) and non-prerelease (`1.2.3.N`)
+- `formatVersion` places build number after the prerelease tag when one exists
+- All 5 tests updated to use new format, all passing
+
+## Learnings
+
+- Semver prerelease identifiers are dot-separated after the hyphen: `1.2.3-preview.1` is valid, `1.2.3.1-preview` is not
+- The bump-build test suite copies the real script to a temp dir and patches `__dirname` — any regex changes must not break the patching mechanism
 ### 2026-02-28 : Implement Phase 1 of Consult Mode
 **PRD:** `.squad/identity/prd-consult-mode.md`
 **Requested by:** James Sturtevant
