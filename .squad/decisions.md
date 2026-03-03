@@ -1634,3 +1634,13 @@ If having a "GitHub-branded" install matters, publish to GitHub Packages (npm re
 **By:** Brady (via Copilot)
 **What:** The migration doc for customers must cover every potential scenario — every thing that could go wrong and how to recover. It's the canonical doc Brady sends to users repeatedly. Must be exhaustive, not just a happy path.
 **Why:** User request — captured for team memory
+
+### 2026-03-03: Docker samples must install SDK deps in-container
+**By:** Hockney
+**Context:** knock-knock sample Docker build was broken
+**What:** Sample Dockerfiles must NOT copy host `node_modules` for workspace packages. Instead, they must:
+1. Copy the SDK `package.json` and strip lifecycle scripts (`prepare`, `prepublishOnly`)
+2. Run `npm install` inside the container to get a complete, non-hoisted dependency tree
+3. Copy pre-built `dist` on top
+**Why:** npm workspace hoisting moves transitive deps (like `@opentelemetry/api`) to the repo root `node_modules`. Copying `packages/squad-sdk/node_modules` from the host gives an incomplete tree inside Docker, causing `ERR_MODULE_NOT_FOUND` at runtime. Installing fresh inside the container resolves all deps correctly.
+**Applies to:** All sample Dockerfiles that reference `packages/squad-sdk` via `file:` links.

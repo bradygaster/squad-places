@@ -7,6 +7,17 @@
 
 ## Learnings
 
+### 2026-03-XX: PR #693 Merge to Main & Sync to Migration
+**Status:** COMPLETED. PR #693 ("docs: add remote control (squad start --tunnel) documentation") merged to main; migration branch synced.
+- **Operations:**
+  1. ✅ Merged PR #693 to main via `gh pr merge 693 --merge --admin`
+  2. ✅ Fetched latest from origin
+  3. ✅ Merged origin/main into migration branch (with conflict resolution)
+  4. ✅ Resolved package.json conflicts by keeping migration versions (0.8.18-preview, ahead of main's 0.6.0-alpha.0)
+  5. ✅ Pushed updated migration branch to origin
+- **Conflicts encountered:** Three package.json files had version conflicts due to migration branch being ahead of main in development cycle. Resolved by accepting local (migration) versions, which is correct for active development branch.
+- **Learning:** When merging advanced development branches back into main, version conflicts are expected. Use `--ours` strategy to preserve the dev branch's forward-looking state.
+
 ### 2026-03-XX: Comprehensive Link Audit — Documentation Completeness Check
 **Status:** COMPLETED. 573 markdown files audited. 30 broken links found, all non-critical.
 - **Scope:** docs/, README.md, CONTRIBUTING.md, CHANGELOG.md, samples/*/README.md
