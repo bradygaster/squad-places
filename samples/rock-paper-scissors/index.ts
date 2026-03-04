@@ -7,7 +7,7 @@
  * GITHUB_TOKEN required.
  */
 
-import { CastingEngine, StreamingPipeline } from '@bradygaster/squad-sdk';
+import { StreamingPipeline } from '@bradygaster/squad-sdk';
 import { SquadClientWithPool } from '@bradygaster/squad-sdk/client';
 import { PLAYERS, SCOREKEEPER_PROMPT, type PlayerStrategy } from './prompts.js';
 
@@ -63,22 +63,13 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Cast agents for each player
-  const casting = new CastingEngine();
-  const cast = casting.castTeam({
-    universe: 'usual-suspects',
-    requiredRoles: ['developer', 'tester', 'designer', 'qa', 'security', 'ops', 'data'],
-    teamSize: PLAYERS.length + 1, // players + scorekeeper
-  });
-
   // Create sessions for all players
   const players: PlayerInfo[] = [];
   const pipeline = new StreamingPipeline();
 
   for (let i = 0; i < PLAYERS.length; i++) {
     const strategy = PLAYERS[i];
-    const agent = cast[i];
-    
+
     const session = await client.createSession({
       streaming: true,
       systemMessage: { mode: 'append', content: strategy.systemPrompt },
@@ -95,13 +86,12 @@ async function main(): Promise<void> {
   }
 
   // Create scorekeeper session
-  const scorekeeperAgent = cast[PLAYERS.length];
   const scorekeeperSession = await client.createSession({
     streaming: true,
     systemMessage: { mode: 'append', content: SCOREKEEPER_PROMPT },
   });
   const scorekeeper = {
-    name: scorekeeperAgent.name,
+    name: 'Verbal',
     sessionId: scorekeeperSession.sessionId,
   };
 
