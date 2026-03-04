@@ -40,7 +40,7 @@ async function main(): Promise<void> {
     console.log(`  ${BOLD}init${RESET}       Initialize Squad (skip files that already exist)`);
     console.log(`             Flags: --global (init in personal squad directory)`);
     console.log(`  ${BOLD}upgrade${RESET}    Update Squad-owned files to latest version`);
-    console.log(`             Overwrites: squad.agent.md, templates dir (.squad-templates/ or .ai-team-templates/)`);
+    console.log(`             Overwrites: squad.agent.md, templates dir (.squad/templates/)`);
     console.log(`             Never touches: .squad/ or .ai-team/ (your team state)`);
     console.log(`             Flags: --global (upgrade personal squad), --migrate-directory (rename .ai-team/ → .squad/)`);
     console.log(`  ${BOLD}status${RESET}     Show which squad is active and why`);

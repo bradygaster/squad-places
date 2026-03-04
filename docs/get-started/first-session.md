@@ -33,7 +33,7 @@ You'll see:
 ```
 ✅ Squad installed.
    .github/agents/squad.agent.md — coordinator agent
-   .squad-templates/ — 11 template files
+   .squad/templates/ — 11 template files
 
 Open GitHub Copilot and select Squad from the agent list.
 ```

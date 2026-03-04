@@ -48,7 +48,7 @@ function parseArgs(argv) {
 }
 
 function printUsage() {
-  console.log('Usage: node .squad-templates/ralph-triage.js --squad-dir .squad --output triage-results.json');
+  console.log('Usage: node .squad/templates/ralph-triage.js --squad-dir .squad --output triage-results.json');
 }
 
 function normalizeEol(content) {

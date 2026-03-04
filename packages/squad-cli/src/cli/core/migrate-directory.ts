@@ -65,10 +65,11 @@ export async function migrateDirectory(dest: string): Promise<void> {
   
   // Rename .ai-team-templates/ if it exists
   const aiTeamTemplatesDir = path.join(dest, '.ai-team-templates');
-  const squadTemplatesDir = path.join(dest, '.squad-templates');
+  const squadTemplatesDir = path.join(dest, '.squad', 'templates');
   if (fs.existsSync(aiTeamTemplatesDir)) {
+    fs.mkdirSync(path.join(dest, '.squad'), { recursive: true });
     fs.renameSync(aiTeamTemplatesDir, squadTemplatesDir);
-    success('Renamed .ai-team-templates/ → .squad-templates/');
+    success('Renamed .ai-team-templates/ → .squad/templates/');
   }
   
   console.log();
