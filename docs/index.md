@@ -54,6 +54,7 @@ Install Squad in under a minute and run your first session.
 |---------|-----------------|
 | [Installation](get-started/installation.md) | Get running in 60 seconds |
 | [Your First Session](get-started/first-session.md) | From zero to fan-out — the walkthrough |
+| [Features](features/team-setup.md) | Everything Squad can do — parallel work, memory, routing, and more |
 | [Guide](guide/tips-and-tricks.md) | Tips, prompts, and patterns that work |
 | [CLI Reference](reference/cli.md) | Commands, shell, config files |
 | [SDK Reference](reference/sdk.md) | Programmatic API |

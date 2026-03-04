@@ -32,10 +32,10 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 };
 
 // Nav sections: directory name → display title (order matters)
-// Simplified to 5 core sections + blog. Brady's directive: fewer docs, action-oriented.
 const SECTIONS = [
   { dir: 'get-started', title: 'Get Started' },
   { dir: 'guide', title: 'Guide' },
+  { dir: 'features', title: 'Features' },
   { dir: 'reference', title: 'Reference' },
   { dir: 'scenarios', title: 'Scenarios' },
   { dir: 'blog', title: 'Blog' },
@@ -45,6 +45,16 @@ const SECTIONS = [
 const SECTION_ORDER = {
   'get-started': ['installation', 'first-session', 'migration'],
   'guide': ['tips-and-tricks', 'sample-prompts', 'personal-squad'],
+  'features': [
+    'team-setup', 'routing', 'model-selection', 'response-modes',
+    'parallel-execution', 'memory', 'skills', 'directives',
+    'ceremonies', 'reviewer-protocol',
+    'github-issues', 'labels', 'prd-mode', 'project-boards',
+    'ralph', 'copilot-coding-agent', 'human-team-members',
+    'remote-control', 'vscode', 'worktrees',
+    'export-import', 'upstream-inheritance', 'marketplace', 'plugins', 'mcp',
+    'notifications',
+  ],
   'reference': ['cli', 'sdk', 'config'],
   'scenarios': ['existing-repo', 'solo-dev', 'issue-driven-dev', 'monorepo', 'ci-cd-integration', 'team-of-humans', 'aspire-dashboard'],
 };
