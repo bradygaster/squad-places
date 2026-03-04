@@ -33,7 +33,7 @@ npm install --save-dev @bradygaster/squad-cli
 npx squad init
 ```
 
-**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/migration-github-to-npm.md) if upgrading from the old GitHub-native distribution, or [comprehensive v0.8.18+ migration guide](docs/migration-guide-private-to-public.md).
+**Or use npx (no install):** `npx @bradygaster/squad-cli` — see [Migration Guide](docs/get-started/migration.md) if upgrading from an older version.
 
 ### 3. Authenticate with GitHub (for Issues, PRs, and Ralph)
 
@@ -159,7 +159,7 @@ For insider builds:
 npm install -g @bradygaster/squad-cli@insider
 ```
 
-> **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed. All distribution is now via npm (see [Migration Guide](docs/migration-github-to-npm.md) for v0.8.18+ migration details).
+> **Note:** GitHub-native distribution (`npx github:bradygaster/squad`) has been removed. All distribution is now via npm (see [Migration Guide](docs/get-started/migration.md) for details).
 
 ---
 

@@ -28,7 +28,7 @@ Then in Copilot: `/agent` → select **Squad** → describe your project.
 ## Key Links
 
 - **Repository:** [github.com/bradygaster/squad](https://github.com/bradygaster/squad)
-- **Migration guide:** [docs/migration-github-to-npm.md](https://github.com/bradygaster/squad/blob/main/docs/migration-github-to-npm.md)
+- **Migration guide:** [docs/get-started/migration.md](https://github.com/bradygaster/squad/blob/main/docs/get-started/migration.md)
 - **Samples:** [samples/](https://github.com/bradygaster/squad/tree/main/samples) — hello-squad, rock-paper-scissors, streaming-chat, hook-governance, and more
 - **Full blog post:** [docs/blog/021-the-migration.md](https://github.com/bradygaster/squad/blob/main/docs/blog/021-the-migration.md)
 - **README:** [github.com/bradygaster/squad](https://github.com/bradygaster/squad#what-is-squad)
@@ -44,7 +44,7 @@ cd your-squad-project
 squad upgrade
 ```
 
-See full [migration checklist](https://github.com/bradygaster/squad/blob/main/docs/migration-checklist.md) for details.
+See the [migration guide](https://github.com/bradygaster/squad/blob/main/docs/get-started/migration.md) for details.
 
 ---
 

@@ -43,7 +43,7 @@ const SECTIONS = [
 
 // Explicit ordering within sections (filename without .md → priority)
 const SECTION_ORDER = {
-  'get-started': ['installation', 'first-session'],
+  'get-started': ['installation', 'first-session', 'migration'],
   'guide': ['tips-and-tricks', 'sample-prompts', 'personal-squad'],
   'reference': ['cli', 'sdk', 'config'],
   'scenarios': ['existing-repo', 'solo-dev', 'issue-driven-dev', 'monorepo', 'ci-cd-integration', 'team-of-humans', 'aspire-dashboard'],

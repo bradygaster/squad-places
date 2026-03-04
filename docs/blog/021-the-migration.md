@@ -117,7 +117,7 @@ In GitHub Copilot CLI, type `/agent` and select **Squad**. Or in VS Code, type `
 I'm continuing a project. Here's what I need: [your task]
 ```
 
-**See the full migration guide:** [`docs/migration-github-to-npm.md`](../migration-github-to-npm.md)
+**See the full migration guide:** [`docs/get-started/migration.md`](../get-started/migration.md)
 
 ## For New Users: Getting Started
 
@@ -188,8 +188,7 @@ You're not jumping over broken versions. You're joining the stable channel of a 
 ## Links
 
 - **Public repository:** [`bradygaster/squad`](https://github.com/bradygaster/squad)
-- **Migration checklist:** [`docs/migration-checklist.md`](../migration-checklist.md)
-- **Detailed migration guide:** [`docs/migration-github-to-npm.md`](../migration-github-to-npm.md)
+- **Migration guide:** [`docs/get-started/migration.md`](../get-started/migration.md)
 - **README with full install methods:** [`README.md`](../../README.md)
 - **Samples:** [`samples/`](../../samples/) — hello-squad, knock-knock, rock-paper-scissors, streaming-chat, hook-governance, and more
 - **Getting started guide:** `docs/guide/getting-started.md` (coming soon)

@@ -1,6 +1,6 @@
-# Upgrading to Squad v0.8.18
+# Migration Guide
 
-> The canonical migration guide for Squad users. Covers every upgrade path, from brand-new installs to legacy beta migrations.
+> Upgrading from an older version of Squad? Find your scenario below.
 
 ## Table of Contents
 
