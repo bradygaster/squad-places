@@ -789,3 +789,10 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 **Result:** 5 corrections made via [CORRECTED] annotations. No conflicting or stale decisions found. History is now clean and ready for future spawns to read cold.
 
 **Overall status:** ✅ CLEAN (with corrections documented inline)
+
+### Template path test fix — Issue #190 (2026-03-04)
+**Status:** Complete — test updated in `test/cli/init.test.ts`.
+- **What:** Updated test description and path from `.squad-templates/` to `.squad/templates/` to match the corrected install path in `init.ts`.
+- **Key finding:** The SDK dist was stale (still had old `.squad-templates` path). Source was already updated but `npm run build` hadn't been run. Rebuilt SDK to verify test passes.
+- **Pre-existing failure:** Line 94 gitattributes content mismatch (unrelated, not introduced by this change).
+- **Lesson:** On Windows, use `join(root, '.squad', 'templates')` not `join(root, '.squad/templates')` — forward-slash segments in `join` args work on Node but it's better practice to use separate args.
