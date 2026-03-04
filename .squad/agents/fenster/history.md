@@ -561,3 +561,6 @@ The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-ex
 
 - Wildcard `export *` from `runtime/constants.js` causes TS2308 collision with `AgentRole` already exported from `casting/index.js` — use named exports when barrel already re-exports a module with overlapping symbol names
 - Only use named exports for `otel.ts` to avoid leaking internal OTel SDK types into the public API surface
+
+## Learnings
+- Issue #188: doctor.ts existed at cli/commands/doctor.ts with full implementation (runDoctor, doctorCommand exports) but was never wired into cli-entry.ts command routing. Two additions needed: help text line + lazy-import route block before the Unknown command fatal. Docs already had the command listed. Always check CLI routing when adding new command files.
