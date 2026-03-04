@@ -118,6 +118,6 @@ The following checks run automatically in CI (no manual action required):
 
 ## References
 
-- [GitHub Actions Workflows](.github/workflows/)
-- [Package Configuration](package.json)
-- [Changelog](CHANGELOG.md)
+- [GitHub Actions Workflows](../.github/workflows/)
+- [Package Configuration](../package.json)
+- [Changelog](../CHANGELOG.md)

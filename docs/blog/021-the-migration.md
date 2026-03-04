@@ -201,7 +201,7 @@ The public repo is live. npm distribution is stable. Docs are rebuilt. The team 
 If you hit issues:
 - **[File a bug](https://github.com/bradygaster/squad/issues/new)** — Issues are public. We read them.
 - **[Start a discussion](https://github.com/bradygaster/squad/discussions)** — Ideas, questions, feedback.
-- **[Check the docs](https://github.com/bradygaster/squad#documentation)** — migration guides, scenarios, reference.
+- **[Check the docs](https://github.com/bradygaster/squad#what-is-squad)** — migration guides, scenarios, reference.
 
 Welcome to the public Squad. Let's build.
 

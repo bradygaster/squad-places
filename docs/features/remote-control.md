@@ -322,5 +322,5 @@ Logs are created on first event.
 ## See Also
 
 - [CLI Reference](../reference/cli.md) — All commands
-- [Getting Started](../get-started/quickstart.md) — Squad setup
+- [Getting Started](../get-started/installation.md) — Squad setup
 - [VS Code Integration](./vscode.md) — Remote Control in VS Code
