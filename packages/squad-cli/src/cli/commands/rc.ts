@@ -57,7 +57,7 @@ export async function runRC(cwd: string, options: RCOptions): Promise<void> {
       for (const line of memberLines) {
         const cols = line.split('|').map(c => c.trim()).filter(Boolean);
         if (cols.length >= 2 && cols[0] !== 'Name') {
-          agents.push({ name: cols[0], role: cols[1] });
+          agents.push({ name: cols[0]!, role: cols[1]! });
         }
       }
       console.log(`  ${GREEN}✓${RESET} Loaded ${agents.length} agents from team.md\n`);
@@ -82,7 +82,7 @@ export async function runRC(cwd: string, options: RCOptions): Promise<void> {
     onPrompt: async (text) => {
       console.log(`  ${CYAN}←${RESET} ${DIM}Remote prompt:${RESET} ${text}`);
       bridge.addMessage('user', text);
-      const agent = agents.length > 0 ? agents[0] : { name: 'Assistant', role: 'General' };
+      const agent = agents.length > 0 ? agents[0]! : { name: 'Assistant', role: 'General' };
       bridge.addMessage('agent', `[Copilot passthrough not active] Echo: ${text}`, agent.name);
     },
     onDirectMessage: async (agentName, text) => {

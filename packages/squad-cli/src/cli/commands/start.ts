@@ -118,6 +118,7 @@ export async function runStart(cwd: string, options: StartOptions): Promise<void
 
   // ─── Spawn copilot in PTY ─────────────────────────────────
   // Dynamic import node-pty (native module)
+  // @ts-expect-error — node-pty is an optional native dependency
   const nodePty = await import('node-pty');
 
   const copilotExePath = path.join(
@@ -178,7 +179,7 @@ export async function runStart(cwd: string, options: StartOptions): Promise<void
     bridge?.passthroughFromAgent(JSON.stringify({ type: 'pty', data }));
   });
 
-  pty.onExit(({ exitCode }) => {
+  pty.onExit(({ exitCode }: { exitCode: number }) => {
     console.log(`\n${DIM}Copilot exited (code ${exitCode}).${RESET}`);
     destroyTunnel();
     bridge?.stop();

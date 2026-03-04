@@ -20,6 +20,7 @@ const currentDir = dirname(currentFile);
 
 export interface UpgradeOptions {
   migrateDirectory?: boolean;
+  self?: boolean;
 }
 
 export interface UpdateInfo {
