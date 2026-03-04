@@ -1,6 +1,6 @@
 {
   "name": "@bradygaster/squad-sdk",
-  "version": "0.8.20-preview.1",
+  "version": "0.8.20",
   "description": "Squad SDK — Programmable multi-agent runtime for GitHub Copilot",
   "type": "module",
   "main": "./dist/index.js",
@@ -201,7 +201,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bradygaster/squad.git",
+    "url": "git+https://github.com/bradygaster/squad.git",
     "directory": "packages/squad-sdk"
   }
 }
