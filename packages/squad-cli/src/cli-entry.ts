@@ -70,6 +70,7 @@ async function main(): Promise<void> {
     console.log(`  ${BOLD}nap${RESET}        Context hygiene (compress, prune, archive .squad/ state)`);
     console.log(`             Usage: nap [--deep] [--dry-run]`);
     console.log(`             Flags: --deep (thorough cleanup), --dry-run (preview only)`);
+    console.log(`  ${BOLD}doctor${RESET}     Validate squad setup (check files, config, health)`);
     console.log(`  ${BOLD}help${RESET}       Show this help message`);
     console.log(`\nFlags:`);
     console.log(`  ${BOLD}--version, -v${RESET}  Print version`);
@@ -255,6 +256,12 @@ async function main(): Promise<void> {
     const dryRun = args.includes('--dry-run');
     const result = await runNap({ squadDir, deep, dryRun });
     console.log(formatNapReport(result, !!process.env['NO_COLOR']));
+    return;
+  }
+
+  if (cmd === 'doctor') {
+    const { doctorCommand } = await import('./cli/commands/doctor.js');
+    await doctorCommand();
     return;
   }
 
