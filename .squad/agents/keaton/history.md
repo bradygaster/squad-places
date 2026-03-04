@@ -257,6 +257,17 @@
 - **Known issue:** #591 (aspire-integration.test.ts docker pull timeout — environmental, not code)
 - **Architecture insight:** Aspire is NOT a deprecated feature. It's a foundational observability integration that compounds with the OTel instrumentation work (#257–#260). File watcher + dashboard create closed-loop observability loop: runtime traces (internal) + file changes (external) = complete visibility.
 
+### 2026-03-05T[NOW]: PR #131 Close — Remote Squad Mode Ported to Main
+- **Task:** Brady's request to identify and close PR #131 from Shayne Boyer (@spboyer) as superseded. PR proposed elegant remote squad mode with dual-root resolver, repo mode, and hub mode. Brady suspected these features already existed in main via separate PRs.
+- **Investigation:** Reviewed CHANGELOG.md and found explicit credits: "ported from @spboyer's bradygaster/squad#131". All core features mapped to specific implementation PRs:
+  - `resolveSquadPaths()` dual-root resolver (projectDir vs teamDir) → #311
+  - `squad doctor` command (9-check setup validation) → #312
+  - `squad link <path>` + `squad init --mode remote` → #313
+  - `ensureSquadPathDual()` / `ensureSquadPathResolved()` write guards → #314
+- **Resolution:** Posted warm thank-you comment crediting Shayne's design as foundational, mapped each feature, noted that repo mode and hub mode were specializations of his core insight (team identity separation). Closed PR with appreciation note.
+- **Pattern learned:** **Superseded features often deserve explicit appreciation comments.** Closing PRs silently creates contributor alienation; acknowledging which ideas were ported + how they evolved creates goodwill. Shayne's file-ownership-split architecture (team-scoped vs project-scoped) became the backbone of remote squad mode in production.
+- **Next time:** When closing design PRs that were superseded, research the implementation history, map features to issues/PRs, and thank the original author. This is especially important for architectural contributions that influenced later decisions.
+
 ### From Beta (carried forward)
 - Architecture patterns that compound — decisions that make future features easier
 - Silent success mitigation lessons: ~7-10% of background spawns return no text, mitigated by RESPONSE ORDER block + filesystem checks
@@ -265,6 +276,7 @@
 - 13 modules: adapter, agents, build, casting, cli, client, config, coordinator, hooks, marketplace, ralph, runtime, sharing, skills, tools
 - Distribution: GitHub-native (npx github:bradygaster/squad), never npmjs.com
 - v1 docs are internal only — no published docs site
+- **Remote Squad Mode Architecture:** File ownership split (team-scoped: team.md, agents/, casting/, skills/; project-scoped: decisions.md, decisions/inbox/, log/, orchestration-log/) drives dual-root resolution. Config pointer (no symlinks, JSON-based) is Windows-safe and portable. Design is backward-compatible (local mode when no config.json). Inspired by Shayne Boyer's PR #131 design.
 
 ### 2026-02-21: Interactive Shell Proposal
 - **Problem:** Copilot CLI dependency creates unreliable handoffs, zero agent visibility, and external UX control

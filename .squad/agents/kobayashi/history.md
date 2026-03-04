@@ -7,6 +7,35 @@
 
 ## Learnings
 
+### 2026-03-07: Closed Public Repo Issues #175 & PR #182 — Documented Superseding Implementations (COMPLETE)
+**Status:** CLOSED. Both issues closed with appreciation for community work; implementations verified in current codebase.
+
+#### Context
+- **Issue #175:** Bug report from @uvirk — `squad copilot` subcommand hardcoded to `.ai-team/` instead of using `detectSquadDir()`
+- **PR #182:** Fix from @KalebCole — Added `squad doctor` diagnostic (9 checks) + fixed copilot path bug
+
+#### Verification
+1. ✅ `squad doctor` command located at `packages/squad-cli/src/cli/commands/doctor.ts` — implements 9 checks, emoji output, diagnostic-only exit
+2. ✅ `squad copilot` command located at `packages/squad-cli/src/cli/commands/copilot.ts` — properly uses `detectSquadDir()`, no hardcoded `.ai-team/` path
+3. ✅ CHANGELOG.md confirms both features shipped in v0.8.18+ as part of TypeScript replatform (#312, #313, #314)
+4. ✅ Full `.ai-team/` → `.squad/` migration completed in v1 codebase
+
+#### Action Taken
+1. ✅ Posted detailed comments on both PR #182 and issue #175, explaining:
+   - Both features are now implemented in the canonical v1 codebase
+   - Cited specific version (0.8.18+), issue/PR references (#312, #188, #313), and file paths
+   - Thanked @KalebCole for the thorough design and @uvirk for the clear bug report
+   - Explained that public repo had code duplication; v1 is the consolidated implementation
+2. ✅ Closed PR #182 with explicit reference to superseding v1 implementation
+3. ✅ Closed issue #175 with fix version (0.8.18+) and implementation details
+
+#### Key Learning
+When community work duplicates an internal refactor:
+1. Verify that the new implementation is indeed complete and correct
+2. Credit the community contribution for validating the design
+3. Use closure as a teaching moment about architecture consolidation
+4. Be genuine and specific in citations — it builds trust and respect
+
 ### 2026-03-07: Release v0.8.19 — Nap & Doctor Commands, Template Path Fix (COMPLETE)
 **Status:** RELEASED. v0.8.19 published to npm registry, GitHub release created, post-release bump committed.
 
