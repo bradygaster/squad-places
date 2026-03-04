@@ -18,6 +18,12 @@ Thanks to **Shayne Boyer** ([@spboyer](https://github.com/spboyer)) for the orig
 - **Semantic Versioning fix (#692):** Version format changed from `X.Y.Z.N-preview` to `X.Y.Z-preview.N` to comply with semantic versioning spec (prerelease identifier after patch, build metadata after prerelease). Example: `0.8.6-preview.1` instead of `0.8.6.1-preview`.
 - **Version transition:** Public repo final version was `0.8.5.1`. Private repo continues at `0.8.x` cadence (next publish after 0.8.17 is 0.8.18), following semver prerelease convention for development.
 
+## [0.8.20] - 2025-01-08
+
+### Fixed
+- **Template path fix (#190):** Corrected all references from `.squad-templates/` to `.squad/templates/` to align with the project's directory structure. This ensures the CLI correctly resolves team member charters and other template resources.
+- **Init test templates:** Updated initialization tests to reference the corrected `.squad/templates/` directory path.
+
 ## [0.8.18-preview] - TBD
 
 ### Added — Remote Squad Mode (ported from @spboyer's [bradygaster/squad#131](https://github.com/bradygaster/squad/pull/131))
