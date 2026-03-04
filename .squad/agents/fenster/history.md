@@ -564,3 +564,6 @@ The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-ex
 
 ## Learnings
 - Issue #188: doctor.ts existed at cli/commands/doctor.ts with full implementation (runDoctor, doctorCommand exports) but was never wired into cli-entry.ts command routing. Two additions needed: help text line + lazy-import route block before the Unknown command fatal. Docs already had the command listed. Always check CLI routing when adding new command files.
+
+
+📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus

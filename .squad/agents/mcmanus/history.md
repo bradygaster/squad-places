@@ -956,3 +956,28 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 **Note:** Kobayashi separately fixing the link from `docs/reference/cli.md` → `docs/features/remote-control.md` (file wasn't on `main`).
 
 **Pattern observed:** The `quickstart.md` link was a stale reference — the getting-started guide was likely renamed to `installation.md` at some point without updating all cross-references. This is a recurring risk when files are renamed.
+
+### 2026-03-[Current]: File safety table added to migration guide (Issue #188)
+
+**Status:** Complete. Migration docs now clarify which `.squad/` files are safe to copy during upgrades.
+
+**What changed:**
+- Added a 10-row file safety table in Scenario 2, Step 6 of `docs/get-started/migration.md`
+- Table categorizes files as ✅ (safe to copy), ❌ (skip), or 🟡 (optional)
+- Expanded Step 7 description to emphasize `squad doctor` validation (9 checks)
+
+**Why this matters:**
+- User question from #188: "which files/folders exactly are safe to copy to the new .squad?"
+- Common pain point: users unsure whether to copy old `casting/`, `templates/`, or diagnostic logs
+- Clear guidance reduces post-migration support burden
+
+**Learnings:**
+1. **Migration docs gap filled:** Users upgrading from v0.5.4 to v0.8.18 face format incompatibility. The table directly answers the most common question.
+2. **Tone ceiling applied:** Explanations are short, direct, and actionable — no narrative, just the decision matrix they need.
+3. **Validation step emphasized:** `squad doctor` is the post-migration guardrail that catches misconfiguration early. Explicitly calling it out in Step 7 (not just "verify") signals its importance.
+4. **Strategy insight:** DevRel docs should map common user questions → resolution tables/checklists. This pattern applies to other complex upgrade paths (CI/CD setup, SDK changes, etc.)
+
+**Commit:** `fb54b82` — "docs: add file safety table to migration guide"
+
+
+📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus

@@ -741,3 +741,6 @@ Verified 113ad1c documentation files already exist on beta/main with identical c
 - git remote -v shows only origin → https://github.com/bradygaster/squad.git
 - All branches tracking origin correctly
 - No force-pushes, no data loss, no state corruption
+
+
+📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus

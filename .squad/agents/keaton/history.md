@@ -28,6 +28,26 @@
 
 ## Learnings
 
+### 2026-03-05T[NOW]: Migration Docs Gap Analysis — Issue #188 File Migration Guidance
+- **Task:** Brady requested review of migration docs for gaps exposed by issue #188. Users KevinUK and jeremythake hit "Unknown command: doctor" after upgrade (separate CLI bug), but KevinUK also asked critical migration question: "which files/folders exactly are safe to copy to the new .squad?" Verify the docs answer this question; if not, identify what's missing.
+- **Approach:** Read migration docs, verify against codebase behavior (init/upgrade logic, TEMPLATE_MANIFEST, migrations), trace user question to docs coverage.
+- **Finding:** **CRITICAL GAP — Migration docs lack directory-level file-copy guidance.** docs/get-started/migration.md Scenario 2 (v0.5.4 → v0.8.18 upgrade) says "Manually migrate your customizations" but doesn't specify which directories are safe to copy. KevinUK asked about agents/, casting/, decisions/, log/, orchestration-log/, skills/ — codebase clearly distinguishes user-owned vs squad-owned, but docs don't expose this.
+- **Root cause:** TEMPLATE_MANIFEST (templates.ts) explicitly categorizes files: Squad-owned (overwriteOnUpgrade: true) = casting/*.json, templates/, workflows; User-owned (overwriteOnUpgrade: false) = team.md, decisions.md, agents/*/history.md, skills/. But migration.md doesn't reference this framework.
+- **Verified answers from codebase:**
+  - ✅ agents/ — SAFE (all agent charters/history are user-owned, valuable)
+  - ✅ decisions/ & decisions.md — SAFE (append-only user data)
+  - ✅ routing.md, team.md — SAFE (user-written rules/roster)
+  - ✅ skills/ — SAFE (custom skills are user-owned, separate from templates/skills/)
+  - ⚠️ log/, orchestration-log/ — OPTIONAL (append-only diagnostic, not in manifest, safe but not required)
+  - ❌ casting/*.json — DON'T COPY (squad-owned, overwriteOnUpgrade: true, schema incompatible)
+  - ❌ templates/ — DON'T COPY (will be overwritten by upgrade)
+- **Impact:** Users without clear guidance will guess. Common failure: copy old casting/ files thinking they're precious, breaking the team. Observed in #188 — KevinUK explicitly asked about casting.json — indicates users are uncertain.
+- **Recommended fix:** Add table to migration.md Scenario 2 (after step 5, before step 6) showing "Safe to Copy" vs "Don't Copy" for each directory with reasoning. Also add post-migration validation step (`squad doctor` as success check — though that's a separate CLI bug currently).
+- **Fix complexity:** Very low — ~20 lines (table + clarification text), no code changes. Can be implemented by Scribe or any squad member.
+- **Priority:** Medium. Affects all v0.5.4 → v0.8.18 upgrades. Low code complexity, high UX value. Should fix before public release.
+- **Status:** Ready for implementation. Output file: `.squad/decisions/inbox/keaton-migration-docs-gaps.md` (~7KB, full analysis + recommended text for docs).
+- **Pattern learned:** Migration docs need THREE layers: (1) Quick reference table (what's safe?), (2) Reasoning (why?), (3) Validation step (how do I know it worked?). Users upgrade under time pressure; give them the table first, details second. Also: when code has clear ownership (squad-owned vs user-owned), expose that framework in user-facing docs — it directly answers user questions.
+
 ### 2026-03-03T[NOW]: Comprehensive Migration Readiness Review — UX Assessment for v0.5.4 → v0.8.18
 - **Task:** Brady requested comprehensive review of migration readiness focusing on USER EXPERIENCE. Review 7 docs: migration-checklist.md, migration-guide-private-to-public.md, migration-github-to-npm.md, README.md, installation.md, first-session.md, CHANGELOG.md (first 100 lines), and samples/README.md. Assess version consistency, upgrade path clarity, sample discoverability, and user confusion vectors.
 - **Context:** Migration is imminent. v0.5.4 users will upgrade to v0.8.18. Need to ensure docs are crystal clear and version numbers align everywhere.
@@ -647,3 +667,6 @@ Keaton's split plan produced definitive SDK/CLI mapping with clean DAG (CLI → 
 **Confidence Level:** 🟢 **RELIABLE SOURCE OF TRUTH**
 
 This history accurately documents Keaton's work and decisions. Future spawns can read this cold and understand what actually happened, not what was requested.
+
+
+📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus

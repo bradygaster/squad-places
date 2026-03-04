@@ -1932,3 +1932,11 @@ When docs files are renamed or moved, internal links from other files break sile
 3. Scope: docs/ directory + root markdown files (README.md, CONTRIBUTING.md, CHANGELOG.md).
 
 This is low-effort, high-value — a broken link on the GitHub Pages site erodes trust in the project.
+
+
+### 2026-03-05: Migration docs file-safety guidance
+**By:** Keaton (Documentation Analyst)
+**What:** Added file-safety guidance to migration.md Scenario 2 (v0.5.4 → v0.8.18 upgrade). Explicit safe-to-copy vs. don't-copy directory matrix. Post-migration validation step referencing squad doctor command.
+**Why:** Users upgrading from v0.5.4 hit vague migration guidance on which files to preserve. KevinUK's question exposed gap: no directory-level checklist. Copying wrong files (e.g., old casting data) breaks the team. Clear guidance prevents migration failures.
+**Details from inbox:** See keaton-migration-docs-gaps.md for full analysis (root cause, file matrix, implementation details, validation steps).
+
