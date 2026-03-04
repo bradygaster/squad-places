@@ -7,6 +7,20 @@
 
 ## Learnings
 
+### 2026-03-XX: Phase 5 — Create v0.8.18 Tag & Fix Docs Workflow (COMPLETE)
+**Status:** EXECUTED. v0.8.18 tag created on public repo, docs workflow fixed.
+- **Operations:**
+  1. ✅ Verified beta/main at ac9e156 (migration merge commit)
+  2. ✅ Created annotated tag: `git tag -a v0.8.18 ac9e156 -m "Migration release: GitHub-native → npm distribution, monorepo structure"`
+  3. ✅ Pushed tag to public repo: `git push beta v0.8.18`
+  4. ✅ Verified on beta: `git ls-remote beta refs/tags/v0.8.18` → 091a3ae...v0.8.18 ✅
+  5. ✅ Fixed docs workflow: Changed `.github/workflows/squad-docs.yml` trigger from `branches: [preview]` to `branches: [main]`
+  6. ✅ Applied fix to public repo (beta/main) and local migration branch
+- **Rationale:** Public repo now has v0.8.18 release marker matching npm version to be published later. Docs workflow now fires on main branch (preview no longer exists).
+- **Checklist updated:** Phase 5 marked complete
+- **Decision recorded:** `.squad/decisions/inbox/kobayashi-phase5-complete.md`
+- **No gate required:** Proceeding autonomously to Phase 6 per Brady's instructions.
+
 ### 2026-03-XX: Phase 4 — Merge beta/migration → beta/main (COMPLETE)
 **Status:** EXECUTED. Migration branch successfully merged to public repo's main branch.
 - **Gate word:** 🚲 (received from Brady, authorization for Phase 4)

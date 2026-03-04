@@ -1708,3 +1708,45 @@ When merging unrelated histories, 171 conflicts emerged. **Decision:** Accept mi
 **Decision Status:** ✅ FINAL  
 **Phase 4 Status:** ✅ COMPLETE  
 **Proceed to Phase 5:** Yes
+
+
+# Phase 5 Complete: v0.8.18 Tag & Docs Workflow Fix
+
+**Decision Date:** 2025-02-21  
+**Agent:** Kobayashi (Git & Release)  
+**Status:** ✅ Complete
+
+## Summary
+
+Phase 5 of the migration checklist has been executed successfully. Two critical tasks completed:
+
+### Task 1: Create v0.8.18 Tag on Public Repo
+- **Action:** Created annotated tag `v0.8.18` at commit `ac9e156` (the migration merge commit on `beta/main`)
+- **Message:** "Migration release: GitHub-native → npm distribution, monorepo structure"
+- **Verification:** `git ls-remote beta refs/tags/v0.8.18` confirms tag exists on public repo
+- **Rationale:** Public repo version marker aligns with npm package version 0.8.18 to be published in Phase 7.5
+
+### Task 2: Fix Docs Workflow
+- **Problem:** `.github/workflows/squad-docs.yml` was configured to trigger on `branches: [preview]`, but the `preview` branch no longer exists on the public repo
+- **Solution:** Changed trigger from `preview` to `main`
+- **Change:** Single-line edit: `branches: [preview]` → `branches: [main]`
+- **Applied To:** 
+  - Public repo (beta/main) — push committed and accepted
+  - Local migration branch — docs workflow now in sync with public
+
+## Context
+
+This work completes the "version alignment" phase of the GitHub → npm migration. Package.json versions remain at `0.8.18-preview` (no change made per protocol); version bump to `0.8.18` occurs in Phase 7.5 immediately before npm publish.
+
+## Next Steps
+
+- Phase 6: Package name reconciliation (Option A — deprecate `@bradygaster/create-squad`)
+- Phase 7: User upgrade path documentation
+- Phase 7.5: Bump versions to 0.8.18 for release
+- Phase 8: npm publish
+- Phase 9: GitHub Release creation
+
+## Decisions Made
+
+None at the decision level. This was execution of pre-planned Phase 5 steps.
+
