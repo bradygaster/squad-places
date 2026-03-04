@@ -1644,3 +1644,9 @@ If having a "GitHub-branded" install matters, publish to GitHub Packages (npm re
 3. Copy pre-built `dist` on top
 **Why:** npm workspace hoisting moves transitive deps (like `@opentelemetry/api`) to the repo root `node_modules`. Copying `packages/squad-sdk/node_modules` from the host gives an incomplete tree inside Docker, causing `ERR_MODULE_NOT_FOUND` at runtime. Installing fresh inside the container resolves all deps correctly.
 **Applies to:** All sample Dockerfiles that reference `packages/squad-sdk` via `file:` links.
+
+### 2026-03-04T01:41:43Z: User directive
+**By:** Brady (via Copilot)
+**What:** Phase 4's go word is 🚲 (bicycle emoji). Do NOT proceed to Phase 4 until Brady sends 🚲.
+**Why:** User request — captured for team memory. Phased gate control for migration execution.
+

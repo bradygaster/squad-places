@@ -7,6 +7,20 @@
 
 ## Learnings
 
+### 2026-03-XX: Phase 3 — Push origin/migration to beta/migration (COMPLETE)
+**Status:** EXECUTED. migration branch successfully pushed to beta remote.
+- **Gate word:** 🍌 (received from Brady)
+- **Operations:**
+  1. ✅ Verified current branch: on `migration`
+  2. ✅ HEAD SHA captured: `c1dd9b22d3a6b97dcab49ab47ad98d7c7e300249` (updated from checklist's b3a39bc — branch advanced with consult mode merge)
+  3. ✅ Beta remote exists and accessible
+  4. ✅ Fetched from beta: 4,339 objects, 2.95 MiB
+  5. ✅ Pushed migration → beta/migration: 5,650 objects, 5.96 MiB written
+  6. ✅ Verified on beta: `git log beta/migration -3 --oneline` confirms HEAD at c1dd9b2
+- **Checklist updated:** Phase 3 boxes checked, HEAD SHA corrected to c1dd9b22d3a6b97dcab49ab47ad98d7c7e300249
+- **Next gate:** 🚲 (Phase 4 — merge beta/migration → beta/main). Brady has not said 🚲 yet. STOPPED.
+- **Learning:** Migration branch moves cleanly to public repo. HEAD SHA naturally advanced during preparation phases (consult mode merge raised commit). Checklist SHAs are snapshots, not immutable — always verify and record actual SHAs at execution time.
+
 ### 2026-03-XX: PR #693 Merge to Main & Sync to Migration
 **Status:** COMPLETED. PR #693 ("docs: add remote control (squad start --tunnel) documentation") merged to main; migration branch synced.
 - **Operations:**
