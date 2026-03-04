@@ -49,7 +49,10 @@ async function main(): Promise<void> {
   console.log('╚══════════════════════════════════════════╝\n');
 
   // Connect to Copilot
-  const client = new SquadClientWithPool({ githubToken: process.env.GITHUB_TOKEN });
+  const client = new SquadClientWithPool({
+    githubToken: process.env.GITHUB_TOKEN,
+    pool: { maxConcurrent: PLAYERS.length + 2 }, // players + scorekeeper + headroom
+  });
   
   try {
     await client.connect();
