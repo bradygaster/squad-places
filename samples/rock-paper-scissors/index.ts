@@ -277,7 +277,13 @@ async function getPlayerMove(
 
   try {
     if (session.sendAndWait) {
-      await session.sendAndWait({ prompt }, 30_000);
+      const result = await session.sendAndWait({ prompt }, 30_000);
+      // Fallback: capture content from sendAndWait when streaming events don't fire
+      if (!response) {
+        const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+        response = typeof data?.['content'] === 'string' ? (data['content'] as string) : '';
+        if (!response && typeof result === 'string') response = result;
+      }
     } else {
       await session.sendMessage({ prompt });
     }
@@ -385,9 +391,14 @@ async function announceResult(
 
   process.stdout.write(`  📊 ${scorekeeper.name}: `);
 
+  let commentary = '';
   try {
     if (session.sendAndWait) {
-      await session.sendAndWait({ prompt }, 30_000);
+      const result = await session.sendAndWait({ prompt }, 30_000);
+      // Fallback: capture content from sendAndWait when streaming events don't fire
+      const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+      commentary = typeof data?.['content'] === 'string' ? (data['content'] as string) : '';
+      if (!commentary && typeof result === 'string') commentary = result;
     } else {
       await session.sendMessage({ prompt });
     }
@@ -395,6 +406,10 @@ async function announceResult(
     session.off('message_delta', handler);
   }
 
+  // If streaming didn't produce output, print the fallback
+  if (commentary) {
+    process.stdout.write(commentary);
+  }
   console.log();
 }
 
@@ -461,9 +476,13 @@ async function printLeaderboard(
 
   process.stdout.write(`  📊 ${scorekeeper.name}: `);
 
+  let commentary = '';
   try {
     if (session.sendAndWait) {
-      await session.sendAndWait({ prompt }, 30_000);
+      const result = await session.sendAndWait({ prompt }, 30_000);
+      const data = (result as Record<string, unknown> | undefined)?.['data'] as Record<string, unknown> | undefined;
+      commentary = typeof data?.['content'] === 'string' ? (data['content'] as string) : '';
+      if (!commentary && typeof result === 'string') commentary = result;
     } else {
       await session.sendMessage({ prompt });
     }
@@ -471,6 +490,9 @@ async function printLeaderboard(
     session.off('message_delta', handler);
   }
 
+  if (commentary) {
+    process.stdout.write(commentary);
+  }
   console.log('\n');
 }
 
