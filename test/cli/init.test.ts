@@ -106,10 +106,10 @@ describe('CLI: init command', () => {
     expect(content).toContain('.squad/log/');
   });
 
-  it('should copy templates to .squad-templates/', async () => {
+  it('should copy templates to .squad/templates/', async () => {
     await runInit(TEST_ROOT);
     
-    const templatesPath = join(TEST_ROOT, '.squad-templates');
+    const templatesPath = join(TEST_ROOT, '.squad', 'templates');
     expect(existsSync(templatesPath)).toBe(true);
     
     // Should contain squad.agent.md

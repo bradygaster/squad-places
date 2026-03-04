@@ -97,7 +97,7 @@ export interface InitOptions {
   skipExisting?: boolean;
   /** Include GitHub workflows (default: true) */
   includeWorkflows?: boolean;
-  /** Include .squad-templates/ copy (default: true) */
+  /** Include .squad/templates/ copy (default: true) */
   includeTemplates?: boolean;
   /** Include sample MCP config (default: true) */
   includeMcpConfig?: boolean;
@@ -430,7 +430,7 @@ function stampVersionInContent(content: string, version: string): string {
  * - .gitignore entries for logs
  * - .github/agents/squad.agent.md
  * - .github/workflows/ (optional)
- * - .squad-templates/ (optional)
+ * - .squad/templates/ (optional)
  * - .copilot/mcp-config.json (optional)
  * - Identity files (now.md, wisdom.md)
  * - ceremonies.md
@@ -780,11 +780,11 @@ ${projectDescription ? `- **Description:** ${projectDescription}\n` : ''}- **Cre
   }
   
   // -------------------------------------------------------------------------
-  // Copy .squad-templates/ (optional)
+  // Copy .squad/templates/ (optional)
   // -------------------------------------------------------------------------
   
   if (includeTemplates && templatesDir) {
-    const templatesDest = join(teamRoot, '.squad-templates');
+    const templatesDest = join(teamRoot, '.squad', 'templates');
     if (!existsSync(templatesDest)) {
       cpSync(templatesDir, templatesDest, { recursive: true });
       createdFiles.push(toRelativePath(templatesDest));

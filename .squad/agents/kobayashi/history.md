@@ -7,6 +7,38 @@
 
 ## Learnings
 
+### 2026-03-07: Release v0.8.19 — Nap & Doctor Commands, Template Path Fix (COMPLETE)
+**Status:** RELEASED. v0.8.19 published to npm registry, GitHub release created, post-release bump committed.
+
+#### Release Summary
+- **Version:** 0.8.19 (from 0.8.19-preview.1)
+- **Release Date:** 2026-03-07
+- **Packages Published:** @bradygaster/squad-sdk@0.8.19, @bradygaster/squad-cli@0.8.19
+
+#### Changes Included
+1. **squad nap** command restored — Context hygiene engine wired back into CLI with `--deep` and `--dry-run` flags
+2. **squad doctor** command wired — Was implemented but never routed in cli-entry.ts; now accessible as `squad doctor` (fixes #188)
+3. **PR #185 merged** — Template install path fix (`.squad-templates/` → `.squad/templates/`) by @williamhallatt
+4. **PR #178 merged** — GitLab Issues walkthrough and feature reference docs by @CarlosSardo
+5. **Docs improvements** — Features section added to docs nav, broken link fixes, migration guide updated with file-safety table, 19 feature docs synced to main
+
+#### Release Process
+1. ✅ Pre-flight: Verified current versions (all at 0.8.19-preview.1)
+2. ✅ Version bump: Updated package.json (root, squad-sdk, squad-cli) from 0.8.19-preview.1 → 0.8.19
+3. ✅ Build: `npm run build --ignore-scripts` succeeded (verified no 4-part version auto-increment)
+4. ✅ Publish SDK: `npm publish --access public --ignore-scripts` from packages/squad-sdk — succeeded
+5. ✅ Publish CLI: `npm publish --access public --ignore-scripts` from packages/squad-cli — succeeded (published as @bradygaster/squad-cli@0.8.19, 247.3 kB tarball)
+6. ✅ Tag: `git tag v0.8.19` and `git push origin v0.8.19` — succeeded
+7. ✅ GitHub Release: Created via `gh release create` with full release notes documenting new commands, bug fixes, and community contributions
+8. ✅ Post-release: Bumped versions from 0.8.19 → 0.8.20-preview.1, committed with co-author trailer, pushed to origin/main
+9. ✅ Verification: Tag confirmed in git history, release visible at https://github.com/bradygaster/squad/releases/tag/v0.8.19
+
+#### Key Process Notes
+- Used `--ignore-scripts` on both npm publish commands to prevent prebuild script auto-incrementing versions to 4-part format (per Semver fix in issue #692)
+- npm publish required browser authentication on SDK publish; waited through full auth flow
+- CLI publish completed successfully with all 302 files and 1.1 MB unpacked size
+- Post-release commit maintained full co-author trailer as per git commit protocol
+
 ### 2026-03-06: Docs Sync — Migration Branch to Main (COMPLETE)
 **Status:** EXECUTED. Synced 19 unpublished docs from `migration` branch to `main` for GitHub Pages publication.
 

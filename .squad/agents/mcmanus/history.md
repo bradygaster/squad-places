@@ -342,6 +342,30 @@ Documentation quality is solid in structure but suffers from:
 Squad's documentation is strong — clear, well-organized, tone-disciplined, and practically useful. The team has invested in real scenarios and honest limitations. Ready for public release **after addressing the 3 critical items above** (LICENSE file, status clarification, broken link). The 🟡 rating reflects completeness (96%+) with a few last-mile polish items that must be done before announcement.
 
 
+### 2026-03-07: Path references `.squad-templates/` → `.squad/templates/` — docs update (issue #190)
+
+**Status:** Complete. All 9 references across 4 documentation files updated.
+
+**Files edited:**
+1. **docs/scenarios/ci-cd-integration.md** (5 references):
+   - Lines 166–168: Updated 3 workflow template references from `.squad-templates/squad-heartbeat.yml` → `.squad/templates/workflows/squad-heartbeat.yml`, and same for copilot-auto-assign.yml and pr-review-reminder.yml
+   - Line 173: Updated `cp .squad-templates/*.yml` → `cp .squad/templates/workflows/*.yml`
+   - Line 218: Updated "Customize `.squad-templates/`" → "Customize `.squad/templates/`"
+
+2. **docs/scenarios/existing-repo.md** (2 references):
+   - Line 27: Updated `✅ .squad-templates/` → `✅ .squad/templates/`
+   - Line 165: Updated git add statement from `git add .squad/ .squad-templates/ .github/ .gitattributes` → `git add .squad/ .github/ .gitattributes` (templates now nested inside .squad/)
+
+3. **docs/get-started/first-session.md** (1 reference):
+   - Line 36: Updated `.squad-templates/ — 11 template files` → `.squad/templates/ — 11 template files`
+
+4. **docs/features/vscode.md** (1 reference):
+   - Line 30: Updated "Creates `.github/agents/squad.agent.md` and `.squad-templates/`" → "Creates `.github/agents/squad.agent.md` and `.squad/templates/`"
+
+**Rationale:** The template directory was reorganized from `.squad-templates/` (parallel to .squad/) to `.squad/templates/` (nested inside .squad/) to improve organization and simplify git tracking. Workflow templates now live at `.squad/templates/workflows/`. All user-facing documentation needed updating to reflect the new canonical path.
+
+**QA:** Verified all 9 occurrences of `.squad-templates` found and replaced with correct nested path. Docs are now aligned with current project structure.
+
 ### 2026-02-23: Personal Squad tutorial — docs/guide/personal-squad.md
 **Status:** Complete.
 **Changes made:**
