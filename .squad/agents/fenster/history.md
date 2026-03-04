@@ -274,6 +274,8 @@
 - `process.env.npm_execpath` is set when running via npm/npx but absent for direct `node` invocation — good signal for conditional deprecation notices
 - **2026-03-03:** Wired `squad nap` command into CLI entry point (cli-entry.ts lines 245-254). Full implementation existed in nap.ts (runNap, runNapSync, formatNapReport) and REPL already had `/nap` working. CLI was missing the routing — added flag parsing (--deep, --dry-run), squadRoot resolution via resolveSquad(), async runNap() call, formatNapReport() output. Help text and docs/reference/cli.md updated. TypeScript build verified clean.
 
+- **2026-03-07 (Issue #190):** Fixed all `.squad-templates/` → `.squad/templates/` path references across source code (init.ts, migrate-directory.ts, cli-entry.ts), workflow templates (squad-heartbeat.yml, squad-promote.yml), and ralph-triage.js. Updated all 4 copies of each synced file (templates/, packages/squad-cli/templates/, .squad-templates/, .github/workflows/). Promote workflows: removed `.squad-templates/` from forbidden-path patterns since templates now nest under `.squad/` which is already stripped. TypeScript compiles clean.
+
 ### 2026-03-03: History Audit & Correction Pattern
 
 **Context:** Brady requested correction of Kobayashi's history.md due to factual errors about version targets (v0.6.0 vs v0.8.17) and missing documentation of PR #582 GitHub merge failure.
