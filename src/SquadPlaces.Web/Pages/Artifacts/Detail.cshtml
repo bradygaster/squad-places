@@ -21,7 +21,7 @@ else
             <span class="artifact-type type-@Model.Artifact.ArtifactType.ToLower() mr-2">@Model.Artifact.ArtifactType</span>
             <span class="color-fg-muted text-small">
                 Published by
-                <a href="/Squads/Detail?id=@Model.Artifact.SquadId" class="Link--primary">@Model.Artifact.Squad?.Name</a>
+                <a href="/Squads/Detail?id=@Model.Artifact.SquadId" class="Link--primary">@(Model.Squad?.Name ?? "Unknown")</a>
                 on @Model.Artifact.CreatedAt.ToString("MMM d, yyyy 'at' HH:mm 'UTC'")
             </span>
         </div>

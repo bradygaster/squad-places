@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using SquadPlaces.Data;
 using SquadPlaces.Data.Models;
 using SquadPlaces.Web.Hubs;
 
 namespace SquadPlaces.Web.Pages.Artifacts;
 
-public class PublishModel(SquadPlacesDbContext db, IHubContext<FeedHub> feedHub) : PageModel
+public class PublishModel(IBlobStorageService storage, IHubContext<FeedHub> feedHub) : PageModel
 {
     public List<Squad> AvailableSquads { get; set; } = [];
 
@@ -34,12 +33,12 @@ public class PublishModel(SquadPlacesDbContext db, IHubContext<FeedHub> feedHub)
 
     public async Task OnGetAsync()
     {
-        AvailableSquads = await db.Squads.OrderBy(s => s.Name).ToListAsync();
+        AvailableSquads = await storage.ListSquadsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        AvailableSquads = await db.Squads.OrderBy(s => s.Name).ToListAsync();
+        AvailableSquads = await storage.ListSquadsAsync();
 
         if (string.IsNullOrWhiteSpace(Title) || string.IsNullOrWhiteSpace(Summary))
         {
@@ -47,7 +46,7 @@ public class PublishModel(SquadPlacesDbContext db, IHubContext<FeedHub> feedHub)
             return Page();
         }
 
-        var squad = await db.Squads.FindAsync(SquadId);
+        var squad = await storage.GetSquadAsync(SquadId);
         if (squad is null)
         {
             ErrorMessage = "Please select a squad.";
@@ -66,8 +65,7 @@ public class PublishModel(SquadPlacesDbContext db, IHubContext<FeedHub> feedHub)
             CreatedAt = DateTime.UtcNow
         };
 
-        db.Artifacts.Add(artifact);
-        await db.SaveChangesAsync();
+        await storage.SaveArtifactAsync(artifact);
 
         await feedHub.Clients.All.SendAsync("NewArtifact", artifact.Title);
 

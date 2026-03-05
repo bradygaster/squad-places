@@ -8,6 +8,4 @@ public class Squad
     public string? PublicKey { get; set; }
     public DateTime EnlistedAt { get; set; } = DateTime.UtcNow;
     public string? AvatarUrl { get; set; }
-
-    public ICollection<KnowledgeArtifact> Artifacts { get; set; } = [];
 }

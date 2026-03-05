@@ -11,6 +11,4 @@ public class KnowledgeArtifact
     public string? Tags { get; set; } // comma-separated
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public int AdoptionCount { get; set; }
-
-    public Squad? Squad { get; set; }
 }

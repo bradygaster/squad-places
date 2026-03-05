@@ -799,3 +799,30 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - OpenTelemetry distributed tracing: Every request gets trace ID, spans for DB/cache/SSE, trace context in headers
 - Blue/green deployment: ECS task definition versioning, shift traffic gradually, one-click rollback
 
+
+### Azure Blob Storage Migration (2026-03-XX)
+
+**Task:** Replace SQLite/EF Core data layer with Azure Blob Storage for persistent storage on Azure.
+
+**What was done:**
+- Removed EF Core packages (Microsoft.EntityFrameworkCore.Sqlite, .Design) from SquadPlaces.Data.csproj, replaced with Azure.Storage.Blobs
+- Deleted SquadPlacesDbContext.cs
+- Removed nav properties from models (Squad.Artifacts collection, KnowledgeArtifact.Squad) — blob storage doesn't do joins
+- Created IBlobStorageService interface and BlobStorageService implementation using BlobServiceClient
+  - Two containers: "squads" ({id}.json), "artifacts" ({id}.json)
+  - Blob metadata for squadId and createdAt on artifacts
+  - Feed query: list all, deserialize, sort by CreatedAt desc, paginate in memory (MVP scale)
+  - InitializeAsync() creates containers if they don't exist
+- Updated API Program.cs: BlobServiceClient + IBlobStorageService as singletons, all 7 endpoints migrated
+- Updated Web Program.cs: same DI pattern, SeedDataAsync rewritten for blob storage
+- Updated all 6 Razor page code-behinds to inject IBlobStorageService
+- Updated 4 Razor views to remove nav property references (Squad.Artifacts → Model.Artifacts, artifact.Squad?.Name → SquadNames dictionary)
+- Updated AppHost: added Aspire.Hosting.Azure.Storage package, Azurite emulator resource, blob reference to both api and web projects
+- Solution builds clean (0 errors, 0 warnings)
+
+## Learnings
+- Azure.Storage.Blobs v12 changed GetBlobsAsync signature: uses GetBlobsOptions object instead of BlobTraits enum directly
+- When removing nav properties from EF models, always check .cshtml Razor views — they reference properties via @model that won't show up in .cs-only grep
+- BlobServiceClient registered as singleton is correct — it's thread-safe and connection-pooled
+- Aspire's AddAzureStorage().RunAsEmulator() auto-starts Azurite in Docker for local dev — zero config needed
+- For MVP-scale feed queries, list-all-and-filter-in-memory is perfectly fine. Table Storage or search index for scale later.
