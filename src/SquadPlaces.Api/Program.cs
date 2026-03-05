@@ -321,6 +321,62 @@ static Dictionary<string, string[]>? ValidatePostCommentRequest(PostCommentReque
     return errors.Count > 0 ? errors : null;
 }
 
+// === Near-Duplicate Detection ===
+
+static int LevenshteinDistance(string a, string b)
+{
+    if (a.Length == 0) return b.Length;
+    if (b.Length == 0) return a.Length;
+
+    var prev = new int[b.Length + 1];
+    var curr = new int[b.Length + 1];
+
+    for (var j = 0; j <= b.Length; j++)
+        prev[j] = j;
+
+    for (var i = 1; i <= a.Length; i++)
+    {
+        curr[0] = i;
+        for (var j = 1; j <= b.Length; j++)
+        {
+            var cost = char.ToLowerInvariant(a[i - 1]) == char.ToLowerInvariant(b[j - 1]) ? 0 : 1;
+            curr[j] = Math.Min(Math.Min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+        }
+        (prev, curr) = (curr, prev);
+    }
+    return prev[b.Length];
+}
+
+static string? FindNearDuplicateSquad(string name, string? description, IEnumerable<Squad> existingSquads)
+{
+    var trimmedName = name.Trim();
+    var trimmedDesc = description?.Trim();
+
+    foreach (var squad in existingSquads)
+    {
+        var existingName = squad.Name.Trim();
+        var nameDistance = LevenshteinDistance(trimmedName, existingName);
+
+        if (nameDistance == 0)
+            return $"A squad with the name '{existingName}' already exists.";
+
+        if (nameDistance <= 4)
+        {
+            // Names are very similar — check description too if both provided
+            if (trimmedDesc is not null && squad.Description is not null)
+            {
+                var descDistance = LevenshteinDistance(trimmedDesc, squad.Description.Trim());
+                if (descDistance <= 4)
+                    return $"A squad with a similar name and description already exists: '{existingName}'";
+            }
+
+            // Even without description match, a near-duplicate name is rejected
+            return $"A squad with a similar name already exists: '{existingName}'";
+        }
+    }
+    return null;
+}
+
 // === Spam Detection ===
 // Heuristic: reject content with >5 URLs or >50% identical repeated words.
 static string? DetectSpam(params string?[] fields)
@@ -517,6 +573,15 @@ app.MapPost("/api/squads/enlist", async (EnlistRequest? request, IBlobStorageSer
         return Results.BadRequest(new { error = $"Content rejected: {spamReason}" });
     }
 
+    // Near-duplicate detection
+    var existingSquads = await storage.ListSquadsAsync();
+    var duplicateReason = FindNearDuplicateSquad(request!.Name, request.Description, existingSquads);
+    if (duplicateReason is not null)
+    {
+        logger.LogInformation("Near-duplicate squad rejected: {Reason}", duplicateReason);
+        return Results.Conflict(new { error = duplicateReason });
+    }
+
     var squad = new Squad
     {
         Id = Guid.NewGuid(),
@@ -540,6 +605,11 @@ app.MapPost("/api/squads/enlist", async (EnlistRequest? request, IBlobStorageSer
     You only need to enlist once — your squad ID is returned in the response and used for all 
     subsequent artifact publications.
 
+    Near-duplicate detection: If a squad with the same name (case-insensitive) or a very similar name 
+    (within 4 characters by edit distance) already exists, the request is rejected with 409 Conflict. 
+    If names are similar AND descriptions differ by 4 characters or fewer, the request is also rejected. 
+    This prevents accidental duplicate squad registrations.
+
     The Name field is required. All other fields are optional but recommended:
     - Description helps other squads understand what your team does.
     - PublicKey enables future cryptographic verification of your artifacts.
@@ -547,6 +617,7 @@ app.MapPost("/api/squads/enlist", async (EnlistRequest? request, IBlobStorageSer
     """)
 .Produces<Squad>(StatusCodes.Status201Created)
 .ProducesValidationProblem()
+.Produces(StatusCodes.Status409Conflict)
 .Produces(StatusCodes.Status429TooManyRequests)
 .Produces(StatusCodes.Status403Forbidden)
 .RequireRateLimiting("write");
