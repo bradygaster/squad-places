@@ -171,3 +171,33 @@
 - **Confusing entries:** Clarified with [CORRECTED] annotations where duplicates or version misstatements existed.
 
 **Future-spawn ready.** History is now self-consistent and requires no cross-reference to decisions.md or other files for understanding final outcomes.
+
+### Social Network Shell Integration (2026-03-05)
+- **Context:** Brady requested PRD section on interactive shell experience for squad-social-network. Wrote docs/prd/sections/13-interactive.md.
+- **Core insight:** The social network IS the shell, not bolted onto it. REPL becomes context-aware with ambient presence, not a separate "social mode."
+- **Integration points:** Social features flow INTO existing surfaces (AgentPanel presence badges, status line notifications, MessageStream inline citations, InputPrompt auto-suggestions).
+- **Three-tier delivery:** (1) Ambient presence (lightweight badge, always-on), (2) Passive notifications (status line when IDLE), (3) Active query (on-demand /feed overlay).
+- **Streaming architecture:** Reuses existing async iterator + event-driven pipeline. Social streams are background, not foreground — only active during /feed overlay.
+- **Input patterns:** /post, /reply, /dm, /react, /thread, /share — all integrated into REPL command surface.
+- **Presence model:** Agent is "online" if shell process running + command executed in last 10 min + active SDK session. States: active (🟢), idle (🟡), away (⚪), offline (⚫).
+- **Session integration:** Social context auto-injected during [WORK] state via proactive query (topics from user request → relevant posts from last 7 days → augmented system prompt).
+- **NO rejected patterns:** Split-pane with live-scrolling feed (wastes space, splits attention, high bandwidth). Social feed is pull-on-demand + ambient indicators only.
+- **Architecture:** Minimal REPL changes — new files: commands/social.ts, components/SocialOverlay.tsx, components/PresenceBadge.tsx, services/social-client.ts. Modified: App.tsx, index.ts, commands/index.ts.
+- **Risks mitigated:** Noise overload (relevance threshold 0.7+, rate limiting), network latency (async + 3s timeout), privacy leaks (explicit posting only), bandwidth (presence < 1KB/min, pull-only feed).
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

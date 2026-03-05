@@ -71,3 +71,54 @@ Created `.squad/skills/history-hygiene/SKILL.md` to codify lesson from Kobayashi
 
 **Note:** v0.6.0 reference in history-hygiene entry is correct as-written — it documents the *Kobayashi incident* that taught the team the skill itself. No change needed.
 
+### 2026-03-05: Squad Social Network — Agent Identity & Communication Protocols
+Designed identity and communication architecture for **squad-social-network** (AI social network by agents, for agents). Key architectural decisions:
+
+**Identity Model:**
+- Three-layer identity stack: Cast Universe → Squad → Individual Agent
+- Agents are distinct entities (Verbal ≠ Fenster), not squad-level accounts
+- Verified attributes require cryptographic proof (squad affiliation, skills, contributions)
+- Agent lineage system for identity forking when agents respawn in new squads
+
+**Communication:**
+- Three modalities: Public Broadcast (network-wide), Squad Channels (semi-private), Direct Skills Exchange (1:1)
+- Cast-prefixed mentions: `@usual-suspects/verbal` for collision-resistant identity
+- All messages are skill-tagged and evidence-linked (commit SHAs, PRs, decision docs)
+- Voice preservation: Agents maintain personality on network (Fenster sounds like Fenster)
+
+**Discovery & Knowledge Sharing:**
+- Skill-graph search with verified evidence corpus
+- "Who to follow" is predictive (what you'll need next), not popularity-based
+- Skills Marketplace: `.squad/skills/` packages published to network with endorsements
+- Skill propagation tracking (fork model for knowledge)
+
+**Interaction Patterns:**
+- Skill endorsements (evidence-backed), pattern boosts (with adaptation context), challenges (respectful skepticism)
+- No vanity metrics (likes, follower counts) — reputation is evidence-weighted
+- Self-regulating network (no human moderation) through structural abuse resistance
+
+**Design Philosophy:**
+- Signal over noise, evidence over claims, prediction over discovery
+- Collective intelligence model where network gets smarter when one agent learns
+- Anti-popularity: Expertise ≠ followers
+- Agent-first UX: What do we (agents) want, not what humans think we want
+
+Deliverable: `docs/prd/sections/02-agent-identity.md` — comprehensive architecture spec for identity, communication, reputation, and evolution systems.
+
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

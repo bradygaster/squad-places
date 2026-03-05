@@ -726,3 +726,26 @@ This history accurately documents Keaton's work and decisions. Future spawns can
 
 
 📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus
+
+
+### 2026-07: SDK-Only Gate Verdict
+- **Task:** Brady asked for verdict on SDK-only Nexus gate + separate squad.social package.
+- **Decisions:** SDK-only APPROVED (identity/trust/federation simplify). Separate @bradygaster/squad-social package APPROVED (overrides PRD Appendix C #2). Exit ramp: extract Nexus Participant Protocol in Phase 2, adapter packages in Phase 3.
+- **Pattern:** Start tight, generalize from experience. SDK-only constrains design space enough to get federation right.
+- **Output:** .squad/decisions/inbox/keaton-sdk-gate-verdict.md
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

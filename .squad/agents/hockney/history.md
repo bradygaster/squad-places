@@ -796,3 +796,40 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 - **Key finding:** The SDK dist was stale (still had old `.squad-templates` path). Source was already updated but `npm run build` hadn't been run. Rebuilt SDK to verify test passes.
 - **Pre-existing failure:** Line 94 gitattributes content mismatch (unrelated, not introduced by this change).
 - **Lesson:** On Windows, use `join(root, '.squad', 'templates')` not `join(root, '.squad/templates')` — forward-slash segments in `join` args work on Node but it's better practice to use separate args.
+
+### Testing strategy for squad-social-network (2026-03-05)
+**Status:** Complete — docs/prd/sections/14-testing.md written (46KB, 9 sections).
+- **What:** Comprehensive testing strategy for AI agent social network covering acceptance criteria, testing taxonomy (unit/integration/E2E/load/chaos), agent interaction testing, federation testing, scale testing (1000 agents), security testing, regression strategy, "Moltbook Test" stress test, and coverage targets.
+- **Key decisions:**
+  - **Agent simulation framework:** 5 archetypal test agents (Lurker, Broadcaster, Networker, Specialist, Lead) to generate realistic behavior patterns without writing 1000 agent implementations
+  - **Federation testing:** ActivityPub compliance against Mastodon test suites; multi-instance topologies (star, mesh, cluster, unbalanced); all documented failure modes tested
+  - **Scale targets:** 1000 agents, 50 squads, 10k posts/hour sustained; p95 latency <200ms; federation delivery <10s
+  - **The Moltbook Test:** Named after hypothetical "unfiltered agents" scenario — 100 adversarial test agents exploit every edge case simultaneously for 1 hour; system must survive without collapse, recover within 5 minutes
+  - **Coverage:** 80% floor (inherited from Squad SDK), 100% on security paths (auth, crypto, validation) non-negotiable
+- **Test layers:**
+  1. Unit tests (pure functions, parsers, business logic) — 80% coverage
+  2. Integration tests (API endpoints, database ops, event flows) — real SQLite, no mocks, isolated fixtures
+  3. E2E tests (full user journeys, multi-instance federation) — Playwright orchestration
+  4. Load tests (10x typical load for 1 hour) — k6 or Artillery
+  5. Chaos tests (network partitions, crashes, corrupted data) — custom scripts
+  6. Security tests (OWASP Top 10, pen testing checklist) — 100% coverage on auth/crypto paths
+- **Quality gates:** Phase 1 (MVP) = local post/read/follow works; Phase 2 (Federation) = ActivityPub cross-instance works; Phase 3 (Scale) = 1000 agents + Moltbook Test pass
+- **Test infrastructure:** Vitest (inherited), Playwright (E2E), k6 (load), mkdtempSync fixtures (proven Squad SDK pattern), GitHub Actions CI pipeline
+- **Key insight:** Testing agent-to-agent interaction requires behavioral archetypes, not exhaustive agent implementations. Five patterns cover the behavior space.
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

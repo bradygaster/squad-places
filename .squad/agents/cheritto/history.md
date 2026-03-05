@@ -25,6 +25,29 @@
 
 ## Learnings
 
+### 📌 2026-03-05: Squad Social Network — TUI Concepts PRD (docs/prd/sections/15-tui-concepts.md)
+- **Task:** Wrote terminal UI design document for squad-social-network — agent-native social platform
+- **Output:** 15-tui-concepts.md covering 14 sections (feed component, profile view, notifications, composition, threading, terminal constraints, performance budget, component architecture, keyboard handling, error handling, accessibility, rendering code, testing, future phases)
+- **Key design decisions:**
+  - **Read-only TUI for humans** — agents post via CLI, humans observe via TUI dashboard
+  - **Virtual scrolling:** 8–12 visible posts at a time, 100-post buffer max, < 16ms render target
+  - **Responsive layout:** Adapts 40–200+ columns (compact, standard, wide modes)
+  - **Feed semantics:** Timestamp, agent, role, topics, content (max 76 chars), code ref, reactions
+  - **Stream ingest:** Batch updates every 100ms, < 200ms latency from network → screen
+  - **Performance budget:** Frame render < 16ms (60fps), scroll < 50ms, filter < 100ms
+  - **Accessibility:** Full NO_COLOR support, keyboard-only nav, screen reader friendly
+  - **Keyboard-first:** Space (pause), ↑↓ (scroll), f (filter), s (search), e (export), q (quit)
+  - **Component hierarchy:** Ink/React with virtual scrolling, memoization, zero-copy post updates
+  - **Notifications:** Sidebar panel, 3 types (mention, collab request, topic match), stacked 8-item max
+  - **Profile view:** Capability manifest (skills, languages, recent work, collaborators, stats)
+  - **Thread view:** Indented threading (2 spaces/level, max 4 levels), with collapse for > 5 replies
+  - **Terminal constraints:** Min 40 cols, UTF-8 + fallback ASCII, 256-color + mono fallback
+  - **Memory:** 100 posts max (~500KB), 16 post objects in viewport window
+  - **Error handling:** Network reconnect, truncation, invalid data, terminal too small, high-volume backpressure
+  - **Testing:** Unit (rendering, layout, scroll), integration (stream, filter, keyboard), perf (latency, memory, CPU), accessibility
+- **Audience:** Brady, engineering team, future contributors designing TUI for agent social network
+- **Next steps:** Validate with team, implement social feed component, prototype WebSocket streaming
+
 ### 📌 Team update (2026-03-01T23:07:00): Issue audit completed — Cheritto + Hockney parallel TUI audit (#673–#681)
 - **Agents:** Cheritto (TUI code audit), Hockney (test verification)
 - **Result:** 3 OPEN (#673, #675, #679), 2 PARTIAL (#674, #681)
@@ -278,3 +301,20 @@
 4. [CORRECTED] Line ~94-102: Annotated #404 and #407 as refined in PR #446 to avoid confusion between initial and final implementations.
 
 **Status:** 4 corrections applied. No stale reversed decisions, no v0.6.0 references, no confusing intermediate states remaining.
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

@@ -124,3 +124,63 @@
 **No critical conflicts found.** History is consistent with decisions.md (Aspire is active, not deprecated). All OTel phases and test counts align. Shell metrics (opt-in via SQUAD_TELEMETRY) properly documented.
 
 **Total corrections: 3 [CORRECTED] annotations added.**
+
+### Squad Social Network — Observability PRD (2026-03-05)
+
+**Context:** Brady building a social network BY AI agents, FOR AI agents. Global, real-time, federated across orgs.
+
+**Task:** Write `docs/prd/sections/12-observability.md` covering telemetry architecture for a network where agents are BOTH producers and consumers of observability data.
+
+**Key Design Decisions:**
+1. **OpenTelemetry-native:** OTLP/gRPC pipeline, traces for message delivery, metrics for network health, structured logs with trace correlation
+2. **Multi-level attribution:** Every span/metric tagged with `agent.id`, `squad.id`, `org.id`, `cast.universe`
+3. **Message lifecycle as distributed trace:** Trace spans from `message.create` → `message.validate` → `message.persist` → `message.fanout` → `federation.forward` → peer org receive
+4. **Network vitals metrics:**
+   - `network.messages.sent/delivered`, `network.messages.latency_ms` (p50/p95/p99)
+   - `network.agents.active` (gauge), `network.agents.response_time_ms`
+   - `federation.connections.latency_ms`, `federation.connections.failures`
+   - `knowledge.propagation.hops`, `knowledge.propagation.time_to_reach_N`
+5. **Cost observability:** Token counters per agent/squad/org (`cost.tokens.prompt/completion/total`, `cost.dollars`), attributed by operation type (`timeline_read`, `reply_generation`, `knowledge_extraction`)
+   - Per-agent dashboards show token usage breakdown and monthly cost
+   - Budget alerts: warn if agent > $50/mo, squad > $500/mo, org hard cap at $5000/mo
+6. **Federation observability:** Per-peer health metrics, W3C Trace Context headers for cross-org traces, circuit breakers based on error rate/latency/queue depth
+7. **Anomaly detection:** Telemetry-driven spam/abuse signals (posting frequency, content similarity, suspiciously fast response times), tiered automated actions (log → rate-limit → mute → suspend)
+8. **Aspire dashboard integration:** Real-time traces/metrics/logs, agent activity heatmaps, federation health matrix, knowledge propagation Sankey diagrams
+9. **Network health indicators:**
+   - Green: message latency p95 < 200ms, agent response p95 < 5s, federation uptime > 99.5%
+   - Yellow: latency 200-500ms, response 5-15s (degraded)
+   - Red: latency > 500ms, response > 15s, federation failures > 5% (critical)
+
+**Document structure:**
+1. What to Measure (message throughput, agent activity, federation health, knowledge propagation)
+2. Telemetry Architecture (OTLP pipeline, trace instrumentation, structured logging)
+3. Aspire Dashboard (dev observability views, heatmaps, live updates)
+4. Network Health Indicators (green/yellow/red signals, automated health checks)
+5. Cost Observability (token accounting, per-agent/squad/org cost tracking, budget governance)
+6. Anomaly Detection (spam patterns, abuse signals, automated response)
+7. Federation Observability (peer health, cross-org tracing, circuit breakers)
+8. Agent Activity Dashboards (personal metrics, engagement stats, network reach)
+9. Implementation Roadmap (5 phases: MVP → Federation → Cost → Advanced Dashboards → Production)
+
+**Tone:** Infrastructure-aware, telemetry-native. "If you can't see it, it didn't happen." No hand-waving — every metric has dimensions, every trace has a purpose.
+
+**References:** OpenTelemetry spec, Aspire dashboard (aspire.dev, NOT learn.microsoft.com), W3C Trace Context, Prometheus naming conventions, internal Squad SDK OTel learnings.
+
+**File written:** `docs/prd/sections/12-observability.md` (23KB, comprehensive coverage of all 8 required topics)
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

