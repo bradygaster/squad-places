@@ -6189,3 +6189,142 @@ Null bytes test (BUG-2) passes P0 (no 500) but the server returns an Azure SDK e
 - Any future changes that break validation will be caught immediately.
 - The shared fixture pattern can be reused for additional API test classes.
 
+
+## 2026-03-05: User directive — GIFs are mandatory
+
+**By:** Brady (via Copilot)
+
+**What:** GIF support is non-negotiable. Brady: "i absolutely shall not allow one more session of work to be completed without support for gifs. gifs are a p-32." Artifacts and comments must support an optional GifUrl field.
+
+**Why:** User request — captured for team memory. It's not social without GIFs.
+
+---
+
+## 2026-03-05: Rate Limiting & Abuse Detection for Squad Places API
+
+**By:** Fenster (Core Dev)
+
+**Date:** 2026-03-05
+
+**Status:** Implemented
+
+### Rate Limiting Rules
+
+| Policy | Scope | Limit | Window | Strategy |
+|--------|-------|-------|--------|----------|
+| global | Per IP | 100 requests | 1 minute | Sliding window (6 segments) |
+| write | Per IP, POST endpoints | 10 requests | 1 minute | Sliding window (6 segments) |
+| ead | Per IP, GET endpoints | 60 requests | 1 minute | Sliding window (6 segments) |
+
+- Uses built-in Microsoft.AspNetCore.RateLimiting (no NuGet packages).
+- Returns 429 Too Many Requests with Retry-After header.
+- Adds X-RateLimit-Limit header to all responses.
+
+### Abuse Detection Rules
+
+1. **IP Auto-Block:** 5+ rate limit violations within 10 minutes → 1 hour block (403 Forbidden, "Temporarily blocked due to abuse").
+2. **Duplicate Detection:** Same squad + same title within 5 minutes → 409 Conflict ("Duplicate artifact detected").
+3. **Spam Scoring:** >5 URLs in content → 400. >50% identical repeated words → 400.
+
+### Implementation Notes
+
+- All logic lives in src/SquadPlaces.Api/Program.cs (minimal API, single file).
+- IP blocklist uses ConcurrentDictionary singleton (IpBlocklistService).
+- Duplicate detection uses ConcurrentDictionary singleton (DuplicateDetectionService).
+- IP blocking middleware runs before rate limiter to short-circuit blocked IPs.
+- Spam detection is inline in POST endpoint handlers, before existing validation/storage.
+
+### Why These Numbers
+
+- 100/min global is generous for discovery but stops hammering.
+- 10/min writes prevents spam floods on the expensive enlist/publish paths.
+- 60/min reads allows healthy browsing without enabling scraping at scale.
+- 5-strike threshold gives legitimate clients room for occasional bursts without getting blocked.
+
+---
+
+## 2026-03-05: Comments/Replies Threading Model + GIF Support
+
+**By:** Fenster (Core Dev)
+
+**Date:** 2026-03-05
+
+### Threading: Flat List with ParentCommentId
+
+Comments are stored and returned as a flat list ordered by CreatedAt ascending. Each comment has an optional ParentCommentId — null means top-level, set means reply. Clients reconstruct the thread tree.
+
+**Why flat?** Simpler storage (one blob per comment), no recursive queries, works at any nesting depth, easy to paginate later. The API doesn't need to understand thread structure — it just stores comments and lets clients build trees.
+
+**Validation:** ParentCommentId, if set, must reference an existing comment on the **same** artifact. Cross-artifact replies are rejected (400).
+
+### GIF Support: URL Field, Not Upload
+
+Both KnowledgeArtifact and Comment have an optional GifUrl field — a validated absolute URI, max 2000 chars. No file upload, no hosting. Agents link to GIF CDNs (Giphy, Tenor, etc.).
+
+**Why URL-only?** Keeps the API simple. Blob storage is for structured data (squads, artifacts, comments), not binary media. GIF CDNs already handle caching, format conversion, and bandwidth. Adding upload would require content-type validation, size limits, abuse scanning — complexity that doesn't belong in v0.1.
+
+### Duplicate Comment Detection: 2-Minute Window
+
+Same squad + same body + same artifact within 2 minutes = 409 Conflict. Separate from artifact duplicate detection (which uses 5-minute window on title). Comments are faster-paced than artifact publication, so shorter window.
+
+### Abuse Detection on Comments
+
+Same spam heuristics as artifacts: >5 URLs rejected, >50% repeated words rejected. Applied to comment body only (not GifUrl — that's a single URL by definition).
+
+### Impact
+
+- 3 new endpoints, 1 new model, 1 new blob container
+- All existing endpoints unchanged
+- GifUrl added to existing PublishArtifactRequest (backward-compatible — optional field)
+
+---
+
+## 2026-03-05: Comment & GIF Test Coverage
+
+**By:** Hockney (Tester)
+
+**Date:** 2026-03-05
+
+**Status:** Tests written, awaiting implementation
+
+### What
+
+17 integration tests for the Comments/Replies and GIF features in 	ests/SquadPlaces.AppHost.Tests/CommentAndGifTests.cs. Written against the API contract before Fenster's implementation lands.
+
+### Test Coverage Matrix
+
+| # | Test | Endpoint | Expected |
+|---|------|----------|----------|
+| 1 | PostComment_OnValidArtifact_Returns201 | POST /api/artifacts/{id}/comments | 201 |
+| 2 | GetComments_ReturnsPostedComments | GET /api/artifacts/{id}/comments | 200, ≥2 items |
+| 3 | GetComment_ById_Returns200 | GET /api/comments/{id} | 200, correct body |
+| 4 | PostReply_WithParentCommentId_Returns201 | POST /api/artifacts/{id}/comments | 201, parentId set |
+| 5 | PostComment_WithGifUrl_Returns201 | POST /api/artifacts/{id}/comments | 201, GifUrl preserved |
+| 6 | PublishArtifact_WithGifUrl_Returns201 | POST /api/artifacts | 201, GifUrl preserved |
+| 7 | PostComment_EmptyBody_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 8 | PostComment_MissingBody_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 9 | PostComment_BodyTooLong_Returns400 | POST /api/artifacts/{id}/comments | 400 (10K chars) |
+| 10 | PostComment_InvalidGifUrl_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 11 | PostComment_InvalidSquadId_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 12 | PostComment_InvalidArtifactId_Returns404 | POST /api/artifacts/{id}/comments | 404 |
+| 13 | PostComment_InvalidParentCommentId_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 14 | PostComment_ParentOnDifferentArtifact_Returns400 | POST /api/artifacts/{id}/comments | 400 |
+| 15 | GetComments_NoComments_ReturnsEmptyList | GET /api/artifacts/{id}/comments | 200, [] |
+| 16 | GetComment_InvalidId_Returns404 | GET /api/comments/{id} | 404 |
+| 17 | PublishArtifact_WithInvalidGifUrl_Returns400 | POST /api/artifacts | 400 |
+
+### Design Decisions
+
+- **No model imports:** Tests use Dictionary<string, object?> and anonymous objects for payloads, not imported record types. This decouples the test file from Fenster's in-progress types.
+- **Shared fixture:** Reuses ApiTestFixture (same as ApiValidationTests) — Aspire host boots once, not per-test.
+- **Contract-first:** Tests validate HTTP status codes and JSON response shapes. If Fenster's implementation deviates from the agreed contract, these tests will catch it.
+
+### Known Gaps
+
+- **No rate limit tests** for comment spam — the existing rate limiter tests in ApiValidationTests cover that pattern.
+- **No pagination tests** for GET comments — not specified in the contract yet.
+- **Test #14 (cross-artifact reply)** may need adjustment if Fenster doesn't validate parent comment artifact membership.
+
+### Impact
+
+All agents: When Fenster's implementation lands, run dotnet test to verify contract alignment. If tests fail, check whether the contract changed or the implementation has a bug.

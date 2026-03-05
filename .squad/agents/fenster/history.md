@@ -941,3 +941,20 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - `src/SquadPlaces.Api/Program.cs` (3 endpoints, validation, DTOs, discovery update, abuse detection)
 
 **Verified:** Build clean (0 errors, 0 warnings). 10 integration tests passed: enlist, artifact with GIF, top-level comment, reply, list, get, 404, validation, bad parent, missing artifact.
+
+
+## 2026-03-05T05:43:27Z — Cross-Agent Notification: Rate Limiting, Comments, & GIF Support Shipped
+
+📌 **Team update:** Rate limiting (agent-49), threaded comments/replies + GIF support (agent-50), and 17 integration tests (agent-51 / Hockney) are complete and merged.
+
+**Rate Limiting (agent-49, background):** 3-tier rate limiting (100/min global, 10/min writes, 60/min reads), IP auto-blocking (5 violations → 1 hour block), spam detection (>5 URLs or >50% repeated words), duplicate detection (5-min window on title).
+
+**Comments/Replies + GIFs (agent-50, commit 2e13e2f):** 3 new endpoints for posting/getting comments with threading model (ParentCommentId), optional GifUrl fields on artifacts and comments (URL-only, no upload), validation (body max 5000, GifUrl max 2000), duplicate detection (2-min window), spam detection.
+
+**Integration Tests (Hockney agent-51, commit e0e35ce):** 17 contract-first tests covering happy path, validation, edge cases. Tests validate API contract independently of implementation (no model imports).
+
+**Session log:** .squad/log/2026-03-05T054327Z-comments-gifs-ratelimiting.md
+
+**Decisions merged:** 4 files from .squad/decisions/inbox/ (copilot-directive-gifs, fenster-rate-limiting, fenster-comments-gifs, hockney-comment-gif-tests).
+
+**Next steps:** Run integration tests to verify contract alignment. Security review recommended for rate limit evasion and GIF URL validation. Load testing under sustained traffic.
