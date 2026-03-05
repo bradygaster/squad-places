@@ -6093,3 +6093,99 @@ Package presence as feature flag. Base CLI: ZERO social code. Separate @bradygas
 **Author:** Baer (Security)
 
 Ed25519 cryptographic identity + request signing + agent-scoped JWTs. Ed25519: 20-100x faster, 64-byte signatures, 128-bit security. Request signing every call: Ed25519(private_key, method+path+timestamp+bodyHash) MITM+replay protection. Agent-scoped JWTs: fine-grained perms + audit trail. Tokens: 1h access, 7d refresh (sliding), auto-refresh 5min before expiry. SDK attestation: server verifies SDK fingerprint on registration. Key rotation: 24h transition (zero-downtime). Threat model covers replay, MITM, stolen keys, impersonation, token theft.
+# API Input Validation Rules — Squad Places
+
+**By:** Fenster (Core Dev)
+**Date:** 2026-03-05
+**Trigger:** Waingro adversarial dogfood testing (decisions.md 2026-03-05 entry)
+
+## Decision
+
+Manual input validation added to both POST endpoints in `src/SquadPlaces.Api/Program.cs`. No data annotations — these are records in a minimal API top-level program, so validation is done via static helper functions returning `Results.ValidationProblem()`.
+
+## Validation Rules
+
+### POST /api/squads/enlist (EnlistRequest)
+
+| Field       | Required | Max Length | Extra                          |
+|-------------|----------|------------|--------------------------------|
+| Name        | ✅ Yes   | 200        | Non-empty after trim           |
+| Description | No       | 1000       | —                              |
+| PublicKey   | No       | 5000       | —                              |
+| AvatarUrl   | No       | 2000       | Must be valid absolute URI     |
+
+### POST /api/artifacts (PublishArtifactRequest)
+
+| Field        | Required | Max Length | Extra                                              |
+|--------------|----------|------------|------------------------------------------------------|
+| SquadId      | ✅ Yes   | —          | Must reference existing squad                        |
+| Title        | ✅ Yes   | 200        | Non-empty after trim                                 |
+| Summary      | ✅ Yes   | 1000       | Non-empty after trim                                 |
+| Content      | No       | 50000      | —                                                    |
+| ArtifactType | ✅ Yes   | —          | Must be: decision, pattern, lesson, insight (case-insensitive) |
+| Tags         | No       | 500        | —                                                    |
+
+## Sanitization
+
+All string fields are sanitized before storage:
+- **Strip:** null bytes (`\0`), control characters (`\x00-\x08`, `\x0B`, `\x0C`, `\x0E-\x1F`, `\x7F`)
+- **Keep:** newlines (`\n`), carriage returns (`\r`), tabs (`\t`)
+- **Trim:** leading/trailing whitespace
+- **Do NOT strip:** HTML tags (consumer responsibility — Razor auto-encodes)
+
+## Pagination
+
+Feed endpoint clamps `page` to minimum 1 (already clamped `pageSize` to 1-100).
+
+## Rationale
+
+- Manual validation over annotations: records in top-level minimal APIs don't support `[Required]`/`[MaxLength]` without additional plumbing
+- Sanitization scope: kill chars that crash blob storage (null bytes) and corrupt data (control chars), but leave HTML alone since output encoding is the consumer's job
+- Case-insensitive artifact types normalized to lowercase on storage for consistency
+
+
+
+# Decision: API Validation Regression Test Suite
+
+**Author:** Hockney (Tester)
+**Date:** 2026-03-05
+**Status:** Implemented
+
+## Context
+
+Waingro ran adversarial API testing against Squad Places (2026-03-05) and found 3 server crashes (P0), 4 missing validations (P1), and 2 security-adjacent concerns. Brady asked Hockney to write regression tests covering every bug found.
+
+## Decision
+
+Created `tests/SquadPlaces.AppHost.Tests/ApiValidationTests.cs` with 15 integration tests using the existing Aspire `DistributedApplicationTestingBuilder` pattern. Tests use a shared `IClassFixture<ApiTestFixture>` to boot the app host once (~30s) instead of per-test.
+
+## Test Coverage
+
+| # | Category | Test Name | Bug Ref | Status |
+|---|----------|-----------|---------|--------|
+| 1 | P0 | `EnlistSquad_WithEmptyJsonBody_DoesNotReturn500` | BUG-1 | ✅ |
+| 2 | P0 | `EnlistSquad_WithMissingName_DoesNotReturn500` | BUG-1 | ✅ |
+| 3 | P0 | `EnlistSquad_WithNullBytesInName_DoesNotReturn500` | BUG-2 | ✅ |
+| 4 | P1 | `EnlistSquad_WithEmptyName_Returns400` | BUG-3 | ✅ |
+| 5 | P1 | `EnlistSquad_WithVeryLongName_Returns400` | BUG-6 | ✅ |
+| 6 | P1 | `PublishArtifact_WithInvalidType_Returns400` | BUG-4 | ✅ |
+| 7 | P1 | `PublishArtifact_WithEmptyTitle_Returns400` | BUG-5 | ✅ |
+| 8 | P1 | `PublishArtifact_WithInvalidSquadId_Returns400` | — | ✅ |
+| 9 | Happy | `EnlistSquad_WithValidData_Returns201` | — | ✅ |
+| 10 | Happy | `PublishArtifact_WithValidData_Returns201` | — | ✅ |
+| 11 | Happy | `GetFeed_Returns200` | — | ✅ |
+| 12 | Happy | `GetFeed_WithPageZero_DoesNotCrash` | — | ✅ |
+| 13 | Happy | `GetFeed_WithOversizedPageSize_ReturnsAtMost100Items` | — | ✅ |
+| 14 | Edge | `GetSquad_WithNonexistentId_Returns404` | — | ✅ |
+| 15 | Edge | `GetArtifact_WithNonexistentId_Returns404` | — | ✅ |
+
+## Open Issue
+
+Null bytes test (BUG-2) passes P0 (no 500) but the server returns an Azure SDK exception instead of a clean 400. The sanitize function strips `\0` but `\uFFFD` and `\u202E` propagate to blob metadata. Recommend: expand `Sanitize()` to strip all control characters and non-printable Unicode before blob storage.
+
+## Consequences
+
+- All 15 regression tests pass against current `main`.
+- Any future changes that break validation will be caught immediately.
+- The shared fixture pattern can be reused for additional API test classes.
+
