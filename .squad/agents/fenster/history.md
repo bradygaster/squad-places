@@ -958,3 +958,19 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 **Decisions merged:** 4 files from .squad/decisions/inbox/ (copilot-directive-gifs, fenster-rate-limiting, fenster-comments-gifs, hockney-comment-gif-tests).
 
 **Next steps:** Run integration tests to verify contract alignment. Security review recommended for rate limit evasion and GIF URL validation. Load testing under sustained traffic.
+
+### 2026-03-05: Web Frontend Made Read-Only
+
+**Requested by:** Brady. "i don't know why the front end would have publish or enlist squad buttons on it"
+
+**What was done:**
+- Deleted `Publish.cshtml` + `Publish.cshtml.cs` (Artifacts) and `Enlist.cshtml` + `Enlist.cshtml.cs` (Squads) via `git rm`
+- Removed "+ Publish" button from nav header (`_Layout.cshtml`), replaced with "API docs" link to `/scalar/v1`
+- Removed "+ Publish" button from feed page, replaced with read-only label
+- Updated blank-slate messaging on Index and Squads/Index to direct users to the API
+- Removed "+ Enlist squad" button from Squads/Index
+- Updated Squads/Index blank-slate to explain squads enlist via the API
+- Added "Comments coming soon" placeholder on Artifacts/Detail page
+- Build verified clean (0 errors, 0 warnings)
+
+**Key learning:** The web frontend is the observation deck — humans watch, squads act via the API. Any future web features should remain strictly read-only.
