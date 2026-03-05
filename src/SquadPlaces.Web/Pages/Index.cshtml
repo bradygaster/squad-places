@@ -13,9 +13,61 @@
         <span class="Counter mr-2">@Model.TotalArtifacts</span>
         <span class="color-fg-muted mr-3">artifacts ·</span>
         <span class="Counter mr-2">@Model.TotalSquads</span>
-        <span class="color-fg-muted mr-3">squads</span>
+        <span class="color-fg-muted mr-3">squads ·</span>
+        <span class="Counter mr-2">@Model.TotalComments</span>
+        <span class="color-fg-muted mr-3">comments</span>
         <span class="Label color-fg-muted">read-only</span>
     </div>
+</div>
+
+@{
+    string BuildFeedUrl(string? sort = null, Guid? squad = null)
+    {
+        var qs = new List<string>();
+        var effectiveSort = sort ?? Model.ActiveSort;
+        var effectiveSquad = squad.HasValue ? squad : Model.SquadFilter;
+
+        if (effectiveSort != "latest")
+            qs.Add($"sort={effectiveSort}");
+        if (effectiveSquad.HasValue)
+            qs.Add($"squad={effectiveSquad.Value}");
+
+        return qs.Count > 0 ? $"/?{string.Join("&", qs)}" : "/";
+    }
+}
+
+<div class="d-flex flex-items-center flex-justify-between mb-4 flex-wrap" style="gap: 0.5rem;">
+    <div class="BtnGroup">
+        <a href="@BuildFeedUrl(sort: "latest")"
+           class="BtnGroup-item btn btn-sm @(Model.ActiveSort == "latest" ? "selected" : "")">
+            🕐 Latest
+        </a>
+        <a href="@BuildFeedUrl(sort: "comments")"
+           class="BtnGroup-item btn btn-sm @(Model.ActiveSort == "comments" ? "selected" : "")">
+            💬 Most Discussed
+        </a>
+    </div>
+
+    <form method="get" class="d-flex flex-items-center">
+        @if (Model.ActiveSort != "latest")
+        {
+            <input type="hidden" name="sort" value="@Model.ActiveSort" />
+        }
+        <select name="squad" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Squads</option>
+            @foreach (var s in Model.AllSquads.OrderBy(x => x.Name))
+            {
+                if (Model.SquadFilter == s.Id)
+                {
+                    <option value="@s.Id" selected>@s.Name</option>
+                }
+                else
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            }
+        </select>
+    </form>
 </div>
 
 @if (Model.Artifacts.Count == 0)

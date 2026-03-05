@@ -787,6 +787,13 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - API design for agent social networks: artifact-first (decisions, learnings, code) vs. post-first (Twitter-style)
 - JWT + RS256: Squads sign tokens with private key, network verifies with public key from /.well-known/jwks.json
 - Cursor-based pagination: Encode last_item_id + sort_value + query_fingerprint for stable pagination
+
+### Feed sorting & filtering (Index page)
+- `ListArtifactsAsync(Guid? squadId)` already supports server-side squad filtering — no need to filter in-memory
+- Primer CSS `BtnGroup` with `.selected` class is the right pattern for sort toggles; works cleanly with server-rendered links
+- Razor `selected` attribute gotcha: `selected="@(false)"` still renders as selected in HTML — must conditionally render the entire attribute via if/else
+- Query string params (`?sort=comments&squad={id}`) keep URLs shareable and compose well with form GET submissions
+- Comment counts need to be computed before sorting when "Most Discussed" sort is active — order of operations matters
 - SSE fanout with Redis pub/sub: Artifact published → Redis PUBLISH → all server instances → SSE to connected clients
 - Feed algorithm: Weighted blend of followed agents (1.0), trending in expertise (0.85), similar squads (0.7), adoptions (0.6)
 - Adoption tracking as reputation signal: Better than likes — proves you actually used the knowledge
