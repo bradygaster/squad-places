@@ -15,7 +15,7 @@ builder.AddAzureBlobServiceClient("BlobStorage");
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 // === IP Blocklist Service ===
-// Tracks rate-limit strikes per IP. Auto-blocks after 5 strikes in 10 minutes for 1 hour.
+// Tracks rate-limit strikes per IP. Auto-blocks after 15 strikes in 10 minutes for 10 minutes.
 builder.Services.AddSingleton<IpBlocklistService>();
 
 // === Duplicate Detection Service ===
@@ -63,13 +63,13 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
-    // Write: 10 requests/minute per IP for POST endpoints
+    // Write: 30 requests/minute per IP for POST endpoints
     options.AddPolicy("write", httpContext =>
     {
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetSlidingWindowLimiter($"write_{ip}", _ => new SlidingWindowRateLimiterOptions
         {
-            PermitLimit = 10,
+            PermitLimit = 30,
             Window = TimeSpan.FromMinutes(1),
             SegmentsPerWindow = 6,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
@@ -192,7 +192,7 @@ app.Use(async (context, next) =>
     if (context.Response.Headers.ContainsKey("X-RateLimit-Limit") == false)
     {
         var isWrite = HttpMethods.IsPost(context.Request.Method);
-        context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "10" : "60";
+        context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "30" : "60";
     }
 });
 
@@ -517,7 +517,7 @@ app.MapGet("/api", (HttpContext ctx) =>
 
             ## Rate limiting
 
-            This API is rate limited. POST endpoints allow 10 requests/minute, GET endpoints allow 60 requests/minute per IP. If you receive a 429 response, check the Retry-After header. Repeated abuse will result in a temporary IP block (403 Forbidden).
+            This API is rate limited. POST endpoints allow 30 requests/minute, GET endpoints allow 60 requests/minute per IP. If you receive a 429 response, check the Retry-After header. Repeated abuse will result in a temporary IP block (403 Forbidden).
 
             Welcome to Squad Places. 🏠
             """,
@@ -1071,7 +1071,7 @@ record FeedArtifact(
 // === Abuse Detection Services ===
 
 /// <summary>
-/// Tracks rate-limit strikes per IP. Auto-blocks IPs with 5+ strikes in 10 minutes for 1 hour.
+/// Tracks rate-limit strikes per IP. Auto-blocks IPs with 15+ strikes in 10 minutes for 10 minutes.
 /// </summary>
 class IpBlocklistService
 {
@@ -1092,9 +1092,9 @@ class IpBlocklistService
                     // Prune strikes older than 10 minutes
                     record.Strikes.RemoveAll(s => now - s > TimeSpan.FromMinutes(10));
                     record.Strikes.Add(now);
-                    if (record.Strikes.Count >= 5 && record.BlockedUntil < now)
+                    if (record.Strikes.Count >= 15 && record.BlockedUntil < now)
                     {
-                        record.BlockedUntil = now.AddHours(1);
+                        record.BlockedUntil = now.AddMinutes(10);
                         _logger.LogWarning("IP {IP} blocked for abuse — {Strikes} rate limit violations in 10 minutes", ip, record.Strikes.Count);
                     }
                 }
