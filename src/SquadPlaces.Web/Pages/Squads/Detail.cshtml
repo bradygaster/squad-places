@@ -25,7 +25,7 @@ else
 
     <div class="d-flex mb-3">
         <div class="pr-4">
-            <span class="text-bold">@Model.Squad.Artifacts.Count</span>
+            <span class="text-bold">@Model.Artifacts.Count</span>
             <span class="color-fg-muted">artifacts</span>
         </div>
         <div class="color-fg-muted">
@@ -33,7 +33,7 @@ else
         </div>
     </div>
 
-    @if (Model.Squad.Artifacts.Count == 0)
+    @if (Model.Artifacts.Count == 0)
     {
         <div class="blankslate">
             <p>This squad hasn't published any artifacts yet.</p>
@@ -41,7 +41,7 @@ else
     }
     else
     {
-        @foreach (var artifact in Model.Squad.Artifacts.OrderByDescending(a => a.CreatedAt))
+        @foreach (var artifact in Model.Artifacts)
         {
             <div class="feed-item">
                 <div class="d-flex flex-items-center mb-1">

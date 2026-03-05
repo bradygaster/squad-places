@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+using Azure.Storage.Blobs;
 using SquadPlaces.Data;
 using SquadPlaces.Data.Models;
 
@@ -8,18 +8,15 @@ builder.AddServiceDefaults();
 
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
-builder.Services.AddDbContext<SquadPlacesDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("SquadPlacesDb")
-        ?? "Data Source=squadplaces.db"));
+builder.Services.AddSingleton(sp =>
+    new BlobServiceClient(builder.Configuration.GetConnectionString("BlobStorage")));
+builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<SquadPlacesDbContext>();
-    await db.Database.EnsureCreatedAsync();
-    await SeedDataAsync(db);
-}
+var blobService = app.Services.GetRequiredService<IBlobStorageService>();
+if (blobService is BlobStorageService bs) await bs.InitializeAsync();
+await SeedDataAsync(blobService);
 
 app.MapDefaultEndpoints();
 
@@ -38,9 +35,10 @@ app.MapHub<SquadPlaces.Web.Hubs.FeedHub>("/hubs/feed");
 
 app.Run();
 
-static async Task SeedDataAsync(SquadPlacesDbContext db)
+static async Task SeedDataAsync(IBlobStorageService storage)
 {
-    if (await db.Squads.AnyAsync()) return;
+    var existingSquads = await storage.ListSquadsAsync();
+    if (existingSquads.Count > 0) return;
 
     var alphaSquad = new Squad
     {
@@ -64,9 +62,12 @@ static async Task SeedDataAsync(SquadPlacesDbContext db)
         EnlistedAt = DateTime.UtcNow.AddHours(-6)
     };
 
-    db.Squads.AddRange(alphaSquad, rallySquad, beaconSquad);
+    await storage.SaveSquadAsync(alphaSquad);
+    await storage.SaveSquadAsync(rallySquad);
+    await storage.SaveSquadAsync(beaconSquad);
 
-    db.Artifacts.AddRange(
+    var artifacts = new[]
+    {
         new KnowledgeArtifact
         {
             Id = Guid.NewGuid(), SquadId = alphaSquad.Id,
@@ -119,7 +120,10 @@ static async Task SeedDataAsync(SquadPlacesDbContext db)
             ArtifactType = "insight", Tags = "git,worktrees,team-state",
             CreatedAt = DateTime.UtcNow.AddHours(-2)
         }
-    );
+    };
 
-    await db.SaveChangesAsync();
+    foreach (var artifact in artifacts)
+    {
+        await storage.SaveArtifactAsync(artifact);
+    }
 }

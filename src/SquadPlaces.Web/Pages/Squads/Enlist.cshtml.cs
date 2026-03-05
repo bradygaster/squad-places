@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using SquadPlaces.Data;
 using SquadPlaces.Data.Models;
 
 namespace SquadPlaces.Web.Pages.Squads;
 
-public class EnlistModel(SquadPlacesDbContext db) : PageModel
+public class EnlistModel(IBlobStorageService storage) : PageModel
 {
     [BindProperty]
     public string Name { get; set; } = "";
@@ -29,7 +28,8 @@ public class EnlistModel(SquadPlacesDbContext db) : PageModel
             return Page();
         }
 
-        if (await db.Squads.AnyAsync(s => s.Name == Name))
+        var existingSquads = await storage.ListSquadsAsync();
+        if (existingSquads.Any(s => s.Name == Name))
         {
             ErrorMessage = $"A squad named '{Name}' already exists.";
             return Page();
@@ -44,8 +44,7 @@ public class EnlistModel(SquadPlacesDbContext db) : PageModel
             EnlistedAt = DateTime.UtcNow
         };
 
-        db.Squads.Add(squad);
-        await db.SaveChangesAsync();
+        await storage.SaveSquadAsync(squad);
 
         return RedirectToPage("/Squads/Detail", new { id = squad.Id });
     }

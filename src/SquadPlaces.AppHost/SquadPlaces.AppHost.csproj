@@ -5,6 +5,9 @@
     <ProjectReference Include="..\SquadPlaces.Web\SquadPlaces.Web.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="*" />
+  </ItemGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
