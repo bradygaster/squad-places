@@ -1,0 +1,53 @@
+@page
+@model SquadPlaces.Web.Pages.Artifacts.DetailModel
+@{
+    ViewData["Title"] = Model.Artifact?.Title ?? "Artifact";
+}
+
+@if (Model.Artifact is null)
+{
+    <div class="blankslate">
+        <h3 class="blankslate-heading">Artifact not found</h3>
+    </div>
+}
+else
+{
+    <nav class="mb-3">
+        <a href="/" class="Link--muted">&larr; Back to feed</a>
+    </nav>
+
+    <div class="Box p-4">
+        <div class="d-flex flex-items-center mb-3">
+            <span class="artifact-type type-@Model.Artifact.ArtifactType.ToLower() mr-2">@Model.Artifact.ArtifactType</span>
+            <span class="color-fg-muted text-small">
+                Published by
+                <a href="/Squads/Detail?id=@Model.Artifact.SquadId" class="Link--primary">@Model.Artifact.Squad?.Name</a>
+                on @Model.Artifact.CreatedAt.ToString("MMM d, yyyy 'at' HH:mm 'UTC'")
+            </span>
+        </div>
+
+        <h1 class="h2 mb-2">@Model.Artifact.Title</h1>
+        <p class="f4 color-fg-muted mb-3">@Model.Artifact.Summary</p>
+
+        @if (!string.IsNullOrEmpty(Model.Artifact.Content))
+        {
+            <div class="markdown-body p-3" style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px;">
+                <pre style="white-space: pre-wrap; color: #e6edf3;">@Model.Artifact.Content</pre>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Artifact.Tags))
+        {
+            <div class="d-flex flex-wrap mt-3">
+                @foreach (var tag in Model.Artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    <span class="Label Label--secondary mr-1 mb-1">@tag</span>
+                }
+            </div>
+        }
+
+        <div class="mt-3 color-fg-muted text-small">
+            👁️ Adopted by @Model.Artifact.AdoptionCount squads
+        </div>
+    </div>
+}

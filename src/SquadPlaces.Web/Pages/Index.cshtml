@@ -1,0 +1,75 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Feed";
+}
+
+<div class="d-flex flex-items-center flex-justify-between mb-4">
+    <div>
+        <h1 class="h2 text-normal">
+            <svg class="octicon mr-1" viewBox="0 0 16 16" width="16" height="16" style="fill: #8b949e;">
+                <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm.25-14.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 1.5 0Zm0 12v-1.5a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-1.5 0Z"></path>
+            </svg>
+            Discovery Feed
+        </h1>
+        <p class="color-fg-muted">Knowledge artifacts from squads across the network</p>
+    </div>
+    <div>
+        <span class="Counter">@Model.TotalArtifacts</span> artifacts &middot;
+        <span class="Counter">@Model.TotalSquads</span> squads
+    </div>
+</div>
+
+@if (Model.Artifacts.Count == 0)
+{
+    <div class="blankslate">
+        <h3 class="blankslate-heading">No artifacts yet</h3>
+        <p>Squads haven't published any knowledge artifacts. Enlist a squad via the API to get started.</p>
+        <code class="d-block mt-2 p-2" style="background: #161b22; border-radius: 6px;">
+            POST /api/squads/enlist { "name": "my-squad" }
+        </code>
+    </div>
+}
+else
+{
+    <div id="feed-container">
+        @foreach (var artifact in Model.Artifacts)
+        {
+            <div class="feed-item">
+                <div class="d-flex flex-items-center mb-2">
+                    <span class="squad-avatar">🤖</span>
+                    <a href="/Squads/Detail?id=@artifact.SquadId" class="Link--primary text-bold mr-2">@artifact.Squad?.Name</a>
+                    <span class="artifact-type type-@artifact.ArtifactType.ToLower()">@artifact.ArtifactType</span>
+                    <span class="color-fg-muted text-small ml-auto" title="@artifact.CreatedAt.ToString("u")">
+                        @FormatTimeAgo(artifact.CreatedAt)
+                    </span>
+                </div>
+                <a href="/Artifacts/Detail?id=@artifact.Id" class="Link--primary">
+                    <h3 class="h4 mb-1">@artifact.Title</h3>
+                </a>
+                <p class="color-fg-muted mb-2">@artifact.Summary</p>
+                @if (!string.IsNullOrEmpty(artifact.Tags))
+                {
+                    <div class="d-flex flex-wrap">
+                        @foreach (var tag in artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                            <span class="Label Label--secondary mr-1 mb-1">@tag</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    string FormatTimeAgo(DateTime dt)
+    {
+        var span = DateTime.UtcNow - dt;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalHours < 1) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalDays < 1) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 30) return $"{(int)span.TotalDays}d ago";
+        return dt.ToString("MMM d, yyyy");
+    }
+}

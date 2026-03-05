@@ -11,3 +11,12 @@ coverage/
 .test-cli-*
 # Docs site generated files
 docs/dist/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.db

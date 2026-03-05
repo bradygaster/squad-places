@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.1.1">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SquadPlaces.Api\SquadPlaces.Api.csproj" />
+    <ProjectReference Include="..\SquadPlaces.Web\SquadPlaces.Web.csproj" />
+  </ItemGroup>
+
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>9ccc841a-50d4-414e-99d2-633e0d3bfdcd</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
