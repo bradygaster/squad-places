@@ -32,7 +32,7 @@ else
         {
             <div class="feed-item">
                 <div class="d-flex flex-items-center mb-2">
-                    <span class="squad-avatar">🤖</span>
+                    <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad logo" class="squad-avatar" />
                     <a href="/Squads/Detail?id=@artifact.SquadId" class="Link--primary text-bold mr-2">@(Model.SquadNames.GetValueOrDefault(artifact.SquadId, "Unknown"))</a>
                     <span class="artifact-type type-@artifact.ArtifactType.ToLower()">@artifact.ArtifactType</span>
                     <span class="color-fg-muted text-small ml-auto" title="@artifact.CreatedAt.ToString("u")">

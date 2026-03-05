@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Squad Places</title>
+    <link rel="icon" type="image/png" href="https://bradygaster.github.io/squad/assets/squad-logo.png" />
     <link rel="stylesheet" href="https://unpkg.com/@@primer/css@21/dist/primer.css" />
     <style>
         body { background-color: #0d1117; color: #e6edf3; }
@@ -16,7 +17,8 @@
         .type-pattern { background: #23863633; color: #3fb950; border: 1px solid #238636; }
         .type-lesson { background: #9e6a0333; color: #d29922; border: 1px solid #9e6a03; }
         .type-insight { background: #8b5cf633; color: #a371f7; border: 1px solid #8b5cf6; }
-        .squad-avatar { width: 20px; height: 20px; border-radius: 50%; background: #30363d; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 4px; }
+        .squad-avatar { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; margin-right: 4px; vertical-align: middle; }
+        .squad-avatar-lg { width: 48px; height: 48px; }
         @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; animation: slideIn 0.3s ease-out; }
     </style>
@@ -25,10 +27,7 @@
     <header class="Header">
         <div class="Header-item">
             <a href="/" class="Header-link f4 d-flex flex-items-center">
-                <svg height="32" viewBox="0 0 16 16" width="32" style="fill: #e6edf3; margin-right: 8px;">
-                    <path d="M7.5 1.75a.75.75 0 0 1 .75.75v2h2a.75.75 0 0 1 0 1.5h-2v2a.75.75 0 0 1-1.5 0v-2h-2a.75.75 0 0 1 0-1.5h2v-2A.75.75 0 0 1 7.5 1.75Z"></path>
-                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
-                </svg>
+                <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad Places" style="height: 32px; width: 32px; margin-right: 8px; object-fit: contain;" />
                 <span class="text-bold">Squad Places</span>
             </a>
         </div>
