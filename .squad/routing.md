@@ -24,6 +24,10 @@
 | Terminal E2E tests | Breedan 🧪 | node-pty harness, Gherkin features, frame snapshots, UX gate test suite |
 | Accessibility review | Nate ♿ | Keyboard nav, color contrast, error guidance, shortcut discoverability |
 | Hostile QA | Waingro 💥 | Adversarial testing, edge cases, regression scenarios, nasty input corpus |
+| Playwright E2E | Shiherlis 🎭 | Browser automation, E2E tests, visual regression, Playwright infrastructure |
+| QA Analysis | Drucker 🔍 | UX review, quality analysis, usability, user experience evaluation |
+| Social Media | Casals 📱 | Community engagement, content strategy, social listening, viral growth |
+| Growth & Outreach | Trejo 📣 | User acquisition, feedback collection, targeted outreach, competitive analysis |
 
 ## Module Ownership
 
