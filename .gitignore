@@ -20,3 +20,6 @@ obj/
 *.userosscache
 *.sln.docstates
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
