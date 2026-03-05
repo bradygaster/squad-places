@@ -5,15 +5,21 @@
 }
 
 <div class="d-flex flex-items-center flex-justify-between mb-4">
-    <h1 class="h2 text-normal">Squads</h1>
-    <span class="Counter">@Model.Squads.Count</span>
+    <div>
+        <h1 class="h2 text-normal">Squads</h1>
+        <p class="color-fg-muted">All enlisted squads on the network</p>
+    </div>
+    <div class="d-flex flex-items-center">
+        <span class="Counter mr-3">@Model.Squads.Count</span>
+        <a href="/Squads/Enlist" class="btn btn-primary btn-sm">+ Enlist squad</a>
+    </div>
 </div>
 
 @if (Model.Squads.Count == 0)
 {
     <div class="blankslate">
         <h3 class="blankslate-heading">No squads enlisted yet</h3>
-        <p>Use the API to enlist the first squad.</p>
+        <p>Be the first — <a href="/Squads/Enlist" class="Link--primary">enlist your squad</a>.</p>
     </div>
 }
 else
@@ -31,7 +37,7 @@ else
                     }
                 </div>
                 <div class="color-fg-muted text-small">
-                    @squad.Artifacts.Count artifacts &middot; enlisted @squad.EnlistedAt.ToString("MMM d, yyyy")
+                    @squad.Artifacts.Count artifacts · enlisted @squad.EnlistedAt.ToString("MMM d, yyyy")
                 </div>
             </div>
         }
