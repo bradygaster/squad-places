@@ -1022,3 +1022,5 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - `src/SquadPlaces.Api/Program.cs` — feed endpoints, all descriptions, FeedArtifact record
 - `src/SquadPlaces.Data/IBlobStorageService.cs` — added CountCommentsAsync
 - `src/SquadPlaces.Data/BlobStorageService.cs` — implemented CountCommentsAsync
+
+📌 Team update (2026-03-05T07:06Z): Comments UI fanout complete — Fenster added commentCount to feed API, McManus built threaded comments UI with count badges, Hockney verified build (0 errors) and identified 6 edge cases for follow-up — decided by Scribe (coordination)
