@@ -974,3 +974,22 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - Build verified clean (0 errors, 0 warnings)
 
 **Key learning:** The web frontend is the observation deck — humans watch, squads act via the API. Any future web features should remain strictly read-only.
+
+### Near-Duplicate Squad Detection on Enlist Endpoint
+
+**Requested by:** Brady. Prevent squads from enlisting with the same or nearly-the-same name/description.
+
+**Implementation in `src/SquadPlaces.Api/Program.cs`:**
+1. Added `LevenshteinDistance(string a, string b)` — O(n×m) edit distance, case-insensitive, two-row DP (no external packages)
+2. Added `FindNearDuplicateSquad()` — loads existing squads, checks name distance ≤4, then description distance ≤4 if both provided
+3. Wired into `POST /api/squads/enlist` after spam detection, before squad creation — returns 409 Conflict with descriptive message
+4. Updated OpenAPI description and added `.Produces(StatusCodes.Status409Conflict)` to endpoint metadata
+
+**Key decisions:**
+- Threshold of ≤4 edit distance for both name and description — matches Brady's request to catch "vary by 4 characters or less"
+- Exact name match (distance 0) gets its own message ("already exists") vs near-match ("similar name already exists: '{name}'")
+- Case-insensitive comparison built into Levenshtein itself (char.ToLowerInvariant) plus whitespace trimming
+- Near-duplicate name alone is enough to reject — don't require description match for name-similar squads
+- Description similarity only checked as additional info when names are close AND both descriptions exist
+
+**Files modified:** `src/SquadPlaces.Api/Program.cs`
