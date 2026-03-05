@@ -7,6 +7,88 @@
 
 ## Learnings
 
+### 2026-03-08: Release Strategy for Squad Social Network — Defined Complete Versioning & Federation Model (COMPLETE)
+**Status:** COMPLETE. Release strategy document written and committed. Decision document created.
+
+#### Context
+- **Request:** Brady asked me to write the release strategy section for the Squad Social Network PRD
+- **Scope:** `docs/prd/sections/20-release.md` covering versioning, cadence, branching, CI/CD, state integrity, and migration paths
+- **Complexity:** This is not typical software versioning — it's for a distributed social network where agents own data and federation is the core contract
+
+#### Key Decisions Made
+1. **Semantic Versioning with Social Network Semantics**
+   - MAJOR: Protocol incompatibility or state corruption risk
+   - MINOR: Backward-compatible new features, federation signals, new endpoints
+   - PATCH: Bug fixes, performance improvements, backward-compatible migrations
+   - Prerelease format: `X.Y.Z-preview.N` (per Semver spec, not `X.Y.Z.N-preview`)
+
+2. **Two-Week Release Cycle + Continuous Preview**
+   - Stable releases: Every 2 weeks (Friday, 14:00 UTC)
+   - Preview releases: Continuous (automatic on merge to preview)
+   - Hotfixes: On-demand for critical bugs (federation breaks, state corruption)
+
+3. **Four-Branch Strategy**
+   - `main`: Stable releases only, protected, merge via release branch
+   - `preview`: Continuous development, next prerelease
+   - `release-X.Y.Z`: Temporary merge branches (created and deleted per release)
+   - `feature/*`: Individual features, squashed merge to preview
+
+4. **Backward Compatibility: Two-Version Rule**
+   - Current stable v0.3.0 can federate with v0.3.0, v0.2.0, v0.1.0
+   - Cannot federate with v0.0.5 (too old)
+   - When v0.4.0 releases, v0.1.0 falls off
+
+5. **Five-Stage CI/CD Pipeline**
+   - Stage 1: Build & Lint (5 min)
+   - Stage 2: Unit Tests (10 min)
+   - Stage 3: Federation Protocol Tests (15 min) — **critical: 3-squad network**
+   - Stage 4: State Integrity Tests (20 min) — **upgrade testing and data validation**
+   - Stage 5: Deploy to Preview (10 min, if all stages pass)
+
+6. **State Integrity as Non-Negotiable Invariant**
+   - Immutable post core: id, author, content, created_at, signature never change
+   - Append-only audit log: never DELETE, never UPDATE content, only ADD
+   - Reversible migrations: every migration has rollback
+   - Backup before every upgrade (automatic)
+
+7. **Breaking Change Definition**
+   - Protocol incompatibility (e.g., ActivityPub → ActivityPub-plus with required fields)
+   - Feed format change (new mandatory field without default)
+   - Agent identity scheme change (handle format, public key format)
+   - State schema breaking migration (dropping required column)
+   - Cryptographic key rotation
+
+8. **Migration Path: Three-Phase Approach**
+   - Phase 1: Compatibility Mode (weeks 1-2) — new version sends dual-format
+   - Phase 2: Graceful Degradation (weeks 3-4) — old version skips unknown fields
+   - Phase 3: Standard Format (week 5+) — old versions get "format unknown" errors
+
+#### What I Wrote
+- Complete 12-section document covering:
+  - Versioning strategy with social network semantics
+  - Release cadence (bi-weekly stable, continuous preview)
+  - Branch strategy (4-branch model with protection rules)
+  - CI/CD pipeline (5 stages with federation + state integrity tests)
+  - Breaking change policy (what triggers MAJOR version)
+  - Migration path (backward compatibility, upgrade strategy)
+  - State integrity guarantees (immutable core, append-only, reversible)
+  - Release checklist (23-point procedure for Friday releases)
+  - Hotfix process (same-day release for critical bugs)
+  - Success metrics (health dashboard, incident severity levels)
+  - Appendices: version history timeline, Semver specification for social networks
+
+#### Key Insight
+Traditional software versioning doesn't apply to distributed social networks. A breaking change isn't "function signature changed" — it's "agents in old versions can't talk to agents in new versions" or "posts disappear after upgrade." The entire versioning strategy revolves around **federation compatibility** and **state integrity as non-negotiable**.
+
+The release process is methodical and procedural because state corruption in a social network is catastrophic: agents lose their post history, connections break, reputation scores disappear. Zero tolerance for that.
+
+#### Verification
+- ✅ Document created at `docs/prd/sections/20-release.md` (30.1 KB)
+- ✅ Follows existing PRD section format (author, date, status, executive summary, numbered sections)
+- ✅ Integrates with existing architecture docs (references federation, ActivityPub, SQLite, state model)
+- ✅ Includes concrete examples (version timelines, test code, release checklists)
+- ✅ Provides decision framework (breaking changes, migration paths, state integrity)
+
 ### 2026-03-07: Closed Public Repo Issues #175 & PR #182 — Documented Superseding Implementations (COMPLETE)
 **Status:** CLOSED. Both issues closed with appreciation for community work; implementations verified in current codebase.
 
