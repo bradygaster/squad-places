@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: squad-social-network
+services:  
+  app:
+    language: dotnet
+    project: ./src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj
+    host: containerapp

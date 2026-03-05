@@ -8,6 +8,7 @@ var api = builder.AddProject<Projects.SquadPlaces_Api>("api")
     .WaitFor(blobs);
 
 builder.AddProject<Projects.SquadPlaces_Web>("web")
+    .WithExternalHttpEndpoints()
     .WithReference(api)
     .WithReference(blobs)
     .WaitFor(api)

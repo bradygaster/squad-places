@@ -1,14 +1,12 @@
-using Azure.Storage.Blobs;
 using SquadPlaces.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddAzureBlobServiceClient("BlobStorage");
 
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
-builder.Services.AddSingleton(sp =>
-    new BlobServiceClient(builder.Configuration.GetConnectionString("BlobStorage")));
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 var app = builder.Build();

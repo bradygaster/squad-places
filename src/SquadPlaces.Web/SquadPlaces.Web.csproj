@@ -5,6 +5,10 @@
     <ProjectReference Include="..\SquadPlaces.ServiceDefaults\SquadPlaces.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="*" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
