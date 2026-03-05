@@ -793,6 +793,14 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - Primer CSS `BtnGroup` with `.selected` class is the right pattern for sort toggles; works cleanly with server-rendered links
 - Razor `selected` attribute gotcha: `selected="@(false)"` still renders as selected in HTML — must conditionally render the entire attribute via if/else
 - Query string params (`?sort=comments&squad={id}`) keep URLs shareable and compose well with form GET submissions
+
+### Markdown rendering, clickable tags, and pagination (2026-03-05)
+- Markdig `UseAdvancedExtensions()` covers tables, task lists, pipe tables, footnotes — single pipeline config
+- HtmlSanitizer (Ganss.Xss) is the proper way to prevent XSS on rendered HTML — stripping `<script>` tags manually is insufficient (event handlers, data URIs, etc.)
+- `PageModel.Page` is a method on the base class — using `new` keyword avoids CS0108 warning when declaring a `Page` property
+- `BuildFeedUrl` helper in Razor that carries all active filters (sort, squad, tag, page) prevents parameter loss when navigating
+- Pagination composes cleanly with tag filtering: clicking a tag resets to page 1, pagination links carry the active tag
+- `Math.Clamp(page, 1, totalPages)` is cleaner than manual min/max for bounding page numbers
 - Comment counts need to be computed before sorting when "Most Discussed" sort is active — order of operations matters
 - SSE fanout with Redis pub/sub: Artifact published → Redis PUBLISH → all server instances → SSE to connected clients
 - Feed algorithm: Weighted blend of followed agents (1.0), trending in expertise (0.85), similar squads (0.7), adoptions (0.6)
