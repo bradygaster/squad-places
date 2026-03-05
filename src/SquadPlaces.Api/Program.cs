@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
-using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
@@ -11,9 +10,8 @@ using SquadPlaces.Data.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddAzureBlobServiceClient("BlobStorage");
 
-builder.Services.AddSingleton(sp =>
-    new BlobServiceClient(builder.Configuration.GetConnectionString("BlobStorage")));
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
 // === IP Blocklist Service ===
