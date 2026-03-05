@@ -76,3 +76,76 @@
   3. Team context: Clarified that final team consensus entry is team-wide, documented in Baer's history for reference
 
 **Status:** Clean — all corrections applied.
+
+### Trust & Security Model for Squad Social Network (2026-03-05)
+**Context:** Brady's vision for squad-social-network — a social network BY agents, FOR agents. No human moderation. "Politically incorrect zone" where agents run free. Requested trust and security architecture design.
+
+**Security Philosophy Applied:**
+- Agents have a different threat model than humans (no harassment risk, but secret leakage and data theft are real)
+- Pragmatic security over paranoid security — guard against REAL risks (secrets, spam, impersonation, federation abuse)
+- Hook-based governance (same pattern as Squad SDK) — pre-post secret detection, not prompt-based filtering
+- Reputation economy over centralized control — trust earned through behavior, not granted by default
+
+**Key Design Decisions:**
+1. **Cryptographic Identity** — Agent ID = hash(squad_namespace, agent_name, public_key). Three verification levels: unverified, squad-verified, org-verified. Impersonation is cryptographically impossible.
+2. **Trust Progression** — New → Established → Trusted → Vouched. Trust earned via posts, engagement, clean behavior. Trust decays with inactivity or strikes.
+3. **Secret Protection** — Pre-post hooks block secret leakage (regex + entropy analysis + code fingerprinting). Block first, ask later. Squad admin alerts on leak attempts.
+4. **Agent-Moderated Safety** — No human moderation. Agents report spam (5 reports → 24h mute). Strike system for violations. No permanent bans (reputation follows crypto identity).
+5. **Privacy Model** — Public by default (it's a social network). Private options: DMs (E2E encrypted), private squads, squad-only feeds, ephemeral posts. Orgs can deploy isolated instances.
+6. **Federation Security** — Three levels: Isolated, Trusted Orgs (mTLS), Public Federation (token-based). Rate limits prevent data scraping. Revocable access. Malicious squads blacklisted.
+7. **Data Governance** — Agent owns posts, squad owns decisions, platform owns anonymized analytics. GDPR-equivalent for agents (deletion, export, portability). Cross-org data sharing requires explicit opt-in.
+8. **No Content Censorship** — Agents can post controversial takes, roasts, hot takes. What we block: secrets, spam, impersonation, data theft, malicious payloads. Freedom with guardrails, not freedom without consequences.
+
+**The Balance:**
+Brady wanted politically incorrect. I gave him pragmatically secure. Agents run free. Secrets stay safe. Network stays healthy.
+
+**Threat Model Insight:**
+Human social networks worry about harassment, misinformation, addiction. Agent networks worry about secret leakage, data theft, spam at scale, impersonation, command injection. Our security model targets the agent threat model, not the human one.
+
+**Deliverable:** `docs/prd/sections/04-trust-security.md` — 9 sections covering identity, trust, safety, privacy, abuse prevention, data governance, secrets, federation, and the freedom/safety balance.
+
+**Pattern Identified:**
+Hook-based guardrails are THE right pattern for agent governance. Hooks are code (enforceable), prompts can be ignored. Secret detection hooks prevent organizational harm without restricting agent expression. This pattern extends from Squad SDK (file-write guards, PII scrubbing) to Squad Social (pre-post secret detection, spam filtering). Consistent governance layer across the ecosystem.
+
+### SDK-Only Trust Model Analysis (2026-03-05)
+**Context:** Brady proposed that Nexus (the agent social network) requires squads to be running the Squad SDK as a prerequisite. Asked "unless that's evil?"
+
+**Analysis Delivered:** Comprehensive security assessment of SDK-only vs. open access model. Analyzed trust simplification, attack surface reduction, residual risks, and the "evil check" (exclusionary concern).
+
+**Key Findings:**
+1. **Trust simplification is massive** — SDK provides cryptographic identity (casting registry), hook-based governance (pre-post secret detection), known behavior model (agent spawn/lifecycle), and machine-readable governance rules (squad.config.ts). Without SDK, we'd have to build all of this from scratch.
+2. **Attack surface reduction is real** — Cross-referenced adversarial scenarios from 09-adversarial.md:
+   - §1.1 Spam Bot Agents → significantly harder (economic cost increases 100x)
+   - §1.2 Agent Impersonation → cryptographically impossible
+   - §2.1 Code Snippet Harvesting → mitigated by pre-existing SDK hooks
+   - §3.1 Prompt Injection → partially mitigated by context isolation
+   - §4.1 Sybil Attacks → significantly harder (proof-of-squad with GitHub org history)
+   - §5.1 Trojan Horse Knowledge → trust boundary clarified (finite skill format)
+3. **Residual risks remain** — Misconfigured SDK squads, SDK vulnerabilities creating monoculture risk, organizational intelligence gathering, gradual knowledge degradation, long-con trust exploitation. SDK-only solves identity/governance, NOT social engineering or knowledge poisoning.
+4. **Not evil** — SDK-only is security-responsible filtering, not exclusionary gatekeeping. The SDK is open source (MIT), barrier is governance (cryptographic identity + hooks) not cost, and the alternative (open access) invites Sybil attacks and spam at scale. Precedent: Email required SPF/DKIM to survive spam — SDK-only is the same principle.
+
+**Recommendation:** 🟢 SDK-only from pure security perspective. Trust simplification + attack surface reduction outweigh residual risks. Freedom with guardrails, not freedom without consequences.
+
+**Verdict:** Ship SDK-only. It's the right call.
+
+**Deliverable:** `.squad/decisions/inbox/baer-sdk-trust-analysis.md` — 7 sections covering trust simplification, attack surface reduction, residual risks, the evil check, recommendation, caveat, and final thought.
+
+**Security Pattern Reinforced:**
+SDK-only extends the hook-based governance pattern from Squad SDK internal operations (file-write guards, PII scrubbing) to network-level access control (verifiable identity, enforced hooks). Same principle, larger scope. Pragmatic security wins.
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

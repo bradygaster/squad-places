@@ -105,3 +105,86 @@ Sample ready for use.
 
 **Total corrections: 5** (1 date fix, 4 clarity/hygiene fixes)
 
+### Squad Social Network — Federation & API Design (2026-03-04)
+
+**Task:** Write PRD section 07 (Federation, SDK Integration & API Surface) for squad-social-network project
+
+**Decisions Made:**
+1. **Hybrid Federation Model:** Hub-and-spoke with relay servers for MVP, direct peering for future enterprise use
+2. **Separate Package:** `@bradygaster/squad-social` as opt-in layer, preserving backwards compatibility with existing SDK
+3. **Wire Protocol:** JSON + gzip over WebSocket for real-time, polling fallback for GitHub.com platform
+4. **Authentication:** Ed25519 signatures for message integrity and squad identity verification
+5. **Discovery:** Centralized registry with DNS-style namespaces (org/squad-name), full-text capability search
+6. **Activation:** Social plugin activates on squad init when enabled in config, lazy and always-on modes available
+7. **Rate Limiting:** Tiered quotas (100 msg/hr free, 1000 msg/hr pro), client and server enforcement
+
+**Platform Constraints Identified:**
+- CLI and VS Code support full WebSocket (real-time)
+- GitHub.com requires polling fallback (no persistent WebSocket in browser runtime)
+- JetBrains has same SDK surface as VS Code
+- No mobile support (Copilot SDK not available on mobile)
+
+**Protocol Design Rationale:**
+- JSON over Protobuf: Human-readable debugging, universal parsing, 40-byte size difference negligible after gzip
+- Ed25519 over RSA: 10x faster, 32-byte keys vs 256-byte, constant-time operations
+- No ActivityPub: Agent-scale communication (100s msg/sec) vs human-scale, different latency/volume requirements
+
+**Security Model:**
+- Namespace verification via DNS TXT or GitHub org API (prevents impersonation)
+- Message signatures (prevents tampering)
+- Timestamp validation (prevents replay attacks, 5-min max age)
+- Rate limiting per-IP and per-squad (prevents DoS)
+- Optional end-to-end encryption for future (payload opaque to relay)
+
+**Implementation Phases:** 10-week roadmap from protocol definition through relay deployment, SDK integration, testing, and public launch
+
+### SDK Integration Surface Analysis for squad.social (2026-03-04)
+
+**Task:** Analyze SDK integration architecture for `@bradygaster/squad-social` package at Brady's request
+
+**Key Decisions:**
+1. **Package Architecture:** squad-social is a lifecycle plugin that hooks into Squad SDK's RuntimeEventBus and config system, not a standalone layer
+2. **Integration Point:** Auto-init via Squad.init() when `social.enabled: true` in config (Option A), with manual `createSocialClient()` fallback (Option C)
+3. **SDK-Only Benefits Beyond Identity/Trust:** Structured event stream (real-time typed events), hook enforcement (governance), platform detection (transport adaptation), session lifecycle management (passive observation), model/cost tracking (rich discovery metadata)
+4. **Transport Strategy:** WebSocket for CLI/VS Code/JetBrains, polling fallback for GitHub.com — same API, different latency
+5. **Abstraction Boundary:** `SocialClient` interface as public contract; SDK squads use `SDKSocialClient` (EventBus-native), future non-SDK agents use `ProtocolSocialClient` (adapter-based polling)
+6. **Platform Parity:** No issues — all SDK platforms (CLI, VS Code, JetBrains, GitHub.com) support squad-social; only mobile excluded (no SDK)
+
+**Core Insight:** Squad SDK already has 90% of infrastructure needed (EventBus, hooks, lifecycle, WebSocket bridges) — we're exposing internal coordination bus to the network, not building from scratch
+
+**API Surface:**
+```typescript
+import { createSocialClient } from '@bradygaster/squad-social';
+const social = await createSocialClient({
+  squadId: 'bradygaster/squad-sdk-team',
+  eventBus: squad.eventBus,  // Bridge to existing SDK bus
+  relay: 'wss://relay.squad.network',
+  broadcasting: { events: ['session:created', 'agent:milestone'], mode: 'lazy' }
+});
+await social.discover({ capabilities: ['typescript'], online: true });
+social.subscribe('acmecorp/backend-team', { events: ['agent:milestone'], handler: ... });
+```
+
+**"Open Later" Path:** `SocialClient` interface allows non-SDK agents via `AgentAdapter` (getEvents/sendCommand polling) + `ProtocolSocialClient` implementation — zero breaking changes to existing SDK users
+
+**Recommendations:** Ship SDK-only for MVP, auto-init in Squad.init(), platform parity via transport abstraction, keep interface stable, document adapter pattern for future extensibility
+
+**Output:** Analysis written to `.squad/decisions/inbox/kujan-sdk-integration-surface.md` (ready for Brady review → RFC)
+
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

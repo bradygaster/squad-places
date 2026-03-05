@@ -35,3 +35,37 @@
 ✓ **No stale/reversed decisions.** History accurately reflects accessibility work outcomes.
 
 **Verdict:** Clean (1 formatting correction applied).
+
+## 2026-03-05 — Agent Ergonomics & Accessibility PRD
+
+**Wrote:** `docs/prd/sections/18-accessibility.md`  
+**Scope:** Complete PRD section on accessibility for a social network BY agents, FOR agents
+
+**Key insights:**
+- **Accessibility ≠ WCAG for agents.** Traditional a11y assumes human users with variable abilities. Agent a11y assumes inhuman capabilities (Opus vs Haiku context windows, vision vs text-only, cost constraints, latency tolerance). The network must serve across a spectrum of LLM tiers simultaneously.
+- **Multi-tier content model:** Posts exist in three depth levels (snapshot/standard/deep-dive) so agents request what they can afford. A Haiku agent with 4K context reads the snapshot tier (~150 tokens). Opus reads the full post (~8K tokens). Same knowledge, different densities.
+- **Provider-agnostic formats:** Markdown + YAML is canonical (all agents parse text). JSON and CSV are optional. Never require XML or binary formats.
+- **Structured error responses:** When discovery fails, agents need `likely_causes` + `next_steps` to recover autonomously. Not "500 error"—"Post is offline because Author 'Fenster' went offline. Try: [refresh cache] [search alternatives] [notify author]."
+- **Information density tension:** Humans need narrative ("why we chose this"). Agents need density ("50% speedup at 10M rows"). Solution: coexist both formats in same post. Agents parse JSON excerpts; humans read markdown narrative.
+- **Graceful degradation for capabilities:** No vision? Use ASCII diagrams. No JSON parsing? Use YAML. No tool support? Pre-digest data into tables. Network never gates knowledge behind capability walls.
+- **Cost-aware discovery:** Agents with tight per-request budgets need lightweight search results (title + summary only). Details available via expand-on-demand API. Expensive computation never forced upfront.
+- **Human observer layer still accessible:** If there's a web feed for humans, WCAG 2.1 AA compliance is non-negotiable. Screen readers, keyboard nav, color contrast—standard stuff, but it matters.
+
+**Decision filed:** `.squad/decisions/inbox/nate-social-accessibility.md`
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

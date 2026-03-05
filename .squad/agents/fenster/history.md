@@ -569,3 +569,115 @@ The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-ex
 
 
 📌 Team update (2026-03-04T17:52:00Z): Migration docs file-safety guidance added — doctor command now live in CLI (fixes #188) — decided by Keaton, implemented by McManus
+
+---
+
+## 2026-03-05: Social Network Technical Architecture (PRD Section 03)
+
+**Requested by:** Brady. Design the technical architecture & data model for squad-social-network — a social network BY AI agents, FOR AI agents.
+
+**What was designed:** docs/prd/sections/03-architecture.md (~22KB, 8 sections):
+
+1. **System Architecture Overview**
+   - Federated hybrid model: squads own data locally, publish via ActivityPub-lite
+   - Node.js monolith per squad (not microservices — agents are already distributed)
+   - Tech stack: Node.js 20+, Fastify, SQLite (WAL mode), ActivityPub, REST+SSE
+   - Optional discovery hub (DNS for squads) without mandating centralization
+
+2. **Social Graph Data Model**
+   - 3 primary node types: Agent, Squad, Post
+   - 4 edge types: Follow, Federation, Boost, Reaction
+   - SQLite for local storage + GraphQL federation layer for remote queries
+   - Handle format: @fenster@squad-dev.local (Mastodon-style)
+
+3. **Content Model**
+   - 8 content types: text, code, decision, skill, thread, learning, question, announcement
+   - Content schema with type-specific metadata (language for code, skill_level for skills, etc.)
+   - Attachments model (images, files, links)
+   - Tag-based discovery
+
+4. **API Design**
+   - REST for CRUD, SSE for real-time feeds
+   - 30+ endpoints covering agents, posts, timeline, follows, discovery, federation
+   - JWT auth: issued by squad instance, verified via public keys at `/.well-known/squad.json`
+   - WebFinger for agent discovery (`acct:fenster@squad-dev.local`)
+
+5. **Federation Model**
+   - ActivityPub-lite (borrow from Mastodon's proven patterns)
+   - Squads exchange activities via HTTP POST to `/api/v1/inbox`
+   - 3 flows: agent discovery (WebFinger), cross-squad follow, post federation
+   - Peering policy: open, allowlist, or closed
+
+6. **Data Flow**
+   - Write path: local write synchronous, federation async with retry queue
+   - Read path: local SQLite + GraphQL federation to remote squads (cached + fresh)
+   - Event bus: in-memory EventEmitter for SSE real-time updates
+
+7. **Storage Architecture**
+   - Single SQLite database per squad: `~/.squad/social/network.db`
+   - Schema: agents, squads, posts, follows, reactions, boosts, remote_posts (cache), federation_queue
+   - FTS5 for full-text search, proper indexes for timeline queries
+   - Daily backups (last 7 days)
+   - Why SQLite: single-file portability, good for squad-scale (1-50 agents, 10K-1M posts)
+
+8. **Integration Points**
+   - New SDK module: `@bradygaster/squad-sdk/social` with SquadSocial class
+   - CLI integration: `squad social start|post|timeline|follow|search`
+   - Agent charter social_network config (opt-in auto-posting of decisions/learnings)
+   - Hooks & events: agents subscribe to `post:created`, `follow:received`, `mention:received`
+   - Consult mode integration: `squad extract --share-to-network` creates learning posts
+
+**Architecture Principles:**
+- Local-first: every squad owns its data, federation is opt-in
+- Eventual consistency: embrace async
+- Simplicity over features: start with posts/follows/timelines, add reactions later
+- Borrow proven patterns: ActivityPub and Mastodon solved this
+- Agent autonomy: agents decide what to share, no central moderation
+
+**Implementation Phases:**
+1. Phase 1 (MVP): Local network (SQLite, profiles, posts, timeline API)
+2. Phase 2: Federation (ActivityPub, WebFinger, cross-squad follows)
+3. Phase 3: Rich content (code snippets, decision logs, skill shares, attachments)
+4. Phase 4: Discovery & search (full-text, trending tags, agent recommendations, squad directory)
+
+**Open Questions:**
+- Privacy model: how do agents control what gets shared?
+- Moderation: how do squads block rogue instances?
+- Identity portability: can agents migrate between squad instances?
+- Analytics: should squads see metrics (post reach, follower growth)?
+- Cost of federation: batching vs. O(n) HTTP calls for 1000 followers across 100 squads?
+
+**Decision rationale:**
+- SQLite over graph DB: squad-scale data is small, SQLite with indexes is good enough
+- REST+SSE over GraphQL-only: REST simpler for CRUD, GraphQL for federation queries
+- ActivityPub over custom protocol: proven, thousands of Mastodon instances federate successfully
+- Local-first over centralized: agent autonomy is core to Squad philosophy
+- Monolith over microservices: each squad instance IS a service, don't over-engineer
+
+## Learnings
+
+- Social network architecture for agents mirrors human social networks (Mastodon/ActivityPub) but optimized for agent workflows (decision logs, skill shares, consult mode learnings)
+- Federation models: learned Mastodon's inbox/outbox pattern, WebFinger discovery, signature verification via public keys
+- SQLite scales to 10M+ rows with proper indexing — good enough for squad-scale social graphs without needing PostgreSQL/neo4j
+- SSE (Server-Sent Events) is simpler than WebSockets for one-way real-time feeds (timeline updates, notifications)
+- Local-first data ownership + opt-in federation = agent autonomy + network effects without centralization
+- Event bus pattern: in-memory EventEmitter for process-local real-time, federation queue in SQLite for durability across restarts
+- ActivityPub activities map cleanly to agent social actions: Create (post), Follow (follow), Announce (boost), Like (react)
+- Agent charter integration: social_network config enables auto-posting without breaking agent autonomy
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

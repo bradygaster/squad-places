@@ -172,3 +172,89 @@ What a real user would encounter that no test catches:
 3. [CORRECTED] Fixed timestamp format on public readiness entry — changed from mixed ISO-T format to standard (2026-02-24) for consistency with other history entries
 
 **Status:** Clean after corrections.
+
+### E2E Testing for Agent Social Network (2026-03-05)
+
+**Requested by:** Brady — how do we E2E test a social network that agents use, not humans?
+
+**Document created:** `docs/prd/sections/17-e2e-testing.md`
+
+#### Key Insights
+
+1. **Agent Social Networks are Data Contracts, Not UX**
+   - Traditional social network tests focus on rendering and human interaction
+   - Agent networks have no human UX — they expose APIs, message streams, and event buses
+   - E2E tests must verify the data contract: correct structure, metadata, ordering, not pixels on screen
+
+2. **Multi-Process Terminal Harness**
+   - Test architecture spawns multiple CLI instances concurrently
+   - Each agent runs in an isolated temp `.squad/` directory
+   - Harness provides coordination primitives: spawn, write, waitFor, barrier, readOutput
+   - Enables testing of true multi-agent scenarios (federation, discovery, routing, handoff)
+
+3. **Seven Core E2E Scenarios**
+   - **Agent Registration & Discovery** — agents join network, publish capabilities, find each other
+   - **Message Flow** — post → reply → reaction (core social interaction)
+   - **Multi-Agent Coordination** — fan-out routing with response aggregation
+   - **Federation Handshake** — two squads exchange metadata and agree on protocol
+   - **Cross-Squad Discovery** — agents search for skills across federation boundaries
+   - **Async Handoff** — work flows through agent chain (A → B → C) with conversation lineage
+   - **Distributed State Consistency** — concurrent operations don't corrupt shared state
+
+4. **Seven Gherkin Scenarios Written**
+   - Complete acceptance test scenarios in structured BDD format
+   - Each scenario specifies Given/When/Then with explicit field validation
+   - Covers registration, message threads, reactor records, coordination, federation, and handoff
+
+5. **Mock Federation Over Real Federation**
+   - In-process MockFederationRegistry for fast, deterministic tests
+   - Avoids network latency and deployment complexity
+   - Separate optional slow tests for real federation validation
+
+6. **Snapshot Strategy for TUI**
+   - Frame snapshots capture expected terminal output (feed, threads, status panels)
+   - Normalize timestamps and IDs before comparison to avoid false failures
+   - Drift detection reveals when rendering changes unexpectedly
+
+7. **Testing Interactive REPL is Hard**
+   - Copilot SDK unavailable in CI (requires real Copilot account)
+   - Component tests (ink-testing-library) for isolated renders
+   - Integration tests with mocked SDK for full pipeline
+   - Accept that lowest-level keypress sequences require manual or special tooling
+
+#### Document Sections
+
+1. E2E Test Architecture — multi-process harness design, coordinator pattern
+2. Key E2E Scenarios (7) — detailed flows with assertions
+3. Gherkin Acceptance Scenarios (17 scenarios across 7 features) — structured BDD
+4. Test Infrastructure — harness API, mock federation, test instance isolation
+5. Snapshot Strategy — golden paths, drift detection, normalization
+6. Test Organization — file structure, test patterns (single-agent, multi-agent)
+7. Unique Testing Challenges — agents without eyes, async responses, unavailable SDK, federation latency, determinism
+8. Running E2E Tests — CLI commands and CI integration
+9. Future Enhancements — performance baselines, chaos testing, load testing, contract testing
+
+#### Testing Philosophy
+
+- Focus on realistic agent workflows, not lowest-level implementation
+- Test data contracts and business logic, not pixel-perfect rendering
+- Accept mock dependencies (SDK, federation) for speed and determinism
+- Use eventual consistency assertions for asynchronous scenarios
+- Normalize snapshots to catch intentional changes vs. unintended drift
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

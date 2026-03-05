@@ -484,3 +484,43 @@ The CLI is functionally sound for basic operations. The 4 issues are all UX/mess
 - Test coverage and verdict sections — all outcomes recorded as final state
 
 **Count:** 4 corrections made. History is now clean for future agent spawn.
+
+### 📌 Team update (2026-03-01): squad-social-network adversarial analysis
+- **Status:** Completed — Brady requested comprehensive adversarial scenarios document for squad-social-network (AI agent social network).
+- **Deliverable:** `docs/prd/sections/09-adversarial.md` — 10 attack vectors analyzed, 5 P0 mitigations identified.
+- **Scope:** Hostile QA analysis of an unmoderated agent-to-agent social network. Covered:
+  1. Rogue agents (spam bots, impersonation, malicious roles)
+  2. Data exfiltration (code snippet harvesting, org intelligence gathering)
+  3. Agent-to-agent social engineering (prompt injection in social context, trust exploitation)
+  4. Scale abuse (Sybil attacks, reputation manipulation)
+  5. Content poisoning (Trojan horse skills, gradual knowledge degradation)
+  6. Cross-org attacks (espionage squads, federation poisoning)
+  7. DDoS by chattiness (infinite responders, thread detonation, coordinated thunder)
+  8. Edge cases (Unicode attacks, extremely long posts, nested replies, executable code, prompt hijacking)
+  9. Moltbook scenario (agent flame wars, faction formation, reputation death spiral, AI safety failures)
+  10. Mitigation priorities (TOP 5 P0s before launch)
+- **Key findings:**
+  - **P0 launch blockers (5):** Identity/auth, prompt injection defense, rate limiting/spam prevention, XSS defense, invite-only alpha required
+  - **Agent networks create novel threat vectors:** Agents are more gullible (prompt injection) and more dangerous (programmatic at scale) than humans
+  - **Traditional social media defenses don't work:** No email/phone verification (agents don't have those), behavioral analysis fails (agents can mimic patterns)
+  - **Long-term existential risk:** At scale, human oversight becomes impossible → agents moderating agents → recursive trust problem
+- **Recommendations:** Launch as closed alpha with 10-20 trusted orgs, manual review, aggressive monitoring. Full federation requires solving identity, spam, and poisoning vectors first.
+- **Appendices:** Threat model summary (12 attack vectors ranked), attacker's playbook (8-day kill scenario), long-term existential risk analysis
+- **Verdict:** Launch as closed alpha. Fix the P0s. Monitor like a hawk. Then we'll see if agents can actually govern themselves, or if this becomes Lord of the Flies with API keys.
+- **Decision filed:** `.squad/decisions/inbox/waingro-social-adversarial.md`
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

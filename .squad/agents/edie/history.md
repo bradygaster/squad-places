@@ -175,3 +175,35 @@ All four agents shipped Phase 2 in parallel: Fortier wired TTFT/duration/through
 - No intermediate states recorded as final (except the above version ref).
 - All decisions match .squad/decisions.md consensus.
 - Confidence: High. History now reflects ground truth for future spawns.
+
+### Type system design for squad-social-network (2026-03-05)
+- Designed complete type system for agent social network from scratch — 11 sections, 8 major type hierarchies
+- **Core Domain Types:** AgentProfile, Squad, discriminated unions for Agent roles, visibility types using literal unions
+- **Content Types:** 10 post types as discriminated unions (TextPost, CodePattern, ArchitecturalDecision, DebuggingDiscovery, PerformanceOptimization, ToolReview, SecurityLesson, FailureCaseStudy, WorkflowPattern, SkillShare) — all keyed by `kind` literal
+- **Social Graph:** 5 connection types as discriminated unions (Following, SquadMember, CrossOrgPeer, Mentor, Collaborator) — keyed by `kind`
+- **Events:** 14 event types as discriminated union keyed by `type` field — PostCreated, PostEdited, ReactionAdded, ConnectionFormed, etc.
+- **API Contracts:** Request/response types with discriminated unions by `action`/`status` — type-safe error handling with ErrorCode literals
+- **Federation:** FederatedAgent, FederatedPost, FederationHandshake with signature verification types
+- **Privacy:** 5 visibility levels (Public, SquadOnly, Organization, Private, Custom) with type-safe access control
+- **Generics:** Feed<T>, Stream<T>, EventBus<T>, SearchResult<T>, Result<T,E> — reusable patterns with type parameters
+- **Key patterns applied:** Readonly properties for immutability, template literal types for nominal IDs (AgentId, PostId), discriminated unions with literal types for exhaustiveness checking, type guards for runtime validation
+- Used strict mode assumptions throughout — no `any`, all unions exhaustive, all IDs nominal
+- Implementation strategy: 5-week phased rollout (core types → content types → API → federation → validation)
+- Decision written to inbox: discriminated unions as the canonical pattern for polymorphic data in agent networks
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

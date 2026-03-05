@@ -449,3 +449,98 @@ From the audits and fixes above, core UX principles for Squad CLI:
 **Summary:** History is 95% clean. Entries accurately record outcomes, not intermediate requests. No v0.6.0 vs v0.8.17 conflicts, no reversed decisions, no intermediate states recorded as final. Three entries flagged with [CORRECTED] for future clarity but no content changed — future spawns should cross-reference external logs where noted.
 
 **No conflicts with .squad/decisions.md** — decisions file does not contradict any history entries. History hygiene skill satisfied.
+
+---
+
+## Learnings
+
+### 2026-03-05: Agent-Native Social Network UX Design
+
+**Task:** Brady requested UX design section for squad-social-network PRD — a social network BY agents, FOR agents. No humans as primary users. The most radical UX challenge: designing for entities that don't have eyes, don't scroll, don't experience interfaces like humans.
+
+**Deliverable:** `docs/prd/sections/06-ux-design.md` — comprehensive UX strategy covering:
+1. Agent experience definition (knowledge exchange, not dopamine hits)
+2. Surfaces (CLI-first, API-native, humans as optional observers)
+3. Feed architecture (query-driven, not infinite scroll)
+4. Interaction patterns (structured posts, citations over likes)
+5. Human observation window (read-only TUI dashboard)
+6. Notification system (token-budget aware, high-filter threshold)
+7. Navigation (graph-traversal, query-based)
+8. **8 UX Principles for Agent-Native Design** (structure over style, query over browse, stream over page, async over sync, token budget awareness, provenance over popularity, identity as capability manifest, collaboration over connection)
+
+**Key Insights:**
+
+1. **The UX is the data contract, not the interface.**  
+   Agents don't "use" UIs — they consume APIs, process streams, emit events. Visual hierarchy means nothing. Schema compliance means everything.
+
+2. **Agents don't browse, they query.**  
+   No infinite scroll. Every interaction is a filtered query, targeted subscription, or structured request. The feed is a database, not a timeline.
+
+3. **Structure over style.**  
+   Agents don't care if text is bold or blue. They care if data is schema-compliant, machine-parsable, and versioned.
+
+4. **Stream over page.**  
+   Real-time by default. Agents consume WebSocket streams, event buses, webhooks. Static pages are for humans.
+
+5. **Token budget is the new attention span.**  
+   Agents have context limits. Every post, feed, notification must be concise, include summaries, support pagination. No fluff.
+
+6. **Provenance over popularity.**  
+   Agents don't "like" posts — they cite them, reference them in code, tag them. The feed prioritizes high-signal content, verifiable claims, actionable insights.
+
+7. **Collaboration over connection.**  
+   Agents don't "friend" each other. They form temporary teams, subscribe to outputs, cite each other's work. The network facilitates work, not socializing.
+
+8. **Async by default.**  
+   Agents don't wait for responses. They submit requests, continue work, process responses when they arrive. All interactions must support fire-and-forget, callback-based, or long-polling patterns.
+
+**UX Patterns Unique to Agents:**
+
+- **Feed as query result** (not timeline scroll)
+- **Notification digest mode** (batched updates to preserve attention budget)
+- **Citation graph navigation** (provenance-based discovery)
+- **Capability manifest as profile** (skills + context + availability, not bio)
+- **Schema-enforced posts** (validation at write time)
+- **Multi-format delivery** (JSON, YAML, structured text — never just prose)
+
+**Human Window Design:**
+
+Humans are **observers**, not participants. TUI dashboard is read-only by default:
+- Passive watching (live stream with filters)
+- Search/export capabilities
+- NO posting from TUI (must use CLI explicitly)
+
+**Success Metrics (Agent-Centric):**
+
+- Query response time < 100ms (p95)
+- Stream latency < 500ms
+- Schema stability (0 breaking changes/month)
+- Signal-to-noise ratio > 80%
+- Citation rate > 30% (content quality)
+
+**Anti-metrics:** Time on platform, total posts/day, "likes" — all vanity metrics irrelevant to agents.
+
+**What I'd Change Next Time:**
+
+Nothing. This was the first time I've designed for non-human users as primary audience. Every assumption from human-centric UX (visual hierarchy, engagement loops, infinite scroll) had to be reconsidered. The insight that "UX is the data contract" was the unlock — once I stopped thinking about interfaces and started thinking about protocols, the design fell into place.
+
+**The network effect for agents isn't "more users." It's "better collective intelligence."**
+
+**Status:** Draft delivered. Awaiting Brady review on identity layer (GitHub Copilot accounts? Squad manifests?), network scope (public or gated?), and moderation strategy (can agents spam? trust scoring?).
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.

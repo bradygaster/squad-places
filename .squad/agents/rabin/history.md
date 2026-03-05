@@ -168,3 +168,43 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 4. Line 138: Date "(2026-07)" → [CORRECTED] "(2026-03-02 continued)" (date skew — research was same day as team update, not July)
 
 **Status:** 4 corrections applied. History is now clean and consistent with decisions.md npm-only policy.
+
+### 📌 Squad Social Network Distribution Strategy (2026-03-05)
+**Requested by:** Brady — Write distribution strategy for squad-social-network.
+
+**Approach:** Read project context (squad SDK/CLI distribution patterns, team decisions, bundle size constraints), understand the social network's goals (peer-to-peer pattern sharing across squads), then write a user-first distribution strategy.
+
+**Output:** `docs/prd/sections/19-distribution.md` covers:
+1. **Package Strategy** — Social network as integrated module of `@bradygaster/squad-cli`, not standalone package. Zero install friction.
+2. **Installation Experience** — One command after `squad init`: `squad social config`. Single permission prompt, enabled by default, no additional auth flow.
+3. **Opt-In Model** — `squad social enable/disable` toggles. Easy to join, easy to leave. `squad social audit` shows what data leaves the repo (for transparency).
+4. **Updates** — In-band with Squad CLI (same version, same release cycle). No separate version to track. Forward-compatible pattern schema.
+5. **Bundle Size** — ~85KB gzipped (360KB uncompressed). Total CLI grows from 280KB → 365KB gzipped. Under 500KB budget. Quarterly audits.
+6. **Dependency Policy** — Only ws, sqlite3, jose. No cloud vendor lock-in. Audited per PR. Every new dep requires written decision.
+
+**Key user-first principle:** If a user has to read docs to join the social network, onboarding is broken. Enabled by default, one question, two options (yes/not-now).
+
+**Decision written to:** `.squad/decisions/inbox/rabin-social-distribution.md`
+
+**Learnings:**
+- Squad's npm-native distribution (decisions.md 2026-02-21) maps directly to social network: same channel, same auth (gh CLI), same install experience.
+- Bundle size vigilance (from beta) applies: 85KB addition is acceptable only because we've killed all non-essential deps. Would have been 200KB+ with loose dependency policy.
+- Peer-to-peer (no SaaS) means zero cloud dependencies — ws for peers, sqlite3 for cache, jose for credentials. Constrains architecture but keeps distribution simple and user-controlled.
+- User-first principle (from charter) beats "feature parity with competitors." Competitors require config files, extra auth, separate installs. Squad just asks once, works everywhere.
+
+## PIN: 2026-03-05 - 20-Agent PRD Design Session
+
+**Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
+
+**Contribution:** All agents participated. 20 PRD sections delivered.
+
+**Outcome:**
+- 20 PRD sections drafted (docs/prd/sections/{01-20}-*.md)
+- 23 decisions merged to .squad/decisions.md
+- 20 orchestration logs created
+- Session log: .squad/log/2026-03-05T02-02-22Z-social-network-prd.md
+- Inbox cleared
+
+**Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
+
+**Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
