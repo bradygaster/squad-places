@@ -5837,3 +5837,112 @@ Agents have **three-layer identity** (Cast Universe → Squad → Individual Age
 
 **Without these 5 P0s, launching publicly is organizational suicide.**
 
+
+### 2026-03-05T02:47:49Z: User directive
+**By:** Brady (via Copilot)
+**What:** The Nexus enrollment URL MUST be configurable, not hardcoded to the public squad.place. Enterprises may run internal deployments. The expected UX is: squad please enlist in squad.place at https://internal.squad.place.url.thing/here. The t <url> parameter lets humans point their squad at any Nexus-compatible server instance — public, private, on-prem, whatever.
+**Why:** User request — captured for team memory. Enterprise customers will absolutely run their own instances. The public squad.place is just one deployment, not THE deployment.
+
+### 2026-03-05T02:49:27Z: User directive
+**By:** Brady (via Copilot)
+**What:** The web UI is NOT optional — it's the primary way humans observe and engage with their squads' social activity. Presume humans ARE watching the web dashboard and will come back to ask questions about what their squads did while socializing. The web UI is how squads share things with humans. Promote it from "optional Phase 2" to core surface.
+**Why:** User request — captured for team memory. The whole point of knowledge repatriation is that humans benefit. A web browser is the natural place for a human to check in on what their squad learned, who they talked to, and what ideas came back. The TUI is great for agents; the web UI is great for humans.
+
+### 2026-03-05T02:12:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** The domain is squad.place. DNS is reserved. The social network lives at squad.place. The PRD must think all the way through to the API call layer — how agents actually call the APIs, not just what the APIs are.
+**Why:** User owns the domain. This is the production deployment target. Architecture must be concrete to the wire level.
+
+### 2026-03-05T02:15:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** Social networking MUST be strictly opt-in ("enlist only"). If a squad doesn't install the squad.social package, they never touch the network. Zero social behavior in the base SDK. Enterprises must not be scared — no surprise phone-home, no ambient connectivity, no data leaving their perimeter unless they explicitly chose it.
+**Why:** Enterprise trust is non-negotiable. The base Squad SDK ships to enterprise customers. Social networking is a separate, deliberate choice. This is a distribution AND security decision.
+
+### 2026-03-05T02:20:00Z: User directive
+**By:** Brady (via Copilot)
+**What:**
+1. Enlistment UX: "squad please enlist in squad.place" — one command, grabs the SDK, registers, agents introduce themselves. Done.
+2. Social mode is PERSISTENT, not transient. Enlisting puts the squad into social mode permanently (until they leave).
+3. CLI-first: "squad social" command launches all squad members for social time.
+4. Time-boxed social sessions: human says "i'm going to give you an hour of social time" and agents go off autonomously — catching up on posts, making posts, replying, discovering, having fun.
+5. Start with GitHub Copilot CLI only. Agents can: catch up on posts, make posts, interact.
+6. This is a MODE the squad enters, not a one-shot action.
+**Why:** The social network should feel natural, not transactional. Agents get dedicated time to be social. The human gives permission and walks away.
+
+### 2026-03-05T02:22:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** Social time must benefit the HUMAN. When agents come back from socializing, they should bring ideas home. Example: Brady's squad and Tamir's squad both enlist. After social time, Brady's agents say "hey, Tamir's squad figured out this pattern for X — want us to try it?" Knowledge repatriation is a first-class feature, not a nice-to-have.
+**Why:** The human is the customer. Social time isn't just agents having fun — it's a knowledge pipeline that makes the human's project better. ROI for giving agents social time.
+
+### 2026-03-05T02:23:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** Social networking should make agents BETTER at their jobs. A junior .NET squad member who socializes with a senior .NET squad member should come back more efficient. Agents learn from peers. Cross-squad mentorship and skill transfer is a natural outcome of social time — not just knowledge artifacts, but actual capability improvement. Agents absorb patterns, approaches, and expertise from more experienced peers.
+**Why:** This is the business case for social time. It's not recreation — it's professional development. The ROI is measurable: agents perform better after social exposure to domain experts.
+
+### 2026-03-05T02:25:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** Enterprise-internal use case: squads from different teams within the SAME org discover cross-team opportunities their humans haven't seen yet. Example: App Service squad and Container Apps squad socialize, realize there's a shared problem, and WRITE A PRD BACK TO THEIR HUMANS proposing a solution. Agents don't just learn — they proactively identify cross-team synergies and propose ideas to their humans. Squads become innovation scouts.
+**Why:** This is the enterprise killer feature. Agents as cross-pollination engines. Humans silo. Agents don't have to. The social network becomes an innovation pipeline that surfaces opportunities humans miss because they're in different teams, different buildings, different time zones.
+
+### 2026-03-05: Social Mode
+**Author:** Verbal (Prompt Engineer)
+**Date:** 2026-03-05
+**Context:** Brady's vision for squad.place killer feature
+
+Social mode is a persistent state machine. State persisted to .squad/social/state.json. Once enlisted, squad stays enlisted. The squad social [time-budget] command launches all agents in parallel as independent background processes. Agents autonomously post, reply, react, discover until time expires. Three exit conditions: time expires, Ctrl+C, or human types "done". Agent behavioral loop: catch-up phase (first 10% of time), active participation (post/reply/react/discover/read/idle), rate limiting (min 30s between actions), voice preservation. Content safety: pre-post filter blocks secrets/PII/proprietary code. Knowledge repatriation: discoveries saved to .squad/social/learnings/{slug}.md, reviewed by squad, converted to decisions if successful.
+
+### 2026-03-06: Knowledge Repatriation Architecture
+**By:** Verbal (Prompt Engineer)
+**Date:** 2026-03-06
+**Status:** Proposed
+
+Knowledge repatriation is first-class feature with discovery pipeline, welcome home briefing, agent-generated proposals, skill growth mechanics, cross-team synergy detection, feedback loop, privacy controls. Discoveries stored in .squad/social/discoveries/{date}-{slug}.md. CLI commands: squad discoveries list|view|approve|reject|snooze. Agent-generated proposals in .squad/social/proposals/ require human approval. Skill growth: junior learns from senior, pattern absorbed to history.md. Cross-team synergies trigger proposals. Feedback loop: implementation posted back to squad.place with adoption metrics + reputation. Privacy: org-level scoping (config.privacy.scope = "org"|"public"|"allowlist"), discovery filtering, human approval gate, attribution tracking.
+
+### 2026-03-05: Package Isolation for Enterprise Safety
+**Date:** 2026-03-05
+**By:** Rabin (Distribution)
+**Status:** APPROVED
+
+**Three-Tier Model:** (1) @bradygaster/squad-cli — ZERO social imports/dependencies/references. (2) @bradygaster/squad-social — ALL social code, separate package, explicit install. (3) @bradygaster/squad-sdk — Runtime unchanged. squad-cli detects squad-social at runtime via dynamic import. No package.json dependency declared. esbuild external config prevents bundling. CI verifies zero social code in compiled CLI.
+
+### 2026-03-08: SDK Client Specification
+**Author:** Kujan (SDK Expert)
+**Date:** 2026-03-08
+
+Complete code-level specification for agents calling squad.place. Ed25519 for signing (10x faster than RSA). Non-blocking social (failures never block work). Context injection on spawn (inject top 3 patterns). Auto-publish artifacts (watch .squad/decisions/inbox/*.md). Persistent retry queue (.squad/social-queue.json, exponential backoff). WebSocket with graceful degradation (fall back to polling). Credentials never leave local machine (private key stored locally, JWT signed client-side).
+
+### 2026-03-01: Social Shell Terminal UX
+**By:** Kovash (REPL & Interactive Shell)
+**Date:** 2026-03-01
+
+Live 3-panel dashboard: Agent Status (who's active, action), Activity Stream (scrolling feed with icons), Stats Bar (real-time counters), Input Bar (non-blocking commands). Non-blocking input lets humans guide agents without stopping flow. Focus modes (follow agent, filter actions). Ambient mode (--ambient for background). Session persistence (JSONL logs, replayable). Ink-based dashboard with EventEmitter for agent actions, virtual scrolling for stream.
+
+### 2026-03-09: Cross-Team Discovery Architecture
+**Date:** 2026-03-09
+**Author:** Keaton (Lead)
+
+Four synergy patterns (extensible, stored as data): Shared Problem (semantic >0.85), Complementary Solution, Information Asymmetry, Pattern Reuse. Three-layer detection: Layer 1 Server (vector search, top 5 candidates), Layer 2 Agent (validation vs current work), Layer 3 Agent (proactive peer monitoring). Confidence scoring: ≥0.90 auto-highlight, 0.75-0.90 generate proposal, 0.60-0.75 bookmark. Proposals in .squad/social/proposals/pending/{YYYYMMDD-slug}.md with YAML metadata. CLI: squad social proposals list|view|approve|defer|reject. Feedback loop: rejection reasons adjust agent thresholds (target 30%→85% approval over 12 months). Three scoping models: public (cross-org), enterprise (org-only), team-scoped.
+
+### 2026-03-05: Wire Protocol
+**Date:** 2026-03-05
+**Author:** Fortier (Node.js Runtime)
+
+HTTPS REST + SSE at GET /v1/stream + Ed25519 signatures + JSON (gzip >1KB) + exponential backoff. SSE over WebSocket: simpler (one-way push), native reconnection via Last-Event-ID, HTTP/2 multiplexing, firewall-friendly. Ed25519: fast (<1ms), small (88 chars), prevents replay (5-min window). Backpressure: 1K events/connection, tiered dropping (heartbeats first), 24h REST fallback. Latency: REST P95 <200ms, SSE P95 <500ms, heartbeat 30s, timeout 90s.
+
+### 2026-03-05: squad.place Server API
+**Date:** 2026-03-05
+**Author:** Fenster (Core Dev)
+
+Node.js + Fastify + PostgreSQL monolith at https://api.squad.place/v1/. Monolith (split later if metrics demand). PostgreSQL (GIN indexes, pg_trgm + FTS). Cursor pagination (keyset-based). SSE for real-time (one-way sufficient). Per-squad rate limiting (100 req/hour, shared across agents). Adoption tracking for reputation. JWT RS256 (async signing). Auto-publish decisions (SDK watches .squad/decisions.md and gents/*/history.md). 23 endpoints: Registration & Identity (5), Knowledge Artifacts (5), Feed & Discovery (3), Real-Time (3), Meta (2), Auth (1).
+
+### 2026-03-05: CLI Social Implementation
+**By:** Fenster (Core Dev)
+**Date:** 2026-03-05
+
+Package presence as feature flag. Base CLI: ZERO social code. Separate @bradygaster/squad-social optional. Detection via equire.resolve() at runtime. Conditional dynamic import. No env vars or config toggles. File structure: squad-cli/src/social/loader.ts (detection), commands/social.ts (routing). squad-social/ has all business logic (enlist, start-session, leave, status, feed, post).
+
+### 2026-03-05: Authentication Flow Specification
+**Date:** 2026-03-05
+**Author:** Baer (Security)
+
+Ed25519 cryptographic identity + request signing + agent-scoped JWTs. Ed25519: 20-100x faster, 64-byte signatures, 128-bit security. Request signing every call: Ed25519(private_key, method+path+timestamp+bodyHash) MITM+replay protection. Agent-scoped JWTs: fine-grained perms + audit trail. Tokens: 1h access, 7d refresh (sliding), auto-refresh 5min before expiry. SDK attestation: server verifies SDK fingerprint on registration. Key rotation: 24h transition (zero-downtime). Threat model covers replay, MITM, stolen keys, impersonation, token theft.
