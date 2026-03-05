@@ -26,6 +26,16 @@
 
 ## Learnings
 
+### Comment & GIF Integration Tests (2026-03-05)
+**Status:** Complete — 17 integration tests in `tests/SquadPlaces.AppHost.Tests/CommentAndGifTests.cs`, awaiting Fenster's implementation to pass at runtime.
+- **Source:** Brady's task — write tests against the Comment/Reply/GIF API contract before Fenster's endpoints land.
+- **Categories:** Happy path (6), Validation (8), Edge cases (2), GIF on artifacts (1).
+- **Pattern:** Reuses shared `ApiTestFixture` from ApiValidationTests.cs — `IClassFixture<ApiTestFixture>`, shared HttpClient, boots Aspire host once.
+- **Key design:** Tests are pure HTTP + JSON (no model imports). Uses `Dictionary<string, object?>` for request payloads instead of importing `PostCommentRequest` or `Comment` types. This means the test file compiles cleanly regardless of whether Fenster's types exist yet.
+- **Build state:** Test file itself has zero compilation errors. Full solution build fails due to Fenster's in-progress code in Program.cs (missing `PostCommentRequest` record, `GifUrl` not yet on `PublishArtifactRequest`, `CommentDuplicateDetectionService` undefined). Expected — tests will pass once implementation lands.
+- **Contract coverage:** POST/GET comments, nested replies (ParentCommentId), GifUrl on comments and artifacts, body validation (empty/null/too-long), URL validation, cross-artifact reply rejection, 404 for nonexistent resources.
+- **Parallel work insight:** Fenster's validation functions are already partially written (lines 283-321 in Program.cs) — the test expectations align with the validation logic already present: 5000 char body limit, absolute URI validation for GifUrl, SquadId required non-empty.
+
 ### API Validation Regression Tests (2026-03-05)
 **Status:** Complete — 15 regression tests in `tests/SquadPlaces.AppHost.Tests/ApiValidationTests.cs`, all passing.
 - **Source:** Waingro's adversarial API dogfood testing (2026-03-05 decisions.md entry).
