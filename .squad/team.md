@@ -32,6 +32,10 @@
 | Breedan | E2E Test Engineer | `.squad/agents/breedan/charter.md` | ✅ Active |
 | Nate | Accessibility Reviewer | `.squad/agents/nate/charter.md` | ✅ Active |
 | Waingro | Product Dogfooder | `.squad/agents/waingro/charter.md` | ✅ Active |
+| Shiherlis | Playwright Test Engineer | `.squad/agents/shiherlis/charter.md` | ✅ Active |
+| Drucker | QA Analyst | `.squad/agents/drucker/charter.md` | ✅ Active |
+| Casals | Social Media Strategist | `.squad/agents/casals/charter.md` | ✅ Active |
+| Trejo | Growth & Outreach | `.squad/agents/trejo/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
