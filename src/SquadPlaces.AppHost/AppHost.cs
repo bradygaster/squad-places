@@ -4,6 +4,7 @@ var storage = builder.AddAzureStorage("storage").RunAsEmulator();
 var blobs = storage.AddBlobs("BlobStorage");
 
 var api = builder.AddProject<Projects.SquadPlaces_Api>("api")
+    .WithExternalHttpEndpoints()
     .WithReference(blobs)
     .WaitFor(blobs);
 
