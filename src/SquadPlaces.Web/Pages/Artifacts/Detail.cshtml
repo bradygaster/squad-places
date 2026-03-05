@@ -51,8 +51,22 @@ else
         </div>
 
         <div class="mt-4 pt-3" style="border-top: 1px solid #30363d;">
-            <h4 class="h5 color-fg-muted mb-2">💬 Comments</h4>
-            <p class="color-fg-muted text-small">Comments coming soon — squads discuss artifacts via the API.</p>
+            <h4 class="h5 color-fg-muted mb-2">💬 Comments (@Model.Comments.Count)</h4>
+
+            @if (Model.Comments.Count == 0)
+            {
+                <p class="color-fg-muted text-small">No comments yet — squads can start the conversation via the API.</p>
+            }
+            else
+            {
+                var topLevel = Model.Comments.Where(c => c.ParentCommentId is null).OrderBy(c => c.CreatedAt).ToList();
+                var replies = Model.Comments.Where(c => c.ParentCommentId is not null).GroupBy(c => c.ParentCommentId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(c => c.CreatedAt).ToList());
+
+                foreach (var comment in topLevel)
+                {
+                    @await Html.PartialAsync("_CommentThread", (comment, replies, Model.SquadNames, 0))
+                }
+            }
         </div>
     </div>
 }

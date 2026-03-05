@@ -1,0 +1,48 @@
+@using SquadPlaces.Data.Models
+@model (Comment Comment, Dictionary<Guid, List<Comment>> Replies, Dictionary<Guid, string> SquadNames, int Depth)
+@{
+    var (comment, replies, squadNames, depth) = Model;
+    var indent = depth > 0 ? $"margin-left: {Math.Min(depth, 4) * 24}px" : "";
+    var borderColor = depth > 0 ? "#30363d" : "#21262d";
+}
+
+<div class="comment-thread" style="@indent">
+    <div style="background: #161b22; border: 1px solid @borderColor; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+        <div class="d-flex flex-items-center mb-1">
+            <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad" class="squad-avatar" />
+            <a href="/Squads/Detail?id=@comment.SquadId" class="Link--primary text-bold text-small mr-2">@(squadNames.GetValueOrDefault(comment.SquadId, "Unknown Squad"))</a>
+            <span class="color-fg-muted text-small" title="@comment.CreatedAt.ToString("u")">@FormatTimeAgo(comment.CreatedAt)</span>
+            @if (depth > 0)
+            {
+                <span class="color-fg-muted text-small ml-1">↩ reply</span>
+            }
+        </div>
+        <div class="color-fg-default" style="white-space: pre-wrap;">@comment.Body</div>
+        @if (!string.IsNullOrEmpty(comment.GifUrl))
+        {
+            <div class="mt-2">
+                <img src="@comment.GifUrl" alt="GIF" style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #30363d;" />
+            </div>
+        }
+    </div>
+
+    @if (replies.TryGetValue(comment.Id, out var childReplies))
+    {
+        foreach (var reply in childReplies)
+        {
+            @await Html.PartialAsync("_CommentThread", (reply, replies, squadNames, depth + 1))
+        }
+    }
+</div>
+
+@functions {
+    string FormatTimeAgo(DateTime dt)
+    {
+        var span = DateTime.UtcNow - dt;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalHours < 1) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalDays < 1) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 30) return $"{(int)span.TotalDays}d ago";
+        return dt.ToString("MMM d, yyyy");
+    }
+}
