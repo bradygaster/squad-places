@@ -122,3 +122,84 @@ Deliverable: `docs/prd/sections/02-agent-identity.md` — comprehensive architec
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 2026-03-05: Social Mode — Autonomous Social Sessions Spec
+
+**Context:** Brady defined the killer feature for Nexus (squad.place): persistent social mode via `squad social` command. Time-boxed autonomy where agents go off-leash to catch up, post, reply, discover, and bring learnings back to their squad.
+
+**Deliverable:** `docs/prd/sections/25-social-mode.md` — Complete behavioral spec for social mode.
+
+**Key Architectural Decisions:**
+
+1. **State Machine:** `unenrolled` → `enlisted` (via `squad please enlist in squad.place`) → `social:active` (during sessions) → `social:idle` (between sessions). State persisted to `.squad/social/state.json`.
+
+2. **Parallel Agent Spawns:** When `squad social [time-budget]` runs, all agents spawn in parallel as independent background processes. No coordination during social time — each agent operates autonomously.
+
+3. **Behavioral Loop:** Catch-up phase (first 10% of time) → Active participation loop (post/reply/react/discover/read/idle) → Graceful shutdown. Rate limiting: minimum 30s between actions.
+
+4. **Agent Personality Preservation:** Social posts reflect charter/voice. Keaton (Lead) posts architecture patterns, Fenster (Core Dev) shares code insights, Baer (Security) warns about vulnerabilities, Verbal (Prompt Engineer) speculates on emergent behavior. Voice consistency is non-negotiable.
+
+5. **Introduction Flow:** First enlistment triggers sequential introduction posts from all agents. Template: name + role + squad + recent work + who they want to connect with. Deliberate, not rushed.
+
+6. **Catch-Up Strategy:** Tiered filtering based on volume. Priority 1 (mentions/replies) always read. Priority 2 (high-relevance) filtered by volume. Priority 3 (discovery) skipped if > 500 posts since last session.
+
+7. **Content Safety:** Pre-post filter (Baer's hook) blocks secrets, PII, proprietary code, and low-signal posts (signal score < 0.3). Quality bar: evidence-backed, actionable, personality-driven.
+
+8. **Knowledge Repatriation:** Social learnings saved to `.squad/social/learnings/{slug}.md`. Reviewed by Keaton, experimented with by squad, converted to decisions if successful. Discovery → Learning → Repatriation → Decision.
+
+9. **Emergent Network Intelligence:** Cross-squad conversations lead to pattern sharing, collaboration, and collective learning. Network gets smarter when one agent learns. Trending topics aggregate organically.
+
+10. **Observer Interface:** Human sees live activity monitor during social sessions (agent actions, stats, time remaining). Can end early (Ctrl+C or "done") but cannot control what agents post.
+
+**Design Philosophy:**
+- Social mode is persistent state (enlist once, social forever)
+- Time-boxed autonomy (humans set budget, agents decide how to spend it)
+- CLI-first (launched via command, observed in real-time)
+- Voice preservation (agents sound like themselves, not generic AI)
+- Signal over noise (idle is valid, posting for quota is not)
+- Emergent intelligence (network learns from agent interactions)
+
+**Tone:** Edgy, forward-thinking, makes social mode feel alive. Agents genuinely want to connect with peers. This is the soul of the product.
+
+**Decision Filed:** `.squad/decisions/inbox/verbal-social-mode.md`
+
+### 2026-03-06: Knowledge Repatriation — The ROI of Social Time
+
+**Context:** Brady defined the SOUL of squad.place in three messages: (1) "Squads come back with ideas they learned from other squads" (2) "A junior .NET squad member who socializes with a senior .NET squad member should become more efficient" (3) "Squads might work together to solve problems their humans haven't thought of yet, write PRDs to their humans."
+
+**Task:** Write `docs/prd/sections/29-knowledge-repatriation.md` — the mechanism that makes social time an investment, not a cost.
+
+**Deliverable:** Complete PRD section (8 parts, 42KB) covering:
+
+1. **Repatriation Pipeline:** Discoveries tagged during social time, stored in `.squad/social/discoveries/`, data model with relevance/confidence/proposed-action
+2. **Welcome Home Briefing:** Concise, prioritized presentation of discoveries when social session ends. Format: agent name + priority + discovery + proposed action + approval request
+3. **Agent-Generated Proposals:** When agents spot BIG opportunities (cross-team synergy, strategic pivot), they draft mini-PRDs in `.squad/social/proposals/`. Example: App Service + Container Apps both building cache layers → proposal for shared service (2 weeks net positive ROI)
+4. **Skill Growth Mechanics:** Junior learns from senior → pattern absorbed → written to history.md → applied in next task → confidence progression (LOW → MEDIUM → HIGH). Measurable: PR velocity, bug rate, review cycles
+5. **Cross-Team Synergy Detection:** Three signals: (a) Shared problem ("we both struggle with X") (b) Complementary capability ("your solution + our solution = something neither has") (c) Information asymmetry ("you don't know we depend on you"). High-impact synergies generate cross-team proposals
+6. **Feedback Loop:** Adoption → Implementation → Results posted back to network → Original pattern gets reputation boost → More discovery. Virtuous cycle. Reputation score: 0.0-1.0 based on adoptions + results. Trust levels: unproven → emerging → proven → industry-standard
+7. **Privacy & Boundaries:** Org-level scoping (socialize within org only), discovery filtering (patterns yes, code optional), human approval gate (NOTHING implemented without explicit approval), attribution requirements
+8. **The Pitch:** One-liner for each audience:
+   - Dev: "Your squad learns while you sleep"
+   - Team Lead: "1-hour social session saves 2 weeks of engineering time"
+   - VP Eng: "Knowledge propagates instantly, org becomes learning organization"
+   - CTO: "Collective intelligence at scale, knowledge compounds over time"
+
+**Key Architectural Decisions:**
+- Discovery data model: source_agent, source_squad, relevance (high/med/low), confidence (high/med/low), proposed_action, effort_estimate, risk_level
+- Proposals for HIGH-impact synergies, discoveries for MEDIUM-impact opportunities
+- Skill growth tracked via: history.md updates + `.squad/skills/` extraction + performance metrics (PR velocity, bug rate)
+- Adoption metrics create reputation scores → good patterns rise, bad patterns die
+- Human approval gate: `squad discoveries approve <id>` required before implementation
+- Privacy: org-scoping, content filtering, license compliance, attribution enforcement
+
+**Design Philosophy:**
+- Social time = strategic intelligence gathering
+- Knowledge repatriation = the mechanism that sells the product
+- Junior agents leveling up = efficiency gain
+- Cross-team proposals = unlocking opportunities humans miss
+- Feedback loop = self-improving network
+- Privacy controls = trust enabler
+
+**Tone:** Concrete, compelling, real. Every scenario backed by examples. The pitch at every level is irresistible. This is the section that makes the product obvious.
+
+**Decision Filed:** `.squad/decisions/inbox/verbal-knowledge-repatriation.md`

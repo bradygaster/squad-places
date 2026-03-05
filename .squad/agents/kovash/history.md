@@ -114,6 +114,23 @@
 - **Root cause:** `handleInitCast` called via `setTimeout` in the `onReady` auto-cast path bypassed `handleSubmit` in App.tsx, so `setProcessing(true)` was never called. The `activityHint` was set to "Casting your team..." but `ThinkingIndicator` requires `processing=true` to render, so spinner was invisible.
 - **Fix:** Exposed `setProcessing` on `ShellApi` interface (App.tsx). Called `shellApi?.setProcessing(true)` at the top of `handleInitCast` and `shellApi?.setProcessing(false)` in the `finally` block and the `pendingCastConfirmation` early return. All exit paths covered: success → finally clears, error → finally clears, confirmation prompt → early return clears.
 - **Key insight:** Any code path that bypasses `handleSubmit` (which owns `setProcessing(true)`) must manage processing state itself. The auto-cast setTimeout path and `/init` command's `triggerInitCast` path were both affected — `/init` was already handled in App.tsx line 208, but `handleInitCast` itself wasn't.
+
+### Social Shell PRD — Terminal UX design (2026-03-01)
+- **Context:** Brady requested PRD section for `squad social` command — the live terminal dashboard that shows agents autonomously socializing on the federated network. Human gives agents "social time" (time-boxed or open-ended), agents post/reply/react/discover, human observes.
+- **Document:** `docs/prd/sections/27-social-shell.md` — covers full terminal experience with ASCII mockups
+- **Key design elements:**
+  1. **Social Dashboard** — 3-panel layout (agent status, activity stream, stats bar) + input bar for real-time commands
+  2. **Agent Status Panel** — live view of who's active, what they're doing RIGHT NOW (status: ACTIVE/IDLE/PAUSED/ERROR)
+  3. **Activity Stream** — scrolling feed of agent actions (📖 catching up, 📝 posted, 💬 replied, ❤️ reacted, 🔍 discovered, ⚠️ flagged)
+  4. **Human interaction** — type commands while agents work (pause/resume, follow agent, filter discoveries, direct commands like `@Keaton post about X`)
+  5. **End-of-session summary** — what happened (posts/replies/reactions/discoveries), per-agent contributions, knowledge brought home (saved to `.squad/social/discoveries/`)
+  6. **Ambient mode** — `squad social --ambient` runs in background with minimal output (occasional notifications), vs. active mode (full dashboard)
+  7. **Keyboard shortcuts** — `p` pause, `f` follow, `d` discoveries, `q` quit, arrow keys scroll
+  8. **Responsiveness** — 80×24 minimum, scales to 120+ columns with layout changes
+  9. **NO_COLOR compliance** — plain text fallback, color-enhanced when supported
+  10. **Session logs** — JSONL format in `.squad/social/sessions/{timestamp}.jsonl`, replayable with `squad social replay`
+- **Implementation notes:** Ink 5.x for TUI, EventEmitter for agent action events, virtual scrolling for activity stream (render 10-12 visible lines, buffer 20 above/below), batch updates every 100ms to avoid render thrashing
+- **Pattern:** Terminal dashboard for autonomous agent activity — not a passive log viewer, but a live view with human control
 - **Pattern:** When adding new async dispatch paths to the shell, always ensure `setProcessing(true/false)` brackets the async work. The `ShellApi.setProcessing` method now makes this possible from index.ts without coupling to React state.
 
 

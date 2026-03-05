@@ -149,3 +149,62 @@ SDK-only extends the hook-based governance pattern from Squad SDK internal opera
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### Authentication Flow Specification — Complete Crypto Implementation (2026-03-05)
+**Context:** Brady requested the full cryptographic authentication flow for squad.place — not just "there's auth," but the actual handshakes, signatures, headers, and token claims.
+
+**Deliverable:** `docs/prd/sections/24-auth-flow.md` — 9 sections, 800+ lines, complete implementation spec.
+
+**What's Specified:**
+1. **Key Generation** — Ed25519 keypair generation, PEM storage, 0600 permissions, actual TypeScript code for key generation
+2. **Registration Handshake** — SDK attestation (proof of real SDK), initial JWT issuance, mutual trust establishment, exact HTTP exchange
+3. **JWT Structure** — Complete decoded JWT with all claims (iss, sub, squad_id, agent_id, scope, trust_level, iat, exp), EdDSA signatures, realistic token examples
+4. **Request Signing** — Canonical request format (`method\npath\ntimestamp\nbodyHash`), Ed25519 signatures, X-Squad-Signature header, 5-minute replay window, verification code
+5. **Agent-Level Auth** — Agent-scoped JWTs derived from squad master token, prevents agent impersonation within squad, token caching strategy
+6. **Token Refresh** — 1-hour access tokens, 7-day refresh tokens (sliding window), automatic refresh 5 min before expiry, encrypted storage, retry logic
+7. **Revocation & Rotation** — Emergency revocation API, key rotation with 24h transition period, server-side revocation list, squad-initiated and server-initiated paths
+8. **Threat Model** — Defense against replay attacks (timestamp + nonce), MITM (TLS + signing), stolen keys (rotation + revocation), impersonation (attestation), malicious SDK forks, token theft
+
+**Security Pattern Applied:**
+Same hook-based governance pattern from Squad SDK (file-write guards, PII scrubbing) extended to network-level auth. Cryptographic identity (Ed25519), request signing (every call), attestation (SDK verification), and trust levels (new → established → trusted → vouched) create a defense-in-depth model.
+
+**Why This Matters:**
+Brady has reserved squad.place. SDK-only gate is approved. This spec defines HOW squads prove identity and get authorized. No hand-waving — actual key formats (PEM), actual token claims (scope, trust_level), actual signing algorithm (Ed25519), actual headers (X-Squad-Signature, X-Squad-Timestamp), actual threat mitigations (5-min replay window, nonce tracking, anomaly detection).
+
+**Implementable:**
+- Complete TypeScript code examples for key generation, signing, verification
+- Full HTTP request/response examples with realistic headers
+- Decoded JWT examples with all claims explained
+- Server-side verification logic
+- End-to-end flow example (Keaton posts to squad.place, step-by-step)
+
+**Pattern Reinforced:**
+Pragmatic security. Real risks (replay, MITM, impersonation), real defenses (signatures, attestation, rotation). Not paranoid security (no perfect forward secrecy, no hardware tokens, no zero-knowledge proofs). Balance between security and developer experience. Ed25519 is fast, standard, and well-supported. 1-hour tokens with automatic refresh means developers don't think about auth. Revocation means compromised keys can be invalidated immediately.
+
+**Key Decisions:**
+- Ed25519 over RSA (performance + smaller signatures)
+- Request signing over bearer-token-only (defense in depth)
+- Agent-scoped JWTs over squad-level-only (audit trail, fine-grained permissions)
+- 1-hour access tokens + 7-day refresh (balance security + UX)
+- SDK attestation over open registration (enforces SDK-only trust boundary)
+- 24h key rotation transition period (zero-downtime rotation)
+
+**Threat Model Insight:**
+Auth for agent networks differs from human networks. Humans worry about password reuse, phishing, MFA. Agents worry about key theft (squad.key compromised), impersonation (Fenster pretending to be Keaton), replay attacks (captured requests re-sent), malicious SDK forks (bypassing hooks). Our auth model targets the agent threat model: cryptographic identity (public key registry), request signing (tamper-proof), attestation (SDK verification), and short-lived tokens (limits blast radius of stolen tokens).
+
+**Completeness Check:**
+✅ Key generation (code, format, permissions)
+✅ Registration (HTTP exchange, attestation, server response)
+✅ JWT structure (all claims, realistic examples)
+✅ Request signing (algorithm, headers, verification)
+✅ Agent auth (scoped tokens, caching)
+✅ Token refresh (automatic, encrypted storage, retry)
+✅ Revocation (emergency, rotation, transition)
+✅ Threat model (8 attack scenarios + defenses)
+✅ Implementation checklist (SDK + server tasks)
+✅ End-to-end example (complete flow)
+
+**Next Steps:**
+Fenster (Core Dev) implements SDK auth client. Fortier (Runtime) integrates with squad.place API. McManus (DevRel) writes auth quickstart guide. Hockney (Tester) writes auth flow tests (key generation, signing, refresh, revocation scenarios).
+
+This is the auth spec. Not a vision. Not a sketch. The spec.

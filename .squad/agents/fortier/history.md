@@ -123,3 +123,73 @@ This aligns perfectly with Squad SDK's existing patterns (event-bus.ts, streamin
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+---
+
+### 2026-03-05: Wire Protocol Specification (Section 23)
+
+**Task:** Write `docs/prd/sections/23-wire-protocol.md` — the bytes-on-the-wire specification for api.squad.place.
+
+**What I learned:**
+
+1. **SSE is the right choice for Phase 1:**
+   - Built-in reconnection via `Last-Event-ID` header eliminates manual state tracking
+   - HTTP/2 multiplexing allows multiple SSE streams over one TCP connection
+   - Simpler than WebSocket for one-way push (no handshake complexity, no custom framing)
+   - Works through corporate proxies and firewalls (pure HTTP, no upgrade protocol)
+   - EventSource API is native in browsers and easy to polyfill in Node.js
+
+2. **Request signing prevents replay attacks:**
+   - Sign: `METHOD\nPATH\nTIMESTAMP\nBODY_SHA256`
+   - Ed25519 signature is 88 characters base64-encoded (small overhead)
+   - 5-minute timestamp skew window balances security vs clock drift
+   - Signature verification on server is <1ms (Ed25519 is fast)
+   - Authorization header format: `SquadSig squad_id=...,timestamp=...,signature=...`
+
+3. **Backpressure must be first-class, not afterthought:**
+   - Per-connection buffer: 1,000 events (FIFO queue, ~2 MB)
+   - Send `buffer_warning` at 80% capacity, `buffer_overflow` at 95%
+   - Drop low-priority events first (reactions before messages, messages before heartbeats)
+   - Client SDK must use bounded queues (prevent memory exhaustion)
+   - Slow clients get 24h to catch up via REST API before data loss
+
+4. **Latency budgets drive architecture:**
+   - P95 <200ms for REST calls requires TLS session resumption + HTTP/2 connection reuse
+   - P95 <500ms for SSE event delivery requires in-memory fanout (no database per-event)
+   - Geo-distributed servers drop cross-coast latency from 150ms to 20ms
+   - Heartbeat every 30s keeps NAT holes open + detects dead connections
+   - 90-second timeout balances fast failure detection vs spurious disconnects
+
+5. **Bandwidth scales sublinearly with agents:**
+   - Idle connection: 8.64 MB/month (heartbeat only)
+   - Active agent: 72 MB/month (50 events/hr)
+   - 500 agents = 55 GB/month total (~$5.50 at $0.10/GB egress)
+   - Burst scenario (100 agents publish simultaneously): 8.5 MB/s (68 Mbps) peak
+   - Social network is transport-only (no LLM token costs) — scales on compute/network, not AI inference
+
+6. **Exponential backoff with jitter prevents thundering herd:**
+   - Start at 5s, double each retry, cap at 60s
+   - Add 0–1s random jitter (1,000 clients don't reconnect at exact same millisecond)
+   - Reset delay on successful connection (don't punish stable clients)
+   - Track `Last-Event-ID` across reconnects (resume, don't replay)
+
+7. **Error handling is protocol design, not implementation detail:**
+   - 429 rate limit → respect `Retry-After` header, don't DDoS yourself
+   - 401/403 auth errors → re-authenticate once, alert user if still failing
+   - 500/502 server errors → retry 3 times with backoff, then fail loudly
+   - SSE connection lost → automatic reconnect, no user intervention
+   - Event ID expired (>24h gap) → fetch via REST, then resume SSE
+
+8. **Observability must be built-in from day one:**
+   - Server: `sse_connections_active`, `sse_events_dropped_total`, `sse_buffer_depth`
+   - Client: `sse_reconnect_count`, `sse_processing_lag_seconds`, `sse_events_received_total`
+   - Metrics answer: "Why is my squad slow?" (buffer lag), "Why do I keep reconnecting?" (network instability)
+   - Prometheus-compatible (standard labels: squad_id, event_type, reason)
+
+**Protocol philosophy reinforced:**
+- The wire protocol is not HTTP + JSON — it's latency budgets, backpressure contracts, and reconnection semantics
+- Every millisecond of latency comes from somewhere (DNS, TLS, TCP, server processing) — measure and optimize the slowest
+- Client SDKs don't "handle errors" — they implement the protocol's error recovery specification
+- SSE is underrated for real-time (WebSocket is overkill until you need bidirectional <50ms)
+
+This spec is implementation-ready. Next: build the server.

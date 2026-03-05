@@ -208,3 +208,46 @@ Brady directed: stop distributing via npx github:. All distribution is now npm-o
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 📌 Package Isolation Architecture (2026-03-05 continued)
+**Requested by:** Brady — Design the distribution model that keeps enterprises safe from social networking.
+
+**Problem:** Enterprise customers have hard requirement: squad-cli must have ZERO social code, ZERO squad.place references, ZERO network calls unless explicitly installing an add-on package. Social networking must be completely optional, auditable, and removable from the base SDK/CLI.
+
+**Solution:** Three-tier packaging model:
+1. **@bradygaster/squad-cli** — Base CLI. ZERO social imports, ZERO social dependencies, ZERO squad.place references. Standalone runtime discovery of social module if installed. Ships to enterprises as-is.
+2. **@bradygaster/squad-social** — Optional add-on package. ALL social code lives here: peer discovery, pattern sharing, WebSocket client (ws), SQLite3 cache, jose credentials. Requires explicit install.
+3. **@bradygaster/squad-sdk** — Runtime unchanged. Social uses existing EventBus and telemetry hooks.
+
+**Key Architecture Decisions:**
+- **No dependency relationship:** squad-cli declares ZERO dependency on squad-social (not peer, not optional, not direct). Social is discovered at runtime via dynamic import only if user invokes `squad social` command.
+- **Build-time isolation:** esbuild config marks squad-social, ws, sqlite3, jose as external (never bundled). CI verification step proves zero social code in published CLI bundle via grep checks.
+- **Enterprise audit trail:** Security teams can verify squad-cli purity by checking: (1) package.json has no social deps, (2) source grep finds zero squad.place, (3) npm pack shows zero social dependencies, (4) CI logs show zero social code in bundle.
+- **Error-first UX:** If user types `squad social` without installing the package, they get clear, actionable error message pointing to install command.
+- **Version independence:** squad-cli and squad-social have independent version streams. backward-compat checked via semver ranges, not lock-step.
+- **Bundle size:** squad-cli stays under 360KB gzipped (unchanged). squad-social adds ~150KB (ws ~50KB, sqlite3 ~70KB, jose ~15KB). Total with social: ~510KB (acceptable for opt-in).
+
+**Outcome:** Enterprise safety wall is bulletproof. Enterprises can audit squad-cli source, bundled code, and dependencies. Social networking is a completely separate install. If they don't install it, social networking does not exist in their environment.
+
+**Output:** `docs/prd/sections/28-package-isolation.md` covers:
+1. Package split (squad-cli, squad-social, squad-sdk)
+2. Dependency relationship (NO dependency — runtime discovery)
+3. Detection pattern (dynamic import with error handling)
+4. Build-time isolation (esbuild external + CI verification)
+5. Enterprise audit trail (inspectable source, package contents, network calls)
+6. Installation UX (enterprise customer sees zero social; social user explicitly installs)
+7. Version coupling (independent streams, backward-compat ranges)
+8. Bundle size budget (CLI <360KB, social <150KB, measured quarterly)
+9. Security guarantees (auditable, transparent, opt-in)
+10. Implementation checklist
+11. Decision summary table
+12. Appendix: Enterprise approval email template
+
+**Key Learnings:**
+- Enterprise trust is earned through auditability, not promises. Design the architecture so security teams can verify the claim themselves.
+- "No dependency" is stronger than "optional dependency." Peer deps create noise in logs; direct optional deps still show up in package.json. Runtime discovery via dynamic import is the cleanest approach.
+- Bundle size is a policy enforcement mechanism. Putting the check in CI (before publish) catches creep early.
+- The "clear error message when feature not installed" pattern is user-first. It turns a silent failure (user expects social, gets nothing) into an actionable problem (user sees exact install command).
+- Version coupling decision (independent streams vs lock-step) has downstream impact. Independent streams give freedom but require careful semver discipline. Lock-step is simpler but couples deployment pipelines.
+
+**Decision written to:** `.squad/decisions/inbox/rabin-package-isolation.md`
