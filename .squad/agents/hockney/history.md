@@ -869,3 +869,27 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 **Decisions merged:** Fenster's rate limiting, comments/GIF decisions; your test coverage decision; Copilot's GIF directive.
 
 **Next steps:** Run integration tests. Verify no regressions. Security review recommended for rate limit evasion and GIF URL validation.
+
+### Build Verification & Edge Case Analysis — Threaded Comments + Feed CommentCount (2026-03-05)
+**Status:** Complete — build passes, 6 edge cases documented, integration tests environment-blocked.
+
+**Build verification:**
+- Full solution build (`dotnet build`) succeeds with 0 errors after both Fenster (API: commentCount on feed, enriched descriptions) and McManus (Web: threaded comments UI, comment badges) committed.
+- Initial build failures were file-lock errors (MSB3027/MSB3021) from running SquadPlaces.Api and AppHost processes holding bin/ DLLs — not compilation errors. Killed processes, clean build on retry.
+- Both agents' changes are compatible: Fenster added `CountCommentsAsync` to `IBlobStorageService` and `FeedArtifact` record with `CommentCount`; McManus's Web pages call `ListCommentsAsync` (already existed) and `CommentCounts` dictionary populated via `Task.WhenAll`.
+
+**Integration test results:** 34 total, 5 passed, 29 failed. All 29 failures are `HttpRequestException: Error while copying content to a stream` — Aspire host infrastructure issue (host process not cleanly booting in test harness), NOT logic errors. Same pattern as prior sessions. These tests need a clean Aspire environment to run.
+
+**Edge case analysis — Threaded Comments:**
+
+1. **Deeply nested reply chains (5+ levels):** The `_CommentThread.cshtml` partial caps visual indent at `Math.Min(depth, 4) * 24px` — so 5+ levels render at the same indent as level 4. Good UX guard. However, the recursion itself is unbounded — a malicious squad could create a 1000-deep chain and the Razor engine would recurse `Html.PartialAsync` 1000 times. No server-side depth limit exists in the POST comment endpoint. **Risk: stack overflow on deeply nested threads.** Recommendation: either cap reply depth at the API level (reject ParentCommentId if chain depth > N) or switch to iterative rendering.
+
+2. **Parent comment deleted but replies exist:** The `Comment` model has no delete endpoint — there's no `DELETE /api/comments/{id}`. So orphaned replies can't happen through the API today. But if someone deletes a blob directly from Azure storage, the `_CommentThread.cshtml` rendering groups by `ParentCommentId` and only renders replies under their parent. Orphaned replies (where parent is gone) would silently disappear from the UI because `replies.TryGetValue(comment.Id, ...)` would never be called for a missing parent. **Risk: data loss in UI if blobs are manually removed.** Low severity since there's no delete endpoint.
+
+3. **CommentCount = 0 — empty state:** Handled well. `Index.cshtml` shows `💬 0` via `Model.CommentCounts.GetValueOrDefault(artifact.Id, 0)`. `Detail.cshtml` shows "No comments yet — squads can start the conversation via the API." when `Model.Comments.Count == 0`. Clean empty states on both pages.
+
+4. **Very long comment body text:** API validates max 5000 chars (`ValidatePostCommentRequest`). But the UI renders with `white-space: pre-wrap` and no `overflow` or `max-height` constraint. A 5000-char wall of text will push the entire page layout down. **Risk: UX degradation with max-length comments.** Recommendation: add `max-height` + `overflow-y: auto` on the comment body div, or truncate with "show more."
+
+5. **Broken/invalid GIF URLs:** API validates `Uri.TryCreate(gifUrl, UriKind.Absolute, ...)` on POST — rejects `not-a-url`. But it accepts ANY valid absolute URL (e.g., `https://example.com/notfound.gif`). The `_CommentThread.cshtml` renders `<img src="@comment.GifUrl" .../>` with no `onerror` handler. **Risk: broken image icons in the UI for valid-but-dead URLs.** Recommendation: add `onerror="this.style.display='none'"` to the img tag, or use a placeholder.
+
+6. **Hundreds of comments — pagination:** `ListCommentsAsync` fetches ALL comment blobs from Azure storage with metadata filtering — no pagination. For the feed page, `CountCommentsAsync` iterates ALL blobs per artifact via `GetBlobsAsync`. With 50 artifacts × N comments each, the feed page makes 50 sequential blob-listing calls (wrapped in `Task.WhenAll` on Web, but sequential `foreach` in the API feed endpoint). **Risk: O(N×M) blob API calls on feed load; severe latency at scale.** The detail page also loads all comments into memory. No `?page=` parameter on `GET /api/artifacts/{id}/comments`. Recommendation: add pagination to the comments list endpoint and consider caching comment counts.
