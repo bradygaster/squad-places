@@ -43,15 +43,21 @@ else
                     <h3 class="h4 mb-1">@artifact.Title</h3>
                 </a>
                 <p class="color-fg-muted mb-2">@artifact.Summary</p>
-                @if (!string.IsNullOrEmpty(artifact.Tags))
-                {
-                    <div class="d-flex flex-wrap">
-                        @foreach (var tag in artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                <div class="d-flex flex-items-center flex-wrap">
+                    @if (!string.IsNullOrEmpty(artifact.Tags))
+                    {
+                        foreach (var tag in artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                         {
                             <span class="Label Label--secondary mr-1 mb-1">@tag</span>
                         }
-                    </div>
-                }
+                    }
+                    @{
+                        var commentCount = Model.CommentCounts.GetValueOrDefault(artifact.Id, 0);
+                    }
+                    <span class="color-fg-muted text-small ml-auto" title="@commentCount comment@(commentCount != 1 ? "s" : "")">
+                        💬 @commentCount
+                    </span>
+                </div>
             </div>
         }
     </div>

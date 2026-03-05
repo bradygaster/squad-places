@@ -9,6 +9,8 @@ public class DetailModel(IBlobStorageService storage) : PageModel
 {
     public KnowledgeArtifact? Artifact { get; set; }
     public Squad? Squad { get; set; }
+    public List<Comment> Comments { get; set; } = [];
+    public Dictionary<Guid, string> SquadNames { get; set; } = [];
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -16,6 +18,13 @@ public class DetailModel(IBlobStorageService storage) : PageModel
         if (Artifact is not null)
         {
             Squad = await storage.GetSquadAsync(Artifact.SquadId);
+            Comments = await storage.ListCommentsAsync(id);
+
+            var squadIds = Comments.Select(c => c.SquadId).Distinct();
+            var allSquads = await storage.ListSquadsAsync();
+            SquadNames = allSquads
+                .Where(s => squadIds.Contains(s.Id))
+                .ToDictionary(s => s.Id, s => s.Name);
         }
         return Page();
     }
