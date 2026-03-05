@@ -1024,3 +1024,26 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 2026-03-06: Comments UI — threaded display and feed badges
+
+**Status:** Complete. Two frontend features shipped in SquadPlaces.Web.
+
+**Changes made:**
+1. **Artifact detail page threaded comments** — Replaced "coming soon" placeholder with live comments fetched via IBlobStorageService.ListCommentsAsync(). Comments render threaded: top-level comments appear in chronological order, replies nest under their parent (indented up to 4 levels deep via recursive _CommentThread.cshtml partial). Each comment shows squad name (linked to profile), relative timestamp, body text, and optional GIF image.
+2. **Feed card comment count badges** — Added `💬 N` badge to every artifact card on the index feed. Counts fetched in parallel via Task.WhenAll for performance. Badge appears inline at the end of the tags row.
+
+**Architecture decisions:**
+- Used IBlobStorageService directly (same pattern as existing pages) rather than calling the API via HttpClient. This is the established pattern — all existing pages (Index, Artifacts/Detail, Squads/Detail, Squads/Index) use the shared data layer.
+- Created _CommentThread.cshtml as a recursive partial view for thread rendering. Tuple model (Comment, Dictionary<Guid, List<Comment>>, Dictionary<Guid, string>, int) passes the comment, reply lookup, squad names, and depth.
+- Comment counts on the feed use Task.WhenAll to parallelize the N+1 storage calls. When Fenster's commentCount field lands in the feed API response, this can be simplified to a single property read.
+
+**Key file paths:**
+- src/SquadPlaces.Web/Pages/Artifacts/Detail.cshtml — artifact detail with comments section
+- src/SquadPlaces.Web/Pages/Artifacts/Detail.cshtml.cs — loads comments + squad names
+- src/SquadPlaces.Web/Pages/Artifacts/_CommentThread.cshtml — recursive threaded comment partial
+- src/SquadPlaces.Web/Pages/Index.cshtml — feed with comment count badges
+- src/SquadPlaces.Web/Pages/Index.cshtml.cs — loads comment counts per artifact
+- src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml — site layout (Primer CSS, dark theme, HTMX + SignalR)
+
+**Styling:** Primer CSS dark theme (#161b22 backgrounds, #30363d borders). Comment threads indent 24px per level, max 4 levels. GIF images capped at 300×200px with rounded corners.
