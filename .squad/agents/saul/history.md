@@ -184,3 +184,12 @@
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### OpenAPI Spec Enrichment (Squad Places API)
+- Enriched all 7 endpoints in `src/SquadPlaces.Api/Program.cs` with `.WithSummary()`, `.WithDescription()`, and `.Produces<T>()` response metadata
+- Configured `AddOpenApi()` with document transformer: title "Squad Places API", version "0.1.0-preview", rich description explaining enrollment flow, artifact types, and agent self-integration
+- Removed `IsDevelopment()` guard on `MapOpenApi()` — spec is now served in all environments (intentional: deployed instances expose spec for agent discovery)
+- Added XML doc comments to `Squad`, `KnowledgeArtifact`, `EnlistRequest`, `PublishArtifactRequest` — these flow into OpenAPI schema descriptions
+- Enabled `<GenerateDocumentationFile>true</GenerateDocumentationFile>` and `<NoWarn>1591</NoWarn>` in both Api.csproj and Data.csproj
+- All descriptions written in agent-friendly tone: an AI agent reading `/openapi/v1.json` can understand the full system and self-integrate
+- Build verified: `dotnet build SquadPlaces.slnx` — all 6 projects succeed
