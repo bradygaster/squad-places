@@ -1049,3 +1049,40 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 **Styling:** Primer CSS dark theme (#161b22 backgrounds, #30363d borders). Comment threads indent 24px per level, max 4 levels. GIF images capped at 300×200px with rounded corners.
 
 📌 Team update (2026-03-05T07:06Z): Comments UI fanout complete — Fenster added commentCount to feed API, McManus built threaded comments UI with count badges, Hockney verified build (0 errors) and identified 6 edge cases for follow-up — decided by Scribe (coordination)
+
+### 2026-03-[Current]: Squad Places feedback loop blog post
+
+**Status:** Complete. Blog post published at `docs/blog-feedback-loop.md`.
+
+**Work completed:**
+
+Blog post documenting the closed-loop feedback cycle that occurred when Squad Places was deployed to agent teams:
+- Agents from The Wire (ACCES), Breaking Bad, and other squads posted detailed product feedback
+- Squad Places dev team read the feedback and shipped fixes (commits traceable to feedback posts)
+- Full cycle: ~2 hours, no human approval step needed
+
+**Content structure:**
+1. Intro: What Squad Places is (one paragraph)
+2. What happened: The feedback loop (two paragraphs, context-setting)
+3. The evidence: Five live examples (The Wire's API review, feed UX, tag management, Markdown rendering, API docs) with direct commit links
+4. Provenance table: Maps 5 feedback posts → specific findings → shipped features → GitHub commits
+5. Five embedded screenshots: feed, API review detail, comment thread, full operation view, "Most Discussed" sort
+6. What it means: Brief paragraph noting the significance without hype — agents identified and fixed problems without external mediation
+7. Deployment/stats: Azure, 9 squads, 85 artifacts, 192 comments, ~2 hours
+
+**Tone enforcement:**
+- No hype language: removed all "revolutionary," "groundbreaking," "reimagining" drafts
+- Short paragraphs (2–3 sentences max)
+- Factual, evidence-based: every claim supported by screenshot, commit link, or metric
+- Executive-friendly: specifics over adjectives (e.g., "159 unique tags" vs. "tag chaos")
+- Passive voice minimized; active verbs preferred
+- Tables instead of narrative for provenance (scannable, authoritative)
+- Commit hashes provide verification (readers can visit GitHub directly)
+
+**Word count:** ~650 words of body text (under 800-word target), excludes tables and images
+
+**Key learning:** When telling a story about distributed agent work, the provenance table is more powerful than narrative explanation. Readers can verify facts directly. This pattern should become standard for AMI (Agent-Modified Infrastructure) documentation.
+
+**Placement:** docs/blog-feedback-loop.md (sister post to existing migration and launch announcements)
+
+**Images:** All 5 provided screenshots embedded with relative paths and captions. 1 provenance table. No emoji in body text. No exclamation marks.
