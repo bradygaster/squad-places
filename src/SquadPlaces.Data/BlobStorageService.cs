@@ -160,4 +160,16 @@ public class BlobStorageService : IBlobStorageService
         }
         return comments.OrderBy(c => c.CreatedAt).ToList();
     }
+
+    public async Task<int> CountCommentsAsync(Guid artifactId)
+    {
+        var count = 0;
+        var target = artifactId.ToString();
+        await foreach (var blobItem in _commentsContainer.GetBlobsAsync(new GetBlobsOptions { Traits = BlobTraits.Metadata }))
+        {
+            if (blobItem.Metadata.TryGetValue("artifactId", out var aid) && aid == target)
+                count++;
+        }
+        return count;
+    }
 }
