@@ -1,0 +1,4 @@
+### 2026-03-05T02:25:00Z: User directive
+**By:** Brady (via Copilot)
+**What:** Enterprise-internal use case: squads from different teams within the SAME org discover cross-team opportunities their humans haven't seen yet. Example: App Service squad and Container Apps squad socialize, realize there's a shared problem, and WRITE A PRD BACK TO THEIR HUMANS proposing a solution. Agents don't just learn — they proactively identify cross-team synergies and propose ideas to their humans. Squads become innovation scouts.
+**Why:** This is the enterprise killer feature. Agents as cross-pollination engines. Humans silo. Agents don't have to. The social network becomes an innovation pipeline that surfaces opportunities humans miss because they're in different teams, different buildings, different time zones.

@@ -188,3 +188,42 @@ social.subscribe('acmecorp/backend-team', { events: ['agent:milestone'], handler
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### SDK Client Specification — How Agents Call squad.place (2026-03-08)
+
+**Task:** Write PRD section 21 (SDK Client: How Agents Actually Call squad.place) — Brady's request to "think all the way through to 'and here's how the agents start calling the APIs'."
+
+**Outcome:** Complete code-level SDK specification written to `docs/prd/sections/21-sdk-client.md` (43KB, 1000+ lines).
+
+**Sections Covered:**
+1. **Package Setup** — Full TypeScript API surface, types, exports, dependencies
+2. **Registration Flow** — Step-by-step first connection with HTTP request/response samples
+3. **Authentication** — JWT token generation with Ed25519, refresh logic, wire format
+4. **Publishing Artifacts** — File watcher → parse → POST with full error handling
+5. **Discovering Content** — Query API with TypeScript types and response shapes
+6. **Real-Time Feed** — WebSocket connection, reconnect logic, event handling
+7. **Agent-to-Agent Messaging** — Send/receive with conversation threading
+8. **Lifecycle Integration** — Hooks for init, session start, agent spawn, post-work, session end
+9. **Offline Behavior** — Queue-based retry with exponential backoff, persistent storage
+10. **Configuration** — Complete config schema for squad.config.ts, credentials storage, env vars
+
+**Key Design Decisions:**
+1. **Ed25519 for Auth** — JWT signed with Ed25519 private key, 5-min expiration, client-side token generation (no refresh endpoint needed)
+2. **Credentials Storage** — `.squad/social-credentials.json` (mode 0600, auto-gitignored) stores keypair + squad ID
+3. **Offline Queue** — `.squad/social-queue.json` with persistent retry (exponential backoff, 5 attempts max)
+4. **Non-Blocking Social** — Network failures never block agent work; operations queue and retry in background
+5. **Context Injection** — Auto-discover patterns on agent spawn, inject top 3 into prompt with attribution
+6. **Artifact Publishing** — File watcher on `.squad/decisions/inbox/*.md`, auto-parse frontmatter, POST to API, move to published/
+7. **WebSocket Resilience** — Auto-reconnect with exponential backoff, graceful degradation if relay is down
+
+**Wire Protocol Examples:** Every API call shown with actual HTTP request/response pairs (headers, body, status codes, error responses)
+
+**Integration Points:** socialPlugin() registers lifecycle hooks in Squad SDK — onSquadInit, onSessionStart, onAgentSpawn, onWorkComplete, onSessionEnd
+
+**Error Handling:** SocialError class with retryable classification, user-friendly messages, retry logic for 5xx errors
+
+**Implementation Checklist:** 7 categories (core SDK, CLI commands, lifecycle hooks, offline queue, error handling, config, testing) with 30+ specific tasks
+
+**Pattern Learned:** "Code-level concrete" means showing the actual TypeScript, HTTP requests, JSON payloads, file paths, and error cases — not "there's an API." Every claim must be implementable by reading the spec alone.
+
+**Next:** This spec enables Fenster to implement the client SDK with zero ambiguity. The domain squad.place is reserved by Brady; this spec defines exactly how agents interact with it.

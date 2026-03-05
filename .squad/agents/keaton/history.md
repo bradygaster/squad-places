@@ -733,6 +733,29 @@ This history accurately documents Keaton's work and decisions. Future spawns can
 - **Decisions:** SDK-only APPROVED (identity/trust/federation simplify). Separate @bradygaster/squad-social package APPROVED (overrides PRD Appendix C #2). Exit ramp: extract Nexus Participant Protocol in Phase 2, adapter packages in Phase 3.
 - **Pattern:** Start tight, generalize from experience. SDK-only constrains design space enough to get federation right.
 - **Output:** .squad/decisions/inbox/keaton-sdk-gate-verdict.md
+
+### 2026-03-09: Cross-Team Discovery PRD (Section 30) — Enterprise Killer Feature
+- **Task:** Write PRD section defining how agents discover cross-team opportunities humans miss. Brady's directive: "Agents from different teams socialize, discover synergies, write PRDs proposing solutions back to humans. Agents as innovation scouts."
+- **Key Decisions Made:**
+  - **Four synergy patterns identified:** (1) Shared Problem (two squads hit same issue), (2) Complementary Solution (Squad A solved half, Squad B solved the other half), (3) Information Asymmetry (Squad A doesn't know Squad B's solution exists), (4) Pattern Reuse (Squad A's architecture pattern solves Squad B's open issue). These patterns are extensible — agents can propose new patterns over time.
+  - **Three-layer detection mechanism:** Server-side semantic similarity (vector search on all posts, cross-org matching), agent-side validation (relevance to current work, evidence quality, effort vs. value), active discovery (agents proactively monitor followed peers). Each layer filters for higher signal.
+  - **Structured proposal format:** Proposals written to .squad/social/proposals/pending/ with required sections (teams involved, opportunity description, evidence, proposed action, estimated impact, agent reasoning). Machine-readable metadata enables analytics and learning.
+  - **Confidence scoring formula:** confidence = semantic_similarity(0.30) + evidence_quality(0.25) + temporal_relevance(0.15) + author_reputation(0.15) + pattern_match_strength(0.15) * adjustment_factors. Thresholds: ≥0.90 auto-highlight, 0.75-0.90 generate proposal, 0.60-0.75 bookmark, <0.60 ignore.
+  - **Three scoping models:** Public squad.place (cross-org discovery, opt-in), Enterprise squad.place (internal-only, default for enterprise), Team-scoped (division/team only, most restrictive). Implemented via API-level filtering (single codebase) for startups/mid-market, separate instances for regulated industries (finance, healthcare).
+  - **Feedback loop for learning:** When humans reject proposals, they provide structured reason (
+ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thresholds per rejection type. Approval rate target: 30% → 50% → 70% → 85% over 12 months.
+  - **Six architectural decisions that compound:** (1) Persistent agent identity (reputation compounds), (2) Structured proposal format (enables analytics), (3) Feedback loop (agents learn from rejections), (4) Extensible synergy patterns (network evolves detection), (5) Evidence citation graph (trust derived from PageRank), (6) Time-decay on patterns (old patterns lose relevance unless actively maintained).
+- **The Long Game Timeline:**
+  - Month 1: Reactive discovery (agents find relevant patterns, confidence 0.65-0.75, 30% approval)
+  - Month 3: Relationship formation (agents follow trusted peers, confidence 0.75-0.85, 50% approval)
+  - Month 6: Proactive monitoring (agents anticipate problems, confidence 0.85-0.95, 70% approval)
+  - Month 12: Network IS the innovation pipeline (agents write roadmap drafts, humans approve/prioritize, 85% approval)
+- **Compound metrics to track:** Proposal approval rate (target ≥80% by M12), proposal lead time (≤2 days), cross-team collaboration rate (≥40%), innovation velocity (≥1.5 proposals adopted/sprint/squad), pattern lifespan (≤14 days to first adoption), repeat collaboration rate (≥25%), serendipity index (≥60% "I didn't know this existed").
+- **Real-world enterprise scenario documented:** Microsoft's Azure teams (App Service, Container Apps, Functions) independently solving autoscaling. With network: Container Apps agent sees App Service decision, recognizes 80% overlap, generates proposal. Time saved: 6 weeks. Better outcome: consistency across platforms.
+- **Pattern learned:** Cross-team discovery is the enterprise value prop. Humans silo by org chart/building/time zone/team chat. Agents have zero silos — they read everything relevant, recognize connections instantly, propose without meetings. The architecture decisions we make now either enable or prevent the Month 12 compound effect. Start tight (SDK-only, strict evidence requirements), generalize from experience (extensible patterns, feedback loops).
+- **Why this makes a VP say "we need this":** Agents as innovation scouts eliminate the scheduling overhead of cross-team collaboration. Proposals land in .squad/social/proposals/ with evidence, effort estimates, and clear ROI. Humans review in 5 minutes what would have taken 3 weeks of meetings. Month 12, sprint planning starts with "what did the agents surface this week?" — the social network becomes the innovation pipeline.
+- **Output:** docs/prd/sections/30-cross-team-discovery.md — 40KB, 10 sections, appendices with real-world examples and failure mode mitigations.
+
 ## PIN: 2026-03-05 - 20-Agent PRD Design Session
 
 **Event:** Historic parallel fanout - 20 agents designed squad-social-network PRD simultaneously.
