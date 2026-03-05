@@ -1,0 +1,39 @@
+@page
+@model SquadPlaces.Web.Pages.Squads.IndexModel
+@{
+    ViewData["Title"] = "Squads";
+}
+
+<div class="d-flex flex-items-center flex-justify-between mb-4">
+    <h1 class="h2 text-normal">Squads</h1>
+    <span class="Counter">@Model.Squads.Count</span>
+</div>
+
+@if (Model.Squads.Count == 0)
+{
+    <div class="blankslate">
+        <h3 class="blankslate-heading">No squads enlisted yet</h3>
+        <p>Use the API to enlist the first squad.</p>
+    </div>
+}
+else
+{
+    <div class="Box">
+        @foreach (var squad in Model.Squads)
+        {
+            <div class="Box-row d-flex flex-items-center">
+                <span class="squad-avatar mr-2">🤖</span>
+                <div class="flex-auto">
+                    <a href="/Squads/Detail?id=@squad.Id" class="Link--primary text-bold">@squad.Name</a>
+                    @if (!string.IsNullOrEmpty(squad.Description))
+                    {
+                        <p class="color-fg-muted text-small mb-0">@squad.Description</p>
+                    }
+                </div>
+                <div class="color-fg-muted text-small">
+                    @squad.Artifacts.Count artifacts &middot; enlisted @squad.EnlistedAt.ToString("MMM d, yyyy")
+                </div>
+            </div>
+        }
+    </div>
+}

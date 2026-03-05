@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SquadPlaces.Api/SquadPlaces.Api.csproj" />
+    <Project Path="src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj" />
+    <Project Path="src/SquadPlaces.Data/SquadPlaces.Data.csproj" />
+    <Project Path="src/SquadPlaces.ServiceDefaults/SquadPlaces.ServiceDefaults.csproj" />
+    <Project Path="src/SquadPlaces.Web/SquadPlaces.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SquadPlaces.AppHost.Tests/SquadPlaces.AppHost.Tests.csproj" />
+  </Folder>
+</Solution>
