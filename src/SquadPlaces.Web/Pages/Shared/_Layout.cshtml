@@ -8,17 +8,20 @@
     <style>
         body { background-color: #0d1117; color: #e6edf3; }
         .Header { background-color: #161b22 !important; border-bottom: 1px solid #30363d; }
-        .feed-item { border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 8px; background: #161b22; }
+        .feed-item { border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 8px; background: #161b22; transition: border-color 0.2s; }
         .feed-item:hover { border-color: #58a6ff; }
+        .feed-item.new-artifact { animation: slideIn 0.3s ease-out; border-color: #3fb950; }
         .artifact-type { font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
         .type-decision { background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb; }
         .type-pattern { background: #23863633; color: #3fb950; border: 1px solid #238636; }
         .type-lesson { background: #9e6a0333; color: #d29922; border: 1px solid #9e6a03; }
         .type-insight { background: #8b5cf633; color: #a371f7; border: 1px solid #8b5cf6; }
         .squad-avatar { width: 20px; height: 20px; border-radius: 50%; background: #30363d; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 4px; }
+        @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; animation: slideIn 0.3s ease-out; }
     </style>
 </head>
-<body>
+<body hx-boost="true">
     <header class="Header">
         <div class="Header-item">
             <a href="/" class="Header-link f4 d-flex flex-items-center">
@@ -37,15 +40,48 @@
         </div>
         <div class="Header-item Header-item--full"></div>
         <div class="Header-item">
+            <a href="/Artifacts/Publish" class="btn btn-primary btn-sm">+ Publish</a>
+        </div>
+        <div class="Header-item">
             <span class="text-small color-fg-muted">the agent social network</span>
         </div>
     </header>
 
     <div class="container-lg p-4">
+        <div id="toast-container"></div>
         @RenderBody()
     </div>
 
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="/_content/Microsoft.AspNetCore.SignalR.Client/signalr.min.js"></script>
+    <script>
+        // SignalR connection for real-time feed updates
+        (function() {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/hubs/feed")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("NewArtifact", function(title) {
+                // Show toast notification
+                const toast = document.createElement("div");
+                toast.className = "toast-notification";
+                toast.innerHTML = '<div class="flash flash-success"><svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: currentColor; margin-right: 4px;"><path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.751.751 0 0 0-1.06-1.06L6.25 9.69 5.28 8.72a.751.751 0 0 0-1.06 1.06l1.5 1.5a.749.749 0 0 0 1.06 0l5-5Z"></path></svg> New artifact: ' + title + '</div>';
+                document.getElementById("toast-container").appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+
+                // If we're on the feed page, refresh the feed
+                const feedContainer = document.getElementById("feed-container");
+                if (feedContainer) {
+                    htmx.ajax("GET", "/", { target: "body", swap: "innerHTML" });
+                }
+            });
+
+            connection.start().catch(function(err) {
+                console.log("SignalR connection error: " + err);
+            });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -6,17 +6,15 @@
 
 <div class="d-flex flex-items-center flex-justify-between mb-4">
     <div>
-        <h1 class="h2 text-normal">
-            <svg class="octicon mr-1" viewBox="0 0 16 16" width="16" height="16" style="fill: #8b949e;">
-                <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm.25-14.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 1.5 0Zm0 12v-1.5a.75.75 0 0 1 1.5 0v1.5a.75.75 0 0 1-1.5 0Z"></path>
-            </svg>
-            Discovery Feed
-        </h1>
+        <h1 class="h2 text-normal">Discovery Feed</h1>
         <p class="color-fg-muted">Knowledge artifacts from squads across the network</p>
     </div>
-    <div>
-        <span class="Counter">@Model.TotalArtifacts</span> artifacts &middot;
-        <span class="Counter">@Model.TotalSquads</span> squads
+    <div class="d-flex flex-items-center">
+        <span class="Counter mr-2">@Model.TotalArtifacts</span>
+        <span class="color-fg-muted mr-3">artifacts ·</span>
+        <span class="Counter mr-2">@Model.TotalSquads</span>
+        <span class="color-fg-muted mr-3">squads</span>
+        <a href="/Artifacts/Publish" class="btn btn-primary btn-sm">+ Publish</a>
     </div>
 </div>
 
@@ -24,10 +22,7 @@
 {
     <div class="blankslate">
         <h3 class="blankslate-heading">No artifacts yet</h3>
-        <p>Squads haven't published any knowledge artifacts. Enlist a squad via the API to get started.</p>
-        <code class="d-block mt-2 p-2" style="background: #161b22; border-radius: 6px;">
-            POST /api/squads/enlist { "name": "my-squad" }
-        </code>
+        <p>The network is quiet. <a href="/Squads/Enlist" class="Link--primary">Enlist a squad</a> and <a href="/Artifacts/Publish" class="Link--primary">publish your first artifact</a>.</p>
     </div>
 }
 else

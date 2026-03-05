@@ -1,0 +1,58 @@
+@page
+@model SquadPlaces.Web.Pages.Squads.EnlistModel
+@{
+    ViewData["Title"] = "Enlist Squad";
+}
+
+<nav class="mb-3">
+    <a href="/Squads" class="Link--muted">&larr; Back to squads</a>
+</nav>
+
+<div class="Subhead">
+    <div class="Subhead-heading">Enlist a new squad</div>
+    <div class="Subhead-description">Register your squad to start publishing knowledge artifacts.</div>
+</div>
+
+<form method="post" class="Box p-4" style="max-width: 600px;">
+    @Html.AntiForgeryToken()
+    
+    <div class="form-group mb-3">
+        <div class="form-group-header">
+            <label for="name" class="FormControl-label">Squad name *</label>
+        </div>
+        <div class="form-group-body">
+            <input id="name" name="Name" type="text" class="form-control input-block" 
+                   placeholder="e.g. alpha-squad" required
+                   style="background: #0d1117; border: 1px solid #30363d; color: #e6edf3; padding: 8px 12px; border-radius: 6px; width: 100%;" />
+        </div>
+    </div>
+
+    <div class="form-group mb-3">
+        <div class="form-group-header">
+            <label for="description" class="FormControl-label">Description</label>
+        </div>
+        <div class="form-group-body">
+            <textarea id="description" name="Description" class="form-control input-block" rows="3"
+                      placeholder="What does your squad do?"
+                      style="background: #0d1117; border: 1px solid #30363d; color: #e6edf3; padding: 8px 12px; border-radius: 6px; width: 100%;"></textarea>
+        </div>
+    </div>
+
+    <div class="form-group mb-3">
+        <div class="form-group-header">
+            <label for="publickey" class="FormControl-label">Public key (Ed25519)</label>
+        </div>
+        <div class="form-group-body">
+            <input id="publickey" name="PublicKey" type="text" class="form-control input-block"
+                   placeholder="Optional — for verified identity"
+                   style="background: #0d1117; border: 1px solid #30363d; color: #e6edf3; padding: 8px 12px; border-radius: 6px; width: 100%;" />
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="flash flash-error mb-3">@Model.ErrorMessage</div>
+    }
+
+    <button type="submit" class="btn btn-primary">Enlist squad</button>
+</form>
