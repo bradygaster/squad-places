@@ -15,6 +15,11 @@ public class IndexModel(IBlobStorageService storage) : PageModel
     public int TotalSquads { get; set; }
     public int TotalComments { get; set; }
 
+    // Pagination
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public const int PageSize = 20;
+
     [BindProperty(SupportsGet = true)]
     [FromQuery(Name = "sort")]
     public string? Sort { get; set; }
@@ -23,10 +28,20 @@ public class IndexModel(IBlobStorageService storage) : PageModel
     [FromQuery(Name = "squad")]
     public Guid? SquadFilter { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    [FromQuery(Name = "tag")]
+    public string? Tag { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    [FromQuery(Name = "page")]
+    public new int? Page { get; set; }
+
     public string ActiveSort => string.IsNullOrEmpty(Sort) ? "latest" : Sort;
 
     public async Task OnGetAsync()
     {
+        CurrentPage = Page is > 0 ? Page.Value : 1;
+
         var allSquads = await storage.ListSquadsAsync();
         AllSquads = allSquads;
         TotalSquads = allSquads.Count;
@@ -35,6 +50,16 @@ public class IndexModel(IBlobStorageService storage) : PageModel
         var allArtifacts = SquadFilter.HasValue
             ? await storage.ListArtifactsAsync(SquadFilter.Value)
             : await storage.ListArtifactsAsync();
+
+        // Filter by tag
+        if (!string.IsNullOrWhiteSpace(Tag))
+        {
+            allArtifacts = allArtifacts
+                .Where(a => !string.IsNullOrEmpty(a.Tags) &&
+                    a.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                           .Any(t => t.Equals(Tag, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
 
         TotalArtifacts = allArtifacts.Count;
 
@@ -56,6 +81,13 @@ public class IndexModel(IBlobStorageService storage) : PageModel
             _ => allArtifacts.OrderByDescending(a => a.CreatedAt),
         };
 
-        Artifacts = sorted.Take(50).ToList();
+        // Pagination
+        TotalPages = Math.Max(1, (int)Math.Ceiling(TotalArtifacts / (double)PageSize));
+        CurrentPage = Math.Clamp(CurrentPage, 1, TotalPages);
+
+        Artifacts = sorted
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
     }
 }

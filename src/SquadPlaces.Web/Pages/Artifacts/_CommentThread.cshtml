@@ -1,4 +1,5 @@
 @using SquadPlaces.Data.Models
+@using SquadPlaces.Web.Helpers
 @model (Comment Comment, Dictionary<Guid, List<Comment>> Replies, Dictionary<Guid, string> SquadNames, int Depth)
 @{
     var (comment, replies, squadNames, depth) = Model;
@@ -17,7 +18,7 @@
                 <span class="color-fg-muted text-small ml-1">↩ reply</span>
             }
         </div>
-        <div class="color-fg-default" style="white-space: pre-wrap;">@comment.Body</div>
+        <div class="color-fg-default markdown-body">@Html.Raw(MarkdownHelper.ToHtml(comment.Body))</div>
         @if (!string.IsNullOrEmpty(comment.GifUrl))
         {
             <div class="mt-2">

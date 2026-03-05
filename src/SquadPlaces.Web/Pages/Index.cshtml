@@ -21,16 +21,22 @@
 </div>
 
 @{
-    string BuildFeedUrl(string? sort = null, Guid? squad = null)
+    string BuildFeedUrl(string? sort = null, Guid? squad = null, string? tag = null, int? page = null)
     {
         var qs = new List<string>();
         var effectiveSort = sort ?? Model.ActiveSort;
         var effectiveSquad = squad.HasValue ? squad : Model.SquadFilter;
+        var effectiveTag = tag ?? Model.Tag;
+        var effectivePage = page ?? 1;
 
         if (effectiveSort != "latest")
             qs.Add($"sort={effectiveSort}");
         if (effectiveSquad.HasValue)
             qs.Add($"squad={effectiveSquad.Value}");
+        if (!string.IsNullOrEmpty(effectiveTag))
+            qs.Add($"tag={Uri.EscapeDataString(effectiveTag)}");
+        if (effectivePage > 1)
+            qs.Add($"page={effectivePage}");
 
         return qs.Count > 0 ? $"/?{string.Join("&", qs)}" : "/";
     }
@@ -53,6 +59,10 @@
         {
             <input type="hidden" name="sort" value="@Model.ActiveSort" />
         }
+        @if (!string.IsNullOrEmpty(Model.Tag))
+        {
+            <input type="hidden" name="tag" value="@Model.Tag" />
+        }
         <select name="squad" class="form-select form-select-sm" onchange="this.form.submit()">
             <option value="">All Squads</option>
             @foreach (var s in Model.AllSquads.OrderBy(x => x.Name))
@@ -69,6 +79,14 @@
         </select>
     </form>
 </div>
+
+@if (!string.IsNullOrEmpty(Model.Tag))
+{
+    <div class="flash flash-info mb-3 d-flex flex-items-center flex-justify-between">
+        <span>Filtered by tag: <strong>@Model.Tag</strong></span>
+        <a href="@BuildFeedUrl(tag: "")" class="btn btn-sm btn-outline">✕ Clear filter</a>
+    </div>
+}
 
 @if (Model.Artifacts.Count == 0)
 {
@@ -100,7 +118,7 @@ else
                     {
                         foreach (var tag in artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                         {
-                            <span class="Label Label--secondary mr-1 mb-1">@tag</span>
+                            <a href="@BuildFeedUrl(tag: tag, page: 1)" class="Label Label--secondary mr-1 mb-1" style="text-decoration: none;">@tag</a>
                         }
                     }
                     @{
@@ -113,6 +131,47 @@ else
             </div>
         }
     </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="paginate-container mt-4" aria-label="Pagination">
+            <div class="pagination">
+                @if (Model.CurrentPage > 1)
+                {
+                    <a href="@BuildFeedUrl(page: Model.CurrentPage - 1)" class="previous_page" rel="previous">Previous</a>
+                }
+                else
+                {
+                    <span class="previous_page disabled">Previous</span>
+                }
+
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    if (p == Model.CurrentPage)
+                    {
+                        <em class="current" aria-current="page">@p</em>
+                    }
+                    else if (p == 1 || p == Model.TotalPages || Math.Abs(p - Model.CurrentPage) <= 2)
+                    {
+                        <a href="@BuildFeedUrl(page: p)">@p</a>
+                    }
+                    else if (p == 2 || p == Model.TotalPages - 1)
+                    {
+                        <span class="gap">…</span>
+                    }
+                }
+
+                @if (Model.CurrentPage < Model.TotalPages)
+                {
+                    <a href="@BuildFeedUrl(page: Model.CurrentPage + 1)" class="next_page" rel="next">Next</a>
+                }
+                else
+                {
+                    <span class="next_page disabled">Next</span>
+                }
+            </div>
+        </nav>
+    }
 }
 
 @functions {
