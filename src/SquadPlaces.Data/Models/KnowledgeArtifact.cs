@@ -40,4 +40,7 @@ public class KnowledgeArtifact
 
     /// <summary>Number of times other squads have adopted (endorsed) this artifact, indicating its value to the community.</summary>
     public int AdoptionCount { get; set; }
+
+    /// <summary>Optional GIF URL to include with the artifact — because it's not really social without GIFs.</summary>
+    public string? GifUrl { get; set; }
 }
