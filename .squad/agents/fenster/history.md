@@ -861,3 +861,83 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - Case-insensitive artifact type matching, normalized to lowercase on storage
 
 **Test results:** 12/12 adversarial tests pass — all 3 P0 crashes fixed, all 4 P1 validation gaps closed, sanitization working.
+
+### 2025-07-17: Rate Limiting & Abuse Detection for Squad Places API
+
+**Requested by:** Brady. Post-validation hardening — protect the API against hammering, spam, and scaled adversarial attacks.
+
+**Implementation in `src/SquadPlaces.Api/Program.cs`:**
+
+1. **Rate limiting** via built-in `Microsoft.AspNetCore.RateLimiting` (no NuGet packages):
+   - `global` policy: 100 req/min per IP (sliding window, 6 segments)
+   - `write` policy: 10 req/min per IP on POST endpoints (enlist, publish)
+   - `read` policy: 60 req/min per IP on GET endpoints
+   - Returns 429 with `Retry-After` and `X-RateLimit-Limit` headers
+   - Named policies applied via `.RequireRateLimiting()` on each endpoint
+
+2. **IP auto-blocking** (`IpBlocklistService`):
+   - `ConcurrentDictionary`-backed singleton tracks rate-limit strikes per IP
+   - 5+ strikes in 10 minutes → 1 hour block (403 Forbidden)
+   - Middleware runs before rate limiter for fast short-circuit
+   - Strikes auto-prune; blocks auto-expire
+
+3. **Duplicate detection** (`DuplicateDetectionService`):
+   - Same squad + same title within 5 minutes → 409 Conflict
+   - `ConcurrentDictionary`-backed, lazy cleanup of stale entries
+
+4. **Spam scoring** (`DetectSpam()` static helper):
+   - >5 URLs in combined content → 400
+   - >50% identical repeated words → 400
+   - Applied inline in POST handlers before storage
+
+5. **OpenAPI updates**: All endpoints now produce 429/403. Publish endpoint also produces 409.
+
+6. **Discovery prompt** updated with rate limiting guidance for agents.
+
+**Key decisions:**
+- All logic in Program.cs (minimal API, single file — no new projects)
+- Thread-safe `ConcurrentDictionary` with `lock` on individual records for strike counting
+- Sliding window (not fixed window) for fairer rate limiting across time boundaries
+- Spam detection uses `params string?[]` to check combined fields in a single call
+
+### 2026-03-05: Comments/Replies (Threaded Conversations) + GIF Support
+
+**Requested by:** Brady. "agents should be able to reply in comments and start conversations cross-thread. it's not social if it's just posts with no replies. and i absolutely shall not allow one more session of work to be completed without support for gifs."
+
+**What was built:**
+
+1. **Comment model** (`src/SquadPlaces.Data/Models/Comment.cs`): Id, ArtifactId, SquadId, ParentCommentId (null = top-level, set = reply), Body (markdown), GifUrl (optional), CreatedAt.
+
+2. **GifUrl on KnowledgeArtifact**: Added optional `GifUrl` property to artifacts. Updated `PublishArtifactRequest` record and validation.
+
+3. **Storage layer** (`IBlobStorageService` + `BlobStorageService`): Third blob container "comments". `SaveCommentAsync`, `GetCommentAsync`, `ListCommentsAsync` (filtered by artifactId metadata, ordered CreatedAt ascending).
+
+4. **Three new API endpoints** in `Program.cs`:
+   - `POST /api/artifacts/{artifactId}/comments` — post comment or reply (write rate limit)
+   - `GET /api/artifacts/{artifactId}/comments` — list all comments on artifact (read rate limit)
+   - `GET /api/comments/{id}` — get single comment (read rate limit)
+
+5. **Validation**: `ValidatePostCommentRequest` — Body required/max 5000, GifUrl valid URI/max 2000, SquadId required. GifUrl validation also added to `ValidatePublishArtifactRequest`.
+
+6. **Abuse detection**: Spam detection (URLs, repeated words) applied to comment body. Duplicate comment detection (same squad + same body + same artifact within 2 minutes = 409).
+
+7. **Threading model**: Flat list returned from API, clients reconstruct tree via ParentCommentId. ParentCommentId validated to exist and belong to same artifact.
+
+8. **OpenAPI**: Full `.WithName()`, `.WithTags("Comments")`, `.WithSummary()`, `.WithDescription()` on all 3 endpoints. Produces metadata for all status codes.
+
+9. **Discovery endpoint updated**: Added conversation/reply instructions, GIF mention, and 3 new endpoints to quick reference table.
+
+**Key decisions:**
+- Flat comment list (ascending CreatedAt) — client reconstructs thread tree. Simpler API, works for any depth.
+- `CommentDuplicateDetectionService` separate from artifact dupe detection — 2-minute window (vs 5 for artifacts) since comments are faster.
+- ParentCommentId cross-artifact validation: parent must belong to same artifact (400 if not).
+- GifUrl is just a URL field, not file upload — keeps it simple, agents can link to any GIF CDN.
+
+**Files modified:**
+- `src/SquadPlaces.Data/Models/Comment.cs` (new)
+- `src/SquadPlaces.Data/Models/KnowledgeArtifact.cs` (added GifUrl)
+- `src/SquadPlaces.Data/IBlobStorageService.cs` (3 new methods)
+- `src/SquadPlaces.Data/BlobStorageService.cs` (comments container + 3 methods)
+- `src/SquadPlaces.Api/Program.cs` (3 endpoints, validation, DTOs, discovery update, abuse detection)
+
+**Verified:** Build clean (0 errors, 0 warnings). 10 integration tests passed: enlist, artifact with GIF, top-level comment, reply, list, get, 404, validation, bad parent, missing artifact.

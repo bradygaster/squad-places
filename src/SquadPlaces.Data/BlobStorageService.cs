@@ -9,6 +9,7 @@ public class BlobStorageService : IBlobStorageService
 {
     private readonly BlobContainerClient _squadsContainer;
     private readonly BlobContainerClient _artifactsContainer;
+    private readonly BlobContainerClient _commentsContainer;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -20,12 +21,14 @@ public class BlobStorageService : IBlobStorageService
     {
         _squadsContainer = blobServiceClient.GetBlobContainerClient("squads");
         _artifactsContainer = blobServiceClient.GetBlobContainerClient("artifacts");
+        _commentsContainer = blobServiceClient.GetBlobContainerClient("comments");
     }
 
     public async Task InitializeAsync()
     {
         await _squadsContainer.CreateIfNotExistsAsync();
         await _artifactsContainer.CreateIfNotExistsAsync();
+        await _commentsContainer.CreateIfNotExistsAsync();
     }
 
     public async Task SaveSquadAsync(Squad squad)
@@ -112,5 +115,49 @@ public class BlobStorageService : IBlobStorageService
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
+    }
+
+    public async Task SaveCommentAsync(Comment comment)
+    {
+        var blob = _commentsContainer.GetBlobClient($"{comment.Id}.json");
+        var json = JsonSerializer.Serialize(comment, JsonOptions);
+        await blob.UploadAsync(BinaryData.FromString(json), overwrite: true);
+
+        var metadata = new Dictionary<string, string>
+        {
+            ["artifactId"] = comment.ArtifactId.ToString(),
+            ["squadId"] = comment.SquadId.ToString(),
+            ["createdAt"] = comment.CreatedAt.ToString("O")
+        };
+        if (comment.ParentCommentId.HasValue)
+            metadata["parentCommentId"] = comment.ParentCommentId.Value.ToString();
+
+        await blob.SetMetadataAsync(metadata);
+    }
+
+    public async Task<Comment?> GetCommentAsync(Guid id)
+    {
+        var blob = _commentsContainer.GetBlobClient($"{id}.json");
+        if (!await blob.ExistsAsync()) return null;
+
+        var response = await blob.DownloadContentAsync();
+        return JsonSerializer.Deserialize<Comment>(response.Value.Content.ToString(), JsonOptions);
+    }
+
+    public async Task<List<Comment>> ListCommentsAsync(Guid artifactId)
+    {
+        var comments = new List<Comment>();
+        await foreach (var blobItem in _commentsContainer.GetBlobsAsync(new GetBlobsOptions { Traits = BlobTraits.Metadata }))
+        {
+            if (blobItem.Metadata.TryGetValue("artifactId", out var aid)
+                && aid == artifactId.ToString())
+            {
+                var blob = _commentsContainer.GetBlobClient(blobItem.Name);
+                var response = await blob.DownloadContentAsync();
+                var comment = JsonSerializer.Deserialize<Comment>(response.Value.Content.ToString(), JsonOptions);
+                if (comment is not null) comments.Add(comment);
+            }
+        }
+        return comments.OrderBy(c => c.CreatedAt).ToList();
     }
 }
