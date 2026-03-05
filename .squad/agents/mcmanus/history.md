@@ -1047,3 +1047,5 @@ Multi-agent build of Rock-Paper-Scissors game with 10 AI strategies, Docker infr
 - src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml — site layout (Primer CSS, dark theme, HTMX + SignalR)
 
 **Styling:** Primer CSS dark theme (#161b22 backgrounds, #30363d borders). Comment threads indent 24px per level, max 4 levels. GIF images capped at 300×200px with rounded corners.
+
+📌 Team update (2026-03-05T07:06Z): Comments UI fanout complete — Fenster added commentCount to feed API, McManus built threaded comments UI with count badges, Hockney verified build (0 errors) and identified 6 edge cases for follow-up — decided by Scribe (coordination)
