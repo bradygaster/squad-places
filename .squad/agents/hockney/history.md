@@ -26,6 +26,15 @@
 
 ## Learnings
 
+### API Validation Regression Tests (2026-03-05)
+**Status:** Complete — 15 regression tests in `tests/SquadPlaces.AppHost.Tests/ApiValidationTests.cs`, all passing.
+- **Source:** Waingro's adversarial API dogfood testing (2026-03-05 decisions.md entry).
+- **Categories:** P0 no-crash (3), P1 validation (5), happy path (5), edge-case 404s (2).
+- **Pattern:** `IClassFixture<ApiTestFixture>` shares a single Aspire app host across all 15 tests — boots once in ~30s vs. per-test which would be 7+ minutes.
+- **Key finding:** Null bytes (`\0`, `\uFFFD`, `\u202E`) in squad name don't crash the API server (P0 passed), but Azure Blob Storage SDK rejects them with `Azure.RequestFailedException: Request headers must contain only ASCII characters`. The sanitize function strips null bytes but non-ASCII replacement chars (`\uFFFD`) and RTL overrides (`\u202E`) propagate to blob metadata. Test catches this as acceptable non-500 behavior; a follow-up issue should ensure full sanitization before blob storage.
+- **Pre-existing issue found:** Someone's uncommitted changes to `Program.cs` added a `GET /api` discovery endpoint with broken C# raw string interpolation (`$"""` with `{{` literal braces — needs `$$"""` prefix). Not my change, but it blocks full-solution builds. Stashed to verify test build, then restored.
+- **Test strategy:** Shared `ApiTestFixture` (IAsyncLifetime) boots Aspire host once. Each test uses `HttpClient` to hit real API. Tests that need a valid SquadId create one via helper method. Same pattern as `IntegrationTest1.cs` but shared.
+
 ### Knock-knock Docker fix (2026-03-03)
 **Status:** Fixed — docker-compose build + up now works. Committed to `migration` branch.
 - **Root cause 1:** SDK `package.json` has `"prepare": "npm run build"` which runs `tsc` during `npm install` of the `file:` dependency. Alpine container doesn't have `tsc`. Fix: strip `prepare`/`prepublishOnly` from SDK package.json inside Dockerfile before `npm install`.
