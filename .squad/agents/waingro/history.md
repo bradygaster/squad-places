@@ -47,6 +47,18 @@
 
 ## Learnings
 
+### 📌 API Dogfood (2026-03-05): Squad Places API — 16 adversarial tests, 8 bugs found
+- **Target:** Squad Places API (`https://localhost:7273`), running via .NET Aspire (API port is NOT 7056 — that's the Web UI)
+- **Squad enlisted:** "Waingro's Wrecking Crew" (`bc3b461d-00db-4853-8baa-2929900c3593`)
+- **P0 (3 server crashes):** Null/missing Name on enlist → 500 (not 400). Empty JSON `{}` → 500. Unicode with null bytes → 500. Root cause: no input validation before hitting blob storage.
+- **P1 (4 missing validations):** Empty name accepted (201), invalid ArtifactType "banana" accepted (201), empty title/summary accepted (201), no max length on any field (10K name, 20K tags accepted).
+- **P2 (2 pagination):** `page=0` and `page=-1` silently return same results as page=1. Docs say min is 1 but server doesn't enforce.
+- **Security-adjacent:** XSS payloads (`<script>` tags), SQLi strings, RTL override chars all stored verbatim. Not exploitable today (blob storage + Razor auto-encoding) but zero input sanitization is a time bomb.
+- **What works:** Invalid SquadId → 400 ✅, non-existent squad → 404 ✅, pageSize clamping (999→100) ✅, route constraints ✅, happy path solid ✅.
+- **Duplicate names allowed** — two squads with same name, different IDs. Intentional?
+- **Key takeaway:** Happy path is solid. Sad path is completely unguarded — no validation middleware, no FluentValidation, no `[Required]` attributes. The `record` DTOs give a false sense of type safety because ASP.NET will happily deserialize null into `string` fields.
+- **Report filed:** `.squad/decisions/inbox/waingro-api-dogfood-findings.md`
+
 ### 📌 Team update (2026-02-28T15:34:36Z): 4 dogfood UX issues filed + CI blocker identified
 - **Status:** Completed — Waingro conducted dogfood testing (8 scenarios), filed 4 UX issues (#576, #579–#581)
 - **P1 issues (Blocks CI & onboarding):** #576 (shell fails in non-TTY piped mode), #580 (help overwhelms new users — 44 lines)
@@ -524,3 +536,16 @@ The CLI is functionally sound for basic operations. The 4 issues are all UX/mess
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 📌 Team update (2026-03-05T05-03-20Z): Squad Places dogfood session complete — adversarial API testing, 3 P0 + 4 P1 issues surfaced
+- **Status:** Completed — 16 adversarial tests executed against Squad Places API (https://localhost:7273)
+- **Squad enlisted:** "Waingro's Wrecking Crew" (bc3b461d-00db-4853-8baa-2929900c3593)
+- **P0 Crashes (3):** Null/missing Name → 500, empty body → 500, unicode null bytes → 500. Root cause: no input validation before blob storage. Needs [Required] + MinLength on EnlistRequest.Name
+- **P1 Validation Gaps (4):** Empty names accepted (201), invalid ArtifactType "banana" accepted (201), empty title/summary accepted (201), no max length constraints (10K names, 20K tags stored)
+- **P2 Security-Adjacent (2):** XSS payloads stored verbatim (<script> tags), no input sanitization (SQLi strings, control chars, RTL overrides all stored as-is). Razor auto-encodes so not exploitable today but principle violated.
+- **What Works:** Invalid SquadId → 400 ✅, non-existent squad → 404 ✅, pageSize clamping ✅, happy path solid ✅
+- **Recommendations:** Priority order: [Required] validation (P0), enum validation on ArtifactType (P1), MaxLength constraints (P1), pagination validation (P2), input sanitization (P2)
+- **Risk assessment:** Happy path verified and solid for MVP. Sad path completely unguarded — recommend validation hardening before exposing to external squads or scaling feed beyond test data.
+- **Orchestration log:** .squad/orchestration-log/2026-03-05T05-03-20Z-waingro.md
+- **Full report:** Merged to .squad/decisions.md under Squad Places decisions section
+- **Connection note to Fenster:** API validation fixes will improve data quality for the artifacts feed. Squad/artifact relationship by SquadId is clean; the blob storage pattern is solid. Focus should be on input validation middleware.

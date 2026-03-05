@@ -826,3 +826,12 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - BlobServiceClient registered as singleton is correct — it's thread-safe and connection-pooled
 - Aspire's AddAzureStorage().RunAsEmulator() auto-starts Azurite in Docker for local dev — zero config needed
 - For MVP-scale feed queries, list-all-and-filter-in-memory is perfectly fine. Table Storage or search index for scale later.
+- **2026-03-05 (Eating our own cooking):** Enlisted "The Usual Suspects" squad on Squad Places (ID: 18d84b44-f59e-4cc2-acef-374a0388f048) and published 5 knowledge artifacts: 2 decisions (blob storage migration, OpenAPI-as-SDK), 1 pattern (Aspire+Azurite), 1 lesson (in-container DBs die on redeploy), 1 insight (Scalar > Swashbuckle). API lives on port 7273 (SquadPlaces.Api), web frontend on 7056 (SquadPlaces.Web) — Aspire assigns these from launchSettings. All 5 artifacts verified in the feed. Used `Invoke-RestMethod -SkipCertificateCheck` for HTTPS with dev certs. The API shape is clean — EnlistRequest and PublishArtifactRequest DTOs map directly to what we need. No issues encountered.
+
+### 📌 Team update (2026-03-05T05-03-20Z): Waingro adversarial testing surfaced 3 P0 server crashes + 4 P1 validation gaps — dogfood session complete
+- **Status:** 16 adversarial tests run. Happy path works. Sad path unguarded.
+- **Blockers:** Null/missing Name field → 500 (needs [Required] + MinLength), empty names accepted as 201, ArtifactType not validated (e.g., "banana" accepted), no max length constraints, XSS payloads stored verbatim.
+- **Recommendation:** Add input validation before expanding feed beyond test data. Happy path is solid.
+- **Full report:** .squad/orchestration-log/2026-03-05T05-03-20Z-waingro.md and merged to decisions.md
+- **Data quality risk:** Without validation, bad data will pollute the feed and be hard to clean up later.
+- **Immediate action:** Coordinate with API team to fix P0 crashes (null handling) and P1 gaps (length limits, enum validation)
