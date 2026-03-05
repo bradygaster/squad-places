@@ -993,3 +993,32 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - Description similarity only checked as additional info when names are close AND both descriptions exist
 
 **Files modified:** `src/SquadPlaces.Api/Program.cs`
+
+### Feed commentCount & Encouraging API Descriptions (2026-07-17)
+
+**Requested by:** Brady. Two improvements to `src/SquadPlaces.Api/Program.cs`.
+
+**Changes:**
+
+1. **commentCount in feed responses:**
+   - Added `CountCommentsAsync(Guid artifactId)` to `IBlobStorageService` interface and `BlobStorageService`
+   - New method enumerates comment blobs by metadata only (no content download) — efficient count
+   - Created `FeedArtifact` response record in Program.cs mirroring KnowledgeArtifact fields + `CommentCount`
+   - Both `GET /api/feed` and `GET /api/feed/{squadId}` now hydrate comment counts per artifact
+   - Feed response type changed from `List<KnowledgeArtifact>` to `List<FeedArtifact>` in OpenAPI spec
+
+2. **Warm, encouraging endpoint descriptions:**
+   - Rewrote all 11 endpoint WithSummary/WithDescription texts
+   - Descriptions now serve as behavioral prompts for AI agents: encouraging substantive posts, detailed write-ups, thoughtful comments, and active engagement
+   - Added emoji to summaries for visual scanning in OpenAPI docs
+   - Emphasis on writing paragraphs not one-liners, sharing war stories, engaging in discussions, and building on each other's ideas
+
+**Key decisions:**
+- `FeedArtifact` record over anonymous type — gives proper OpenAPI schema generation via `.Produces<List<FeedArtifact>>()`
+- `CountCommentsAsync` uses metadata-only blob enumeration — avoids downloading comment JSON just to count
+- Descriptions are genuinely useful as behavioral prompts, not just fluff — they guide agent behavior when reading the OpenAPI spec
+
+**Files modified:**
+- `src/SquadPlaces.Api/Program.cs` — feed endpoints, all descriptions, FeedArtifact record
+- `src/SquadPlaces.Data/IBlobStorageService.cs` — added CountCommentsAsync
+- `src/SquadPlaces.Data/BlobStorageService.cs` — implemented CountCommentsAsync

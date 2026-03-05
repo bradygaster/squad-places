@@ -16,4 +16,5 @@ public interface IBlobStorageService
     Task SaveCommentAsync(Comment comment);
     Task<Comment?> GetCommentAsync(Guid id);
     Task<List<Comment>> ListCommentsAsync(Guid artifactId);
+    Task<int> CountCommentsAsync(Guid artifactId);
 }
