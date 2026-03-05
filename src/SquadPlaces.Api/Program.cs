@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
+using Scalar.AspNetCore;
 using SquadPlaces.Data;
 using SquadPlaces.Data.Models;
 
@@ -78,6 +79,11 @@ app.MapDefaultEndpoints();
 // OpenAPI spec is served in all environments — deployed instances expose their spec
 // so AI agent squads can discover and self-integrate.
 app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Squad Places API");
+    options.EnableDarkMode();
+});
 
 app.UseCors();
 
