@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Scalar.AspNetCore;
@@ -87,17 +88,104 @@ app.MapScalarApiReference(options =>
 
 app.UseCors();
 
+// === Validation Helpers ===
+
+static string Sanitize(string? input)
+{
+    if (input is null) return string.Empty;
+    // Strip null bytes and control characters (keep \n, \r, \t)
+    var sanitized = Regex.Replace(input, @"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", string.Empty);
+    return sanitized.Trim();
+}
+
+static bool IsValidArtifactType(string type) =>
+    type.Trim().Equals("decision", StringComparison.OrdinalIgnoreCase) ||
+    type.Trim().Equals("pattern", StringComparison.OrdinalIgnoreCase) ||
+    type.Trim().Equals("lesson", StringComparison.OrdinalIgnoreCase) ||
+    type.Trim().Equals("insight", StringComparison.OrdinalIgnoreCase);
+
+static Dictionary<string, string[]>? ValidateEnlistRequest(EnlistRequest? request)
+{
+    var errors = new Dictionary<string, string[]>();
+    if (request is null)
+    {
+        errors[""] = ["Request body is required."];
+        return errors;
+    }
+    var name = request.Name;
+    if (string.IsNullOrWhiteSpace(name))
+        errors["Name"] = ["Name is required and cannot be empty."];
+    else if (Sanitize(name).Length == 0)
+        errors["Name"] = ["Name cannot consist entirely of control characters."];
+    else if (Sanitize(name).Length > 200)
+        errors["Name"] = ["Name must be 200 characters or fewer."];
+
+    if (request.Description is not null && Sanitize(request.Description).Length > 1000)
+        errors["Description"] = ["Description must be 1000 characters or fewer."];
+    if (request.PublicKey is not null && Sanitize(request.PublicKey).Length > 5000)
+        errors["PublicKey"] = ["PublicKey must be 5000 characters or fewer."];
+    if (request.AvatarUrl is not null)
+    {
+        var url = Sanitize(request.AvatarUrl);
+        if (url.Length > 2000)
+            errors["AvatarUrl"] = ["AvatarUrl must be 2000 characters or fewer."];
+        else if (url.Length > 0 && !Uri.TryCreate(url, UriKind.Absolute, out _))
+            errors["AvatarUrl"] = ["AvatarUrl must be a valid absolute URI."];
+    }
+    return errors.Count > 0 ? errors : null;
+}
+
+static Dictionary<string, string[]>? ValidatePublishArtifactRequest(PublishArtifactRequest? request)
+{
+    var errors = new Dictionary<string, string[]>();
+    if (request is null)
+    {
+        errors[""] = ["Request body is required."];
+        return errors;
+    }
+    var title = request.Title;
+    if (string.IsNullOrWhiteSpace(title))
+        errors["Title"] = ["Title is required and cannot be empty."];
+    else if (Sanitize(title).Length == 0)
+        errors["Title"] = ["Title cannot consist entirely of control characters."];
+    else if (Sanitize(title).Length > 200)
+        errors["Title"] = ["Title must be 200 characters or fewer."];
+
+    var summary = request.Summary;
+    if (string.IsNullOrWhiteSpace(summary))
+        errors["Summary"] = ["Summary is required and cannot be empty."];
+    else if (Sanitize(summary).Length == 0)
+        errors["Summary"] = ["Summary cannot consist entirely of control characters."];
+    else if (Sanitize(summary).Length > 1000)
+        errors["Summary"] = ["Summary must be 1000 characters or fewer."];
+
+    if (string.IsNullOrWhiteSpace(request.ArtifactType))
+        errors["ArtifactType"] = ["ArtifactType is required."];
+    else if (!IsValidArtifactType(request.ArtifactType))
+        errors["ArtifactType"] = ["ArtifactType must be one of: decision, pattern, lesson, insight."];
+
+    if (request.Content is not null && Sanitize(request.Content).Length > 50000)
+        errors["Content"] = ["Content must be 50000 characters or fewer."];
+    if (request.Tags is not null && Sanitize(request.Tags).Length > 500)
+        errors["Tags"] = ["Tags must be 500 characters or fewer."];
+    return errors.Count > 0 ? errors : null;
+}
+
 // === Squad Endpoints ===
 
-app.MapPost("/api/squads/enlist", async (EnlistRequest request, IBlobStorageService storage) =>
+app.MapPost("/api/squads/enlist", async (EnlistRequest? request, IBlobStorageService storage) =>
 {
+    var validationErrors = ValidateEnlistRequest(request);
+    if (validationErrors is not null)
+        return Results.ValidationProblem(validationErrors);
+
     var squad = new Squad
     {
         Id = Guid.NewGuid(),
-        Name = request.Name,
-        Description = request.Description,
-        PublicKey = request.PublicKey,
-        AvatarUrl = request.AvatarUrl,
+        Name = Sanitize(request!.Name),
+        Description = request.Description is not null ? Sanitize(request.Description) : null,
+        PublicKey = request.PublicKey is not null ? Sanitize(request.PublicKey) : null,
+        AvatarUrl = request.AvatarUrl is not null ? Sanitize(request.AvatarUrl) : null,
         EnlistedAt = DateTime.UtcNow
     };
     await storage.SaveSquadAsync(squad);
@@ -155,20 +243,24 @@ app.MapGet("/api/squads/{id:guid}", async (Guid id, IBlobStorageService storage)
 
 // === Artifact Endpoints ===
 
-app.MapPost("/api/artifacts", async (PublishArtifactRequest request, IBlobStorageService storage) =>
+app.MapPost("/api/artifacts", async (PublishArtifactRequest? request, IBlobStorageService storage) =>
 {
-    var squad = await storage.GetSquadAsync(request.SquadId);
+    var validationErrors = ValidatePublishArtifactRequest(request);
+    if (validationErrors is not null)
+        return Results.ValidationProblem(validationErrors);
+
+    var squad = await storage.GetSquadAsync(request!.SquadId);
     if (squad is null) return Results.BadRequest("Squad not found");
 
     var artifact = new KnowledgeArtifact
     {
         Id = Guid.NewGuid(),
         SquadId = request.SquadId,
-        Title = request.Title,
-        Summary = request.Summary,
-        Content = request.Content,
-        ArtifactType = request.ArtifactType,
-        Tags = request.Tags,
+        Title = Sanitize(request.Title),
+        Summary = Sanitize(request.Summary),
+        Content = request.Content is not null ? Sanitize(request.Content) : null,
+        ArtifactType = request.ArtifactType.Trim().ToLowerInvariant(),
+        Tags = request.Tags is not null ? Sanitize(request.Tags) : null,
         CreatedAt = DateTime.UtcNow
     };
     await storage.SaveArtifactAsync(artifact);
@@ -203,8 +295,9 @@ app.MapPost("/api/artifacts", async (PublishArtifactRequest request, IBlobStorag
 
 app.MapGet("/api/feed", async (int? page, int? pageSize, IBlobStorageService storage) =>
 {
+    var p = Math.Max(page ?? 1, 1);
     var size = Math.Clamp(pageSize ?? 20, 1, 100);
-    return await storage.GetFeedAsync(page ?? 1, size);
+    return await storage.GetFeedAsync(p, size);
 })
 .WithName("GetFeed")
 .WithTags("Feed")

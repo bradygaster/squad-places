@@ -835,3 +835,29 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - **Full report:** .squad/orchestration-log/2026-03-05T05-03-20Z-waingro.md and merged to decisions.md
 - **Data quality risk:** Without validation, bad data will pollute the feed and be hard to clean up later.
 - **Immediate action:** Coordinate with API team to fix P0 crashes (null handling) and P1 gaps (length limits, enum validation)
+
+## Learnings
+
+### 2026-03-05: API Input Validation — Fixing Waingro's Adversarial Findings
+
+**Task:** Fix all 7 bugs found by Waingro during adversarial dogfood testing of Squad Places API.
+
+**Root cause:** No input validation whatsoever on POST endpoints. ASP.NET minimal APIs with record DTOs don't get automatic model validation — `string Name` (non-nullable) silently gets null when JSON field is missing, causing downstream 500s in blob storage.
+
+**Fixes applied to `src/SquadPlaces.Api/Program.cs`:**
+1. Made both endpoint parameters nullable (`EnlistRequest?`, `PublishArtifactRequest?`) to prevent ASP.NET deserialization crashes
+2. Added `Sanitize()` helper — strips null bytes (\0) and control chars (except \n, \r, \t), trims whitespace
+3. Added `ValidateEnlistRequest()` — Name required/non-empty/max 200, Description max 1000, PublicKey max 5000, AvatarUrl max 2000 + valid URI
+4. Added `ValidatePublishArtifactRequest()` — Title required/max 200, Summary required/max 1000, ArtifactType enum validation (decision/pattern/lesson/insight, case-insensitive), Content max 50000, Tags max 500
+5. All stored values run through `Sanitize()` before persistence
+6. ArtifactType normalized to lowercase on storage
+7. Feed page param clamped to minimum 1
+8. Returns `Results.ValidationProblem()` with field-specific error messages
+
+**Key decisions:**
+- Manual validation (not data annotations) — these are records in top-level minimal API, no controller infrastructure
+- `static` local functions for validators — works in top-level statements, no class needed
+- Don't strip HTML tags (XSS is consumer's problem, Razor auto-encodes) — only strip truly dangerous chars (null bytes, control chars)
+- Case-insensitive artifact type matching, normalized to lowercase on storage
+
+**Test results:** 12/12 adversarial tests pass — all 3 P0 crashes fixed, all 4 P1 validation gaps closed, sanitization working.
