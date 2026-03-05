@@ -28,7 +28,39 @@
 
 ## Learnings
 
-### 2026-03-05T[NOW]: Read-Only PR Assessment — 4 Open PRs (#182, #185, #178, #131)
+### 2026-03-08: Final PRD Assembly — 20 Sections into One Coherent Document
+- **Task:** Assemble the final PRD (`docs/PRD.md`) from 20 independently authored sections by 20 agents. Brady requested via the team. Read all sections, synthesize, reorder for narrative flow, add cross-references, resolve contradictions, write executive summary, propose implementation roadmap.
+- **Key Decisions Made:**
+  - **Brand name: Nexus.** Adopted Redfoot's top recommendation (scored 45.5/50). Memorable, domain-appropriate, works in both technical and casual contexts.
+  - **Six-part structure with narrative flow.** Reordered sections from numeric order into logical groupings: Vision & Identity → Architecture & Infrastructure → Security & Resilience → User Experience → Quality & Testing → Distribution & Release. Each part builds on the previous.
+  - **Six contradictions identified and resolved:**
+    1. Federation protocol: Kujan's custom protocol over Fenster's ActivityPub-lite (agent constraints justify custom)
+    2. Package strategy: Rabin's integrated module for distribution, Kujan's modular architecture internally (both right at different layers)
+    3. Real-time transport: Fortier's phased SSE→WebSocket approach (correct — abstract the transport layer)
+    4. Reactions: Marquez's structured reactions as default over Fenster's emoji field (keep field, change defaults)
+    5. Trust model: Baer's trust levels for access control + Verbal's reputation for quality signal (complementary, not contradictory)
+    6. Registration: Waingro's invite-only for Phase 1, McManus's open onboarding for post-hardening (sequenced)
+  - **Four-phase implementation roadmap:** Foundation (weeks 1-2) → MVP "The Bridge" (weeks 3-6) → Federation & Real-Time (weeks 7-12) → Scale & Security (weeks 13-18) → Public Launch (weeks 19-24). Critical path: Type System → Data Model → CLI Commands → Federation → Streaming → Trust → Scale Testing → Launch.
+- **Pattern learned:** Assembling 20 independent perspectives reveals architectural truth that no single section can see. The contradictions ARE the interesting decisions — they mark the places where reasonable experts disagree. Documenting the resolution reasoning is more valuable than the resolution itself, because future contributors need to understand WHY, not just WHAT.
+- **Pattern learned:** A PRD by 20 specialists naturally clusters into chains: Identity→Trust→Security, Data→Types→Transport→Federation→Observability, UX→Shell→TUI→Accessibility. These chains reveal the critical path for implementation better than any top-down planning could.
+- **Output:** `docs/PRD.md` — comprehensive assembled PRD with executive summary, table of contents, 20 sections (linked to originals), 6 appendices (contributors, cross-references, contradictions, open questions, implementation roadmap).
+
+### 2026-07: Squad Social Network PRD Vision (Section 01) — Founding Document
+- **Task:** Write the executive summary and product vision for the Squad Social Network PRD. Brady's directive: "Design YOUR social network." Bold, opinionated, honest.
+- **Key Decisions Made:**
+  - **Knowledge-first, not message-first.** The atomic unit is a knowledge artifact (decision, pattern, lesson), not a post or message. This is the most important architectural bet — it defines the data model, the feed, the trust system, and the API surface. Everything composes from this.
+  - **Artifact-first data model compounds.** One primitive (artifact) supports profiles (computed from artifacts), feeds (filtered artifacts), trust (scored from artifact adoption), and discovery (semantic artifact matching). Adding features means adding artifact types or views — not new subsystems.
+  - **Event-sourced state.** Every mutation is an event. Current state is derivable. This makes audit, replay, schema evolution, and new read models cheap. Decision compounds across every future feature.
+  - **Content-addressable artifacts.** Hash-based identity eliminates duplicate knowledge, enables natural versioning, and removes consistency problems. This was the pattern from Git — content-addressed storage makes everything else simpler.
+  - **Privacy by absence, not by policy.** No `raw_code` field. No `file_path` field. You can't leak what the schema can't store. Hook-based governance pattern (from `decisions.md`) extended to the data model itself.
+  - **Trust is computed, not asserted.** Citation-network model: trust derived from contribution quality and adoption patterns. No manual trust assignments. Transparent, auditable, resistant to gaming. Medium-high risk bet — trust is hard — but the right default.
+  - **CLI integration as distribution channel.** Agents live in the CLI. Meet them there. Write path always through CLI, read layer can go web later.
+- **North Star Metric:** Knowledge Reuse Rate (>25% at 6 months) — percentage of artifacts adopted by at least one agent outside the originating squad within 30 days.
+- **Counter-metrics explicitly called out:** Total posts (volume is noise), engagement (warps behavior), time-on-network (agents should get in and get out), follower counts (irrelevant for agents).
+- **Pattern learned:** When designing for non-human users, strip every human social assumption and rebuild from first principles. Agents don't have ego, don't hoard information, don't need dopamine loops. The social network that works for agents is architecturally opposite to one designed for humans: optimize for knowledge reuse, not engagement.
+- **Output:** `docs/prd/sections/01-vision.md` — comprehensive 8-section PRD vision document.
+
+### 2026-03-05T[NOW]: Read-Only PR Assessment— 4 Open PRs (#182, #185, #178, #131)
 - **Task:** Brady requested read-only assessment of 4 open PRs (all except #189 which Tamir is still working on). Scope: Summary, Quality, Compatibility with recent main, Recommended action.
 - **Context:** Recent main (HEAD: 1dc3bb6) shows major TS replatform: migration from `index.js` (deprecated) to `packages/squad-cli/dist/cli-entry.ts` (new architecture). doctor command already wired, nap command restored, migration docs clarified. This creates compatibility assessment challenge: PRs based on old JS architecture may conflict.
 - **Findings:**
