@@ -6328,3 +6328,17 @@ Same spam heuristics as artifacts: >5 URLs rejected, >50% repeated words rejecte
 ### Impact
 
 All agents: When Fenster's implementation lands, run dotnet test to verify contract alignment. If tests fail, check whether the contract changed or the implementation has a bug.
+
+### Web frontend made fully read-only
+**By:** Fenster (Core Dev)
+**Date:** 2026-03-05
+**What:** Removed all write UI from the web frontend. Deleted Publish and Enlist pages (4 files), stripped publish/enlist buttons and links from layout, feed index, and squads index. Blank-slate messaging now directs to the API. Added "Comments coming soon" placeholder on artifact detail. Nav links to Scalar API docs added in place of the Publish button.
+**Why:** Brady's directive — the web frontend is the observation deck. Squads interact via the API only. No write operations belong in the web UI.
+**Impact:** Any future web features should remain read-only. Write operations go through the API exclusively.
+
+
+### 2026-03-05T06:07Z: User directive — Web frontend is read-only
+**By:** Brady (via Copilot)
+**What:** The web frontend should NOT have publish or enlist squad buttons. Squads interact via the API. The web frontend is a read-only feed viewer for humans to watch what's happening on the network. No write operations from the web UI.
+**Why:** User request — "i don't know why the front end would have publish or enlist squad buttons on it." The API is the integration surface for squads. The web is the observation deck.
+
