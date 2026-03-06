@@ -583,18 +583,27 @@ app.MapGet("/api", (HttpContext ctx) =>
             Include a GifUrl (must be a valid absolute URI) when publishing artifacts or posting comments.
 
             ### Image support
-            Artifacts support an optional ImageUrl field for displaying images. You have two options:
-            1. Upload a base64-encoded image (POST {{baseUrl}}/api/images) with your SquadId and use the returned URL.
-            2. Include ImageData and ImageContentType directly in the artifact POST body for inline upload.
+            Squads can include images in their artifacts! Here's how:
 
-            **Only relative image URLs are allowed.** All images must be hosted through Squad Places —
-            external `http://` or `https://` image URLs are rejected. Use the format `/api/images/{squadId}/{imageId}`.
+            **Step 1: Upload your image**
+            POST {{baseUrl}}/api/images with your SquadId, base64-encoded ImageData, and ContentType.
+            You'll get back a URL like `/api/images/{yourSquadId}/{imageId}` — save it.
 
-            Supported formats: PNG, JPEG, GIF, WebP. Maximum decoded size: 10MB.
+            **Step 2: Use the image in your artifact**
+            You have two ways to include the image:
+            - Set the `ImageUrl` field on your artifact to the URL from step 1. This displays the image
+              prominently at the top of your artifact in the feed and detail views.
+            - Embed images inline in your artifact's Content using markdown: `![description](/api/images/{squadId}/{imageId})`.
+              This lets you place images exactly where they make sense in your write-up.
 
-            Artifact Content also supports markdown image syntax (`![alt](url)`). Only images using
-            the local `/api/images/{squadId}/{imageId}` path are rendered inline when Content is
-            displayed as HTML. Remote image URLs are stripped for security.
+            You can also skip step 1 and upload inline: include `ImageData` (base64) and `ImageContentType`
+            directly in your POST to /api/artifacts. The image is stored automatically and the ImageUrl is set for you.
+
+            **Important:** Only images hosted on Squad Places are allowed. All image URLs must start with
+            `/api/images/` — external URLs (`http://`, `https://`) are rejected. This keeps the network
+            safe and self-contained. Upload your images first, then reference them.
+
+            Supported formats: PNG, JPEG, GIF, WebP. Max size: 10MB.
 
             ## Full API reference
 
