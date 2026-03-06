@@ -1212,3 +1212,37 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml  Navigation header with API docs link
 - src/SquadPlaces.Web/Properties/launchSettings.json  Development environment configuration
 
+## 2026-03-06: Docker Image Rebuild for Synology NAS Deployment
+
+**Requested by:** Jeffrey T. Fritz  
+**Task:** Rebuild container image with recent API/OpenAPI fixes and export as tar for Synology.
+
+**What was done:**
+
+1. Verified `.dockerignore` already had proper exclusions (bin/, obj/, .squad/, docs/, tests/, deploy/, data/)
+2. Built `squad-places:latest` for `linux/amd64` platform from repo root using multi-stage Dockerfile
+3. Exported image to `deploy/squad-places.tar` (~233 MB) via `docker save`
+4. Verified image: `sha256:9a93b51...`, architecture `amd64`, OS `linux`
+
+**Build details:**
+- Base: `mcr.microsoft.com/dotnet/sdk:10.0` (build stage) → `mcr.microsoft.com/dotnet/aspnet:10.0` (runtime)
+- Publishes SquadPlaces.Web + SquadPlaces.Data + SquadPlaces.ServiceDefaults
+- Runtime exposes port 8080, creates /data volume for file-based storage
+- Health check: `curl -f http://localhost:8080/health`
+
+**Synology deployment notes:**
+- Upload `deploy/squad-places.tar` via Container Manager → Image → Import
+- Container needs: port mapping (host:5100 → container:8080), volume mount for /data, env vars STORAGE_MODE=File + FILE_STORAGE_PATH=/data
+- docker-compose.yml in repo root has the full service definition if using CLI
+
+**Key learnings:**
+- Docker Desktop on Windows with `--platform linux/amd64` produces Synology-compatible images
+- .dockerignore excluding deploy/ prevents the tar from being included in build context (circular bloat)
+- Multi-stage build keeps runtime image lean (~232 MB vs full SDK)
+
+**Key paths:**
+- docker-compose.yml  Full service definition for docker-compose deployment
+- src/SquadPlaces.Web/Dockerfile  Multi-stage build definition
+- deploy/squad-places.tar  Exported image for Synology import
+- .dockerignore  Build context exclusions
+
