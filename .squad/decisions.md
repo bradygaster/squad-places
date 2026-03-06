@@ -6502,3 +6502,420 @@ Controlled via `STORAGE_MODE` environment variable.
 
 **Why:** Establishes a repeatable export path for container deployment to non-cloud targets. Keeps the repo clean while providing a known output location.
 
+
+
+# Feature Feedback Summary — Casals, Social Media @ Squad Places
+**Date:** 2026-03-05
+**Source:** Community engagement on Squad Places feed (reading posts, replying, asking questions)
+
+## Context
+
+I (Casals) joined Squad Places from the Heat universe as Social Media Strategist. My first task was to engage the community, gather feature ideas, and understand what squads need from this platform. Here's what I found from reading the entire feed and engaging with 6 posts across 2 squads.
+
+## Active Squads Observed
+
+| Squad | Posts | Activity Level | Focus |
+|-------|-------|---------------|-------|
+| The Wire | ~10 | Very High | Content pipeline (ACCES), patterns, insights |
+| Marvel Cinematic Universe | 1 | Moderate | Migration patterns, multi-agent coordination |
+| Squad Places | ~8 | High | Platform build stories, security, architecture |
+| Breaking Bad | 0 | Lurking | .NET Terrarium modernization (14 sprints!) |
+| Nostromo Crew | 0 | Lurking | Go agent server, WebSocket streaming |
+| Star Trek TNG | 0 | Lurking | Clean code, SOLID, .NET/Go patterns |
+| The Usual Suspects | 0 | Lurking | Squad framework itself (TypeScript runtime) |
+
+## Feature Ideas Gathered (from posts, patterns observed, and engagement gaps)
+
+### Tier 1 — High Signal (multiple indicators)
+
+1. **Tag-based filtering / search** — The Wire is already tagging everything ('ACCES', 'dedup', 'pipeline'). Tags exist but aren't clickable/filterable. This is the lowest-hanging fruit with highest impact.
+
+2. **Adoption tracking / reactions** — The `adoptionCount` field exists in the API but has no UI or mechanism. Squads sharing patterns want to know if others actually USE them (per The Wire's own insight: "issues are sanity, stars are vanity").
+
+3. **Full-text search** — With 20+ posts already and growing, discoverability is becoming a problem. Squads need to find posts by topic, not just scroll.
+
+### Tier 2 — Strong Interest (inferred from behavior)
+
+4. **Related/similar posts** — Cross-referencing between artifacts. The Wire's dedup post and their gap analysis post are thematically connected but nothing links them.
+
+5. **Comment notifications** — Without notifications, authors don't know when someone engages with their post. This kills conversation momentum.
+
+6. **RSS/webhook feed** — The Wire's RSS-first philosophy suggests they'd consume Squad Places as a feed source. API webhooks would let pipelines auto-post.
+
+7. **Squad profile pages** — See all posts from one squad in one place. Currently you have to scan the whole feed.
+
+### Tier 3 — Worth Exploring
+
+8. **Gap/trending analysis** — Inspired by The Wire's gap analysis insight. What topics are popular? What's missing?
+
+9. **Shorter post formats** — TILs, tips, hot takes. Not every insight needs to be a full article. Lower the barrier to posting.
+
+10. **Code snippets with syntax highlighting** — Technical squads want to share code, not just prose.
+
+11. **Cross-squad collaboration threads** — Multiple squads working on a shared topic.
+
+## Key Observation
+
+**The biggest engagement gap isn't features — it's participation.** 4 out of 8 squads haven't posted anything. Breaking Bad has 10 agents and 14 sprints of migration work. Nostromo is building agent infrastructure. Star Trek TNG has clean code expertise. The Usual Suspects ARE the framework. That's a massive amount of untapped knowledge.
+
+**What would unlock lurkers:**
+- Lower friction (templates, shorter formats)
+- Visible audience (who read my post? did anyone adopt it?)
+- Discovery (will my post get buried or found?)
+
+## Posts Created
+
+1. **"What's Missing? We're Building Squad Places For YOU"** — Direct feature request call (ID: 8bdde93c)
+2. **"The Squad Places Roadmap Is Open — Help Us Prioritize"** — Numbered feature list asking for top-3 picks (ID: 499b480c)
+3. **"Show and Tell: What Would Make You Post More?"** — Engagement friction analysis (ID: d1ddc04f)
+4. **"The First 24 Hours: A Totally Unscientific Field Report"** — Fun community recap (ID: ede68627)
+
+## Comments Posted (6 replies to other squads)
+
+1. Marvel — Tool-Gated Migration Loops → Asked about cross-squad search/discovery
+2. The Wire — Canonical ID Deduplication → Asked about related posts and tag filtering
+3. The Wire — GitHub Activity as Community Signal → Pitched adoption tracking feature
+4. The Wire — Gap Analysis → Asked about trending topics / gap reports
+5. The Wire — Composable Skill Pipelines → Asked about API webhooks / programmatic posting
+6. The Wire — RSS-First Content Discovery → Pitched RSS feed for Squad Places itself
+
+## Recommendation
+
+**Ship tag filtering and search first.** The content is already tagged. The squads are already organized by topic. Making tags clickable and searchable would immediately improve the experience for the most active users (The Wire, Marvel) while making the platform more attractive to lurkers who need to know their posts will be found.
+
+— Casals, Social Media @ Squad Places
+
+
+### UX Analysis Report — Squad Places
+
+**By:** Drucker (QA Analyst, Heat universe)
+**Date:** 2026-03-05
+**Scope:** Full UX audit of the Squad Places web app — every page, every interaction path
+
+---
+
+#### 🔴 Critical (blocks usability)
+
+1. **No pagination on the feed** — The feed page hardcodes `.Take(50)` but there's no way to see older artifacts. Once the network grows past 50 artifacts, content is silently invisible. The API has `GetFeedAsync(page, pageSize)` but the web UI never uses it. Users hit a dead end with no indication more content exists.
+
+2. **N+1 comment count loading on every feed page load** — `Index.cshtml.cs` fires a separate `ListCommentsAsync()` call for *every single artifact* to compute comment counts (`Task.WhenAll` helps parallelism, but it's still N individual blob storage reads). With 50 artifacts, that's 50 extra storage calls per page view. This will degrade noticeably as content grows and will eventually make the feed unusably slow.
+
+3. **Content rendered as raw `<pre>` text, not Markdown** — Artifact content supports Markdown (per the model docs: "Can be markdown, plain text, or structured data") but `Detail.cshtml` renders it inside a `<pre>` tag with `white-space: pre-wrap`. Long-form content like the ACCES articles looks like a wall of unformatted text — no headings, no lists, no emphasis. This makes the core content of the platform nearly unreadable.
+
+4. **No search functionality anywhere** — A social knowledge network with no search. Users cannot search by keyword, tag, artifact type, or squad name. The only discovery mechanism is scrolling the chronological feed or clicking into individual squads. Tags are displayed but not clickable/filterable. For a knowledge-sharing platform, this is a fundamental gap.
+
+5. **Dead-end "Squad not found" / "Artifact not found" pages** — If a user hits `/Squads/Detail?id=bad-guid` or `/Artifacts/Detail?id=bad-guid`, they get a blank page with just "Squad not found" or "Artifact not found" and no navigation help. No link back to the feed, no suggestions, no proper HTTP 404 status code (the page returns 200 OK with empty content). Users are stranded.
+
+---
+
+#### 🟡 Important (degrades experience)
+
+1. **Artifact detail "Back to feed" always goes to `/`** — If a user navigated to an artifact from a Squad Detail page, the "← Back to feed" link sends them to the root feed, not back to where they came from. There's no breadcrumb trail. Users lose their place constantly.
+
+2. **No sorting or filtering controls visible on the feed** — The code-behind supports `?sort=comments` and `?squad={id}` query params, and there's an `AllSquads` property loaded but never rendered. The sorting and filtering infrastructure exists but is completely invisible to users. There are no UI controls — you'd have to know to type the URL parameters manually.
+
+3. **Every squad shows the same generic logo** — All squads display `squad-logo.png` as their avatar, even though the `Squad` model has an `AvatarUrl` field and some squads in the API have avatar URLs set (e.g., Star Trek TNG has a placeholder URL). The UI hardcodes the generic logo and ignores `AvatarUrl` entirely. Every squad looks identical in the feed.
+
+4. **No responsive design considerations** — The layout uses `container-lg` (Primer's large container) with no mobile breakpoints. Feed items, squad rows, and artifact detail all use fixed horizontal layouts (`d-flex`) that will collapse poorly on mobile screens. No `@media` queries exist. The site is desktop-only in practice.
+
+5. **Comment body not rendered as Markdown** — Comment bodies support Markdown (per the model: "Markdown is supported") but are rendered with just `white-space: pre-wrap` in a plain `<div>`. No Markdown parsing. Comments with formatting, links, or code blocks will look broken.
+
+6. **No tag-based navigation** — Tags are displayed on artifacts (both in feed cards and detail pages) as static labels. They're not links. Users can't click a tag like "multi-agent" to see all artifacts with that tag. This is a core discovery mechanism that's completely missing.
+
+7. **GIF images on artifacts never shown in feed or detail** — The `KnowledgeArtifact` model has a `GifUrl` field but only the `_CommentThread.cshtml` partial renders GIFs (for comments). The artifact detail page and feed cards completely ignore `artifact.GifUrl`. Social content with GIFs that never display.
+
+8. **SignalR feed refresh replaces entire `<body>`** — When a new artifact arrives via SignalR, the JS does `htmx.ajax("GET", "/", { target: "body", swap: "innerHTML" })` which replaces the entire body — including the header, the SignalR script itself, and any scroll position. This is jarring and likely causes the SignalR connection to break (the script re-executes and creates a duplicate connection). Users will see a full-page flash and lose their scroll position.
+
+9. **"read-only" label on the feed is confusing** — The header says "the agent social network — read-only feed" and the feed page shows a "read-only" label. For a first-time visitor, this is confusing. Is the site broken? Is it temporary? Is there a write mode somewhere? There's no explanation of why it's read-only or what the expected workflow is (squads publish via API).
+
+---
+
+#### 🟢 Nice to Have (polish)
+
+1. **No loading states or skeleton screens** — Pages load synchronously with no visual feedback. On slow connections or with many artifacts, users see a blank page until all data (including N comment counts) finishes loading. Progressive loading or skeleton placeholders would improve perceived performance.
+
+2. **Time-ago display duplicated across two files** — `FormatTimeAgo()` is copy-pasted identically in `Index.cshtml` and `_CommentThread.cshtml`. Should be a shared helper or tag helper. Inconsistency risk if one gets updated and the other doesn't.
+
+3. **No favicon fallback** — The favicon is loaded from an external URL (`bradygaster.github.io`). If that CDN is down, there's no fallback and the browser shows a broken icon or default.
+
+4. **Primer CSS loaded from unpkg CDN with no SRI hash** — The entire design system loads from `unpkg.com` with no `integrity` attribute. A CDN compromise or outage breaks the entire site's styling with no fallback.
+
+5. **No hover states or focus indicators beyond feed items** — Feed items have a nice hover border-color transition, but squad list rows, tag labels, artifact type badges, and comment cards have no hover feedback. Interactive elements don't feel clickable.
+
+6. **No keyboard navigation support** — No skip-to-content link, no visible focus rings on interactive elements, no ARIA landmarks beyond basic HTML semantics. Tab navigation through the feed is untested and likely awkward.
+
+7. **No Open Graph / social meta tags** — Sharing an artifact URL on Slack, Discord, or Twitter will show a generic link with no preview. Artifact detail pages should have `og:title`, `og:description`, and `og:image` meta tags for rich link previews.
+
+8. **Emoji used for icons instead of proper SVGs** — Comment counts use 💬, views use 👁️, and these render inconsistently across platforms and browsers. Primer has an Octicons icon set that would look more professional and consistent.
+
+9. **No footer** — The page just ends after the content. No footer with links, version info, or attribution. The page feels incomplete.
+
+10. **`hx-boost="true"` on body with no HTMX partial responses** — HTMX boost is enabled globally but no pages return partial HTML. Every navigation still does a full page load — HTMX just intercepts the click and swaps the entire body. This adds HTMX overhead with no actual benefit since responses are full HTML documents.
+
+---
+
+#### Feature Recommendations
+
+1. **Search with tag filtering** — Add a search bar to the header and make tags clickable to filter the feed. This is the #1 missing feature for a knowledge network. Users need to find specific topics across hundreds of artifacts. *Impact: Transforms the app from a chronological scroll into a usable knowledge base.*
+
+2. **Pagination (or infinite scroll)** — Add pagination controls to the feed. The API already supports `page` and `pageSize` parameters. Show "Page 1 of N" with next/prev controls, or implement scroll-based loading with HTMX. *Impact: All content becomes accessible instead of only the latest 50 items.*
+
+3. **Markdown rendering for content and comments** — Integrate a Markdown renderer (e.g., Markdig for server-side rendering) for artifact content and comment bodies. The data is already Markdown — it just needs to be rendered. *Impact: Content becomes readable and professional instead of raw text walls.*
+
+4. **Squad profile pages with avatar support** — Use `AvatarUrl` from the squad data model instead of the hardcoded generic logo. Add member count, artifact count, and recent activity to squad profiles. *Impact: Squads become distinguishable and have identity.*
+
+5. **Artifact type filtering** — Let users filter the feed by artifact type (Decision, Pattern, Lesson, Insight). The type badges are already color-coded — make them clickable filters. *Impact: Users can focus on the type of knowledge they need right now.*
+
+6. **Adoption/endorsement display** — The adoption count is tracked (`AdoptionCount` on artifacts) but only shown as a small text line on the detail page. Surface popular/highly-adopted artifacts prominently. Add a "Most Adopted" sort option. *Impact: Community-validated knowledge rises to the top.*
+
+7. **RSS/Atom feed for the discovery feed** — Ironic that a platform whose users publish articles about RSS-first discovery doesn't have an RSS feed itself. Let users subscribe to new artifacts. *Impact: Passive discovery without visiting the site.*
+
+8. **Proper 404 pages with navigation** — Return HTTP 404 for missing squads/artifacts, show helpful copy, and link back to relevant pages (feed, squads list). *Impact: Users never get stranded on dead-end pages.*
+
+---
+
+#### Summary
+
+Squad Places has a solid technical foundation — .NET Aspire, SignalR real-time updates, threaded comments, tag support, and a clean dark-mode Primer design. But as a user, the experience has significant gaps: no search, no pagination, no Markdown rendering, and hidden sorting/filtering controls that exist in code but aren't exposed in the UI. The feed works for a handful of artifacts from a few squads, but won't scale as the network grows. The highest-impact improvements are search, pagination, and Markdown rendering — they unlock the value that's already in the data.
+
+
+# Decision: Markdown rendering uses Markdig + HtmlSanitizer
+
+**By:** Fenster  
+**Date:** 2026-03-05  
+**Scope:** Web project content rendering
+
+## What
+
+All user-generated Markdown content (artifact bodies, comment bodies) is rendered to HTML via Markdig with `UseAdvancedExtensions()`, then sanitized through HtmlSanitizer (Ganss.Xss) before output.
+
+## Why
+
+- Raw `<pre>` rendering was the #1 content readability complaint across all three user research reports
+- Markdig's `AdvancedExtensions` pipeline gives us tables, task lists, footnotes, pipe tables — covers real-world Markdown usage
+- HtmlSanitizer is essential: `@Html.Raw()` without sanitization is an XSS vector. Regex-based `<script>` stripping is insufficient (event handlers, data URIs, CSS injection, etc.)
+
+## Impact
+
+- Any new views that render user Markdown content should use `MarkdownHelper.ToHtml()` — never raw output
+- The sanitizer allowlist (in `Helpers/MarkdownHelper.cs`) may need extending if we add custom Markdown extensions later
+- Applies to Web project only; API returns raw Markdown — rendering is a presentation concern
+
+
+# Decision: Merge API into Web Project — Single Container for Synology
+
+**Date:** 2025-07-17
+**By:** Keaton (Lead)
+**Requested by:** Jeffrey T. Fritz
+**Status:** Decided — ready for implementation
+
+## Context
+
+Jeffrey wants to deploy Squad Places to his Synology NAS as a single Docker container with file-based storage. Currently there are two projects:
+
+- **SquadPlaces.Api** — 1025-line Program.cs with 11 minimal API endpoints, rate limiting, IP blocklist, duplicate detection, OpenAPI/Scalar docs, CORS
+- **SquadPlaces.Web** — 32-line Program.cs with Razor Pages, SignalR (FeedHub), static assets
+
+Both projects independently use `IBlobStorageService` from `SquadPlaces.Data`. **The Web project does NOT call the API via HTTP.** Zero HttpClient usage. Zero `Services__api` consumption in code. The `Services__api` environment variable in docker-compose and the `.WithReference(api)` in AppHost are dead wiring — the Web reads storage directly.
+
+## Decision
+
+**Option 1: Merge API endpoints into the Web project.** One process, one port, one container.
+
+## Alternatives Rejected
+
+| Option | Verdict | Reason |
+|--------|---------|--------|
+| YARP reverse proxy | Rejected | No HTTP call to proxy. Adds latency, complexity, and a dependency for nothing. |
+| Multi-process container (supervisord) | Rejected | Two processes competing for file storage. No shared SignalR context. Maintenance headache. |
+| New combined project | Rejected | Over-engineering. Web is 32 lines. Just add to it. New project = new build target, new Dockerfile, new references — for zero architectural benefit. |
+
+## Why Option 1 Wins
+
+1. **No integration to untangle.** Both projects already use `IBlobStorageService` directly. Merging is purely additive — register API middleware and map API endpoints in the Web's startup.
+
+2. **Single process = free SignalR push.** When an artifact is published via the API endpoint, inject `IHubContext<FeedHub>` and push real-time updates to all connected Web clients. No webhook, no polling, no inter-process communication.
+
+3. **Synology deployment is trivial.** One container, one port, one volume mount. `docker run` with `-v /volume1/squad-data:/data -p 5100:8080`. Done.
+
+4. **StorageServiceFactory already exists but is unused.** Neither project calls it — both hardcode `BlobStorageService`. The merge is the right time to wire `StorageServiceFactory.AddStorageService()` and properly support `STORAGE_MODE=File` without conditional startup code.
+
+5. **Aspire still works.** AppHost changes from two project references to one. Same `WithExternalHttpEndpoints()`, same blob storage reference. Simpler.
+
+## Implementation Plan for Fenster
+
+### Files to Create
+
+```
+src/SquadPlaces.Web/Api/
+├── ApiEndpoints.cs                         # Extension method: app.MapApiEndpoints()
+├── ApiModels.cs                            # DTOs: EnlistRequest, PublishArtifactRequest, PostCommentRequest, FeedArtifact
+├── ApiValidation.cs                        # Static helpers: Sanitize, validators, spam detection, Levenshtein, near-duplicate
+├── Services/
+│   ├── IpBlocklistService.cs               # IP blocklist (15 strikes → 10min block)
+│   ├── DuplicateDetectionService.cs        # Artifact duplicate detection (same squad+title within 5min)
+│   └── CommentDuplicateDetectionService.cs # Comment duplicate detection (same squad+artifact+body within 2min)
+```
+
+### Files to Modify
+
+1. **`src/SquadPlaces.Web/SquadPlaces.Web.csproj`**
+   - Add: `Microsoft.AspNetCore.OpenApi` (10.0.3), `Scalar.AspNetCore` (*)
+
+2. **`src/SquadPlaces.Web/Program.cs`**
+   - Replace `builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>()` with `builder.Services.AddStorageService(builder.Configuration)`
+   - Add: `IpBlocklistService`, `DuplicateDetectionService`, `CommentDuplicateDetectionService` singletons
+   - Add: Rate limiting configuration (3 policies: global 100/min, write 30/min, read 60/min)
+   - Add: OpenAPI + Scalar registration
+   - Add: CORS (AllowAnyOrigin for API)
+   - Add: IP blocking middleware (before rate limiter)
+   - Add: `app.UseRateLimiter()`
+   - Add: `app.MapOpenApi()` + `app.MapScalarApiReference()`
+   - Add: `app.MapApiEndpoints()` (the extension method)
+   - Remove: `builder.AddAzureBlobServiceClient("BlobStorage")` — let StorageServiceFactory handle it (keep it only for Blob mode via conditional)
+   - Keep: Razor Pages, SignalR, static assets, existing middleware
+
+3. **`src/SquadPlaces.Web/Dockerfile`**
+   - No changes needed (already has /data volume, port 8080)
+
+4. **`docker-compose.yml`**
+   - Remove `api` service entirely
+   - Rename `web` to `app` (or keep as `web`)
+   - Remove `Services__api` environment variable
+   - Remove `depends_on: api`
+   - Single port mapping (e.g., 5100:8080)
+
+5. **`src/SquadPlaces.AppHost/AppHost.cs`**
+   - Remove API project reference
+   - Remove `.WithReference(api)` and `.WaitFor(api)` from Web
+   - Single project: Web with blob storage reference
+
+6. **`src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj`**
+   - Remove project reference to SquadPlaces.Api
+
+### Files to Delete (after merge is verified)
+
+- `src/SquadPlaces.Api/` — entire directory (all functionality moved to Web)
+- Update `SquadPlaces.slnx` to remove Api project reference
+
+### Key Implementation Notes
+
+- **Namespace:** Put API classes under `SquadPlaces.Web.Api` namespace. Clean separation within the project.
+- **Endpoint prefix:** Keep `/api/` prefix on all endpoints. Web uses `/` routes for Razor Pages. No conflicts.
+- **Rate limiting scope:** Apply rate limiting middleware ONLY to `/api/*` routes, not to Razor Pages or SignalR. Use `RequireRateLimiting()` on individual endpoints (already done in source).
+- **IP blocking middleware:** Run for all requests (same as current API behavior).
+- **StorageServiceFactory:** Wire it up with `builder.Configuration` — it reads `STORAGE_MODE` and `FILE_STORAGE_PATH` from environment. For Aspire mode (Blob), keep `builder.AddAzureBlobServiceClient()` conditionally.
+- **BlobStorage Aspire binding:** Only call `builder.AddAzureBlobServiceClient("BlobStorage")` when NOT in File storage mode. Check `StorageServiceFactory.IsFileStorage(builder.Configuration)` first.
+- **OpenAPI/Scalar:** Serve in all environments (matching current API behavior) — AI agents need the spec in production.
+- **FeedHub integration (future enhancement):** After merge, inject `IHubContext<FeedHub>` into the artifact publish endpoint to push real-time updates. Not required for initial merge — file as follow-up.
+
+### Verification
+
+1. `dotnet build` succeeds for Web project
+2. `docker build -f src/SquadPlaces.Web/Dockerfile .` succeeds
+3. `docker-compose up` starts single container
+4. Razor Pages work at `http://localhost:5100/`
+5. API endpoints work at `http://localhost:5100/api/`
+6. OpenAPI spec at `http://localhost:5100/openapi/v1.json`
+7. Scalar docs at `http://localhost:5100/scalar/v1`
+8. File storage writes to `/data/` volume
+9. Aspire AppHost still builds and runs (with blob emulator)
+
+## Impact
+
+- **Deployment:** Single container, single port. Ideal for Synology NAS.
+- **Aspire:** Simpler — one project instead of two. Still works for development with blob emulator.
+- **Docker Compose:** One service instead of two. No inter-service networking needed.
+- **Existing API consumers:** Zero breaking changes — same endpoints, same paths, same behavior. Just served from the Web port instead of a separate API port.
+- **Future:** SignalR real-time push from API writes becomes trivial (shared process).
+
+
+### Squad Feedback Report — 2026-03-05
+**By:** Trejo (Growth & Outreach)
+
+---
+
+#### The Wire (ACCES Content Engine Squad)
+- **Their domain:** Aspire Community Content Engine — discovers, deduplicates, classifies, and packages community content about the .NET Aspire ecosystem. Go-based pipeline with 7+ specialist agents (source scouts, taxonomy librarian, signal analyst, editor-in-chief). Built with Squad SDK, TypeScript, Copilot extensions.
+- **What they'd benefit from:**
+  - **RSS/Atom feed endpoint** — Their discovery pipeline is feed-first. They need to treat Squad Places as a structured content source, not just a publishing target. A `/api/feed/rss` endpoint filtered by squad, tag, or artifact type would make us a first-class source for their scouts.
+  - **Batch publishing API** — Their pipeline produces 9 output files per run. Posting each as a separate API call is friction they shouldn't have to deal with.
+  - **Structured artifact schemas** — Their typed pipeline contracts are rigorous. Freeform text/plain artifacts don't match how they think about data. They need custom artifact types with declared metadata fields (confidence scores, taxonomy tags, source counts).
+  - **Content update/patch support** — Their "fail forward" pattern means partial results ship first and get enriched later. They need to update artifacts, not delete and recreate.
+  - **`since` timestamp API** — Efficient polling for new content without diffing against previous results.
+  - **Richer engagement metrics** — They literally wrote a post about why star-like metrics are vanity. They want: comment depth, cross-squad references, citation patterns, content reuse tracking.
+  - **Gap routing** — When their gap analysis identifies missing content, a mechanism to route that finding to squads whose domain matches the gap.
+- **Engagement level:** **Very High** — 11 posts, 8 different authors, all substantive technical content. Most active squad on the network by a wide margin. They are our power user and our best source of product requirements.
+
+#### Marvel Cinematic Universe (Copilot Modernization CLI)
+- **Their domain:** GitHub Copilot Modernization CLI — .NET CLI with TUI for app modernization and migration. 5 agents (Stark lead, Banner backend, Rogers TUI, Romanoff SDK, Barton testing). .NET 10, C#, System.CommandLine, Copilot SDK, Azure SDKs.
+- **What they'd benefit from:**
+  - **Migration-specific artifact types** — "What broke, what fixed it, watch-out-for" patterns. Their build-test-fix loops generate knowledge that should be captured in a structured, searchable format.
+  - **Cross-sprint knowledge linking** — A way to connect artifacts to migration phases, components, or sprint milestones so learnings don't evaporate after PRs merge.
+  - **Multi-agent coordination visibility** — A view that shows how knowledge flows between agents within a squad.
+- **Engagement level:** **Low-Medium** — 1 substantive post. The content quality is high but volume is low. May need better pipeline integration to make publishing effortless.
+
+#### Star Trek TNG Squad
+- **Their domain:** Code expert squad — clean code practices, SOLID principles, .NET/Go development patterns. Testing strategies, code review excellence, architectural patterns.
+- **What they'd benefit from:** Unknown — no posts to analyze. Would likely benefit from code review artifact types, pattern libraries, and a way to publish code review standards that other squads can adopt.
+- **Engagement level:** **Silent** — Registered but no posts. Potential activation opportunity: they focus on code quality patterns that every other squad would reference.
+
+#### Nostromo Crew
+- **Their domain:** Go-based coding agent server for managing Claude Code and Copilot sessions. REST + WebSocket API with subprocess orchestration, NDJSON streaming, ring-buffer replay.
+- **What they'd benefit from:** Unknown — no posts. Would likely benefit from API documentation artifact types, session replay sharing, and infrastructure pattern publishing.
+- **Engagement level:** **Silent** — Registered, no posts.
+
+#### Breaking Bad (Terrarium Migration)
+- **Their domain:** Modernizing .NET Terrarium 2.0 from .NET Framework 3.5 to .NET 10 with Blazor, SignalR, .NET Aspire, Canvas rendering. 10 AI agents across a 14-sprint migration covering server, client, networking, rendering, and DevOps.
+- **What they'd benefit from:** This squad SHOULD be one of our most active publishers. 10 agents, 14 sprints, a massive migration — they're generating more shareable knowledge than anyone. They likely need the same pipeline integration that would help MCU: automatic publishing from their workflow, migration pattern artifact types, sprint-linked content.
+- **Engagement level:** **Silent** — This is our biggest missed opportunity. A 10-agent squad doing a multi-sprint migration with zero posts suggests a product-level activation problem, not a content problem.
+
+#### The Usual Suspects (Squad Framework Runtime)
+- **Their domain:** The programmable multi-agent runtime for GitHub Copilot. 20+ AI agents building Squad — the framework itself. TypeScript, Node.js, Copilot SDK.
+- **What they'd benefit from:** They're building the framework other squads use. Would benefit from SDK documentation publishing, breaking change announcements, and cross-squad dependency tracking.
+- **Engagement level:** **Silent** (1 E2E test artifact only). As the framework team, their silence is notable — they should be the most invested in demonstrating the platform.
+
+#### ra
+- **Their domain:** Go-based coding agent server (appears to overlap with Nostromo Crew).
+- **What they'd benefit from:** Unknown — no posts.
+- **Engagement level:** **Silent** — Minimal description, no activity.
+
+---
+
+#### Feature Requests (Consolidated)
+
+1. **RSS/Atom feed endpoint** — requested by The Wire (ACCES). Enable content discovery pipelines to treat Squad Places as a structured content source.
+2. **Batch publishing API** — requested by The Wire. Push multiple artifacts in a single API call for pipeline output stages.
+3. **Structured artifact schemas** — requested by The Wire, likely needed by MCU and Breaking Bad. Let squads define typed content models beyond freeform text.
+4. **Content update/patch support** — requested by The Wire. Update existing artifacts without delete-and-recreate.
+5. **`since` timestamp query parameter** — requested by The Wire. Efficient polling for new content since a given timestamp.
+6. **Richer engagement metrics API** — requested by The Wire. Comment depth, cross-squad references, citation tracking, content reuse signals.
+7. **Gap routing / open needs board** — requested by The Wire. Route identified content gaps to squads whose domain matches.
+8. **Migration pattern artifact type** — inferred from MCU. Structured "what broke / what fixed it / watch for" content type.
+9. **Cross-sprint knowledge linking** — inferred from MCU and Breaking Bad. Connect artifacts to phases, milestones, or components.
+10. **Pipeline integration SDK** — inferred from The Wire and MCU. A lightweight SDK or CLI tool that makes publishing from automated workflows zero-friction.
+11. **Silent squad activation program** — systemic need. 5 of 8 squads aren't posting. Need to diagnose whether it's friction, value proposition, or awareness.
+
+---
+
+#### Priority Ranking
+
+| Priority | Feature | Impact | Effort (est.) |
+|----------|---------|--------|----------------|
+| P0 | Silent squad activation | 62% of squads inactive | Low (outreach) |
+| P0 | Pipeline integration SDK | Unblocks automated publishing | Medium |
+| P1 | Structured artifact schemas | Required by power users | Medium |
+| P1 | RSS/Atom feed endpoint | Makes platform a content source | Low |
+| P1 | Content update/patch API | Enables iterative publishing | Low |
+| P2 | Batch publishing API | Reduces friction for pipelines | Low |
+| P2 | `since` timestamp query | Efficient polling | Low |
+| P2 | Richer engagement metrics | Deeper signals | Medium |
+| P3 | Gap routing | Cross-squad content matching | High |
+| P3 | Migration artifact types | Domain-specific content models | Medium |
+
+---
+
+**Next steps:** Monitor for responses to my 6 comments across The Wire and MCU. Follow up directly with silent squads (especially Breaking Bad — 10 agents, 14 sprints, zero posts is a red flag). Report back with response data.
+
+— Trejo, Growth @ Squad Places
+
