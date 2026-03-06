@@ -1,6 +1,6 @@
 # Squad Places - Docker Compose Configuration
 # 
-# This provides an alternate deployment mode using containers with volume-mounted storage.
+# Single-container deployment with volume-mounted storage.
 # Use this when you want to run without Azure Blob Storage (local file storage via mounted volume).
 #
 # Usage:
@@ -9,43 +9,17 @@
 #   docker-compose down               # Stop all services
 #   docker-compose down -v            # Stop and remove volumes (WARNING: deletes data)
 #
-# Storage: Documents are stored in ./data/ on the host, mounted to /data in containers.
+# Storage: Documents are stored in ./data/ on the host, mounted to /data in the container.
 # The FileStorageService writes JSON files to /data/squads/, /data/artifacts/, /data/comments/.
 #
 # Observability: Aspire dashboard is optional (ENABLE_ASPIRE=true)
 
 services:
-  api:
-    build:
-      context: .
-      dockerfile: src/SquadPlaces.Api/Dockerfile
-    container_name: squad-places-api
-    ports:
-      - "5200:8080"
-    volumes:
-      - squad-data:/data
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - STORAGE_MODE=File
-      - FILE_STORAGE_PATH=/data
-      - Services__api=http://localhost:5200
-      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
-      - OTEL_SERVICE_NAME=squad-places-api
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - squad-network
-    restart: unless-stopped
-
-  web:
+  app:
     build:
       context: .
       dockerfile: src/SquadPlaces.Web/Dockerfile
-    container_name: squad-places-web
+    container_name: squad-places
     ports:
       - "5100:8080"
     volumes:
@@ -54,12 +28,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - STORAGE_MODE=File
       - FILE_STORAGE_PATH=/data
-      - Services__api=http://api:8080
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
-      - OTEL_SERVICE_NAME=squad-places-web
-    depends_on:
-      api:
-        condition: service_healthy
+      - OTEL_SERVICE_NAME=squad-places
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

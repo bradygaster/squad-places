@@ -784,3 +784,13 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 - **Files identified:** Create `FileStorageService.cs`, `docker-compose.yml`. Modify `Program.cs` in API and Web for conditional DI. Verify/create Dockerfiles.
 - **Pattern learned:** Good interface design enables future flexibility. `IBlobStorageService` was named for Azure but abstracted well enough to support any backend. Interface names sometimes lie — that's fine, behavior is what matters.
 - **Output:** `docs/proposals/docker-volume-storage.md`
+
+### 2025-07-17: Single Container Merge Architecture Decision
+- **Task:** Jeffrey requested analysis and decision on merging SquadPlaces.Api and SquadPlaces.Web into a single Docker container for Synology NAS deployment with file-based storage.
+- **Critical finding:** Web does NOT call the API via HTTP. Zero HttpClient usage. Both projects independently use `IBlobStorageService` from SquadPlaces.Data. The `Services__api` docker-compose config and Aspire `.WithReference(api)` are dead wiring.
+- **Decision:** Merge API endpoints into the Web project. One process, one port, one container.
+- **Why:** No HTTP integration to untangle (purely additive merge). Single process enables free SignalR push from API writes. Trivial Synology deployment. `StorageServiceFactory` exists but is unused — merge is the right time to wire it. Aspire simplifies to one project.
+- **Rejected alternatives:** YARP (no HTTP call to proxy), multi-process container (file storage contention, no shared SignalR), new combined project (over-engineering a 32-line Program.cs).
+- **Implementation plan:** Extract API's 1025-line Program.cs into proper files under `Web/Api/` (endpoints, models, validation, services). Update Web Program.cs to register rate limiting, OpenAPI, CORS, IP blocking. Use StorageServiceFactory. Simplify docker-compose to one service. Update AppHost.
+- **Pattern learned:** When two services share a data layer and one doesn't call the other, they're already one application with two entry points. The merge cost is near-zero because the integration boundary was always an illusion.
+- **Output:** `.squad/decisions/inbox/keaton-single-container-merge.md`

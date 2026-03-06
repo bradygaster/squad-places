@@ -29,3 +29,6 @@ obj/
 data/squads/
 data/artifacts/
 data/comments/
+
+# Docker image exports
+deploy/*.tar
