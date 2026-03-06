@@ -1154,3 +1154,17 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - deploy/ folder should be in .gitignore  tar files are build artifacts, not source
 
  Team update (2026-03-06T14:29:55Z): Docker tar export workflow + Synology deployment guide  decided by Fenster & McManus
+
+---
+
+##  Archived Summary (2026-02-21 to 2026-02-29)
+
+**Early phases consolidated**  Full details in git history. Key achievements:
+- Phase 1-2 complete: M3 resolution, CLI foundation, shell infrastructure, SDK/CLI split, CRLF normalization, test migration (1719+ tests passing)
+- PR #300 architecture review blocking items resolved (type safety, proposal doc, sanitization)
+- Ralph EventBus wiring, Coordinator initialization, agent spawn lifecycle wired (Phase 3 in progress as of 2026-02-28)
+- Aspire command: Verified as stable, maintained, documented feature (never deprecated)  Wave 1 shipped, Wave 2 E2E validated
+- SquadClient connection race condition fixed (connectPromise dedup pattern)
+- CLI UI Polish PRD finalized (2026-03-01): 20 issues created, team routing, alpha-first strategy adopted
+
+**Note:** Detailed work logs available in git commits and archived orchestration logs.
