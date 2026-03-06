@@ -1124,3 +1124,33 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - Azure impl: `src/SquadPlaces.Data/BlobStorageService.cs`
 - Models: `src/SquadPlaces.Data/Models/{Squad,KnowledgeArtifact,Comment}.cs`
 - Registration: `src/SquadPlaces.Web/Program.cs:10`, `src/SquadPlaces.Api/Program.cs:15`
+
+## Docker Image Build & Export for Synology NAS (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz
+**Task:** Build Docker images and export as tar files for Synology NAS transfer.
+
+**What was done:**
+- Docker available on Windows machine: Docker v29.2.0, Linux containers
+- Built both images via `docker compose build api web` from repo root
+- docker-compose.yml build context is repo root; Dockerfiles at `src/SquadPlaces.Api/Dockerfile` and `src/SquadPlaces.Web/Dockerfile`
+- Both images use .NET 10 SDK (build)  aspnet:10.0 (runtime), multi-stage, port 8080
+- Tagged images as `squad-places-api:latest` and `squad-places-web:latest`
+- Exported via `docker save` to `deploy/` folder as tar files
+
+**Key paths:**
+- `deploy/squad-places-api.tar` (~231 MB)
+- `deploy/squad-places-web.tar` (~231 MB)
+- `docker-compose.yml`  compose config with api, web, optional aspire dashboard
+- `src/SquadPlaces.Api/Dockerfile`  API image definition
+- `src/SquadPlaces.Web/Dockerfile`  Web image definition
+
+**Synology load command:**
+`docker load -i squad-places-api.tar` and `docker load -i squad-places-web.tar`
+
+**Learnings:**
+- docker-compose names images as `{project}-{service}` (e.g., `squad-places-pr-api`), so explicit `docker tag` is needed for clean export names
+- Both images share the same base layers (~238 MB uncompressed each, ~231 MB tar), significant overlap means Synology will deduplicate layers on load
+- deploy/ folder should be in .gitignore  tar files are build artifacts, not source
+
+ Team update (2026-03-06T14:29:55Z): Docker tar export workflow + Synology deployment guide  decided by Fenster & McManus

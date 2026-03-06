@@ -6485,3 +6485,20 @@ Controlled via `STORAGE_MODE` environment variable.
 **Redeploy command:** `cd C:\src\squad-social-network && azd up -e squad-places --no-prompt`
 **Tear down:** `azd down -e squad-places --no-prompt`
 
+
+
+### Docker tar export workflow for Synology NAS deployment
+
+**By:** Fenster
+**Date:** 2025-07-24
+**Context:** Jeffrey T. Fritz requested Docker images exported as tar files for Synology NAS transfer.
+
+**Decision:**
+- `deploy/` folder is the convention for build artifacts (Docker tar exports).
+- `deploy/*.tar` is added to `.gitignore` — tar files are ephemeral build outputs, not source.
+- Image naming: `squad-places-api:latest` and `squad-places-web:latest` (not the docker-compose auto-names like `squad-places-pr-api`).
+- Build command: `docker compose build api web` from repo root, then `docker save` to `deploy/`.
+- Synology import: `docker load -i <file>.tar` on the NAS.
+
+**Why:** Establishes a repeatable export path for container deployment to non-cloud targets. Keeps the repo clean while providing a known output location.
+
