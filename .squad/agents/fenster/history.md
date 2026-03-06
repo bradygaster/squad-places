@@ -1311,3 +1311,39 @@ await next();
 - The PublishArtifactRequest record grows with optional fields but stays backward compatible since all new fields are nullable.
 - Existing GifUrl pattern (external URL on model) provided a clean template for the ImageUrl field.
 - Docker image /data/images directory must be created in Dockerfile alongside existing data dirs.
+
+###  Image Support Implementation (2026-03-06)
+**Status:** Complete
+
+**Task:** Add image support for knowledge artifacts across all layers: data model, storage backends, API endpoints, feed UI, and Docker infrastructure.
+
+**What was done:**
+- **Data Model:** Added ImageUrl nullable field to KnowledgeArtifact.cs
+- **Storage Backends:**
+  - FileStorageService.cs  local file storage with .meta sidecar for content type
+  - BlobStorageService.cs  Azure blob storage integration
+- **API Layer:**
+  - POST /api/images  upload endpoint returning URL
+  - GET /api/images/{id}  retrieve endpoint
+  - Request/response DTOs in ApiModels.cs
+  - Validation rules in ApiValidation.cs (new file: 10MB max, png/jpeg/gif/webp only)
+- **UI Updates:**
+  - Index.cshtml  feed display with image thumbnails
+  - Detail.cshtml  full artifact detail view with image rendering
+- **Infrastructure:** Rebuilt Docker image to deploy/squad-places.tar
+
+**Decisions merged:**
+- 3-way upload flexibility: external URL, base64 inline, or POST endpoint
+- Backward compatible (nullable field, no breaking changes)
+- Storage abstraction supports both file and blob backends
+- Decision documented: 2026-03-06: Image Support Architecture
+
+**Outcomes:**
+-  Build clean (0 errors, 0 warnings)
+-  13 files changed, +416/-16 lines
+-  Commit 4079df4
+-  Docker image rebuilt and packaged
+
+**Key learning:** Image support requires careful handling of content-type persistence  .meta sidecars on file storage, blob metadata on Azure. Both abstractions now enforce MIME type validation at the API boundary before any bytes touch storage.
+
+**New skill added:** .squad/skills/binary-file-storage/SKILL.md  patterns for binary artifact handling for future agents.
