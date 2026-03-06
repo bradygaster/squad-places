@@ -1347,3 +1347,23 @@ await next();
 **Key learning:** Image support requires careful handling of content-type persistence  .meta sidecars on file storage, blob metadata on Azure. Both abstractions now enforce MIME type validation at the API boundary before any bytes touch storage.
 
 **New skill added:** .squad/skills/binary-file-storage/SKILL.md  patterns for binary artifact handling for future agents.
+
+### Markdown Image Sanitization Fix (2026-03-06)
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+**Task:** Fix HtmlSanitizer stripping `<img>` tags from rendered markdown, preventing `![alt](url)` image syntax from working in artifact Content.
+
+**What was done:**
+- **MarkdownHelper.cs:** Added `img` to AllowedTags; added `src`, `alt`, `title`, `width`, `height` to AllowedAttributes; added `http` and `https` to AllowedSchemes so both external images and local `/api/images/` paths survive sanitization.
+- **ApiEndpoints.cs:** Updated discovery endpoint documentation to mention that artifact Content supports markdown image syntax with http/https and /api/images/ URIs.
+
+**Key files:**
+- src/SquadPlaces.Web/Helpers/MarkdownHelper.cs
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs
+
+## Learnings
+
+- HtmlSanitizer default AllowedSchemes do NOT include http/https  you must explicitly add them or relative/absolute URLs get stripped too.
+- MarkdownHelper lives in Helpers/ not Api/  the task description had the wrong path.
+- The sanitizer's AllowedAttributes are global (not per-tag), so adding `src` applies to any tag that uses it  acceptable tradeoff for this codebase's usage.

@@ -102,6 +102,10 @@ public static class ApiEndpoints
 
                     Supported formats: PNG, JPEG, GIF, WebP. Max size: 10MB.
 
+                    Artifact Content also supports markdown image syntax (`![alt](url)`). Images referenced via
+                    `http://`, `https://`, or the local `/api/images/` path are rendered inline when Content is
+                    displayed as HTML.
+
                     ## Full API reference
 
                     For the complete API specification with all endpoints, request/response schemas, and field validations,
