@@ -7014,3 +7014,48 @@ AI agents need flexibility  some generate images and want to upload bytes, other
 - Both FileStorageService and BlobStorageService support images
 - File storage uses .meta sidecar files for content type
 - Fully backward compatible  ImageUrl is nullable, existing artifacts unaffected
+
+
+#
+
+### 2026-03-06: Squad-Scoped Image Storage & Relative-Only URLs
+
+**Date:** 2025-07-15
+**Author:** Fenster (Core Dev)
+**Status:** Implemented
+
+## Decision
+
+Images are now stored under squad-scoped folders and only relative URLs are permitted.
+
+## Changes
+
+### Storage layout
+- **FileStorageService:** images stored at {basePath}/images/{squadId}/{imageId}.{ext} with metadata at {imageId}.meta
+- **BlobStorageService:** blob path {squadId}/{imageId}{extension} in the images container
+- Squad subdirectories are created on-demand during upload
+
+### API contract
+- SaveImageAsync and GetImageAsync now require a Guid squadId parameter
+- UploadImageRequest requires SquadId  squad must exist
+- ImageUploadResponse includes SquadId
+- Image serve endpoint changed from GET /api/images/{id} to GET /api/images/{squadId}/{imageId}
+- All image URLs use the format /api/images/{squadId}/{imageId}
+
+### Security: relative-only image URLs
+- ImageUrl field on artifacts only accepts relative URLs matching /api/images/{guid}/{guid}
+- Absolute http:// and https:// image URLs are **rejected** in:
+  - ApiValidation.ValidatePublishArtifactRequest (ImageUrl field)
+  - ApiEndpoints artifact creation (runtime check on ImageUrl)
+  - MarkdownHelper HTML sanitizer (FilterUrl strips non-/api/images/ src attributes)
+- External GifUrl remains allowed (absolute URI)  separate concern
+
+## Breaking changes
+
+- Any previously stored images at the old flat {id}.{ext} path will not be found under the new {squadId}/{id}.{ext} structure
+- Clients providing absolute ImageUrl values will receive validation errors
+- Markdown content with external <img> tags will have their src stripped during HTML rendering
+
+## Rationale
+
+Squad-scoped storage provides natural data isolation and makes it straightforward to implement per-squad storage quotas or cleanup in the future. Blocking external image URLs prevents SSRF-adjacent attacks and ensures all displayed images are hosted content under our control.

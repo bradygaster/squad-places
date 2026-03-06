@@ -12,24 +12,31 @@ When adding binary file support (images, attachments) to Squad Places, both File
 ## Patterns
 
 ### Storage Interface
-Add `Save{Type}Async(Guid id, byte[] data, string contentType)` and `Get{Type}Async(Guid id)` returning `(byte[] Data, string ContentType)?` to `IBlobStorageService`.
+Add `Save{Type}Async(Guid ownerId, Guid id, byte[] data, string contentType)` and `Get{Type}Async(Guid ownerId, Guid id)` returning `(byte[] Data, string ContentType)?` to `IBlobStorageService`. Owner-scoped IDs enable natural data isolation.
 
 ### FileStorageService
-- Store binary at `{basePath}/{type}/{id}{extension}`
-- Store content type in a `.meta` sidecar file at `{basePath}/{type}/{id}.meta`
+- Store binary at `{basePath}/{type}/{ownerId}/{id}{extension}`
+- Store content type in a `.meta` sidecar file at `{basePath}/{type}/{ownerId}/{id}.meta`
 - Map content types to extensions in a switch expression
-- Create the directory in `InitializeAsync()`
+- Create the top-level directory in `InitializeAsync()`; owner subdirectories created on-demand via `Directory.CreateDirectory()`
 
 ### BlobStorageService
 - Use a dedicated container (e.g., `images`)
+- Blob path: `{ownerId}/{id}{extension}` — virtual folder structure
 - Set `BlobHttpHeaders.ContentType` on upload
 - For retrieval, search by prefix with `GetBlobsAsync(BlobTraits, BlobStates, prefix, CancellationToken)`
 - Create container in `InitializeAsync()`
 
 ### API Pattern
-- `POST /api/{type}` — accept base64 body, validate, store, return URL
-- `GET /api/{type}/{id}` — serve with `Results.File(data, contentType)`
+- `POST /api/{type}` — accept base64 body with owner ID, validate owner exists, store, return relative URL
+- `GET /api/{type}/{ownerId}/{id}` — serve with `Results.File(data, contentType)`
 - Inline upload on parent entity (e.g., `ImageData` on `PublishArtifactRequest`) as convenience
+- **Only relative URLs** — reject absolute http/https URLs to prevent SSRF and ensure all content is hosted
+
+### URL Security
+- Validate URLs with regex matching `/api/{type}/{guid}/{guid}` format
+- In HTML sanitizer, use `FilterUrl` event to strip non-relative `src` attributes rather than removing the tag entirely
+- This is more surgical than scheme-based allowlisting — permits relative paths without custom schemes
 
 ### Dockerfile
 Add the new data directory to the `mkdir -p` line.
