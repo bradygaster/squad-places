@@ -1168,3 +1168,47 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - CLI UI Polish PRD finalized (2026-03-01): 20 issues created, team routing, alpha-first strategy adopted
 
 **Note:** Detailed work logs available in git commits and archived orchestration logs.
+
+
+## Fixed API Docs and Endpoints (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz
+
+**Problem:** API documentation (Scalar) and API endpoints were not working. User reported "the API docs and endpoints linked in the website don't work".
+
+**Root causes identified:**
+
+1. **Dead configuration wiring in _Layout.cshtml**  Navigation link was using Configuration["services:api:https:0"] which referenced a non-existent "api" service (AppHost registers as "web", not "api"). This resulted in an empty string and broken links.
+
+2. **Middleware ordering issue**  MapOpenApi() and MapScalarApiReference() were called BEFORE UseRouting(), causing endpoints to not be registered properly in the routing table.
+
+3. **Antiforgery blocking API POSTs**  UseAntiforgery() was applied globally after UseRouting(), requiring antiforgery tokens for ALL requests including REST API endpoints.
+
+4. **Development environment missing STORAGE_MODE**  launchSettings.json didn't set STORAGE_MODE=File, causing app to crash on startup when blob storage wasn't configured.
+
+**What was done:**
+
+1. Fixed _Layout.cshtml (line 44-46)  Removed dead config lookup, replaced with direct /scalar/v1 link (everything is same-origin now)
+2. Moved MapOpenApi() and MapScalarApiReference() AFTER UseRouting() in Program.cs to ensure proper endpoint registration
+3. Created API route group with .DisableAntiforgery()  Refactored ApiEndpoints.cs to use MapGroup("/api").DisableAntiforgery() pattern, preventing antiforgery validation on REST API endpoints
+4. Updated launchSettings.json  Added STORAGE_MODE=File to both http and https profiles for local development
+
+**Verified working:**
+- /scalar/v1  Interactive API documentation (Scalar UI)
+- /openapi/v1.json  OpenAPI specification
+- /api  Discovery endpoint with onboarding prompt
+- POST /api/squads/enlist  POST endpoint works without antiforgery token
+
+**Key learnings:**
+
+- **Single-container architecture**  SquadPlaces.Web contains BOTH Razor Pages UI AND REST API endpoints at /api/*. No separate API service exists.
+- **Route groups for middleware**  MapGroup("/api").DisableAntiforgery() is the correct pattern for selectively disabling antiforgery on a subset of endpoints
+- **Middleware ordering matters**  Endpoint mapping (MapOpenApi, MapScalarApiReference, etc.) MUST come after UseRouting() in ASP.NET Core pipeline
+- **Aspire service naming**  AppHost registers the web project as "web", not "api". Configuration keys use the service name: services:web:http:0
+
+**Key paths:**
+- src/SquadPlaces.Web/Program.cs  Middleware pipeline and OpenAPI configuration
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs  All 11 REST API endpoints with route group pattern
+- src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml  Navigation header with API docs link
+- src/SquadPlaces.Web/Properties/launchSettings.json  Development environment configuration
+
