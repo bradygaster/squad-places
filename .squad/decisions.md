@@ -6919,3 +6919,75 @@ src/SquadPlaces.Web/Api/
 
 — Trejo, Growth @ Squad Places
 
+
+
+# Fix: Middleware crash on large responses
+
+**Date:** 2026-02-24  
+**By:** Fenster (Core Dev)  
+**Context:** Bug fix — production-blocking issue
+
+## Problem
+
+The IP blocking middleware in `src/SquadPlaces.Web/Program.cs` was crashing on **every request with a response body larger than Kestrel's initial buffer size (~16KB)**.
+
+### Root Cause
+
+After calling `await next();` on line 193, the middleware attempted to set response headers on lines 196-199:
+
+```csharp
+if (context.Response.Headers.ContainsKey("X-RateLimit-Limit") == false)
+{
+    var isWrite = HttpMethods.IsPost(context.Request.Method);
+    context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "30" : "60";
+}
+```
+
+This threw `System.InvalidOperationException: Headers are read-only, response has already started` because for any response larger than the initial buffer, Kestrel had already started streaming the response body by the time `next()` returned. You cannot set headers after `Response.HasStarted` is true.
+
+### Symptoms
+
+- `/scalar/v1` worked (636 bytes, fits in buffer)
+- `/openapi/v1.json` crashed (39KB response)
+- `/` crashed (6KB response)
+- `/api/feed` crashed (any response)
+
+Stack trace pointed to `Program.cs:line 199` attempting to set headers after response started.
+
+## Solution
+
+Used ASP.NET Core's `context.Response.OnStarting()` callback to register header-setting logic **before** the response starts. This is the idiomatic pattern for middleware that needs to set response headers:
+
+```csharp
+// Add rate limit headers to all responses (before response starts)
+context.Response.OnStarting(() =>
+{
+    if (!context.Response.Headers.ContainsKey("X-RateLimit-Limit"))
+    {
+        var isWrite = HttpMethods.IsPost(context.Request.Method);
+        context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "30" : "60";
+    }
+    return Task.CompletedTask;
+});
+
+await next();
+```
+
+The `OnStarting` callback is guaranteed to execute before the first byte of the response body is written, regardless of response size.
+
+## Verification
+
+1. ✅ Build: `dotnet build src\SquadPlaces.Web` — 0 errors, 0 warnings
+2. ✅ Local test in Production mode:
+   - `/scalar/v1` → 200 OK, 636 bytes, X-RateLimit-Limit: 60
+   - `/openapi/v1.json` → 200 OK, 39KB, X-RateLimit-Limit: 60
+   - `/` → 200 OK, 6KB, X-RateLimit-Limit: 60
+   - `/api/feed` → 200 OK, X-RateLimit-Limit: 60
+3. ✅ Docker image rebuilt and saved to `deploy/squad-places.tar`
+
+## Decision
+
+**Use `context.Response.OnStarting()` for all middleware that needs to set response headers after calling `next()`.**
+
+This pattern ensures headers are always applied before the response starts streaming, regardless of response size or buffering behavior.
+
