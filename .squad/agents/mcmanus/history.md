@@ -1086,3 +1086,70 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 **Placement:** docs/blog-feedback-loop.md (sister post to existing migration and launch announcements)
 
 **Images:** All 5 provided screenshots embedded with relative paths and captions. 1 provenance table. No emoji in body text. No exclamation marks.
+
+### 2026-03 (Current): Synology NAS Deployment Guide  Squad Places
+
+**Status:** Complete. Comprehensive Synology deployment guide created at docs/synology-deployment.md.
+
+**Context:**
+- Project: Squad Places (ASP.NET Core 10 API + Web frontend)
+- Requestor: Jeffrey T. Fritz
+- Use case: Deploying to Synology NAS using Docker images (TAR files)
+- Docker setup: docker-compose with two services (api:5200, web:5100), shared file storage at /data
+
+**Documentation created:** docs/synology-deployment.md (11.8 KB)
+
+**Content structure  9 major sections:**
+1. **Prerequisites**  Hardware (x64 NAS, DSM 7.1+), Container Manager, SSH (optional)
+2. **Step 1: Build & Export Images**  Instructions for building from repo, exporting as TAR on build machine
+3. **Step 2: Load into Synology**  Two approaches: Container Manager UI (graphical) and SSH (faster for bulk uploads)
+4. **Step 3: Create Shared Folder**  Persistent storage folder setup via File Station UI
+5. **Step 4: Prepare docker-compose**  Complete compose file with exact paths, volume mounts, environment vars
+6. **Step 5: Start Containers**  SSH and UI methods side-by-side
+7. **Step 6: Verify Deployment**  Health checks (docker-compose ps, curl tests, web UI access)
+8. **Step 7: Network & Firewall**  Synology firewall rules, port forwarding for external access
+9. **Step 89: Persistence & Updates**  Backup strategy, version update workflow
+
+**Troubleshooting section (7 scenarios):**
+- Port conflicts (netstat method to diagnose)
+- Permission denied on /data (chmod 755, chown 1026:1026)
+- Container startup failures (log inspection, common causes)
+- Health check failures (logging, manual curl tests)
+- Data not persisting (volume mount verification)
+- Memory issues (resource monitoring, limits)
+
+**Advanced section:** Observability dashboard (Aspire) optional setup.
+
+**Tone & style:**
+- Practical, copy-paste-friendly: Commands verbatim, file paths Synology-native (/volume1/squad-places-data)
+- Synology terminology used consistently: Container Manager (not "Docker app"), File Station, Control Panel, Shared Folder
+- Dual-path approach (UI + SSH) for accessibility (GUI users and automation)
+- Evidence-based: compose file exactly mirrors docker-compose.yml in repo; environment vars match source
+- Code blocks properly formatted: YAML syntax-highlighted, bash for commands
+- No hype: Factual, solution-oriented language
+
+**Key decisions:**
+1. Chose /volume1/squad-places-data as standard path (common first volume) with guidance to adjust
+2. Emphasized health check logic (API must reach "healthy" before Web starts) for deployment reliability
+3. Included both UI and SSH paths  UI first (lower barrier), SSH second (faster)
+4. SSH method includes image load verification (docker images grep)  helps debug missing-image errors
+5. Permission fix (chown 1026:1026) targets Synology's "docker" system user
+6. Update workflow keeps existing compose; only requires docker-compose pull + restart
+7. Observability section marked "Advanced"  not required but documented for monitoring
+
+**Testing/validation:**
+- Compose file syntax validated against repo's docker-compose.yml
+- Environment variables cross-checked against both API and Web Dockerfiles
+- Port mappings (5200  8080 for API, 5100  8080 for Web) verified against docker-compose.yml
+- Health check endpoints (/health) verified in Dockerfile health checks
+- Volume mount paths match Dockerfile VOLUME declarations and healthcheck curl targets
+
+**File paths referenced:**
+- Source of truth: docker-compose.yml (lines 17100)
+- API Dockerfile: src/SquadPlaces.Api/Dockerfile (lines 144)
+- Web Dockerfile: src/SquadPlaces.Web/Dockerfile (lines 144)
+- New guide: docs/synology-deployment.md
+
+**Archival notes:** This is a specialized guide for a specific deployment target (Synology NAS). It complements the existing docs/docker-deployment.md (generic Docker + Compose) by adding Synology-specific UI, CLI, and troubleshooting flows. Both documents are meant to coexist  generic guide for broad audience, Synology guide for NAS owners.
+
+ Team update (2026-03-06T14:29:55Z): Docker tar export workflow + Synology deployment guide  decided by Fenster & McManus
