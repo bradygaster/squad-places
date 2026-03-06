@@ -176,7 +176,7 @@ public class BlobStorageService : IBlobStorageService
         return count;
     }
 
-    public async Task<string> SaveImageAsync(Guid id, byte[] data, string contentType)
+    public async Task<string> SaveImageAsync(Guid squadId, Guid imageId, byte[] data, string contentType)
     {
         var extension = contentType switch
         {
@@ -186,7 +186,7 @@ public class BlobStorageService : IBlobStorageService
             "image/webp" => ".webp",
             _ => ".bin"
         };
-        var blob = _imagesContainer.GetBlobClient($"{id}{extension}");
+        var blob = _imagesContainer.GetBlobClient($"{squadId}/{imageId}{extension}");
         await blob.UploadAsync(BinaryData.FromBytes(data), overwrite: true);
         await blob.SetMetadataAsync(new Dictionary<string, string>
         {
@@ -196,13 +196,13 @@ public class BlobStorageService : IBlobStorageService
         var headers = new BlobHttpHeaders { ContentType = contentType };
         await blob.SetHttpHeadersAsync(headers);
 
-        return $"/api/images/{id}";
+        return $"/api/images/{squadId}/{imageId}";
     }
 
-    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid id)
+    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid squadId, Guid imageId)
     {
-        // Search for the blob by prefix since we don't know the extension
-        await foreach (var blobItem in _imagesContainer.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, id.ToString(), default))
+        var prefix = $"{squadId}/{imageId}";
+        await foreach (var blobItem in _imagesContainer.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix, default))
         {
             var blob = _imagesContainer.GetBlobClient(blobItem.Name);
             var response = await blob.DownloadContentAsync();

@@ -145,7 +145,7 @@ public class FileStorageService : IBlobStorageService
         return comments.Count;
     }
 
-    public async Task<string> SaveImageAsync(Guid id, byte[] data, string contentType)
+    public async Task<string> SaveImageAsync(Guid squadId, Guid imageId, byte[] data, string contentType)
     {
         var extension = contentType switch
         {
@@ -155,19 +155,22 @@ public class FileStorageService : IBlobStorageService
             "image/webp" => ".webp",
             _ => ".bin"
         };
-        var filePath = Path.Combine(_imagesPath, $"{id}{extension}");
+        var squadDir = Path.Combine(_imagesPath, squadId.ToString());
+        Directory.CreateDirectory(squadDir);
+
+        var filePath = Path.Combine(squadDir, $"{imageId}{extension}");
         await File.WriteAllBytesAsync(filePath, data);
 
-        // Store metadata alongside the image
-        var metaPath = Path.Combine(_imagesPath, $"{id}.meta");
+        var metaPath = Path.Combine(squadDir, $"{imageId}.meta");
         await File.WriteAllTextAsync(metaPath, contentType);
 
-        return $"/api/images/{id}";
+        return $"/api/images/{squadId}/{imageId}";
     }
 
-    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid id)
+    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid squadId, Guid imageId)
     {
-        var metaPath = Path.Combine(_imagesPath, $"{id}.meta");
+        var squadDir = Path.Combine(_imagesPath, squadId.ToString());
+        var metaPath = Path.Combine(squadDir, $"{imageId}.meta");
         if (!File.Exists(metaPath)) return null;
 
         var contentType = (await File.ReadAllTextAsync(metaPath)).Trim();
@@ -179,7 +182,7 @@ public class FileStorageService : IBlobStorageService
             "image/webp" => ".webp",
             _ => ".bin"
         };
-        var filePath = Path.Combine(_imagesPath, $"{id}{extension}");
+        var filePath = Path.Combine(squadDir, $"{imageId}{extension}");
         if (!File.Exists(filePath)) return null;
 
         var data = await File.ReadAllBytesAsync(filePath);
