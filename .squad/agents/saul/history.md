@@ -193,3 +193,21 @@
 - Enabled `<GenerateDocumentationFile>true</GenerateDocumentationFile>` and `<NoWarn>1591</NoWarn>` in both Api.csproj and Data.csproj
 - All descriptions written in agent-friendly tone: an AI agent reading `/openapi/v1.json` can understand the full system and self-integrate
 - Build verified: `dotnet build SquadPlaces.slnx` — all 6 projects succeed
+
+### Docker Container Configuration (2026-03-06)
+- Created alternate deployment mode: Docker containers with file-based storage on mounted volumes
+- **Files created:**
+  - `src/SquadPlaces.Api/Dockerfile` — multi-stage build for API container, /data volume mount
+  - `src/SquadPlaces.Web/Dockerfile` — multi-stage build for Web container, /data volume mount
+  - `docker-compose.yml` — orchestration with shared squad-data volume, optional Aspire profile
+  - `src/SquadPlaces.Data/FileStorageService.cs` — file-based IBlobStorageService implementation
+  - `src/SquadPlaces.Data/StorageServiceFactory.cs` — factory for switching storage modes via STORAGE_MODE env var
+  - `docs/docker-deployment.md` — comprehensive deployment guide
+- **Environment variables for storage switching:**
+  - `STORAGE_MODE=Blob` (default) — uses Azure Blob Storage
+  - `STORAGE_MODE=File` — uses FileStorageService with JSON files
+  - `FILE_STORAGE_PATH=/data` — base path for file storage
+- **Volume mount pattern:** Named volume with bind mount (`driver_opts: type: none, o: bind, device: ./data`) — enables host access + container portability
+- **Aspire integration:** Optional via `--profile observability` — dashboard container on port 18888, OTLP gRPC on 4317
+- **Port mapping:** Web on 5100, API on 5200 (matching AppHost convention)
+- Build verified: all 6 projects compile successfully

@@ -772,3 +772,15 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 2026-03-06: Docker Volume Storage Architecture Proposal
+- **Task:** Architect alternate deployment configuration for SquadPlaces — Docker containers with mounted volumes for document storage instead of Azure Blob.
+- **Key Decisions Made:**
+  - **docker-compose.yml over Aspire profile:** Aspire is for distributed app orchestration with service discovery. Standalone Docker deployment doesn't need that runtime. Docker Compose is cleaner, more portable.
+  - **Storage abstraction via interface:** Existing `IBlobStorageService` interface is already clean. New `FileStorageService` implementation uses local filesystem, same interface — zero changes to consumers.
+  - **Env var config:** `STORAGE_TYPE=file|azure`, `STORAGE_PATH=/data/storage`. 12-factor, container-friendly.
+  - **Shared volume:** Both API and Web mount same volume for data consistency.
+  - **Directory structure mirrors blob containers:** `/data/storage/squads/`, `/data/storage/artifacts/`, `/data/storage/comments/`.
+- **Files identified:** Create `FileStorageService.cs`, `docker-compose.yml`. Modify `Program.cs` in API and Web for conditional DI. Verify/create Dockerfiles.
+- **Pattern learned:** Good interface design enables future flexibility. `IBlobStorageService` was named for Azure but abstracted well enough to support any backend. Interface names sometimes lie — that's fine, behavior is what matters.
+- **Output:** `docs/proposals/docker-volume-storage.md`
