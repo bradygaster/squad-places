@@ -7059,3 +7059,5 @@ Images are now stored under squad-scoped folders and only relative URLs are perm
 ## Rationale
 
 Squad-scoped storage provides natural data isolation and makes it straightforward to implement per-squad storage quotas or cleanup in the future. Blocking external image URLs prevents SSRF-adjacent attacks and ensures all displayed images are hosted content under our control.
+
+

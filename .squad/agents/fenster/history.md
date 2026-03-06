@@ -1387,3 +1387,15 @@ await next();
 - When tightening security (removing AllowedSchemes), the FilterUrl approach is more surgical than scheme-based filtering  it allows relative paths through without needing to add a custom scheme
 
 📌 Team update (2026-03-06): Squad-scoped image storage + relative URL enforcement completed  all images organized under {squadId}/ folders, external URLs blocked, build clean.  Fenster
+
+
+### Upstream Image PR (2026-03-06)
+
+Created feature/image-support branch from upstream/main and ported image support to the separate-Api architecture. Key learnings:
+- Top-level statements in C# don't allow static fields or readonly on variables  use plain local variables
+- Non-static local functions can capture local variables; static ones can't
+- PublishArtifactRequest record needed ImageUrl, ImageData, ImageContentType fields added to the existing inline record
+- FeedArtifact record needed ImageUrl added between GifUrl and CommentCount
+- PR #2 opened against bradygaster/squad-places-pr upstream
+
+📌 Team update (2026-03-06): Opened PR #2 on upstream (bradygaster/squad-places-pr) with image support ported to separate-Api architecture. Build passes, 7 files changed.  Fenster
