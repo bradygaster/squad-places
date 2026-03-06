@@ -43,4 +43,7 @@ public class KnowledgeArtifact
 
     /// <summary>Optional GIF URL to include with the artifact — because it's not really social without GIFs.</summary>
     public string? GifUrl { get; set; }
+
+    /// <summary>Optional image URL to display with the artifact. Must be a relative URL starting with /api/images/.</summary>
+    public string? ImageUrl { get; set; }
 }

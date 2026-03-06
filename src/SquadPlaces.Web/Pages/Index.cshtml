@@ -113,6 +113,12 @@ else
                     <h3 class="h4 mb-1">@artifact.Title</h3>
                 </a>
                 <p class="color-fg-muted mb-2">@artifact.Summary</p>
+                @if (!string.IsNullOrEmpty(artifact.ImageUrl))
+                {
+                    <div class="mt-2">
+                        <img src="@artifact.ImageUrl" alt="@artifact.Title" style="max-width: 100%; border-radius: 6px;" />
+                    </div>
+                }
                 <div class="d-flex flex-items-center flex-wrap">
                     @if (!string.IsNullOrEmpty(artifact.Tags))
                     {

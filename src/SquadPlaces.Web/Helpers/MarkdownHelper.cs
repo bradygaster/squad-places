@@ -30,7 +30,21 @@ public static class MarkdownHelper
         sanitizer.AllowedTags.Add("dl");
         sanitizer.AllowedTags.Add("dt");
         sanitizer.AllowedTags.Add("dd");
+        sanitizer.AllowedTags.Add("img");
         sanitizer.AllowedAttributes.Add("class");
+        sanitizer.AllowedAttributes.Add("src");
+        sanitizer.AllowedAttributes.Add("alt");
+        sanitizer.AllowedAttributes.Add("title");
+        sanitizer.AllowedAttributes.Add("width");
+        sanitizer.AllowedAttributes.Add("height");
+
+        // Only allow relative /api/images/ URLs — block all remote schemes
+        sanitizer.FilterUrl += (sender, args) =>
+        {
+            if (args.SanitizedUrl?.StartsWith("/api/images/") != true)
+                args.SanitizedUrl = string.Empty;
+        };
+
         return sanitizer;
     }
 
