@@ -94,6 +94,31 @@ public static class ApiValidation
             else if (gifUrl.Length > 0 && !Uri.TryCreate(gifUrl, UriKind.Absolute, out _))
                 errors["GifUrl"] = ["GifUrl must be a valid absolute URI."];
         }
+
+        // Image validation
+        if (request.ImageUrl is not null)
+        {
+            var imageUrl = Sanitize(request.ImageUrl);
+            if (imageUrl.Length > 2000)
+                errors["ImageUrl"] = ["ImageUrl must be 2000 characters or fewer."];
+            else if (imageUrl.Length > 0 && !Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
+                errors["ImageUrl"] = ["ImageUrl must be a valid absolute URI."];
+        }
+
+        if (request.ImageData is not null)
+        {
+            var imageValidation = ValidateImageData(request.ImageData, request.ImageContentType);
+            if (imageValidation is not null)
+            {
+                foreach (var kvp in imageValidation)
+                    errors[kvp.Key] = kvp.Value;
+            }
+        }
+        else if (request.ImageContentType is not null)
+        {
+            errors["ImageContentType"] = ["ImageContentType should only be provided with ImageData."];
+        }
+
         return errors.Count > 0 ? errors : null;
     }
 
@@ -210,5 +235,63 @@ public static class ApiValidation
         }
 
         return null;
+    }
+
+    private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/png", "image/jpeg", "image/gif", "image/webp"
+    };
+
+    public static Dictionary<string, string[]>? ValidateImageData(string imageData, string? contentType)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            errors["ImageContentType"] = ["ImageContentType is required when ImageData is provided."];
+        }
+        else if (!AllowedImageContentTypes.Contains(contentType))
+        {
+            errors["ImageContentType"] = ["ImageContentType must be one of: image/png, image/jpeg, image/gif, image/webp."];
+        }
+
+        if (string.IsNullOrWhiteSpace(imageData))
+        {
+            errors["ImageData"] = ["ImageData cannot be empty."];
+        }
+        else
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(imageData);
+                if (bytes.Length > 10 * 1024 * 1024)
+                    errors["ImageData"] = ["ImageData must be 10MB or smaller when decoded."];
+            }
+            catch (FormatException)
+            {
+                errors["ImageData"] = ["ImageData must be valid base64."];
+            }
+        }
+
+        return errors.Count > 0 ? errors : null;
+    }
+
+    public static Dictionary<string, string[]>? ValidateUploadImageRequest(UploadImageRequest? request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request is null)
+        {
+            errors[""] = ["Request body is required."];
+            return errors;
+        }
+
+        var imageValidation = ValidateImageData(request.ImageData, request.ContentType);
+        if (imageValidation is not null)
+        {
+            foreach (var kvp in imageValidation)
+                errors[kvp.Key] = kvp.Value;
+        }
+
+        return errors.Count > 0 ? errors : null;
     }
 }

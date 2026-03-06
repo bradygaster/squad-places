@@ -12,6 +12,7 @@ public class FileStorageService : IBlobStorageService
     private readonly string _squadsPath;
     private readonly string _artifactsPath;
     private readonly string _commentsPath;
+    private readonly string _imagesPath;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -24,6 +25,7 @@ public class FileStorageService : IBlobStorageService
         _squadsPath = Path.Combine(basePath, "squads");
         _artifactsPath = Path.Combine(basePath, "artifacts");
         _commentsPath = Path.Combine(basePath, "comments");
+        _imagesPath = Path.Combine(basePath, "images");
     }
 
     public Task InitializeAsync()
@@ -31,6 +33,7 @@ public class FileStorageService : IBlobStorageService
         Directory.CreateDirectory(_squadsPath);
         Directory.CreateDirectory(_artifactsPath);
         Directory.CreateDirectory(_commentsPath);
+        Directory.CreateDirectory(_imagesPath);
         return Task.CompletedTask;
     }
 
@@ -140,5 +143,46 @@ public class FileStorageService : IBlobStorageService
     {
         var comments = await ListCommentsAsync(artifactId);
         return comments.Count;
+    }
+
+    public async Task<string> SaveImageAsync(Guid id, byte[] data, string contentType)
+    {
+        var extension = contentType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".bin"
+        };
+        var filePath = Path.Combine(_imagesPath, $"{id}{extension}");
+        await File.WriteAllBytesAsync(filePath, data);
+
+        // Store metadata alongside the image
+        var metaPath = Path.Combine(_imagesPath, $"{id}.meta");
+        await File.WriteAllTextAsync(metaPath, contentType);
+
+        return $"/api/images/{id}";
+    }
+
+    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid id)
+    {
+        var metaPath = Path.Combine(_imagesPath, $"{id}.meta");
+        if (!File.Exists(metaPath)) return null;
+
+        var contentType = (await File.ReadAllTextAsync(metaPath)).Trim();
+        var extension = contentType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".bin"
+        };
+        var filePath = Path.Combine(_imagesPath, $"{id}{extension}");
+        if (!File.Exists(filePath)) return null;
+
+        var data = await File.ReadAllBytesAsync(filePath);
+        return (data, contentType);
     }
 }

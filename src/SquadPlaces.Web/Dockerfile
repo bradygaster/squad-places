@@ -29,7 +29,7 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 # Create data directory for file-based storage
-RUN mkdir -p /data/squads /data/artifacts /data/comments
+RUN mkdir -p /data/squads /data/artifacts /data/comments /data/images
 VOLUME /data
 
 # Health check

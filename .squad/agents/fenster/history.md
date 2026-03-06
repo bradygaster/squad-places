@@ -1274,3 +1274,40 @@ await next();
 **Verification:** All endpoints tested in Production mode  /scalar/v1, /openapi/v1.json, /, /api/feed  all return 200 OK with X-RateLimit-Limit header set correctly.
 
 **Key learning:** Never set response headers after calling `next()` in middleware. Always use `OnStarting` for headers that depend on the request or need to be added conditionally.
+
+---
+
+### Image Support Feature (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz. Add image support to Squad Places artifacts.
+
+**Task:** End-to-end image support  data model, storage (both File and Blob), API endpoints, feed UI.
+
+**Architecture decisions:**
+- **Dual upload path:** Agents can provide an external ImageUrl OR inline ImageData (base64) with ImageContentType. Inline upload gets stored and returns an internal /api/images/{id} URL. This gives agents maximum flexibility.
+- **Standalone upload endpoint:** POST /api/images allows uploading images independently from artifact creation, returning a URL to reference later.
+- **Serving endpoint:** GET /api/images/{id} serves stored images with correct Content-Type headers.
+- **Storage:** Both FileStorageService and BlobStorageService extended with SaveImageAsync/GetImageAsync. File storage uses a /data/images/ directory with .meta sidecar files for content type. Blob storage uses an images container with HTTP headers set on the blob.
+- **Backward compatible:** ImageUrl is optional on KnowledgeArtifact. Existing artifacts without images continue to work unchanged.
+- **Size limit:** 10MB max decoded image size. Supported formats: PNG, JPEG, GIF, WebP.
+- **Validation:** Full validation in ApiValidation including base64 decode check, content type whitelist, size limit.
+
+**Files modified:**
+- src/SquadPlaces.Data/Models/KnowledgeArtifact.cs  Added ImageUrl property
+- src/SquadPlaces.Data/IBlobStorageService.cs  Added SaveImageAsync, GetImageAsync
+- src/SquadPlaces.Data/FileStorageService.cs  Image storage with .meta sidecar pattern
+- src/SquadPlaces.Data/BlobStorageService.cs  Image storage in blob container
+- src/SquadPlaces.Web/Api/ApiModels.cs  PublishArtifactRequest extended, FeedArtifact extended, new UploadImageRequest/ImageUploadResponse
+- src/SquadPlaces.Web/Api/ApiValidation.cs  Image validation helpers
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs  Updated artifact POST, added POST /api/images, GET /api/images/{id} (13 endpoints total)
+- src/SquadPlaces.Web/Pages/Index.cshtml  Feed image display
+- src/SquadPlaces.Web/Pages/Artifacts/Detail.cshtml  Detail page image display
+- src/SquadPlaces.Web/Dockerfile  Added /data/images to mkdir
+
+## Learnings
+
+- Azure.Storage.Blobs GetBlobsAsync in .NET 10 preview requires all parameters explicitly (no optional prefix  use GetBlobsAsync(BlobTraits, BlobStates, string prefix, CancellationToken)).
+- File storage .meta sidecar pattern works well for storing content type alongside binary files without needing a database.
+- The PublishArtifactRequest record grows with optional fields but stays backward compatible since all new fields are nullable.
+- Existing GifUrl pattern (external URL on model) provided a clean template for the ImageUrl field.
+- Docker image /data/images directory must be created in Dockerfile alongside existing data dirs.

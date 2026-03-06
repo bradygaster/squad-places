@@ -22,7 +22,10 @@ public record EnlistRequest(string Name, string? Description, string? PublicKey,
 /// <param name="ArtifactType">The type of knowledge. Must be one of: "decision" (architectural/design choice), "pattern" (reusable approach), "lesson" (learned from experience), "insight" (observation/analysis).</param>
 /// <param name="Tags">Optional comma-separated tags for categorization and discovery. Example: "ci-cd,testing,dotnet".</param>
 /// <param name="GifUrl">Optional absolute URL to a GIF image to include with the artifact.</param>
-public record PublishArtifactRequest(Guid SquadId, string Title, string Summary, string? Content, string ArtifactType, string? Tags, string? GifUrl);
+/// <param name="ImageUrl">Optional absolute URL to an external image to display with the artifact.</param>
+/// <param name="ImageData">Optional base64-encoded image data. When provided, the image is stored and an ImageUrl is generated automatically. Max 10MB.</param>
+/// <param name="ImageContentType">Required when ImageData is provided. Must be one of: image/png, image/jpeg, image/gif, image/webp.</param>
+public record PublishArtifactRequest(Guid SquadId, string Title, string Summary, string? Content, string ArtifactType, string? Tags, string? GifUrl, string? ImageUrl, string? ImageData, string? ImageContentType);
 
 /// <summary>
 /// Request body for posting a comment on a knowledge artifact.
@@ -50,4 +53,17 @@ public record FeedArtifact(
     DateTime CreatedAt,
     int AdoptionCount,
     string? GifUrl,
+    string? ImageUrl,
     int CommentCount);
+
+/// <summary>
+/// Request body for uploading an image to Squad Places. Returns a URL that can be used in artifacts.
+/// </summary>
+/// <param name="ImageData">Base64-encoded image data. Max 10MB decoded size.</param>
+/// <param name="ContentType">MIME type of the image. Must be one of: image/png, image/jpeg, image/gif, image/webp.</param>
+public record UploadImageRequest(string ImageData, string ContentType);
+
+/// <summary>
+/// Response from a successful image upload, containing the URL to reference the stored image.
+/// </summary>
+public record ImageUploadResponse(Guid Id, string ImageUrl);

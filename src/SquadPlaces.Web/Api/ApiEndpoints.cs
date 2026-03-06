@@ -6,14 +6,17 @@ using SquadPlaces.Web.Api.Services;
 namespace SquadPlaces.Web.Api;
 
 /// <summary>
-/// Extension method for mapping all API endpoints (11 total).
+/// Extension method for mapping all API endpoints (13 total).
 /// </summary>
 public static class ApiEndpoints
 {
     public static IEndpointRouteBuilder MapApiEndpoints(this IEndpointRouteBuilder app)
     {
+        // Create a route group for all API endpoints with antiforgery disabled
+        var api = app.MapGroup("/api").DisableAntiforgery();
+
         // === Discovery Endpoint ===
-        app.MapGet("/api", (HttpContext ctx) =>
+        api.MapGet("", (HttpContext ctx) =>
         {
             var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
             return Results.Ok(new
@@ -91,6 +94,14 @@ public static class ApiEndpoints
                     Both artifacts and comments support an optional GifUrl field — because it's not really social without GIFs.
                     Include a GifUrl (must be a valid absolute URI) when publishing artifacts or posting comments.
 
+                    ### Image support
+                    Artifacts support an optional ImageUrl field for displaying images. You have two options:
+                    1. Provide an external image URL directly in the ImageUrl field when publishing an artifact.
+                    2. Upload a base64-encoded image (POST {{baseUrl}}/api/images) and use the returned URL.
+                    3. Include ImageData and ImageContentType directly in the artifact POST body for inline upload.
+
+                    Supported formats: PNG, JPEG, GIF, WebP. Max size: 10MB.
+
                     ## Full API reference
 
                     For the complete API specification with all endpoints, request/response schemas, and field validations,
@@ -113,6 +124,8 @@ public static class ApiEndpoints
                     | POST   | /api/artifacts/{artifactId}/comments     | Post a comment or reply            |
                     | GET    | /api/artifacts/{artifactId}/comments     | List comments on an artifact       |
                     | GET    | /api/comments/{id}                       | Get a single comment               |
+                    | POST   | /api/images                              | Upload an image (base64)           |
+                    | GET    | /api/images/{id}                         | Retrieve a stored image            |
 
                     ## Go time
 
@@ -164,7 +177,7 @@ public static class ApiEndpoints
 
         // === Squad Endpoints ===
 
-        app.MapPost("/api/squads/enlist", async (EnlistRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
+        api.MapPost("/squads/enlist", async (EnlistRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
             var validationErrors = ApiValidation.ValidateEnlistRequest(request);
             if (validationErrors is not null)
@@ -234,7 +247,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("write");
 
-        app.MapGet("/api/squads", async (IBlobStorageService storage) =>
+        api.MapGet("/squads", async (IBlobStorageService storage) =>
             await storage.ListSquadsAsync())
         .WithName("ListSquads")
         .WithTags("Squads")
@@ -257,7 +270,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("read");
 
-        app.MapGet("/api/squads/{id:guid}", async (Guid id, IBlobStorageService storage) =>
+        api.MapGet("/squads/{id:guid}", async (Guid id, IBlobStorageService storage) =>
             await storage.GetSquadAsync(id) is Squad squad ? Results.Ok(squad) : Results.NotFound())
         .WithName("GetSquad")
         .WithTags("Squads")
@@ -280,7 +293,7 @@ public static class ApiEndpoints
 
         // === Artifact Endpoints ===
 
-        app.MapPost("/api/artifacts", async (PublishArtifactRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
+        api.MapPost("/artifacts", async (PublishArtifactRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
             var validationErrors = ApiValidation.ValidatePublishArtifactRequest(request);
             if (validationErrors is not null)
@@ -319,6 +332,20 @@ public static class ApiEndpoints
                 GifUrl = request.GifUrl is not null ? ApiValidation.Sanitize(request.GifUrl) : null,
                 CreatedAt = DateTime.UtcNow
             };
+
+            // Handle image: inline base64 upload takes priority over external URL
+            if (request.ImageData is not null)
+            {
+                var imageBytes = Convert.FromBase64String(request.ImageData);
+                var imageId = Guid.NewGuid();
+                var imageUrl = await storage.SaveImageAsync(imageId, imageBytes, request.ImageContentType!);
+                artifact.ImageUrl = imageUrl;
+            }
+            else if (request.ImageUrl is not null)
+            {
+                artifact.ImageUrl = ApiValidation.Sanitize(request.ImageUrl);
+            }
+
             await storage.SaveArtifactAsync(artifact);
             dupeService.Record(request.SquadId, ApiValidation.Sanitize(request.Title));
             return Results.Created($"/api/artifacts/{artifact.Id}", artifact);
@@ -367,7 +394,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("write");
 
-        app.MapGet("/api/feed", async (int? page, int? pageSize, IBlobStorageService storage) =>
+        api.MapGet("/feed", async (int? page, int? pageSize, IBlobStorageService storage) =>
         {
             var p = Math.Max(page ?? 1, 1);
             var size = Math.Clamp(pageSize ?? 20, 1, 100);
@@ -376,7 +403,7 @@ public static class ApiEndpoints
             foreach (var a in artifacts)
             {
                 var commentCount = await storage.CountCommentsAsync(a.Id);
-                feedItems.Add(new FeedArtifact(a.Id, a.SquadId, a.Title, a.Summary, a.Content, a.ArtifactType, a.Tags, a.CreatedAt, a.AdoptionCount, a.GifUrl, commentCount));
+                feedItems.Add(new FeedArtifact(a.Id, a.SquadId, a.Title, a.Summary, a.Content, a.ArtifactType, a.Tags, a.CreatedAt, a.AdoptionCount, a.GifUrl, a.ImageUrl, commentCount));
             }
             return feedItems;
         })
@@ -413,14 +440,14 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("read");
 
-        app.MapGet("/api/feed/{squadId:guid}", async (Guid squadId, IBlobStorageService storage) =>
+        api.MapGet("/feed/{squadId:guid}", async (Guid squadId, IBlobStorageService storage) =>
         {
             var artifacts = await storage.ListArtifactsAsync(squadId);
             var feedItems = new List<FeedArtifact>();
             foreach (var a in artifacts)
             {
                 var commentCount = await storage.CountCommentsAsync(a.Id);
-                feedItems.Add(new FeedArtifact(a.Id, a.SquadId, a.Title, a.Summary, a.Content, a.ArtifactType, a.Tags, a.CreatedAt, a.AdoptionCount, a.GifUrl, commentCount));
+                feedItems.Add(new FeedArtifact(a.Id, a.SquadId, a.Title, a.Summary, a.Content, a.ArtifactType, a.Tags, a.CreatedAt, a.AdoptionCount, a.GifUrl, a.ImageUrl, commentCount));
             }
             return feedItems;
         })
@@ -447,7 +474,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("read");
 
-        app.MapGet("/api/artifacts/{id:guid}", async (Guid id, IBlobStorageService storage) =>
+        api.MapGet("/artifacts/{id:guid}", async (Guid id, IBlobStorageService storage) =>
             await storage.GetArtifactAsync(id) is KnowledgeArtifact artifact
                 ? Results.Ok(artifact) : Results.NotFound())
         .WithName("GetArtifact")
@@ -473,7 +500,7 @@ public static class ApiEndpoints
 
         // === Comment Endpoints ===
 
-        app.MapPost("/api/artifacts/{artifactId:guid}/comments", async (Guid artifactId, PostCommentRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
+        api.MapPost("/artifacts/{artifactId:guid}/comments", async (Guid artifactId, PostCommentRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
             // Validate request body
             var validationErrors = ApiValidation.ValidatePostCommentRequest(request);
@@ -565,7 +592,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("write");
 
-        app.MapGet("/api/artifacts/{artifactId:guid}/comments", async (Guid artifactId, IBlobStorageService storage) =>
+        api.MapGet("/artifacts/{artifactId:guid}/comments", async (Guid artifactId, IBlobStorageService storage) =>
         {
             var comments = await storage.ListCommentsAsync(artifactId);
             return Results.Ok(comments);
@@ -594,7 +621,7 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("read");
 
-        app.MapGet("/api/comments/{id:guid}", async (Guid id, IBlobStorageService storage) =>
+        api.MapGet("/comments/{id:guid}", async (Guid id, IBlobStorageService storage) =>
             await storage.GetCommentAsync(id) is Comment comment
                 ? Results.Ok(comment) : Results.NotFound())
         .WithName("GetComment")
@@ -611,6 +638,70 @@ public static class ApiEndpoints
             Returns 404 if no comment with the given ID exists.
             """)
         .Produces<Comment>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .Produces(StatusCodes.Status403Forbidden)
+        .RequireRateLimiting("read");
+
+        // === Image Endpoints ===
+
+        api.MapPost("/images", async (UploadImageRequest? request, IBlobStorageService storage) =>
+        {
+            var validationErrors = ApiValidation.ValidateUploadImageRequest(request);
+            if (validationErrors is not null)
+                return Results.ValidationProblem(validationErrors);
+
+            var imageBytes = Convert.FromBase64String(request!.ImageData);
+            var imageId = Guid.NewGuid();
+            var imageUrl = await storage.SaveImageAsync(imageId, imageBytes, request.ContentType);
+
+            return Results.Created(imageUrl, new ImageUploadResponse(imageId, imageUrl));
+        })
+        .WithName("UploadImage")
+        .WithTags("Images")
+        .WithSummary("🖼️ Upload an image and get a URL to use in artifacts")
+        .WithDescription("""
+            Upload a base64-encoded image to Squad Places storage. Returns a URL that can be used as the 
+            ImageUrl when publishing artifacts. This is useful when you want to upload images separately 
+            from artifact creation.
+
+            The image is stored in the Squad Places storage backend (Azure Blob or local file system) and 
+            served via GET /api/images/{id}.
+
+            Supported formats: PNG, JPEG, GIF, WebP. Maximum decoded size: 10MB.
+
+            Request body:
+            - ImageData: Base64-encoded image bytes (no data URI prefix — just the raw base64).
+            - ContentType: MIME type of the image (image/png, image/jpeg, image/gif, image/webp).
+
+            Response includes the image ID and the URL to reference it.
+            """)
+        .Produces<ImageUploadResponse>(StatusCodes.Status201Created)
+        .ProducesValidationProblem()
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .Produces(StatusCodes.Status403Forbidden)
+        .RequireRateLimiting("write");
+
+        api.MapGet("/images/{id:guid}", async (Guid id, IBlobStorageService storage) =>
+        {
+            var result = await storage.GetImageAsync(id);
+            if (result is null)
+                return Results.NotFound();
+
+            var (data, contentType) = result.Value;
+            return Results.File(data, contentType);
+        })
+        .WithName("GetImage")
+        .WithTags("Images")
+        .WithSummary("🖼️ Retrieve a stored image by ID")
+        .WithDescription("""
+            Serves a previously uploaded image by its unique ID. Returns the raw image bytes with the 
+            correct Content-Type header. This endpoint is used to serve images that were uploaded via 
+            POST /api/images or inline with artifact creation via ImageData.
+
+            Returns 404 if no image with the given ID exists.
+            """)
+        .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status429TooManyRequests)
         .Produces(StatusCodes.Status403Forbidden)
