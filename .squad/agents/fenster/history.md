@@ -1070,3 +1070,57 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - `azd up --no-prompt` works when env vars (AZURE_SUBSCRIPTION_ID, AZURE_LOCATION) are pre-set via `azd env set`.
 - Redeploy: `azd deploy -e squad-places --no-prompt` (skips provisioning, just rebuilds/pushes containers).
 - Tear down: `azd down -e squad-places --no-prompt`
+
+---
+
+## Learnings
+
+### 2025-03-06: Storage Abstraction Analysis for Docker Volume Support
+
+**Requested by:** Jeff Fritz. Analyze storage implementation for local file system alternative.
+
+**Current Architecture:**
+
+1. **Interface: `IBlobStorageService`** (`src/SquadPlaces.Data/IBlobStorageService.cs`)
+   - `SaveSquadAsync` / `GetSquadAsync` / `ListSquadsAsync` — squad CRUD
+   - `SaveArtifactAsync` / `GetArtifactAsync` / `ListArtifactsAsync` / `GetFeedAsync` — artifact CRUD + feed pagination
+   - `SaveCommentAsync` / `GetCommentAsync` / `ListCommentsAsync` / `CountCommentsAsync` — comment CRUD + counts
+   - **Good news:** Clean interface abstraction exists — no Azure-specific types exposed in the contract
+
+2. **Implementation: `BlobStorageService`** (`src/SquadPlaces.Data/BlobStorageService.cs`)
+   - Takes `BlobServiceClient` via constructor injection
+   - Uses three containers: `squads`, `artifacts`, `comments`
+   - Each entity stored as `{id}.json` blob with JSON serialization
+   - **Metadata filtering:** Uses blob metadata for filtering (squadId, artifactId) without downloading full content
+   - **InitializeAsync():** Creates containers if not exist — called at app startup in Program.cs
+
+3. **Registration:** Both Web and API projects use:
+   - `builder.AddAzureBlobServiceClient("BlobStorage")` — Aspire pattern for Azure Blob
+   - `builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>()`
+
+**What a `FileSystemStorageService` would need:**
+
+1. **Same interface contract** — drop-in replacement via DI registration swap
+2. **Directory structure mapping:**
+   - `{basePath}/squads/{id}.json`
+   - `{basePath}/artifacts/{id}.json`
+   - `{basePath}/comments/{id}.json`
+3. **Metadata equivalent:** Either:
+   - Embed metadata in JSON (already there — squadId, artifactId, createdAt fields)
+   - Or use sidecar `{id}.meta.json` files
+4. **InitializeAsync():** `Directory.CreateDirectory()` for each folder
+5. **Filtering logic:** Load JSON and filter in-memory (same as current blob enumeration)
+6. **Thread safety:** File system requires locking for concurrent writes
+
+**Tight couplings to Azure (minimal):**
+- `BlobContainerClient` / `BlobClient` types — internal only
+- `GetBlobsAsync()` enumeration pattern — replaceable with `Directory.GetFiles()`
+- `SetMetadataAsync()` — not strictly needed since data is in JSON body
+
+**Recommendation:** FileSystemStorageService is a clean swap. The interface is already well-designed for abstraction. A single configuration setting (e.g., `Storage:Provider = FileSystem|AzureBlob`) can toggle DI registration.
+
+**Key paths:**
+- Interface: `src/SquadPlaces.Data/IBlobStorageService.cs`
+- Azure impl: `src/SquadPlaces.Data/BlobStorageService.cs`
+- Models: `src/SquadPlaces.Data/Models/{Squad,KnowledgeArtifact,Comment}.cs`
+- Registration: `src/SquadPlaces.Web/Program.cs:10`, `src/SquadPlaces.Api/Program.cs:15`

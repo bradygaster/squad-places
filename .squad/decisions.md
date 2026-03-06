@@ -6384,3 +6384,104 @@ KnowledgeArtifact is a storage model — commentCount is computed, not stored. M
 **Why:** Brady requested protection against squads enlisting with the same or trivially-varied names. Threshold of 4 catches obvious typo/case variations while allowing genuinely distinct names.
 **Impact:** Any agent or client calling the enlist endpoint may now receive 409 Conflict if the name is too close to an existing squad. Retry with a more distinct name.
 
+
+
+---
+
+# Decision: Docker Deployment with Storage Abstraction
+
+# Decision: Docker Deployment with Storage Abstraction
+
+**Date:** 2026-03-06  
+**Author:** Keaton  
+**Status:** Proposed
+
+## Context
+
+Jeff requested alternate deployment configuration for Docker containers with mounted volumes.
+
+## Decision
+
+1. **Use docker-compose.yml** (not Aspire profiles) for standalone Docker deployment
+2. **New FileStorageService** implements existing `IBlobStorageService` interface for local filesystem storage
+3. **Environment variable config:** `STORAGE_TYPE=file|azure`, `STORAGE_PATH=/data/storage`
+4. **Shared Docker volume** between API and Web containers
+
+## Rationale
+
+- Aspire is overkill for standalone Docker — docker-compose is more portable
+- Existing interface is well-abstracted; no changes to consumers
+- Env vars follow 12-factor principles for container config
+
+## Impact
+
+- Creates new `FileStorageService.cs` in SquadPlaces.Data
+- Modifies DI registration in API and Web Program.cs
+- Creates docker-compose.yml and Dockerfiles
+
+## Full Proposal
+
+See `docs/proposals/docker-volume-storage.md`
+
+
+---
+
+# Decision: Dual Storage Mode Architecture
+
+# Decision: Dual Storage Mode Architecture
+
+**By:** Saul (Aspire & Observability)
+**Date:** 2026-03-06
+
+## What
+
+Squad Places supports two storage backends:
+1. **Blob** (default): Azure Blob Storage via Aspire hosting
+2. **File**: Local JSON files for Docker deployments with volume mounts
+
+Controlled via `STORAGE_MODE` environment variable.
+
+## Why
+
+- Docker container deployments need storage independence from Azure services
+- File-based storage enables offline development and simpler self-hosting
+- Volume mounts preserve data across container restarts
+- No code changes required to switch modes — environment variables only
+
+## Impact
+
+- New services must implement `IBlobStorageService` interface
+- Docker deployments should use `STORAGE_MODE=File` and `FILE_STORAGE_PATH=/data`
+- Aspire AppHost mode continues to use Blob storage by default
+- Production deployments should NOT use file storage (no concurrency support)
+
+## Files
+
+- `src/SquadPlaces.Data/FileStorageService.cs`
+- `src/SquadPlaces.Data/StorageServiceFactory.cs`
+- `docker-compose.yml`
+- `docs/docker-deployment.md`
+
+
+---
+
+# Decision: Azure Deployment via AZD
+
+### 2026-03-05: Azure deployment via azd — Squad Places
+**By:** Fenster
+**What:** Deployed Squad Places to Azure Container Apps using `azd up`. Key decisions:
+- **Resource group:** `rg-squad-places` in East US
+- **Environment name:** `squad-places`
+- **Subscription:** Bradyg's Happy Work Cloud (`e93e46f2-56c8-425d-bf31-90d2acdd26d5`)
+- **Web endpoint (public):** `https://web.nicebeach-b92b0c14.eastus.azurecontainerapps.io/`
+- **API endpoint (internal):** `https://api.internal.nicebeach-b92b0c14.eastus.azurecontainerapps.io/`
+- **Aspire Dashboard:** `https://aspire-dashboard.ext.nicebeach-b92b0c14.eastus.azurecontainerapps.io`
+- **Storage account:** `storagenkv6xgwigekle` (provisioned by Aspire via azd)
+- **Container Registry:** `acrnkv6xgwigekle`
+- Used `Aspire.Azure.Storage.Blobs` client integration (`AddAzureBlobServiceClient`) instead of manual `BlobServiceClient` construction — this handles both Azurite (local dev) and real Azure Storage (deployed) automatically via managed identity.
+- Added `.WithExternalHttpEndpoints()` to the web project in AppHost to make it publicly accessible.
+- API stays internal — only reachable within the Container Apps environment.
+**Why:** Brady requested deployment. Aspire's `RunAsEmulator()` on `AddAzureStorage` handles the local/cloud duality — emulator locally, real storage when deployed.
+**Redeploy command:** `cd C:\src\squad-social-network && azd up -e squad-places --no-prompt`
+**Tear down:** `azd down -e squad-places --no-prompt`
+
