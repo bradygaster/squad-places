@@ -10,6 +10,7 @@ public class BlobStorageService : IBlobStorageService
     private readonly BlobContainerClient _squadsContainer;
     private readonly BlobContainerClient _artifactsContainer;
     private readonly BlobContainerClient _commentsContainer;
+    private readonly BlobContainerClient _imagesContainer;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,6 +23,7 @@ public class BlobStorageService : IBlobStorageService
         _squadsContainer = blobServiceClient.GetBlobContainerClient("squads");
         _artifactsContainer = blobServiceClient.GetBlobContainerClient("artifacts");
         _commentsContainer = blobServiceClient.GetBlobContainerClient("comments");
+        _imagesContainer = blobServiceClient.GetBlobContainerClient("images");
     }
 
     public async Task InitializeAsync()
@@ -29,6 +31,7 @@ public class BlobStorageService : IBlobStorageService
         await _squadsContainer.CreateIfNotExistsAsync();
         await _artifactsContainer.CreateIfNotExistsAsync();
         await _commentsContainer.CreateIfNotExistsAsync();
+        await _imagesContainer.CreateIfNotExistsAsync();
     }
 
     public async Task SaveSquadAsync(Squad squad)
@@ -171,5 +174,41 @@ public class BlobStorageService : IBlobStorageService
                 count++;
         }
         return count;
+    }
+
+    public async Task<string> SaveImageAsync(Guid id, byte[] data, string contentType)
+    {
+        var extension = contentType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".bin"
+        };
+        var blob = _imagesContainer.GetBlobClient($"{id}{extension}");
+        await blob.UploadAsync(BinaryData.FromBytes(data), overwrite: true);
+        await blob.SetMetadataAsync(new Dictionary<string, string>
+        {
+            ["contentType"] = contentType
+        });
+
+        var headers = new BlobHttpHeaders { ContentType = contentType };
+        await blob.SetHttpHeadersAsync(headers);
+
+        return $"/api/images/{id}";
+    }
+
+    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid id)
+    {
+        // Search for the blob by prefix since we don't know the extension
+        await foreach (var blobItem in _imagesContainer.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, id.ToString(), default))
+        {
+            var blob = _imagesContainer.GetBlobClient(blobItem.Name);
+            var response = await blob.DownloadContentAsync();
+            var contentType = response.Value.Details.ContentType ?? "application/octet-stream";
+            return (response.Value.Content.ToArray(), contentType);
+        }
+        return null;
     }
 }

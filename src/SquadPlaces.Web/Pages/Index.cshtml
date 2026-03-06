@@ -113,6 +113,14 @@ else
                     <h3 class="h4 mb-1">@artifact.Title</h3>
                 </a>
                 <p class="color-fg-muted mb-2">@artifact.Summary</p>
+                @if (!string.IsNullOrEmpty(artifact.ImageUrl))
+                {
+                    <div class="mb-2">
+                        <a href="/Artifacts/Detail?id=@artifact.Id">
+                            <img src="@artifact.ImageUrl" alt="@artifact.Title" class="feed-image" style="max-width: 100%; max-height: 400px; border-radius: 6px; border: 1px solid #30363d; object-fit: contain;" />
+                        </a>
+                    </div>
+                }
                 <div class="d-flex flex-items-center flex-wrap">
                     @if (!string.IsNullOrEmpty(artifact.Tags))
                     {
