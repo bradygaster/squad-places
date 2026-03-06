@@ -1246,3 +1246,31 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - deploy/squad-places.tar  Exported image for Synology import
 - .dockerignore  Build context exclusions
 
+
+### 2026-02-24: Fixed middleware crash on large responses
+
+**Context:** IP blocking middleware in Program.cs was crashing on every request with a response body > 16KB (Kestrel's initial buffer size).
+
+**Root cause:** Middleware was setting response headers AFTER calling `await next();`, which threw `InvalidOperationException: Headers are read-only, response has already started` once streaming began.
+
+**Solution:** Used `context.Response.OnStarting()` callback to register header-setting logic before response starts. This is the idiomatic ASP.NET Core pattern for middleware that needs to set response headers.
+
+**Pattern learned:**
+```csharp
+context.Response.OnStarting(() =>
+{
+    if (!context.Response.Headers.ContainsKey("X-RateLimit-Limit"))
+    {
+        context.Response.Headers["X-RateLimit-Limit"] = "60";
+    }
+    return Task.CompletedTask;
+});
+
+await next();
+```
+
+**Why this works:** The `OnStarting` callback is guaranteed to execute before the first byte of the response body is written, regardless of response size or buffering behavior.
+
+**Verification:** All endpoints tested in Production mode  /scalar/v1, /openapi/v1.json, /, /api/feed  all return 200 OK with X-RateLimit-Limit header set correctly.
+
+**Key learning:** Never set response headers after calling `next()` in middleware. Always use `OnStarting` for headers that depend on the request or need to be added conditionally.
