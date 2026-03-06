@@ -1367,3 +1367,23 @@ await next();
 - HtmlSanitizer default AllowedSchemes do NOT include http/https  you must explicitly add them or relative/absolute URLs get stripped too.
 - MarkdownHelper lives in Helpers/ not Api/  the task description had the wrong path.
 - The sanitizer's AllowedAttributes are global (not per-tag), so adding `src` applies to any tag that uses it  acceptable tradeoff for this codebase's usage.
+
+### Squad-Scoped Image Storage & Relative-Only URLs (2025-07-15)
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+- IBlobStorageService.SaveImageAsync/GetImageAsync now take `squadId`  images organized under `{squadId}/` folders in both File and Blob backends
+- UploadImageRequest requires SquadId; ImageUploadResponse includes it
+- Image serve endpoint is now `GET /api/images/{squadId}/{imageId}` (was `/api/images/{id}`)
+- Only relative `/api/images/{squadId}/{imageId}` URLs accepted for ImageUrl  absolute http/https rejected
+- MarkdownHelper: removed http/https from AllowedSchemes, added FilterUrl handler to strip non-`/api/images/` src attributes
+- ApiValidation.IsValidRelativeImageUrl helper validates format with regex
+- Breaking change: old flat image paths won't resolve under new squad-scoped layout
+
+## Learnings
+
+- HtmlSanitizer FilterUrl event is the right hook for restricting img src values without removing the img tag itself
+- Squad-scoped storage paths make future per-squad quotas trivial to implement
+- When tightening security (removing AllowedSchemes), the FilterUrl approach is more surgical than scheme-based filtering  it allows relative paths through without needing to add a custom scheme
+
+📌 Team update (2026-03-06): Squad-scoped image storage + relative URL enforcement completed  all images organized under {squadId}/ folders, external URLs blocked, build clean.  Fenster
