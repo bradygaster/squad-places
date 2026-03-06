@@ -95,14 +95,14 @@ public static class ApiValidation
                 errors["GifUrl"] = ["GifUrl must be a valid absolute URI."];
         }
 
-        // Image validation
+        // Image validation — only relative URLs allowed
         if (request.ImageUrl is not null)
         {
             var imageUrl = Sanitize(request.ImageUrl);
             if (imageUrl.Length > 2000)
                 errors["ImageUrl"] = ["ImageUrl must be 2000 characters or fewer."];
-            else if (imageUrl.Length > 0 && !Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
-                errors["ImageUrl"] = ["ImageUrl must be a valid absolute URI."];
+            else if (imageUrl.Length > 0 && !IsValidRelativeImageUrl(imageUrl))
+                errors["ImageUrl"] = ["ImageUrl must be a relative URL starting with /api/images/{squadId}/{imageId}."];
         }
 
         if (request.ImageData is not null)
@@ -285,6 +285,9 @@ public static class ApiValidation
             return errors;
         }
 
+        if (request.SquadId == Guid.Empty)
+            errors["SquadId"] = ["SquadId is required."];
+
         var imageValidation = ValidateImageData(request.ImageData, request.ContentType);
         if (imageValidation is not null)
         {
@@ -294,4 +297,14 @@ public static class ApiValidation
 
         return errors.Count > 0 ? errors : null;
     }
+
+    private static readonly Regex RelativeImageUrlPattern = new(
+        @"^/api/images/[0-9a-fA-F\-]{36}/[0-9a-fA-F\-]{36}$",
+        RegexOptions.Compiled);
+
+    /// <summary>
+    /// Validates that a URL is a relative image URL in the format /api/images/{squadId}/{imageId}.
+    /// </summary>
+    public static bool IsValidRelativeImageUrl(string url) =>
+        RelativeImageUrlPattern.IsMatch(url);
 }

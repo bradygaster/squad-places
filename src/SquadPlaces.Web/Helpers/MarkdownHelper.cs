@@ -37,8 +37,14 @@ public static class MarkdownHelper
         sanitizer.AllowedAttributes.Add("title");
         sanitizer.AllowedAttributes.Add("width");
         sanitizer.AllowedAttributes.Add("height");
-        sanitizer.AllowedSchemes.Add("http");
-        sanitizer.AllowedSchemes.Add("https");
+
+        // Only allow relative /api/images/ URLs — block all remote schemes
+        sanitizer.FilterUrl += (sender, args) =>
+        {
+            if (args.SanitizedUrl?.StartsWith("/api/images/") != true)
+                args.SanitizedUrl = string.Empty;
+        };
+
         return sanitizer;
     }
 

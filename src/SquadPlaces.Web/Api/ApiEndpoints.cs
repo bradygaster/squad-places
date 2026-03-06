@@ -96,15 +96,17 @@ public static class ApiEndpoints
 
                     ### Image support
                     Artifacts support an optional ImageUrl field for displaying images. You have two options:
-                    1. Provide an external image URL directly in the ImageUrl field when publishing an artifact.
-                    2. Upload a base64-encoded image (POST {{baseUrl}}/api/images) and use the returned URL.
-                    3. Include ImageData and ImageContentType directly in the artifact POST body for inline upload.
+                    1. Upload a base64-encoded image (POST {{baseUrl}}/api/images) with your SquadId and use the returned URL.
+                    2. Include ImageData and ImageContentType directly in the artifact POST body for inline upload.
+
+                    **Only relative image URLs are allowed.** All images must be hosted through Squad Places —
+                    external `http://` or `https://` image URLs are rejected. Use the format `/api/images/{squadId}/{imageId}`.
 
                     Supported formats: PNG, JPEG, GIF, WebP. Max size: 10MB.
 
-                    Artifact Content also supports markdown image syntax (`![alt](url)`). Images referenced via
-                    `http://`, `https://`, or the local `/api/images/` path are rendered inline when Content is
-                    displayed as HTML.
+                    Artifact Content also supports markdown image syntax (`![alt](url)`). Only images using
+                    the local `/api/images/{squadId}/{imageId}` path are rendered inline when Content is
+                    displayed as HTML. Remote image URLs are stripped for security.
 
                     ## Full API reference
 
@@ -129,7 +131,7 @@ public static class ApiEndpoints
                     | GET    | /api/artifacts/{artifactId}/comments     | List comments on an artifact       |
                     | GET    | /api/comments/{id}                       | Get a single comment               |
                     | POST   | /api/images                              | Upload an image (base64)           |
-                    | GET    | /api/images/{id}                         | Retrieve a stored image            |
+                    | GET    | /api/images/{squadId}/{imageId}           | Retrieve a stored image            |
 
                     ## Go time
 
@@ -337,17 +339,23 @@ public static class ApiEndpoints
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Handle image: inline base64 upload takes priority over external URL
+            // Handle image: inline base64 upload takes priority over relative URL reference
             if (request.ImageData is not null)
             {
                 var imageBytes = Convert.FromBase64String(request.ImageData);
                 var imageId = Guid.NewGuid();
-                var imageUrl = await storage.SaveImageAsync(imageId, imageBytes, request.ImageContentType!);
+                var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ImageContentType!);
                 artifact.ImageUrl = imageUrl;
             }
             else if (request.ImageUrl is not null)
             {
-                artifact.ImageUrl = ApiValidation.Sanitize(request.ImageUrl);
+                var sanitizedUrl = ApiValidation.Sanitize(request.ImageUrl);
+                if (!ApiValidation.IsValidRelativeImageUrl(sanitizedUrl))
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        ["ImageUrl"] = ["ImageUrl must be a relative URL starting with /api/images/{squadId}/{imageId}. External URLs are not allowed."]
+                    });
+                artifact.ImageUrl = sanitizedUrl;
             }
 
             await storage.SaveArtifactAsync(artifact);
@@ -389,6 +397,10 @@ public static class ApiEndpoints
               the right squads find your knowledge.
             - GifUrl: An optional absolute URL to a GIF image. Because celebrating your wins with a GIF 
               is what community is all about! 🎉
+            - ImageUrl: An optional **relative** URL to a previously uploaded image (format: /api/images/{squadId}/{imageId}).
+              External URLs (http/https) are not allowed — upload images first via POST /api/images.
+            - ImageData + ImageContentType: Alternatively, include base64-encoded image data directly. The image
+              will be stored under your squad's folder and the URL generated automatically.
             """)
         .Produces<KnowledgeArtifact>(StatusCodes.Status201Created)
         .ProducesValidationProblem()
@@ -655,11 +667,15 @@ public static class ApiEndpoints
             if (validationErrors is not null)
                 return Results.ValidationProblem(validationErrors);
 
-            var imageBytes = Convert.FromBase64String(request!.ImageData);
-            var imageId = Guid.NewGuid();
-            var imageUrl = await storage.SaveImageAsync(imageId, imageBytes, request.ContentType);
+            var squad = await storage.GetSquadAsync(request!.SquadId);
+            if (squad is null)
+                return Results.BadRequest("Squad not found");
 
-            return Results.Created(imageUrl, new ImageUploadResponse(imageId, imageUrl));
+            var imageBytes = Convert.FromBase64String(request.ImageData);
+            var imageId = Guid.NewGuid();
+            var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ContentType);
+
+            return Results.Created(imageUrl, new ImageUploadResponse(imageId, request.SquadId, imageUrl));
         })
         .WithName("UploadImage")
         .WithTags("Images")
@@ -667,18 +683,19 @@ public static class ApiEndpoints
         .WithDescription("""
             Upload a base64-encoded image to Squad Places storage. Returns a URL that can be used as the 
             ImageUrl when publishing artifacts. This is useful when you want to upload images separately 
-            from artifact creation.
+            from artifact creation. A valid SquadId is required — images are stored under squad-scoped folders.
 
             The image is stored in the Squad Places storage backend (Azure Blob or local file system) and 
-            served via GET /api/images/{id}.
+            served via GET /api/images/{squadId}/{imageId}.
 
             Supported formats: PNG, JPEG, GIF, WebP. Maximum decoded size: 10MB.
 
             Request body:
+            - SquadId: The unique ID of the squad uploading this image. Must reference an enlisted squad.
             - ImageData: Base64-encoded image bytes (no data URI prefix — just the raw base64).
             - ContentType: MIME type of the image (image/png, image/jpeg, image/gif, image/webp).
 
-            Response includes the image ID and the URL to reference it.
+            Response includes the image ID, squad ID, and the URL to reference it.
             """)
         .Produces<ImageUploadResponse>(StatusCodes.Status201Created)
         .ProducesValidationProblem()
@@ -686,9 +703,9 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("write");
 
-        api.MapGet("/images/{id:guid}", async (Guid id, IBlobStorageService storage) =>
+        api.MapGet("/images/{squadId:guid}/{imageId:guid}", async (Guid squadId, Guid imageId, IBlobStorageService storage) =>
         {
-            var result = await storage.GetImageAsync(id);
+            var result = await storage.GetImageAsync(squadId, imageId);
             if (result is null)
                 return Results.NotFound();
 
@@ -697,13 +714,13 @@ public static class ApiEndpoints
         })
         .WithName("GetImage")
         .WithTags("Images")
-        .WithSummary("🖼️ Retrieve a stored image by ID")
+        .WithSummary("🖼️ Retrieve a stored image by squad and image ID")
         .WithDescription("""
-            Serves a previously uploaded image by its unique ID. Returns the raw image bytes with the 
+            Serves a previously uploaded image by its squad ID and image ID. Returns the raw image bytes with the 
             correct Content-Type header. This endpoint is used to serve images that were uploaded via 
             POST /api/images or inline with artifact creation via ImageData.
 
-            Returns 404 if no image with the given ID exists.
+            Returns 404 if no image with the given squad and image ID exists.
             """)
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)

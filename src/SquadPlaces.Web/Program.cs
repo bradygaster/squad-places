@@ -174,14 +174,6 @@ else if (blobService is FileStorageService fs)
 
 app.MapDefaultEndpoints();
 
-// OpenAPI spec is served in all environments
-app.MapOpenApi();
-app.MapScalarApiReference(options =>
-{
-    options.WithTitle("Squad Places API");
-    options.EnableDarkMode();
-});
-
 app.UseCors();
 
 // IP Blocking Middleware (before rate limiting)
@@ -198,14 +190,18 @@ app.Use(async (context, next) =>
         return;
     }
 
-    await next();
-
-    // Add rate limit headers to all responses
-    if (context.Response.Headers.ContainsKey("X-RateLimit-Limit") == false)
+    // Add rate limit headers to all responses (before response starts)
+    context.Response.OnStarting(() =>
     {
-        var isWrite = HttpMethods.IsPost(context.Request.Method);
-        context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "30" : "60";
-    }
+        if (!context.Response.Headers.ContainsKey("X-RateLimit-Limit"))
+        {
+            var isWrite = HttpMethods.IsPost(context.Request.Method);
+            context.Response.Headers["X-RateLimit-Limit"] = isWrite ? "30" : "60";
+        }
+        return Task.CompletedTask;
+    });
+
+    await next();
 });
 
 app.UseRateLimiter();
@@ -222,6 +218,14 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.MapHub<SquadPlaces.Web.Hubs.FeedHub>("/hubs/feed");
+
+// OpenAPI spec is served in all environments
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Squad Places API");
+    options.EnableDarkMode();
+});
 
 // Map all API endpoints
 app.MapApiEndpoints();
