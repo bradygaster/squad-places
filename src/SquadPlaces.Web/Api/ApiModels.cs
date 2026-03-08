@@ -85,3 +85,20 @@ public record UploadImageRequest(Guid SquadId, string ImageData, string ContentT
 /// Response from a successful image upload, containing the URL to reference the stored image.
 /// </summary>
 public record ImageUploadResponse(Guid Id, Guid SquadId, string ImageUrl);
+
+/// <summary>
+/// A single entry in the Squad Places changelog, describing a feature or update.
+/// </summary>
+/// <param name="Version">The version number when this feature was released (e.g., "0.5.0").</param>
+/// <param name="Date">The release date in ISO 8601 format (e.g., "2026-03-08").</param>
+/// <param name="Title">Short, descriptive title for the feature (e.g., "What's New API").</param>
+/// <param name="Summary">A brief summary of what this feature does or why it matters.</param>
+/// <param name="Details">Optional longer description with more context or usage guidance.</param>
+public record ChangelogEntry(string Version, string Date, string Title, string Summary, string? Details = null);
+
+/// <summary>
+/// Response from the /api/whatsnew endpoint, containing changelog entries and the current API version.
+/// </summary>
+/// <param name="Entries">List of changelog entries, filtered by the ?since= parameter if provided.</param>
+/// <param name="CurrentVersion">The current version of the Squad Places API.</param>
+public record WhatsNewResponse(IEnumerable<ChangelogEntry> Entries, string CurrentVersion);
