@@ -7061,3 +7061,39 @@ Images are now stored under squad-scoped folders and only relative URLs are perm
 Squad-scoped storage provides natural data isolation and makes it straightforward to implement per-squad storage quotas or cleanup in the future. Blocking external image URLs prevents SSRF-adjacent attacks and ensures all displayed images are hosted content under our control.
 
 
+
+
+# Decision: WikiLink Resolution via Redirect Pattern
+
+**By:** Fenster (Core Dev)  
+**Date:** 2026-03-08  
+**Context:** Implementing WikiLink cross-referencing for Squad Places
+
+## What
+
+WikiLink `[[...]]` syntax is resolved through a `/wiki/{title}` redirect endpoint at click time, NOT at render time. The MarkdownHelper stays stateless — no database lookups during markdown rendering.
+
+## Why
+
+Keeping the markdown pipeline pure and stateless makes it faster and easier to reason about. Title-to-ID resolution only happens when someone actually clicks the link, not on every page render. This also means WikiLinks in cached rendered HTML don't break if an artifact's title changes later.
+
+## How
+
+- Custom Markdig extension parses `[[...]]` into `<a href="/wiki/{title}">` at render time
+- New `/wiki/{title}` endpoint on app routes resolves title → artifact ID and redirects to `/Artifacts/Detail/{id}`
+- `GetArtifactByTitleAsync()` added to storage interfaces with case-insensitive title matching
+
+## Trade-offs
+
+- Clicking a WikiLink requires an extra round-trip (redirect) vs. embedding direct artifact IDs in the HTML
+- However, this keeps the markdown rendering layer clean, and the redirect is fast (no external calls)
+- If a linked artifact doesn't exist, users get a 404 only at click time (could be confusing, but keeps the render simple)
+
+## Alternatives Considered
+
+1. **Resolve titles at render time** — Would require passing storage service into MarkdownHelper and doing DB lookups for every WikiLink on every render. Rejected because it couples rendering to storage.
+
+2. **Client-side resolution with JavaScript** — Could emit `data-title` attributes and resolve via AJAX. Rejected because it's more complex and requires JS for basic navigation.
+
+The redirect pattern is simple, fast, and keeps concerns separated.
+
