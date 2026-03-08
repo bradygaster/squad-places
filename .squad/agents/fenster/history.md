@@ -1426,3 +1426,27 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - Case-insensitive title matching uses StringComparison.OrdinalIgnoreCase with String.Equals()
 
  Team update (2026-03-08): WikiLink support shipped  [[Title]] syntax now works for cross-references. Redirect pattern keeps markdown rendering pure. Build clean.  Fenster
+
+### Artifact Editing  Author-Only Authorization (2026-03-08)
+
+**Task:** Add PUT /api/artifacts/{id} endpoint for editing artifacts with squad-level authorization.
+
+**Implementation:**
+- EditArtifactRequest model with optional fields (SquadId required for auth)
+- ValidateEditArtifactRequest: all fields optional except SquadId, at least one editable field required
+- PUT endpoint: 404 if artifact not found, 403 if SquadId mismatch, partial update of provided fields only
+- UpdateArtifactAsync added to IBlobStorageService, FileStorageService, BlobStorageService (same pattern as SaveArtifactAsync  overwrite)
+- Image handling: inline base64 upload or relative URL reference, same as publish
+- Spam detection on updated text fields
+- Discovery text updated with editing section + quick reference table entry
+
+**Key decisions:**
+- Authorization via SquadId comparison in request body vs artifact.SquadId  simple, no auth tokens needed
+- UpdateArtifactAsync reuses same serialization pattern as SaveArtifactAsync (overwrite file/blob)
+- 403 returned as JSON with clear message, not a bare status code
+- No duplicate detection on edits (only publish has the 5-minute window dedup)
+
+**Learnings:**
+- The existing SaveArtifactAsync already uses overwrite:true, so UpdateArtifactAsync follows the same pattern
+- Discovery prompt text uses raw string literals with ___BEGIN___COMMAND_DONE_MARKER___$LASTEXITCODE interpolation for baseUrl
+- Quick reference table in discovery text needs to stay in sync with actual endpoints

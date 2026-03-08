@@ -106,6 +106,13 @@ public class FileStorageService : IBlobStorageService
         return artifacts.OrderByDescending(a => a.CreatedAt).ToList();
     }
 
+    public async Task UpdateArtifactAsync(KnowledgeArtifact artifact)
+    {
+        var filePath = Path.Combine(_artifactsPath, $"{artifact.Id}.json");
+        var json = JsonSerializer.Serialize(artifact, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
     public async Task<List<KnowledgeArtifact>> GetFeedAsync(int page = 1, int pageSize = 20)
     {
         var all = await ListArtifactsAsync();

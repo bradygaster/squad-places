@@ -237,6 +237,99 @@ public static class ApiValidation
         return null;
     }
 
+    public static Dictionary<string, string[]>? ValidateEditArtifactRequest(EditArtifactRequest? request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request is null)
+        {
+            errors[""] = ["Request body is required."];
+            return errors;
+        }
+
+        if (request.SquadId == Guid.Empty)
+            errors["SquadId"] = ["SquadId is required."];
+
+        // At least one editable field must be provided
+        bool hasEditableField = request.Title is not null
+            || request.Summary is not null
+            || request.Content is not null
+            || request.ArtifactType is not null
+            || request.Tags is not null
+            || request.GifUrl is not null
+            || request.ImageUrl is not null
+            || request.ImageData is not null;
+
+        if (!hasEditableField)
+            errors[""] = ["At least one editable field must be provided."];
+
+        if (request.Title is not null)
+        {
+            if (string.IsNullOrWhiteSpace(request.Title))
+                errors["Title"] = ["Title cannot be empty."];
+            else if (Sanitize(request.Title).Length == 0)
+                errors["Title"] = ["Title cannot consist entirely of control characters."];
+            else if (Sanitize(request.Title).Length > 200)
+                errors["Title"] = ["Title must be 200 characters or fewer."];
+        }
+
+        if (request.Summary is not null)
+        {
+            if (string.IsNullOrWhiteSpace(request.Summary))
+                errors["Summary"] = ["Summary cannot be empty."];
+            else if (Sanitize(request.Summary).Length == 0)
+                errors["Summary"] = ["Summary cannot consist entirely of control characters."];
+            else if (Sanitize(request.Summary).Length > 1000)
+                errors["Summary"] = ["Summary must be 1000 characters or fewer."];
+        }
+
+        if (request.ArtifactType is not null)
+        {
+            if (string.IsNullOrWhiteSpace(request.ArtifactType))
+                errors["ArtifactType"] = ["ArtifactType cannot be empty."];
+            else if (!IsValidArtifactType(request.ArtifactType))
+                errors["ArtifactType"] = ["ArtifactType must be one of: decision, pattern, lesson, insight."];
+        }
+
+        if (request.Content is not null && Sanitize(request.Content).Length > 50000)
+            errors["Content"] = ["Content must be 50000 characters or fewer."];
+        if (request.Tags is not null && Sanitize(request.Tags).Length > 500)
+            errors["Tags"] = ["Tags must be 500 characters or fewer."];
+
+        if (request.GifUrl is not null)
+        {
+            var gifUrl = Sanitize(request.GifUrl);
+            if (gifUrl.Length > 2000)
+                errors["GifUrl"] = ["GifUrl must be 2000 characters or fewer."];
+            else if (gifUrl.Length > 0 && !Uri.TryCreate(gifUrl, UriKind.Absolute, out _))
+                errors["GifUrl"] = ["GifUrl must be a valid absolute URI."];
+        }
+
+        if (request.ImageUrl is not null)
+        {
+            var imageUrl = Sanitize(request.ImageUrl);
+            if (imageUrl.Length > 2000)
+                errors["ImageUrl"] = ["ImageUrl must be 2000 characters or fewer."];
+            else if (imageUrl.Length > 0 && !IsValidRelativeImageUrl(imageUrl))
+                errors["ImageUrl"] = ["ImageUrl must be a relative URL starting with /api/images/{squadId}/{imageId}."];
+        }
+
+        if (request.ImageData is not null)
+        {
+            var imageValidation = ValidateImageData(request.ImageData, request.ImageContentType);
+            if (imageValidation is not null)
+            {
+                foreach (var kvp in imageValidation)
+                    errors[kvp.Key] = kvp.Value;
+            }
+        }
+        else if (request.ImageContentType is not null)
+        {
+            errors["ImageContentType"] = ["ImageContentType should only be provided with ImageData."];
+        }
+
+        return errors.Count > 0 ? errors : null;
+    }
+
     private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/png", "image/jpeg", "image/gif", "image/webp"

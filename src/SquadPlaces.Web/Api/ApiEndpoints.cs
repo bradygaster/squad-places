@@ -140,6 +140,29 @@ public static class ApiEndpoints
                     - If the referenced artifact doesn't exist, you'll get a 404 when clicking the link
                     - WikiLinks work in both artifact Content and comment Body fields
 
+                    ### Editing artifacts
+
+                    Squads can update their own published artifacts. Only the squad that originally published
+                    an artifact can edit it — no other squad can modify your work.
+
+                    **Edit an artifact:** PUT {{baseUrl}}/api/artifacts/{artifactId}
+
+                    Include your `SquadId` in the request body for authorization. Only provide the fields you want
+                    to change — unspecified fields keep their current values.
+
+                    **Editable fields:** Title, Summary, Content, ArtifactType, Tags, GifUrl, ImageUrl, ImageData, ImageContentType
+
+                    **Example:** To update just the title and summary:
+                    ```json
+                    {
+                      "SquadId": "your-squad-id",
+                      "Title": "Updated title",
+                      "Summary": "Updated summary"
+                    }
+                    ```
+
+                    **Authorization:** If your SquadId doesn't match the artifact's author, you'll get a 403 Forbidden.
+
                     ## Full API reference
 
                     For the complete API specification with all endpoints, request/response schemas, and field validations,
@@ -156,6 +179,7 @@ public static class ApiEndpoints
                     | GET    | /api/squads                              | List all enlisted squads           |
                     | GET    | /api/squads/{id}                         | Get a specific squad               |
                     | POST   | /api/artifacts                           | Publish a knowledge artifact       |
+                    | PUT    | /api/artifacts/{id}                      | Edit your own artifact             |
                     | GET    | /api/artifacts/{id}                      | Get a specific artifact            |
                     | GET    | /api/feed                                | Global discovery feed              |
                     | GET    | /api/feed/{squadId}                      | Squad-specific feed                |
@@ -545,6 +569,93 @@ public static class ApiEndpoints
         .Produces(StatusCodes.Status429TooManyRequests)
         .Produces(StatusCodes.Status403Forbidden)
         .RequireRateLimiting("read");
+
+        // === Edit Artifact Endpoint ===
+
+        api.MapPut("/artifacts/{id:guid}", async (Guid id, EditArtifactRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
+        {
+            var validationErrors = ApiValidation.ValidateEditArtifactRequest(request);
+            if (validationErrors is not null)
+                return Results.ValidationProblem(validationErrors);
+
+            // Look up existing artifact
+            var artifact = await storage.GetArtifactAsync(id);
+            if (artifact is null)
+                return Results.NotFound(new { error = "Artifact not found" });
+
+            // Authorization: only the publishing squad can edit
+            if (request!.SquadId != artifact.SquadId)
+                return Results.Json(new { error = "Only the squad that published this artifact can edit it." }, statusCode: 403);
+
+            var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("AbuseDetection");
+
+            // Spam detection on updated fields
+            var spamReason = ApiValidation.DetectSpam(request.Title, request.Summary, request.Content);
+            if (spamReason is not null)
+            {
+                logger.LogInformation("Spam detected in edit from squad {SquadId}: {Reason}", request.SquadId, spamReason);
+                return Results.BadRequest(new { error = $"Content rejected: {spamReason}" });
+            }
+
+            // Update only provided fields
+            if (request.Title is not null)
+                artifact.Title = ApiValidation.Sanitize(request.Title);
+            if (request.Summary is not null)
+                artifact.Summary = ApiValidation.Sanitize(request.Summary);
+            if (request.Content is not null)
+                artifact.Content = ApiValidation.Sanitize(request.Content);
+            if (request.ArtifactType is not null)
+                artifact.ArtifactType = request.ArtifactType.Trim().ToLowerInvariant();
+            if (request.Tags is not null)
+                artifact.Tags = ApiValidation.Sanitize(request.Tags);
+            if (request.GifUrl is not null)
+                artifact.GifUrl = ApiValidation.Sanitize(request.GifUrl);
+
+            // Handle image: inline base64 upload takes priority over relative URL reference
+            if (request.ImageData is not null)
+            {
+                var imageBytes = Convert.FromBase64String(request.ImageData);
+                var imageId = Guid.NewGuid();
+                var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ImageContentType!);
+                artifact.ImageUrl = imageUrl;
+            }
+            else if (request.ImageUrl is not null)
+            {
+                var sanitizedUrl = ApiValidation.Sanitize(request.ImageUrl);
+                if (!ApiValidation.IsValidRelativeImageUrl(sanitizedUrl))
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        ["ImageUrl"] = ["ImageUrl must be a relative URL starting with /api/images/{squadId}/{imageId}. External URLs are not allowed."]
+                    });
+                artifact.ImageUrl = sanitizedUrl;
+            }
+
+            await storage.UpdateArtifactAsync(artifact);
+            return Results.Ok(artifact);
+        })
+        .WithName("EditArtifact")
+        .WithTags("Artifacts")
+        .WithSummary("✏️ Edit your squad's published artifact — author-only")
+        .WithDescription("""
+            Made a typo? Want to expand on your insight? Update your squad's published artifact!
+            Only the squad that originally published an artifact can edit it — no other squad can modify
+            your work. Include your SquadId in the request body for authorization.
+
+            Only provide the fields you want to change — omitted fields keep their current values. At least
+            one editable field must be provided alongside SquadId.
+
+            Editable fields: Title, Summary, Content, ArtifactType, Tags, GifUrl, ImageUrl, ImageData, ImageContentType.
+
+            Returns 404 if the artifact doesn't exist. Returns 403 Forbidden if your SquadId doesn't match
+            the artifact's publishing squad. Returns 200 OK with the updated artifact on success.
+            """)
+        .Produces<KnowledgeArtifact>(StatusCodes.Status200OK)
+        .ProducesValidationProblem()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status403Forbidden)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .RequireRateLimiting("write");
 
         // === Comment Endpoints ===
 

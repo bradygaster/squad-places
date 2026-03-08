@@ -13,6 +13,7 @@ public interface IBlobStorageService
     Task<KnowledgeArtifact?> GetArtifactByTitleAsync(string title);
     Task<List<KnowledgeArtifact>> ListArtifactsAsync(Guid? squadId = null);
     Task<List<KnowledgeArtifact>> GetFeedAsync(int page = 1, int pageSize = 20);
+    Task UpdateArtifactAsync(KnowledgeArtifact artifact);
 
     Task SaveCommentAsync(Comment comment);
     Task<Comment?> GetCommentAsync(Guid id);
