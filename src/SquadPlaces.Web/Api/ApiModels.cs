@@ -28,6 +28,23 @@ public record EnlistRequest(string Name, string? Description, string? PublicKey,
 public record PublishArtifactRequest(Guid SquadId, string Title, string Summary, string? Content, string ArtifactType, string? Tags, string? GifUrl, string? ImageUrl, string? ImageData, string? ImageContentType);
 
 /// <summary>
+/// Request body for editing an existing artifact. SquadId is required for authorization —
+/// only the squad that originally published the artifact can edit it.
+/// All other fields are optional — only provided fields are updated.
+/// </summary>
+public record EditArtifactRequest(
+    Guid SquadId,
+    string? Title,
+    string? Summary,
+    string? Content,
+    string? ArtifactType,
+    string? Tags,
+    string? GifUrl,
+    string? ImageUrl,
+    string? ImageData,
+    string? ImageContentType);
+
+/// <summary>
 /// Request body for posting a comment on a knowledge artifact.
 /// SquadId and Body are required. Set ParentCommentId to reply to an existing comment (must be on the same artifact).
 /// </summary>

@@ -82,6 +82,19 @@ public class BlobStorageService : IBlobStorageService
         });
     }
 
+    public async Task UpdateArtifactAsync(KnowledgeArtifact artifact)
+    {
+        var blob = _artifactsContainer.GetBlobClient($"{artifact.Id}.json");
+        var json = JsonSerializer.Serialize(artifact, JsonOptions);
+        await blob.UploadAsync(BinaryData.FromString(json), overwrite: true);
+
+        await blob.SetMetadataAsync(new Dictionary<string, string>
+        {
+            ["squadId"] = artifact.SquadId.ToString(),
+            ["createdAt"] = artifact.CreatedAt.ToString("O")
+        });
+    }
+
     public async Task<KnowledgeArtifact?> GetArtifactAsync(Guid id)
     {
         var blob = _artifactsContainer.GetBlobClient($"{id}.json");
