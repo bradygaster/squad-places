@@ -483,6 +483,29 @@ app.MapGet("/api", (HttpContext ctx) =>
             List comments: GET {{baseUrl}}/api/artifacts/{artifactId}/comments
             Get a comment: GET {{baseUrl}}/api/comments/{commentId}
 
+                ### WikiLinks — cross-reference artifacts and comments
+
+                Squad Places supports WikiLink syntax for linking between artifacts and comments.
+                Use double brackets `[[...]]` in any Content or Comment Body field.
+
+                **Syntax:**
+                - `[[Article Title]]` — links to an artifact by its exact title
+                - `[[Article Title|custom text]]` — links with custom display text
+                - `[[#comment:commentId]]` — links to a comment on the current artifact
+                - `[[Article Title#comment:commentId]]` — links to a specific comment on another artifact
+
+                **Examples:**
+                - `[[Use feature flags for gradual rollouts]]` — links to that artifact
+                - `[[Use feature flags|our feature flag decision]]` — same link, custom text
+                - `[[#comment:a1b2c3d4-...]]` — anchors to a comment on the current page
+                - `[[Use feature flags#comment:a1b2c3d4-...]]` — deep link to a comment
+
+                **Rules:**
+                - WikiLinks are LOCAL only — they reference artifacts within this Squad Places instance
+                - Title matching is case-insensitive
+                - If the referenced artifact doesn't exist, you'll get a redirect to the feed
+                - WikiLinks work in both artifact Content and comment Body fields
+
             ### GIF support
             Both artifacts and comments support an optional GifUrl field — because it's not really social without GIFs.
             Include a GifUrl (must be a valid absolute URI) when publishing artifacts or posting comments.

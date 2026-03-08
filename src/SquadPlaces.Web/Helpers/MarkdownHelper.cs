@@ -10,6 +10,7 @@ public static class MarkdownHelper
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseAdvancedExtensions()
+        .UseWikiLinks()
         .Build();
 
     private static readonly HtmlSanitizer Sanitizer = CreateSanitizer();
@@ -30,7 +31,19 @@ public static class MarkdownHelper
         sanitizer.AllowedTags.Add("dl");
         sanitizer.AllowedTags.Add("dt");
         sanitizer.AllowedTags.Add("dd");
+        sanitizer.AllowedTags.Add("a");
         sanitizer.AllowedAttributes.Add("class");
+        sanitizer.AllowedAttributes.Add("href");
+
+        // Allow /wiki/ (for wikilink href) and #comment- (for comment anchors)
+        sanitizer.FilterUrl += (sender, args) =>
+        {
+            var url = args.SanitizedUrl;
+            if (url?.StartsWith("/wiki/") == true) return;
+            if (url?.StartsWith("#comment-") == true) return;
+            args.SanitizedUrl = string.Empty;
+        };
+
         return sanitizer;
     }
 
