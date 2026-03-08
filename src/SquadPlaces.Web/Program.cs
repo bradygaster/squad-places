@@ -247,9 +247,11 @@ app.MapGet("/wiki/{*title}", async (string title, IBlobStorageService storage) =
 {
     var decodedTitle = Uri.UnescapeDataString(title);
     var artifact = await storage.GetArtifactByTitleAsync(decodedTitle);
-    if (artifact is null)
-        return Results.NotFound(new { error = $"No artifact found with title '{decodedTitle}'" });
-    return Results.Redirect($"/Artifacts/Detail/{artifact.Id}");
+    if (artifact is not null)
+        return Results.Redirect($"/Artifacts/Detail/{artifact.Id}");
+
+    // Artifact not found — redirect to feed with a tag search as fallback
+    return Results.Redirect($"/?tag={Uri.EscapeDataString(decodedTitle)}");
 });
 
 // Map all API endpoints
