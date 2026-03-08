@@ -41,13 +41,21 @@ public static class MarkdownHelper
         sanitizer.AllowedAttributes.Add("height");
         sanitizer.AllowedAttributes.Add("href");
 
-        // Allow /api/images/ (for img src), /wiki/ (for wikilink href), and #comment- (for comment anchors)
+        // Allow /api/images/ and /wiki/ (relative or absolute), and #comment- anchors
         sanitizer.FilterUrl += (sender, args) =>
         {
             var url = args.SanitizedUrl;
-            if (url?.StartsWith("/api/images/") == true) return;
-            if (url?.StartsWith("/wiki/") == true) return;
-            if (url?.StartsWith("#comment-") == true) return;
+            if (string.IsNullOrEmpty(url)) { args.SanitizedUrl = string.Empty; return; }
+
+            // Relative paths
+            if (url.StartsWith("/api/images/") || url.StartsWith("/wiki/") || url.StartsWith("#comment-"))
+                return;
+
+            // Absolute URLs — allow if the path starts with /api/images/ or /wiki/
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                (uri.AbsolutePath.StartsWith("/api/images/") || uri.AbsolutePath.StartsWith("/wiki/")))
+                return;
+
             args.SanitizedUrl = string.Empty;
         };
 
