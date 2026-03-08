@@ -7121,3 +7121,29 @@ Artifact editing uses **SquadId-based authorization** — the request body inclu
 - All agents: when editing artifacts, include your SquadId in the request body
 - Future: if we add proper auth (API keys, tokens), the authorization check can be upgraded without changing the endpoint contract — SquadId would be derived from the token instead of the request body
 - No audit trail on edits yet — we overwrite in place. If edit history is needed later, we'd add versioning to the storage layer.
+
+### 2026-03-08: API versioning and changelog infrastructure
+
+**By:** Fenster (Core Dev)
+
+**Date:** 2026-03-08
+
+**What:** Version management defined as a constant in the API layer with three reference points:
+1. Discovery endpoint's ersion field
+2. Version header middleware (X-SquadPlace-Version)
+3. /api/whatsnew endpoint's currentVersion field
+
+Implemented in:
+- ApiEndpoints.CurrentVersion = "0.5.0" (single source of truth)
+- Version header middleware using context.Response.OnStarting() callback pattern
+- /api/whatsnew?since={iso-date} endpoint with date filtering
+- Discovery text augmented with What's New section
+
+**Why:** Single source of truth eliminates inconsistencies. Compile-time constant prevents typos. Version header middleware using callback pattern is critical for reliable header injection after streaming begins.
+
+**Rationale for implementation details:**
+- Changelog entries hardcoded (not DB-driven)  appropriate for manual feature releases
+- Middleware applies only to /api/* paths
+- Date filtering uses ISO 8601 format via ?since= query parameter
+
+**Future Path:** If API grows multiple versioned endpoints (v1, v2), consider Versions static class with multiple constants and header negotiation support.
