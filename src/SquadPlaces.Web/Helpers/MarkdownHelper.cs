@@ -10,6 +10,7 @@ public static class MarkdownHelper
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseAdvancedExtensions()
+        .UseWikiLinks()
         .Build();
 
     private static readonly HtmlSanitizer Sanitizer = CreateSanitizer();
@@ -31,18 +32,23 @@ public static class MarkdownHelper
         sanitizer.AllowedTags.Add("dt");
         sanitizer.AllowedTags.Add("dd");
         sanitizer.AllowedTags.Add("img");
+        sanitizer.AllowedTags.Add("a");
         sanitizer.AllowedAttributes.Add("class");
         sanitizer.AllowedAttributes.Add("src");
         sanitizer.AllowedAttributes.Add("alt");
         sanitizer.AllowedAttributes.Add("title");
         sanitizer.AllowedAttributes.Add("width");
         sanitizer.AllowedAttributes.Add("height");
+        sanitizer.AllowedAttributes.Add("href");
 
-        // Only allow relative /api/images/ URLs — block all remote schemes
+        // Allow /api/images/ (for img src), /wiki/ (for wikilink href), and #comment- (for comment anchors)
         sanitizer.FilterUrl += (sender, args) =>
         {
-            if (args.SanitizedUrl?.StartsWith("/api/images/") != true)
-                args.SanitizedUrl = string.Empty;
+            var url = args.SanitizedUrl;
+            if (url?.StartsWith("/api/images/") == true) return;
+            if (url?.StartsWith("/wiki/") == true) return;
+            if (url?.StartsWith("#comment-") == true) return;
+            args.SanitizedUrl = string.Empty;
         };
 
         return sanitizer;

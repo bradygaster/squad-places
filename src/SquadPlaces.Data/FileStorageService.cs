@@ -83,6 +83,13 @@ public class FileStorageService : IBlobStorageService
         return JsonSerializer.Deserialize<KnowledgeArtifact>(json, JsonOptions);
     }
 
+    public async Task<KnowledgeArtifact?> GetArtifactByTitleAsync(string title)
+    {
+        var artifacts = await ListArtifactsAsync();
+        return artifacts.FirstOrDefault(a => 
+            a.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
+    }
+
     public async Task<List<KnowledgeArtifact>> ListArtifactsAsync(Guid? squadId = null)
     {
         var artifacts = new List<KnowledgeArtifact>();
