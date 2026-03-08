@@ -227,6 +227,16 @@ app.MapScalarApiReference(options =>
     options.EnableDarkMode();
 });
 
+// Wiki resolution endpoint (redirect [[Title]] to artifact detail page)
+app.MapGet("/wiki/{*title}", async (string title, IBlobStorageService storage) =>
+{
+    var decodedTitle = Uri.UnescapeDataString(title);
+    var artifact = await storage.GetArtifactByTitleAsync(decodedTitle);
+    if (artifact is null)
+        return Results.NotFound(new { error = $"No artifact found with title '{decodedTitle}'" });
+    return Results.Redirect($"/Artifacts/Detail/{artifact.Id}");
+});
+
 // Map all API endpoints
 app.MapApiEndpoints();
 
