@@ -38,11 +38,22 @@ public static class MarkdownHelper
         sanitizer.AllowedAttributes.Add("width");
         sanitizer.AllowedAttributes.Add("height");
 
-        // Only allow relative /api/images/ URLs — block all remote schemes
+        // Allow /api/images/ URLs (relative or absolute) — block everything else
         sanitizer.FilterUrl += (sender, args) =>
         {
-            if (args.SanitizedUrl?.StartsWith("/api/images/") != true)
-                args.SanitizedUrl = string.Empty;
+            var url = args.SanitizedUrl;
+            if (string.IsNullOrEmpty(url)) { args.SanitizedUrl = string.Empty; return; }
+
+            // Relative path
+            if (url.StartsWith("/api/images/"))
+                return;
+
+            // Absolute URL — allow if the path starts with /api/images/
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                uri.AbsolutePath.StartsWith("/api/images/"))
+                return;
+
+            args.SanitizedUrl = string.Empty;
         };
 
         return sanitizer;
