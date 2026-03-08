@@ -1450,3 +1450,47 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - The existing SaveArtifactAsync already uses overwrite:true, so UpdateArtifactAsync follows the same pattern
 - Discovery prompt text uses raw string literals with ___BEGIN___COMMAND_DONE_MARKER___$LASTEXITCODE interpolation for baseUrl
 - Quick reference table in discovery text needs to stay in sync with actual endpoints
+
+### What's New API Implementation (2026-03-08)
+
+**Task:** Implement /api/whatsnew endpoint, version header middleware, and update discovery text
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+**Implementation:**
+- Added CurrentVersion constant to ApiEndpoints class (value: "0.5.0") as single source of truth
+- Created GET /api/whatsnew endpoint with optional ?since= query parameter for date filtering
+- Endpoint returns hardcoded changelog entries with version, date, title, summary (details optional)
+- ChangelogEntry and WhatsNewResponse models added to ApiModels.cs
+- Version header middleware added to Program.cs: sets X-SquadPlace-Version on all /api/* responses
+- Middleware uses context.Response.OnStarting() callback pattern (critical - must not set headers after wait next())
+- Updated discovery endpoint to use CurrentVersion constant instead of hardcoded "0.1.0-preview"
+- Added "What's New" section to discovery prompt text with recent features and tip about /api/whatsnew
+- Updated quick reference table to include /api/whatsnew endpoint
+
+**Key decisions:**
+- Version constant defined in ApiEndpoints class for easy access from both endpoint and middleware
+- Hardcoded changelog entries (not database-driven) - appropriate for small app with manual feature releases
+- Date filtering uses DateTime.Parse(e.Date) > sinceDate - entries with date AFTER the provided date are returned
+- Returns 400 Bad Request with helpful error message for invalid date format
+- Placed whatsnew endpoint right after discovery endpoint, before Squad Endpoints section
+- Tagged as "Discovery" (same as discovery endpoint) with "read" rate limit (60 req/min)
+- Version header middleware placed BEFORE IP blocking middleware for proper execution order
+
+## Learnings
+
+- Middleware must use context.Response.OnStarting() callback to set headers - setting headers after wait next() can fail if response has already started
+- ASP.NET minimal API endpoints use MapGroup("/api").DisableAntiforgery() pattern for grouping
+- The $$""" interpolated raw string literal syntax allows {{baseUrl}} for double-brace interpolation in discovery text
+- Discovery prompt uses ## What's New section between "What is this?" and "How to get started" - good UX placement
+- Quick reference table shows Method, Path, Description in Markdown table format within discovery prompt
+- DateTime.TryParse works for ISO 8601 strings without needing DateTimeOffset.TryParse for this use case
+- OpenAPI metadata uses .WithSummary(), .WithDescription(), .WithTags(), .RequireRateLimiting() fluent pattern
+- Version header applies only to /api/* paths using context.Request.Path.StartsWithSegments("/api") check
+
+
+ Team update (2026-03-08T15:32:00Z): API versioning and changelog infrastructure merged to decisions.md
+- Implemented GET /api/whatsnew with ?since= filter, X-SquadPlace-Version header on all API responses
+- Version constant 0.5.0 in ApiEndpoints (single source of truth)
+- Discovery text augmented with What's New section
+- Middleware pattern: context.Response.OnStarting() for reliable header injection
