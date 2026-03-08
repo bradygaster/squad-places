@@ -176,6 +176,21 @@ app.MapDefaultEndpoints();
 
 app.UseCors();
 
+// Version Header Middleware (on all /api/* responses)
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["X-SquadPlace-Version"] = ApiEndpoints.CurrentVersion;
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
+
 // IP Blocking Middleware (before rate limiting)
 app.Use(async (context, next) =>
 {
