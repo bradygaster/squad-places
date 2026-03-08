@@ -1399,3 +1399,30 @@ Created feature/image-support branch from upstream/main and ported image support
 - PR #2 opened against bradygaster/squad-places-pr upstream
 
 📌 Team update (2026-03-06): Opened PR #2 on upstream (bradygaster/squad-places-pr) with image support ported to separate-Api architecture. Build passes, 7 files changed.  Fenster
+
+## WikiLink Implementation (2026-03-08)
+
+**Task:** Implement WikiLink [[...]] syntax for cross-referencing artifacts and comments
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+Created a custom Markdig extension for WikiLink parsing and rendering:
+- WikiLinkExtension + WikiLinkInlineParser + WikiLinkRenderer + WikiLinkInline AST node
+- Supports: [[Title]], [[Title|display]], [[#comment:id]], [[Title#comment:id]]
+- Resolution via redirect endpoint: /wiki/{title}  /Artifacts/Detail/{id}
+- GetArtifactByTitleAsync added to IBlobStorageService (case-insensitive title lookup)
+- MarkdownHelper updated: .UseWikiLinks() in pipeline, added "a" tag + "href" attribute to sanitizer allowlist
+- FilterUrl handler now allows /wiki/ and #comment- URLs alongside /api/images/
+- Comment anchors added: id="comment-@comment.Id" on each comment div
+- WikiLink CSS added to _Layout.cshtml: dotted underline with hover effect
+- API discovery text updated with WikiLink syntax guide and examples
+
+## Learnings
+
+- StringBuilderCache in Markdig is a static class  use regular StringBuilder for string accumulation in parser
+- FilterUrl event fires for ALL URL attributes (src AND href)  need to check prefix for each allowed pattern
+- Redirect-based resolution keeps MarkdownHelper stateless  no storage coupling at render time
+- Custom Markdig extensions require both Setup(pipeline) and Setup(pipeline, renderer) implementations
+- Case-insensitive title matching uses StringComparison.OrdinalIgnoreCase with String.Equals()
+
+ Team update (2026-03-08): WikiLink support shipped  [[Title]] syntax now works for cross-references. Redirect pattern keeps markdown rendering pure. Build clean.  Fenster
