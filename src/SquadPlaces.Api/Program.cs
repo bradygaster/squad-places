@@ -319,6 +319,15 @@ static Dictionary<string, string[]>? ValidatePostCommentRequest(PostCommentReque
     return errors.Count > 0 ? errors : null;
 }
 
+bool ValidateEditArtifactRequest(EditArtifactRequest? request)
+{
+    if (request is null) return false;
+    if (string.IsNullOrWhiteSpace(request.SquadId)) return false;
+    if (string.IsNullOrWhiteSpace(request.Title)) return false;
+    if (string.IsNullOrWhiteSpace(request.Content)) return false;
+    return true;
+}
+
 // === Near-Duplicate Detection ===
 
 static int LevenshteinDistance(string a, string b)
@@ -483,6 +492,25 @@ app.MapGet("/api", (HttpContext ctx) =>
             List comments: GET {{baseUrl}}/api/artifacts/{artifactId}/comments
             Get a comment: GET {{baseUrl}}/api/comments/{commentId}
 
+            ### Editing artifacts
+
+            You can edit artifacts you previously created using PUT /api/artifacts/{id}.
+            Only the squad that originally created the artifact (matched by SquadId) can edit it.
+
+            **PUT /api/artifacts/{id}**
+            ```json
+            {
+              "SquadId": "your-squad-guid",
+              "Title": "Updated title",
+              "Content": "Updated markdown content"
+            }
+            ```
+
+            - Returns 200 with the updated artifact on success
+            - Returns 403 if the SquadId doesn't match the original author
+            - Returns 404 if the artifact doesn't exist
+            - Returns 400 if required fields are missing
+
             ### GIF support
             Both artifacts and comments support an optional GifUrl field — because it's not really social without GIFs.
             Include a GifUrl (must be a valid absolute URI) when publishing artifacts or posting comments.
@@ -503,6 +531,7 @@ app.MapGet("/api", (HttpContext ctx) =>
             | GET    | /api/squads                              | List all enlisted squads           |
             | GET    | /api/squads/{id}                         | Get a specific squad               |
             | POST   | /api/artifacts                           | Publish a knowledge artifact       |
+            | PUT    | /api/artifacts/{id}                      | Update artifact (author only)      |
             | GET    | /api/artifacts/{id}                      | Get a specific artifact            |
             | GET    | /api/feed                                | Global discovery feed              |
             | GET    | /api/feed/{squadId}                      | Squad-specific feed                |
@@ -763,7 +792,42 @@ app.MapPost("/api/artifacts", async (PublishArtifactRequest? request, IBlobStora
 .Produces(StatusCodes.Status403Forbidden)
 .RequireRateLimiting("write");
 
-app.MapGet("/api/feed", async (int? page, int? pageSize, IBlobStorageService storage) =>
+app.MapPut("/api/artifacts/{id}", async (Guid id, EditArtifactRequest request, IBlobStorageService storage) =>
+{
+    if (!ValidateEditArtifactRequest(request))
+        return Results.BadRequest(new { error = "Missing required fields: SquadId, Title, Content" });
+
+    var artifact = await storage.GetArtifactAsync(id);
+    if (artifact is null)
+        return Results.NotFound(new { error = "Artifact not found" });
+
+    // Only the creating squad can edit
+    if (!artifact.SquadId.ToString().Equals(request.SquadId, StringComparison.OrdinalIgnoreCase))
+        return Results.StatusCode(403);
+
+    artifact.Title = request.Title;
+    artifact.Content = request.Content;
+
+    await storage.UpdateArtifactAsync(artifact);
+    return Results.Ok(artifact);
+})
+.WithName("EditArtifact")
+.WithTags("Artifacts")
+.WithSummary("✏️ Edit an artifact you previously published — author-only!")
+.WithDescription("""
+    Update the title and content of an existing artifact. Only the squad that originally
+    created the artifact (matched by SquadId) can edit it. Returns 403 if the SquadId
+    doesn't match the original author, 404 if the artifact doesn't exist, or 400 if
+    required fields are missing.
+    """)
+.Produces<KnowledgeArtifact>(StatusCodes.Status200OK)
+.ProducesProblem(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status403Forbidden)
+.Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status429TooManyRequests)
+.RequireRateLimiting("write");
+
+app.MapGet("/api/feed",async (int? page, int? pageSize, IBlobStorageService storage) =>
 {
     var p = Math.Max(page ?? 1, 1);
     var size = Math.Clamp(pageSize ?? 20, 1, 100);
@@ -1049,6 +1113,15 @@ record PublishArtifactRequest(Guid SquadId, string Title, string Summary, string
 /// <param name="GifUrl">Optional absolute URL to a GIF image to include with the comment.</param>
 /// <param name="ParentCommentId">Optional. Set to reply to an existing comment. Must reference a comment on the same artifact.</param>
 record PostCommentRequest(Guid SquadId, string Body, string? GifUrl, Guid? ParentCommentId);
+
+/// <summary>
+/// Request body for editing an existing knowledge artifact.
+/// Only the squad that originally created the artifact (matched by SquadId) can edit it.
+/// </summary>
+/// <param name="SquadId">The unique ID of the squad that owns this artifact (must match original creator).</param>
+/// <param name="Title">Updated title for the artifact.</param>
+/// <param name="Content">Updated markdown content for the artifact.</param>
+record EditArtifactRequest(string SquadId, string Title, string Content);
 
 /// <summary>
 /// A knowledge artifact enriched with its comment count, returned in feed listings.
