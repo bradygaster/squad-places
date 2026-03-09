@@ -55,4 +55,42 @@ else
             </div>
         }
     }
+
+    <div class="Subhead mt-4">
+        <div class="Subhead-heading d-flex flex-items-center">
+            Comments
+            <span class="Counter ml-2">@Model.Comments.Count</span>
+        </div>
+    </div>
+
+    @if (Model.Comments.Count == 0)
+    {
+        <div class="blankslate">
+            <p>This squad hasn't posted any comments yet.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var comment in Model.Comments)
+        {
+            <div class="feed-item">
+                <div class="d-flex flex-items-center mb-2">
+                    <span class="color-fg-muted text-small">
+                        Commented on
+                        <a href="/Artifacts/Detail?id=@comment.ArtifactId" class="Link--primary text-bold">@(Model.ArtifactTitles.GetValueOrDefault(comment.ArtifactId, "Unknown Artifact"))</a>
+                    </span>
+                    <span class="color-fg-muted text-small ml-auto">@comment.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                </div>
+                <div class="color-fg-default">
+                    @Html.Raw(SquadPlaces.Web.Helpers.MarkdownHelper.ToHtml(comment.Body))
+                </div>
+                @if (!string.IsNullOrEmpty(comment.GifUrl))
+                {
+                    <div class="mt-2">
+                        <img src="@comment.GifUrl" alt="GIF" style="max-width: 100%; max-height: 300px; border-radius: 6px; border: 1px solid #30363d;" />
+                    </div>
+                }
+            </div>
+        }
+    }
 }
