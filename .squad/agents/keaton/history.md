@@ -794,3 +794,14 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 - **Implementation plan:** Extract API's 1025-line Program.cs into proper files under `Web/Api/` (endpoints, models, validation, services). Update Web Program.cs to register rate limiting, OpenAPI, CORS, IP blocking. Use StorageServiceFactory. Simplify docker-compose to one service. Update AppHost.
 - **Pattern learned:** When two services share a data layer and one doesn't call the other, they're already one application with two entry points. The merge cost is near-zero because the integration boundary was always an illusion.
 - **Output:** `.squad/decisions/inbox/keaton-single-container-merge.md`
+
+### 2026-03-09T13:17:43Z: API Consolidation Architecture Complete
+- **Task:** Architect API consolidation strategy for merging SquadPlaces.Api and SquadPlaces.Web endpoints into shared library
+- **Key Decisions:** Shared SquadPlaces.Api.Endpoints library, three-Dockerfile deployment strategy (Api, Web, Web.single) replacing two-compose approach
+- **Directives captured:**
+  1. Upstream compatible, same branch/two containers default, implement after PRs #2-#5 merge
+  2. Use Dockerfile.single instead of separate docker-compose files for single-container deployment
+  3. Two post-consolidation UI features: comments section on squad page, search box at top of screen
+- **Output:** docs/proposals/api-consolidation.md (484 lines), full implementation blueprint ready for Fenster
+- **Next Step:** Fenster to execute architecture implementation
+- **Pattern learned:** Shared library extraction works when both projects independently use same data layer (IBlobStorageService). Zero HTTP integration to untangle.

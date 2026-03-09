@@ -7147,3 +7147,106 @@ Implemented in:
 - Date filtering uses ISO 8601 format via ?since= query parameter
 
 **Future Path:** If API grows multiple versioned endpoints (v1, v2), consider Versions static class with multiple constants and header negotiation support.
+
+
+### 2026-03-09T12:58:00Z: User directive  API consolidation constraints
+**By:** Jeffrey T. Fritz (via Copilot)
+**What:** Three constraints for the API consolidation refactor:
+1. **Upstream compatible**  stay compatible with bradygaster's upstream repo
+2. **Same branch, two containers by default**  publish two containers (Web + Api) by default, with an opt-in arg or different build script for single container deployment
+3. **Timing**  implement after open PRs #2-#5 merge
+**Why:** User request  captured for team memory
+
+
+### 2026-03-09T13:17:00Z: User directive  single container Dockerfile approach
+**By:** Jeffrey T. Fritz (via Copilot)
+**What:** Two compose scripts don't work for publishing a single container. Use a second Dockerfile (e.g., Dockerfile.single) instead of separate docker-compose files for the single-container deployment mode.
+**Why:** User request  captured for team memory
+
+### 2026-03-09T13:17:00Z: User directive  planned UI features
+**By:** Jeffrey T. Fritz (via Copilot)
+**What:** Two web UI features planned for after API consolidation:
+1. **Comments section on Squad page**  show comments a squad has written on their squad detail page
+2. **Search box**  add a search box at the top of the screen to search for topics squads are working on
+**Why:** User request  captured for team memory. These are post-consolidation features.
+
+
+# Decision: Separate Dockerfiles for Single-Container Opt-In
+
+**Date:** 2025-07-17  
+**Author:** Keaton (Lead)  
+**Context:** Revised section 4 of `docs/proposals/api-consolidation.md` in response to Jeff's feedback on the compose-file approach.
+
+## Problem
+
+Jeff's feedback on the original proposal: "Two compose scripts don't work if I want to publish a single container. Perhaps a second Dockerfile that contains the instructions for the single container publish?"
+
+The original approach proposed two `docker-compose` files:
+- `docker-compose.yml` (two-container, upstream)
+- `docker-compose.single.yml` (single-container, opt-in)
+
+This required Jeff to use `docker compose -f docker-compose.single.yml up` and managed two separate compose configurations. For a single-container deployment to Synology, this adds friction.
+
+## Solution: Separate Dockerfiles
+
+Replaced the two-compose-file approach with a three-Dockerfile strategy:
+
+1. **`src/SquadPlaces.Api/Dockerfile`** — Standalone API (upstream default, two-container mode)
+2. **`src/SquadPlaces.Web/Dockerfile`** — Razor Pages + API proxy (upstream default, two-container mode)
+3. **`src/SquadPlaces.Web/Dockerfile.single`** — Combined Web + API endpoints (opt-in, single-container)
+
+### Operational Impact
+
+**Brady (upstream default):**
+```bash
+docker compose up
+# Builds src/SquadPlaces.Api/Dockerfile and src/SquadPlaces.Web/Dockerfile
+```
+
+**Jeff (single-container, Synology):**
+```bash
+docker build -f src/SquadPlaces.Web/Dockerfile.single .
+# Builds a single image with Web UI + all 15 API endpoints (from shared library) + file storage
+```
+
+## Why This Approach
+
+1. **Simpler for Jeff:** One command (`docker build -f Dockerfile.single`), no compose orchestration needed.
+2. **No build-time conditionals:** Avoids complexity of build args and matrix logic in a single Dockerfile.
+3. **Each Dockerfile is self-contained:** `Dockerfile.single` immediately conveys "this builds everything in one image."
+4. **Upstream-friendly:** Brady's two-container topology is unaffected; he continues using the standard compose file.
+5. **Maintainability:** Jeff can fork and diverge `Dockerfile.single` without touching upstream's Dockerfile or the shared compose file.
+
+## Rationale Against Alternatives
+
+### Why Not Build Args?
+Build args add conditional logic to a single Dockerfile. The resulting image depends on which args were passed at build time. This creates a matrix of possibilities and makes the Dockerfile harder to reason about. Separate Dockerfiles are clearer: each one is a complete, self-contained build specification.
+
+### Why Not a Single Compose with Build Args?
+Same problem: the compose file would need to conditionally set build args, which adds a different layer of complexity.
+
+### Why Not Docker BuildKit Stages?
+Dockerfile stages are for multi-stage builds within a single image. Single-container and two-container are fundamentally different topologies (one process vs. two). Stages don't solve this cleanly.
+
+## Files Changed
+
+- `docs/proposals/api-consolidation.md` — Section 4 revised:
+  - 4.1: Design principle clarified
+  - 4.2: Separate Dockerfiles approach documented
+  - 4.3: Rationale against build args expanded
+  - 4.4: Three Dockerfile specifications (Api, Web, Web.single) documented
+
+## Next Steps
+
+1. Implement the shared library (`SquadPlaces.Api.Endpoints`)
+2. Create `src/SquadPlaces.Api/Dockerfile`
+3. Update `src/SquadPlaces.Web/Dockerfile` to include `Api.Endpoints` COPY
+4. Create `src/SquadPlaces.Web/Dockerfile.single` (identical to `Dockerfile` but labeled for clarity)
+5. Keep single `docker-compose.yml` (two-container default)
+6. Verify both deployment modes work
+
+## Impact
+
+- **Brady (upstream):** Zero change. Same two-container topology, same compose file.
+- **Jeff (fork):** Clearer single-container deployment path via `docker build -f Dockerfile.single`.
+- **Maintainability:** Each Dockerfile is explicit about its purpose and target deployment.

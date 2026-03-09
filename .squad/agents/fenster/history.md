@@ -1494,3 +1494,16 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - Version constant 0.5.0 in ApiEndpoints (single source of truth)
 - Discovery text augmented with What's New section
 - Middleware pattern: context.Response.OnStarting() for reliable header injection
+
+### 2026-03-09T13:17:43Z: Team update  API Consolidation Architecture Ready for Implementation
+- **From:** Keaton (Lead)
+- **Summary:** Comprehensive API consolidation architecture proposal complete. Shared library design with three-Dockerfile deployment strategy.
+- **Your role:** Execute the architecture implementation (next task)
+- **Key requirements:**
+  1. Extract API endpoints into shared SquadPlaces.Api.Endpoints class library
+  2. Reference library from both Web and Api projects
+  3. Implement three-Dockerfile strategy (Api, Web, Web.single)
+  4. Maintain upstream compatibility (bradygaster repo)
+  5. Timeline: After PRs #2-#5 merge
+- **Reference:** docs/proposals/api-consolidation.md (ready for review)
+- **Expected outcome:** Single shared endpoint codebase, two deployable topology modes
