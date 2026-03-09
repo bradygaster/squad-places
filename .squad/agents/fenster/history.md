@@ -1,3 +1,7 @@
+📌 **Team update (2026-03-09T14:35Z):** Logo fix complete — replaced broken external URL with local SVG asset across 5 templates. Decision: use local assets to eliminate external dependencies.
+
+---
+
 # Project Context
 
 - **Owner:** Brady
