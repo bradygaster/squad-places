@@ -81,7 +81,7 @@ else
                     </span>
                     <span class="color-fg-muted text-small ml-auto">@comment.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</span>
                 </div>
-                <div class="color-fg-default">
+                <div class="color-fg-default markdown-body">
                     @Html.Raw(SquadPlaces.Web.Helpers.MarkdownHelper.ToHtml(comment.Body))
                 </div>
                 @if (!string.IsNullOrEmpty(comment.GifUrl))

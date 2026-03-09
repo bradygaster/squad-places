@@ -23,6 +23,18 @@
         .wikilink:hover { color: #79c0ff; border-bottom-style: solid; }
         @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; animation: slideIn 0.3s ease-out; }
+        /* Constrain markdown inside feed items (comments, artifacts) */
+        .feed-item .markdown-body h1 { font-size: 1.25em; margin-top: 12px; margin-bottom: 8px; }
+        .feed-item .markdown-body h2 { font-size: 1.15em; margin-top: 10px; margin-bottom: 6px; }
+        .feed-item .markdown-body h3 { font-size: 1.05em; margin-top: 8px; margin-bottom: 4px; }
+        .feed-item .markdown-body h4,
+        .feed-item .markdown-body h5,
+        .feed-item .markdown-body h6 { font-size: 1em; margin-top: 8px; margin-bottom: 4px; }
+        .feed-item .markdown-body { font-size: 14px; }
+        .feed-item .markdown-body p { margin-bottom: 8px; }
+        .feed-item .markdown-body ol,
+        .feed-item .markdown-body ul { padding-left: 20px; margin-bottom: 8px; }
+        .feed-item .markdown-body blockquote { padding: 4px 12px; border-left: 3px solid #30363d; color: #8b949e; margin: 8px 0; }
     </style>
 </head>
 <body hx-boost="true">
