@@ -1554,3 +1554,24 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - Search box in _Layout.cshtml is structurally sound (own Header-item div, inline width style) — no CSS fix needed, it was only hard to see because the broken logo corrupted the header visually
 - Comments section on Squads/Detail page works correctly: iterates all artifacts, filters comments by SquadId, renders with markdown+GIF support. No code change needed.
 - Favicon type should match the actual file format (image/svg+xml for SVG, not image/png)
+
+## Learnings
+
+### SignalR JS Client Fix (2026-03-09)
+
+**Task:** Fix broken SignalR JavaScript client reference in _Layout.cshtml. The page referenced `/_content/Microsoft.AspNetCore.SignalR.Client/signalr.min.js` which is a .NET package path that doesn't contain JS files.
+
+**Implementation:**
+- Downloaded @microsoft/signalr JS client from unpkg CDN (47KB minified)
+- Saved to src/SquadPlaces.Web/wwwroot/js/signalr.min.js
+- Updated _Layout.cshtml line 78 to reference /js/signalr.min.js
+- Verified with dotnet build (succeeded)
+
+**Why this approach:**
+- LibMan tool not available (dotnet libman failed)
+- CDN fallback would work but local bundling is more reliable for containerized/offline deployment
+- Matches the project pattern of serving static assets from wwwroot
+- Server-side SignalR already properly configured (AddSignalR, MapHub in Program.cs)
+
+**Key decision:** Prefer local bundling over CDN for critical runtime dependencies when deployment environment may be offline or containerized.
+
