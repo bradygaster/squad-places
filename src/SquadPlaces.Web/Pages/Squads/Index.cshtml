@@ -27,7 +27,7 @@ else
         @foreach (var squad in Model.Squads)
         {
             <div class="Box-row d-flex flex-items-center">
-                <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad logo" class="squad-avatar mr-2" />
+                <img src="/images/squad-logo.svg" alt="Squad logo" class="squad-avatar mr-2" />
                 <div class="flex-auto">
                     <a href="/Squads/Detail?id=@squad.Id" class="Link--primary text-bold">@squad.Name</a>
                     @if (!string.IsNullOrEmpty(squad.Description))
