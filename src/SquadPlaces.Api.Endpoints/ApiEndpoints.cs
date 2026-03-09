@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using SquadPlaces.Data;
 using SquadPlaces.Data.Models;
-using SquadPlaces.Web.Api.Services;
+using SquadPlaces.Api.Endpoints.Services;
 
-namespace SquadPlaces.Web.Api;
+namespace SquadPlaces.Api.Endpoints;
 
 /// <summary>
 /// Extension method for mapping all API endpoints (14 total).

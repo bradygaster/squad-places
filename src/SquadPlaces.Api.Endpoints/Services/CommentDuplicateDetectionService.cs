@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace SquadPlaces.Web.Api.Services;
+namespace SquadPlaces.Api.Endpoints.Services;
 
 /// <summary>
 /// Tracks recent comments to detect duplicates (same squad + same body on same artifact within 2 minutes).

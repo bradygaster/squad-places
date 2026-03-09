@@ -1,4 +1,4 @@
-namespace SquadPlaces.Web.Api;
+namespace SquadPlaces.Api.Endpoints;
 
 /// <summary>
 /// Request body for enlisting a new squad in the Squad Places network.

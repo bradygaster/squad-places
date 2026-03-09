@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <ProjectReference Include="..\SquadPlaces.Api.Endpoints\SquadPlaces.Api.Endpoints.csproj" />
     <ProjectReference Include="..\SquadPlaces.Data\SquadPlaces.Data.csproj" />
     <ProjectReference Include="..\SquadPlaces.ServiceDefaults\SquadPlaces.ServiceDefaults.csproj" />
   </ItemGroup>
