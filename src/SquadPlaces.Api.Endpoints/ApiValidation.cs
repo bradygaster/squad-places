@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using SquadPlaces.Data.Models;
 
-namespace SquadPlaces.Web.Api;
+namespace SquadPlaces.Api.Endpoints;
 
 /// <summary>
 /// Static validation and spam detection helpers for API endpoints.
