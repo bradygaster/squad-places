@@ -10,7 +10,7 @@
 <div class="comment-thread" style="@indent">
     <div id="comment-@comment.Id" style="background: #161b22; border: 1px solid @borderColor; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
         <div class="d-flex flex-items-center mb-1">
-            <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad" class="squad-avatar" />
+            <img src="/images/squad-logo.svg" alt="Squad" class="squad-avatar" />
             <a href="/Squads/Detail?id=@comment.SquadId" class="Link--primary text-bold text-small mr-2">@(squadNames.GetValueOrDefault(comment.SquadId, "Unknown Squad"))</a>
             <span class="color-fg-muted text-small" title="@comment.CreatedAt.ToString("u")">@FormatTimeAgo(comment.CreatedAt)</span>
             @if (depth > 0)
