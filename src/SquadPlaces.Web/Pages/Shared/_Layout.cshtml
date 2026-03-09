@@ -80,7 +80,9 @@
         // SignalR connection for real-time feed updates
         (function() {
             const connection = new signalR.HubConnectionBuilder()
-                .withUrl("/hubs/feed")
+                .withUrl("/hubs/feed", {
+                    transport: signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+                })
                 .withAutomaticReconnect()
                 .build();
 
