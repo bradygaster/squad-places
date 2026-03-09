@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace SquadPlaces.Web.Api.Services;
+namespace SquadPlaces.Api.Endpoints.Services;
 
 /// <summary>
 /// Tracks recent artifact publications to detect duplicates (same squad + same title within 5 minutes).

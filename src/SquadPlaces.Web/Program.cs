@@ -1,9 +1,9 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
+using SquadPlaces.Api.Endpoints;
+using SquadPlaces.Api.Endpoints.Services;
 using SquadPlaces.Data;
-using SquadPlaces.Web.Api;
-using SquadPlaces.Web.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +30,8 @@ var enableApiEndpoints = builder.Configuration.GetValue<bool>("ENABLE_API_ENDPOI
 
 if (enableApiEndpoints)
 {
-    // API services
-    builder.Services.AddSingleton<IpBlocklistService>();
-    builder.Services.AddSingleton<DuplicateDetectionService>();
-    builder.Services.AddSingleton<CommentDuplicateDetectionService>();
+    // API services (from shared library)
+    builder.Services.AddSquadPlacesApiServices();
 
     // Rate limiting for API endpoints
     builder.Services.AddRateLimiter(options =>

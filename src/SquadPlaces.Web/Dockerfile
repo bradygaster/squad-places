@@ -8,6 +8,7 @@ WORKDIR /src
 # Copy solution and project files
 COPY SquadPlaces.slnx ./
 COPY src/SquadPlaces.Web/SquadPlaces.Web.csproj src/SquadPlaces.Web/
+COPY src/SquadPlaces.Api.Endpoints/SquadPlaces.Api.Endpoints.csproj src/SquadPlaces.Api.Endpoints/
 COPY src/SquadPlaces.Data/SquadPlaces.Data.csproj src/SquadPlaces.Data/
 COPY src/SquadPlaces.ServiceDefaults/SquadPlaces.ServiceDefaults.csproj src/SquadPlaces.ServiceDefaults/
 
@@ -16,6 +17,7 @@ RUN dotnet restore src/SquadPlaces.Web/SquadPlaces.Web.csproj
 
 # Copy source
 COPY src/SquadPlaces.Web/ src/SquadPlaces.Web/
+COPY src/SquadPlaces.Api.Endpoints/ src/SquadPlaces.Api.Endpoints/
 COPY src/SquadPlaces.Data/ src/SquadPlaces.Data/
 COPY src/SquadPlaces.ServiceDefaults/ src/SquadPlaces.ServiceDefaults/
 
