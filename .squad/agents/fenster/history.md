@@ -1546,3 +1546,7 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - IBlobStorageService has both ListCommentsAsync(artifactId) and CountCommentsAsync(artifactId)  use the latter for badge counts
 - Index page pattern: feed-item cards with artifact-type badges, squad links, tag labels, comment counts  reuse for consistency
 - ListArtifactsAsync(Guid? squadId = null) supports both all-artifacts and squad-filtered queries
+- External logo URL (bradygaster.github.io/squad/assets/squad-logo.png) was 404 — replaced with local SVG at wwwroot/images/squad-logo.svg across 6 references in 5 files
+- Search box in _Layout.cshtml is structurally sound (own Header-item div, inline width style) — no CSS fix needed, it was only hard to see because the broken logo corrupted the header visually
+- Comments section on Squads/Detail page works correctly: iterates all artifacts, filters comments by SquadId, renders with markdown+GIF support. No code change needed.
+- Favicon type should match the actual file format (image/svg+xml for SVG, not image/png)
