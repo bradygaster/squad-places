@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace SquadPlaces.Web.Api.Services;
+namespace SquadPlaces.Api.Endpoints.Services;
 
 /// <summary>
 /// Tracks rate-limit strikes per IP. Auto-blocks IPs with 15+ strikes in 10 minutes for 10 minutes.

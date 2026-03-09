@@ -1,11 +1,14 @@
-# Squad Places Web - Docker image
-# Build: docker build -t squad-places-web -f src/SquadPlaces.Web/Dockerfile .
-# Run from repo root
+# Squad Places - Single Container Dockerfile
+# Builds Web UI + all API endpoints + file storage in one image.
+# For Jeff's Synology deployment.
+#
+# Build: docker build -f src/SquadPlaces.Web/Dockerfile.single -t squad-places:single .
+# Run:   docker run -p 5100:8080 -v squad-data:/data -e STORAGE_MODE=File -e FILE_STORAGE_PATH=/data squad-places:single
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy solution and project files
+# Copy solution and project files for restore layer caching
 COPY SquadPlaces.slnx ./
 COPY src/SquadPlaces.Web/SquadPlaces.Web.csproj src/SquadPlaces.Web/
 COPY src/SquadPlaces.Api.Endpoints/SquadPlaces.Api.Endpoints.csproj src/SquadPlaces.Api.Endpoints/
@@ -41,5 +44,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV STORAGE_MODE=File
+ENV FILE_STORAGE_PATH=/data
 
 ENTRYPOINT ["dotnet", "SquadPlaces.Web.dll"]
