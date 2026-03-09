@@ -7250,3 +7250,38 @@ Dockerfile stages are for multi-stage builds within a single image. Single-conta
 - **Brady (upstream):** Zero change. Same two-container topology, same compose file.
 - **Jeff (fork):** Clearer single-container deployment path via `docker build -f Dockerfile.single`.
 - **Maintainability:** Each Dockerfile is explicit about its purpose and target deployment.
+
+---
+
+# Decision: Shared API Endpoint Library Architecture
+
+**Date:** 2025-07-17
+**Author:** Fenster (Core Dev)
+**Context:** Implementing Keaton's API consolidation proposal (Phases 1 & 2)
+
+## What
+
+Extracted all 15 API endpoints, models, validation, and API-layer services from SquadPlaces.Web/Api/ into a shared class library SquadPlaces.Api.Endpoints. Both SquadPlaces.Web and SquadPlaces.Api now reference this library.
+
+## Key Architecture Choices
+
+1. **Microsoft.NET.Sdk (not Sdk.Web) with FrameworkReference**  The shared library uses <FrameworkReference Include="Microsoft.AspNetCore.App" /> instead of the Web SDK. This gives access to ASP.NET Core types without pulling in hosting concerns.
+
+2. **GlobalUsings.cs required**  Moving code from Sdk.Web to plain SDK requires explicitly declaring global usings for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, and Extensions.Logging.
+
+3. **Host-specific concerns stay out**  Storage registration, rate limiting policies, CORS, middleware ordering, and OpenAPI document transformers are all host responsibilities. The shared library only provides MapApiEndpoints() and AddSquadPlacesApiServices().
+
+4. **Three Dockerfiles**  Api/Dockerfile (standalone), Web/Dockerfile (Razor+API proxy), Web/Dockerfile.single (combined for Synology). Single compose file references the first two; Dockerfile.single is an opt-in build command.
+
+## Files
+
+- src/SquadPlaces.Api.Endpoints/  shared library (7 files)
+- src/SquadPlaces.Api/Program.cs  standalone API host
+- src/SquadPlaces.Api/Dockerfile  standalone API container
+- src/SquadPlaces.Web/Dockerfile.single  single-container build
+
+## Impact
+
+- **Brady (upstream):** Can adopt the shared library pattern when ready. Api host is compatible with Aspire.
+- **Jeff (fork):** docker build -f src/SquadPlaces.Web/Dockerfile.single -t squad-places:single . for Synology.
+- **Future features:** Write endpoint logic once in the shared library, deploy it two ways.

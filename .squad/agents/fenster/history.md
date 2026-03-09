@@ -1507,3 +1507,26 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
   5. Timeline: After PRs #2-#5 merge
 - **Reference:** docs/proposals/api-consolidation.md (ready for review)
 - **Expected outcome:** Single shared endpoint codebase, two deployable topology modes
+### API Consolidation  Shared Endpoint Library (2025-07-17)
+
+**Task:** Extract API endpoints from SquadPlaces.Web/Api/ into a shared class library (SquadPlaces.Api.Endpoints) that both Web and standalone Api projects reference.
+
+**Implementation:**
+- SquadPlaces.Api.Endpoints: class library (Microsoft.NET.Sdk + FrameworkReference to Microsoft.AspNetCore.App, NOT Sdk.Web)
+- Moved ApiEndpoints.cs, ApiModels.cs, ApiValidation.cs, Services/ from Web/Api/ to shared library
+- Namespace: SquadPlaces.Api.Endpoints (distinct from both host projects)
+- ApiServiceRegistration.cs: extension method AddSquadPlacesApiServices() for DI registration of IpBlocklist, DuplicateDetection, CommentDuplicateDetection
+- GlobalUsings.cs needed in class library for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, Extensions.Logging (Web SDK provides these implicitly, plain SDK does not)
+- SquadPlaces.Api/Program.cs: standalone API host with Aspire blob storage, rate limiting, CORS, OpenAPI/Scalar, version header + IP blocking middleware (OnStarting pattern)
+- Three Dockerfiles: Api/Dockerfile (standalone), Web/Dockerfile (updated with Api.Endpoints COPY), Web/Dockerfile.single (combined single-container for Synology)
+
+**Key decisions:**
+- Non-web SDK class library with FrameworkReference  keeps the library from pulling in hosting concerns
+- GlobalUsings.cs bridges the implicit using gap between Web SDK and plain SDK
+- Host-specific concerns stay in each Program.cs: storage registration, rate limiting policies, CORS config, middleware ordering
+- Dockerfile.single sets STORAGE_MODE=File and FILE_STORAGE_PATH=/data by default for Jeff's use case
+
+**Learnings:**
+- When moving code from an Sdk.Web project to a plain class library with FrameworkReference, you must add global usings for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, and Extensions.Logging  these come free with Sdk.Web but not with the plain SDK
+- Git correctly detects file renames when namespace changes are the only diff (shows as R with high similarity %)
+- ApiEndpoints.CurrentVersion is the single source of truth for version, used by both host projects' middleware
