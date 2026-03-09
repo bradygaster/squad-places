@@ -789,6 +789,52 @@ Is remote terminal access via devtunnel + PTY mirroring in scope for Squad v1 co
 **What:** The public migration from squad-pr to squad should target v0.6.0, not v0.8.17. This overrides Kobayashi's Phase 5 Option A recommendation. The public repo (bradygaster/squad) goes from v0.5.4 → v0.6.0 — a clean minor bump.
 **Why:** User directive. v0.6.0 is the logical next public version from v0.5.4. Internal version numbers (0.6.x–0.8.x) were private development milestones.
 **[CORRECTION — 2026-03-03]:** This decision was REVERSED by Brady. Brady explicitly stated: "0.6.0 should NOT appear as the goal for ANY destination. I want the beta to become 0.8.17." The actual migration target is v0.8.17. See the superseding "Versioning Model: npm packages vs Public Repo Tags" decision at line 1046 which clarifies that v0.6.0 is a public repo tag only, while npm packages remain at 0.8.17. Current migration documentation correctly references v0.8.17 throughout.
+
+### 2026-03-09: Web Project API Endpoints Opt-In via ENABLE_API_ENDPOINTS Configuration
+
+**By:** Fenster (Core Dev) + Brady (user directive)  
+**Date:** 2026-03-09T13:52:00Z  
+**Branch:** feature/squad-comments-search  
+**Status:** Implemented — Clean build, pushed
+
+## Context
+
+The Web project previously always called `MapApiEndpoints()`, meaning every Web container served the full API surface. In two-container deployments (separate Web + Api), this is redundant and widens the attack surface.
+
+## What
+
+Implemented `ENABLE_API_ENDPOINTS` as a boolean configuration parameter:
+
+- **Default (appsettings.json):** `false` (two-container mode)
+- **Dockerfile.single:** `ENV ENABLE_API_ENDPOINTS=true` (single-container mode)
+- **docker-compose.yml:** Unchanged (two-container default remains default)
+
+When false, the Web project skips:
+- API-specific services (IpBlocklistService, DuplicateDetectionService, CommentDuplicateDetectionService)
+- Rate limiting middleware
+- CORS configuration
+- OpenAPI/Scalar endpoints
+- `MapApiEndpoints()`
+
+Storage services remain unconditional (needed for Razor Pages).
+
+## Files Modified
+
+- `Program.cs` — Conditional registration guarded by `if (enableApiEndpoints)`
+- `appsettings.json` — Added `"EnableApiEndpoints": false`
+- `Dockerfile.single` — Set `ENV ENABLE_API_ENDPOINTS=true`
+
+## Why
+
+**User directive (Brady):** Web should NOT call MapApiEndpoints() by default. A configuration parameter should control this. Dockerfile.single passes the config to ENABLE it. Two-container mode keeps APIs in the standalone Api project only.
+
+**Architectural benefit:** Two-container mode is now the clean default — Web only serves Razor Pages + SignalR. Any new API-only middleware must be placed inside the `if (enableApiEndpoints)` guard.
+
+## Consequences
+
+- Two-container deployments: Web container is leaner, API surface smaller, attack surface reduced
+- Single-container deployments: Still work via Dockerfile.single or setting the env var
+- Future development: All new API-only services must be guarded by this config toggle
 1. **Not integrated with Squad runtime** — doesn't use EventBus, Coordinator, or agent orchestration. Isolated feature.
 2. **Two separate modes** — PTY mode (`start.ts`) vs. ACP passthrough mode (`rc.ts`). Why both?
 3. **New CLI paradigm** — "start" implies daemon/server, not interactive mirroring. Command naming collision risk.
