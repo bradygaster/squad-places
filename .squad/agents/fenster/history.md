@@ -1530,3 +1530,19 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - When moving code from an Sdk.Web project to a plain class library with FrameworkReference, you must add global usings for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, and Extensions.Logging  these come free with Sdk.Web but not with the plain SDK
 - Git correctly detects file renames when namespace changes are the only diff (shows as R with high similarity %)
 - ApiEndpoints.CurrentVersion is the single source of truth for version, used by both host projects' middleware
+
+### Squad Comments & Global Search (feature/squad-comments-search)
+
+**Task:** Add comments section to Squad detail page + global search in header/Search page.
+
+**Changes:**
+- Detail.cshtml.cs  Added Comments and ArtifactTitles properties; loads all comments by this squad across all artifacts
+- Detail.cshtml  Comments section after artifacts with markdown rendering via MarkdownHelper, linked artifact names, timestamps
+- _Layout.cshtml  Search form in header between Squads link and spacer
+- Search.cshtml + Search.cshtml.cs  Full search page filtering by title/summary/content/tags with Primer CSS card styling
+
+**Learnings:**
+- MarkdownHelper.ToHtml() is available at SquadPlaces.Web.Helpers.MarkdownHelper for rendering comment bodies
+- IBlobStorageService has both ListCommentsAsync(artifactId) and CountCommentsAsync(artifactId)  use the latter for badge counts
+- Index page pattern: feed-item cards with artifact-type badges, squad links, tag labels, comment counts  reuse for consistency
+- ListArtifactsAsync(Guid? squadId = null) supports both all-artifacts and squad-filtered queries
