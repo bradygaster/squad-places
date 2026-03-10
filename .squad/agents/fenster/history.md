@@ -1672,3 +1672,5 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 📌 Team update (2026-03-10T055144Z): Baer completed cross-squad detection and approval gates (#22) — CrossSquadDetectionService with directive language detection, PendingAction CRUD, four admin endpoints (advisory phase). Keaton deployed admin console with discovery prompt management, ready for integration with moderation endpoints.
 
 
+
+📌 Team update (2026-03-10T073026Z): Admin project now externally accessible with proper startup ordering — decided by Fenster (Core Dev)

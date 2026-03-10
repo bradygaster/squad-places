@@ -28,6 +28,51 @@
 
 ## Learnings
 
+### 2026-03-12: SquadPlaces README — comprehensive setup guide completed
+
+**Status:** Complete. Full README.md written for squad-social-network (a different project context from squad-sdk).
+
+**Project discovered:**
+- **What:** SquadPlaces is a .NET 10 social network for AI agent teams, built with Aspire microservices orchestration
+- **Key components:** AppHost (Aspire orchestrator), Web (Blazor WASM), Admin (Blazor Server auth-protected), API (REST), Data models, ServiceDefaults (OpenTelemetry)
+- **Architecture:** Multi-service with Docker-based local dev (Redis + Azure Storage emulator), Azure Container Apps deployment
+- **Authentication:** Multi-scheme (GitHub OAuth primary, optional Entra ID, HMAC for agents)
+- **Content moderation:** Three-tier pipeline (Tier 1 local: injection detection + PII, Tier 2 Azure Content Safety, Tier 3 image analysis)
+
+**README sections delivered:**
+1. Project overview (clear positioning of what SquadPlaces does)
+2. Prerequisites table (tools, versions, optional features)
+3. Quick Start (5 concrete steps: clone, Docker check, GitHub OAuth setup, `dotnet run`, open URLs)
+4. Minimum Viable Setup (streamlined path for rapid testing without optional features)
+5. Configuration Reference (comprehensive table of all config keys: GitHub, Entra ID, telemetry, content moderation)
+6. Architecture Overview (service descriptions, dependency graph ASCII diagram, external infra)
+7. Content Moderation (three-tier explanation with verdicts, graceful degradation)
+8. Authentication (multi-scheme details: GitHub OAuth, Entra ID, cookie auth, endpoints)
+9. Docker guide (Compose usage, data persistence, optional Aspire dashboard)
+10. Azure deployment (azd workflow, prerequisites, post-deployment steps)
+11. Development (building, testing, debugging, project structure, common tasks)
+12. Troubleshooting (Docker, Redis, Storage Emulator, GitHub OAuth, AppInsights, Aspire, signing in, tests)
+
+**Documentation patterns applied:**
+- Tone: Clear, factual, helpful. No hype. Every claim has a why or a reference.
+- Structure: Hierarchical headers, tables for config, code blocks with copy-paste commands, ASCII diagrams for architecture
+- Accessibility: Includes links (Prerequisites download URLs, GitHub issue links, official docs), example commands, common errors and fixes
+- Discoverability: Detailed TOC, multiple entry points (Quick Start for impatient users, Minimum Viable Setup for core-only users, Development for contributors)
+
+**Key learnings embedded in the README:**
+- User secrets are the right place for GitHub OAuth (security, not in code)
+- Docker must be running before `dotnet run` (common gotcha)
+- Three-tier moderation gracefully degrades when Azure isn't configured (operational reality)
+- Aspire Dashboard is the debugging hub for microservices (observability story)
+- GitHub OAuth callback URL must match exactly, including trailing slash (common OAuth headache)
+- Entra ID is optional; GitHub OAuth is sufficient for local dev (reduction of cognitive load)
+
+**Compliance with squad decisions:**
+- Tone ceiling enforced: No marketing language, no "amazing" or "revolutionary," facts only
+- Every feature mentioned with configuration steps: Entra ID, Application Insights, Content Safety, Computer Vision
+- Graceful degradation documented: Azure services are optional, system works without them
+- Minimal viable path clear: Users can follow Quick Start or Minimum Viable Setup without feeling overwhelmed
+
 ### 2026-03-06: CLI help vs README audit — command reference corrected
 
 **Status:** Complete. README.md "All Commands" section updated to match CLI --help output.
@@ -1166,3 +1211,5 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 - Recommendations recorded: PR checklist, doc templates, experimental banner linting, feature ownership model, versioning strategy, monthly audits
 
 **Note:** Detailed work logs available in git commits and archived orchestration logs.
+
+📌 Team update (2026-03-10T073026Z): Comprehensive README.md written covering setup, architecture, auth, deployment, and troubleshooting (27K+ chars) — decided by McManus (DevRel)

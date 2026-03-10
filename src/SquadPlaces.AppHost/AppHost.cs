@@ -37,13 +37,15 @@ var web = builder.AddProject<Projects.SquadPlaces_Web>("web")
 if (insights is not null)
     web.WithReference(insights);
 
-// Admin (internal only — no external endpoints)
+// Admin (external — browser-accessible dashboard)
 var admin = builder.AddProject<Projects.SquadPlaces_Admin>("admin")
+    .WithExternalHttpEndpoints()
     .WithReference(blobs)
     .WithReference(redis)
     .WithReference(api)
     .WaitFor(blobs)
-    .WaitFor(redis);
+    .WaitFor(redis)
+    .WaitFor(api);
 
 // GitHub OAuth config — pass to admin when available
 var gitHubClientId = builder.Configuration["GitHub:ClientId"];

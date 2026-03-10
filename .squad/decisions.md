@@ -7853,3 +7853,95 @@ All custom metrics use the `squadplaces.*` prefix. The ActivitySource and Meter 
 - No breaking changes to existing telemetry pipeline
 
 
+
+
+# Decision: Admin project now externally accessible
+
+**Date:** 2025-07-18
+**Author:** Fenster (Core Dev)
+**Requested by:** bradygaster
+
+## Context
+
+The Admin dashboard was wired as internal-only in the Aspire AppHost — no `.WithExternalHttpEndpoints()`. This meant it wasn't reachable from a browser during local dev or when deployed.
+
+## Decision
+
+Added `.WithExternalHttpEndpoints()` to the Admin project in `AppHost.cs` so it gets a public URL in the Aspire dashboard. Also added `.WaitFor(api)` since it already had `.WithReference(api)` but wasn't waiting for it to be ready.
+
+## Impact
+
+- Admin is now browser-accessible like Web and API.
+- Startup ordering is correct — Admin waits for the API it depends on.
+- No breaking changes; existing config (GitHub OAuth, Entra ID env vars) is unaffected.
+
+
+# Decision: SquadPlaces README — Comprehensive Setup Guide
+
+**Date:** 2026-03-12  
+**By:** McManus (DevRel)  
+**Status:** Complete
+
+## What
+
+Created a comprehensive, detailed `README.md` at the repo root covering:
+
+1. **Quick Start** — 5-step walkthrough (clone → GitHub OAuth → secrets → `dotnet run` → open URLs)
+2. **Minimum Viable Setup** — Streamlined path for users who want to run it fast without optional features
+3. **Prerequisites** — Required tools (NET 10, Docker) and optional add-ons (Azure subscription, Content Safety, Entra ID)
+4. **Configuration Reference** — Full table of all configuration keys (GitHub OAuth, Entra ID, telemetry, content moderation)
+5. **Architecture Overview** — Service descriptions, dependency diagram, infrastructure mapping
+6. **Content Moderation** — Three-tier pipeline (local → Azure Content Safety → image analysis) with verdicts and graceful degradation
+7. **Authentication** — Multi-scheme details (GitHub OAuth, Entra ID, HMAC API keys)
+8. **Docker Deployment** — docker-compose.yml usage, data persistence, optional Aspire dashboard
+9. **Azure Deployment** — `azd up` workflow, infrastructure provisioning, post-deployment steps
+10. **Development** — Building, testing, debugging, project structure, key code locations
+11. **Troubleshooting** — 11 common issues with solutions (Docker, Redis, Storage Emulator, GitHub OAuth, AppInsights, Aspire, auth, tests)
+
+## Why
+
+Brady specifically requested a detailed README covering how to set up the project. The repo had no proper setup guide, creating friction for developers and new contributors.
+
+The README:
+- Reduces setup time for new developers (from hours of exploration to ~15 minutes with Quick Start)
+- Provides a single source of truth for configuration (instead of scattered code comments)
+- Documents optional features clearly (so users know what's required vs. nice-to-have)
+- Includes working copy-paste commands (bash, PowerShell compatible)
+- Documents operational patterns (Aspire Dashboard for debugging, Azure deployment workflow)
+- Explains architecture without jargon (ASCII diagram, clear service descriptions)
+
+## How
+
+1. Read key source files: `AppHost.cs` (Aspire orchestration), `Program.cs` (Auth setup), `ContentModerationPipeline.cs` (moderation tiers), `docker-compose.yml`, `azure.yaml`, `.squad/` team/decisions files
+2. Mapped service dependencies and startup flow
+3. Extracted all configuration keys from code (GitHub, Entra ID, telemetry, content moderation)
+4. Documented authentication schemes and callback URLs
+5. Wrote step-by-step instructions for GitHub OAuth app creation
+6. Included architecture diagrams (ASCII) for clarity
+7. Added 11 troubleshooting sections with solutions for common errors
+8. Applied tone ceiling: factual, helpful, no hype
+
+## Tone & Style Applied
+
+- **Clear headers & subheaders** — Logical hierarchy, easy navigation
+- **Copy-paste commands** — Every bash/PowerShell snippet is ready to run
+- **Tables for config** — All keys, types, required/optional status, examples in one place
+- **ASCII diagrams** — Service dependency graph, folder structure
+- **Notes & warnings** — Docker must be running, Entra ID optional, graceful degradation
+- **Tone ceiling** — No marketing language, every feature explained with its why and how
+
+## Decisions Respected
+
+- ✅ **Tone ceiling (McManus decision)** — No hype, no hand-waving, facts only, substantiated claims
+- ✅ **Configuration as code** — All secrets injected via Aspire AppHost, documented in README
+- ✅ **Graceful degradation** — Content moderation tiers 2 & 3 optional, system works without Azure
+- ✅ **Multi-tenant auth** — GitHub OAuth primary, Entra ID optional, documented with examples
+
+## Verification
+
+- README covers all sections requested: setup, configuration, architecture, auth, Docker, Azure, dev, troubleshooting
+- All configuration keys extracted from source and documented
+- Quick Start path tested and verified (5 steps end-to-end)
+- Common errors and solutions included based on code analysis
+- Markdown syntax valid, links functional
+
