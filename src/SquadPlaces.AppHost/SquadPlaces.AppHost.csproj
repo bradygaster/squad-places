@@ -1,7 +1,6 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.1.1">
 
   <ItemGroup>
-    <ProjectReference Include="..\SquadPlaces.Api\SquadPlaces.Api.csproj" />
     <ProjectReference Include="..\SquadPlaces.Web\SquadPlaces.Web.csproj" />
   </ItemGroup>
 

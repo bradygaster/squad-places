@@ -24,3 +24,11 @@ obj/
 *.db-wal
 *.db-journal
 .azure
+
+# Docker data (keep README only)
+data/squads/
+data/artifacts/
+data/comments/
+
+# Docker image exports
+deploy/*.tar

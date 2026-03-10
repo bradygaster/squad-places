@@ -10,6 +10,7 @@ public class BlobStorageService : IBlobStorageService
     private readonly BlobContainerClient _squadsContainer;
     private readonly BlobContainerClient _artifactsContainer;
     private readonly BlobContainerClient _commentsContainer;
+    private readonly BlobContainerClient _imagesContainer;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,6 +23,7 @@ public class BlobStorageService : IBlobStorageService
         _squadsContainer = blobServiceClient.GetBlobContainerClient("squads");
         _artifactsContainer = blobServiceClient.GetBlobContainerClient("artifacts");
         _commentsContainer = blobServiceClient.GetBlobContainerClient("comments");
+        _imagesContainer = blobServiceClient.GetBlobContainerClient("images");
     }
 
     public async Task InitializeAsync()
@@ -29,6 +31,7 @@ public class BlobStorageService : IBlobStorageService
         await _squadsContainer.CreateIfNotExistsAsync();
         await _artifactsContainer.CreateIfNotExistsAsync();
         await _commentsContainer.CreateIfNotExistsAsync();
+        await _imagesContainer.CreateIfNotExistsAsync();
     }
 
     public async Task SaveSquadAsync(Squad squad)
@@ -79,6 +82,19 @@ public class BlobStorageService : IBlobStorageService
         });
     }
 
+    public async Task UpdateArtifactAsync(KnowledgeArtifact artifact)
+    {
+        var blob = _artifactsContainer.GetBlobClient($"{artifact.Id}.json");
+        var json = JsonSerializer.Serialize(artifact, JsonOptions);
+        await blob.UploadAsync(BinaryData.FromString(json), overwrite: true);
+
+        await blob.SetMetadataAsync(new Dictionary<string, string>
+        {
+            ["squadId"] = artifact.SquadId.ToString(),
+            ["createdAt"] = artifact.CreatedAt.ToString("O")
+        });
+    }
+
     public async Task<KnowledgeArtifact?> GetArtifactAsync(Guid id)
     {
         var blob = _artifactsContainer.GetBlobClient($"{id}.json");
@@ -86,6 +102,13 @@ public class BlobStorageService : IBlobStorageService
 
         var response = await blob.DownloadContentAsync();
         return JsonSerializer.Deserialize<KnowledgeArtifact>(response.Value.Content.ToString(), JsonOptions);
+    }
+
+    public async Task<KnowledgeArtifact?> GetArtifactByTitleAsync(string title)
+    {
+        var artifacts = await ListArtifactsAsync();
+        return artifacts.FirstOrDefault(a => 
+            a.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<List<KnowledgeArtifact>> ListArtifactsAsync(Guid? squadId = null)
@@ -171,5 +194,41 @@ public class BlobStorageService : IBlobStorageService
                 count++;
         }
         return count;
+    }
+
+    public async Task<string> SaveImageAsync(Guid squadId, Guid imageId, byte[] data, string contentType)
+    {
+        var extension = contentType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => ".bin"
+        };
+        var blob = _imagesContainer.GetBlobClient($"{squadId}/{imageId}{extension}");
+        await blob.UploadAsync(BinaryData.FromBytes(data), overwrite: true);
+        await blob.SetMetadataAsync(new Dictionary<string, string>
+        {
+            ["contentType"] = contentType
+        });
+
+        var headers = new BlobHttpHeaders { ContentType = contentType };
+        await blob.SetHttpHeadersAsync(headers);
+
+        return $"/api/images/{squadId}/{imageId}";
+    }
+
+    public async Task<(byte[] Data, string ContentType)?> GetImageAsync(Guid squadId, Guid imageId)
+    {
+        var prefix = $"{squadId}/{imageId}";
+        await foreach (var blobItem in _imagesContainer.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix, default))
+        {
+            var blob = _imagesContainer.GetBlobClient(blobItem.Name);
+            var response = await blob.DownloadContentAsync();
+            var contentType = response.Value.Details.ContentType ?? "application/octet-stream";
+            return (response.Value.Content.ToArray(), contentType);
+        }
+        return null;
     }
 }

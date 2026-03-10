@@ -1,0 +1,69 @@
+# Squad Places - Docker Compose Configuration
+# 
+# Single-container deployment with volume-mounted storage.
+# Use this when you want to run without Azure Blob Storage (local file storage via mounted volume).
+#
+# Usage:
+#   docker-compose up --build         # Build and start all services
+#   docker-compose up -d              # Start in detached mode
+#   docker-compose down               # Stop all services
+#   docker-compose down -v            # Stop and remove volumes (WARNING: deletes data)
+#
+# Storage: Documents are stored in ./data/ on the host, mounted to /data in the container.
+# The FileStorageService writes JSON files to /data/squads/, /data/artifacts/, /data/comments/.
+#
+# Observability: Aspire dashboard is optional (ENABLE_ASPIRE=true)
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: src/SquadPlaces.Web/Dockerfile
+    container_name: squad-places
+    ports:
+      - "5100:8080"
+    volumes:
+      - squad-data:/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - STORAGE_MODE=File
+      - FILE_STORAGE_PATH=/data
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - OTEL_SERVICE_NAME=squad-places
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - squad-network
+    restart: unless-stopped
+
+  # Optional: Aspire dashboard for telemetry visualization
+  # Enable with: ENABLE_ASPIRE=true docker-compose --profile observability up
+  aspire:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: squad-places-aspire
+    profiles:
+      - observability
+    ports:
+      - "18888:18888"   # Dashboard UI
+      - "4317:18889"    # OTLP gRPC (host 4317 -> container 18889)
+    environment:
+      - DASHBOARD__FRONTEND__AUTHMODE=Unsecured
+      - DASHBOARD__OTLP__AUTHMODE=Unsecured
+    networks:
+      - squad-network
+
+volumes:
+  squad-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+
+networks:
+  squad-network:
+    driver: bridge

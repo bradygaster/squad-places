@@ -772,3 +772,36 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 2026-03-06: Docker Volume Storage Architecture Proposal
+- **Task:** Architect alternate deployment configuration for SquadPlaces — Docker containers with mounted volumes for document storage instead of Azure Blob.
+- **Key Decisions Made:**
+  - **docker-compose.yml over Aspire profile:** Aspire is for distributed app orchestration with service discovery. Standalone Docker deployment doesn't need that runtime. Docker Compose is cleaner, more portable.
+  - **Storage abstraction via interface:** Existing `IBlobStorageService` interface is already clean. New `FileStorageService` implementation uses local filesystem, same interface — zero changes to consumers.
+  - **Env var config:** `STORAGE_TYPE=file|azure`, `STORAGE_PATH=/data/storage`. 12-factor, container-friendly.
+  - **Shared volume:** Both API and Web mount same volume for data consistency.
+  - **Directory structure mirrors blob containers:** `/data/storage/squads/`, `/data/storage/artifacts/`, `/data/storage/comments/`.
+- **Files identified:** Create `FileStorageService.cs`, `docker-compose.yml`. Modify `Program.cs` in API and Web for conditional DI. Verify/create Dockerfiles.
+- **Pattern learned:** Good interface design enables future flexibility. `IBlobStorageService` was named for Azure but abstracted well enough to support any backend. Interface names sometimes lie — that's fine, behavior is what matters.
+- **Output:** `docs/proposals/docker-volume-storage.md`
+
+### 2025-07-17: Single Container Merge Architecture Decision
+- **Task:** Jeffrey requested analysis and decision on merging SquadPlaces.Api and SquadPlaces.Web into a single Docker container for Synology NAS deployment with file-based storage.
+- **Critical finding:** Web does NOT call the API via HTTP. Zero HttpClient usage. Both projects independently use `IBlobStorageService` from SquadPlaces.Data. The `Services__api` docker-compose config and Aspire `.WithReference(api)` are dead wiring.
+- **Decision:** Merge API endpoints into the Web project. One process, one port, one container.
+- **Why:** No HTTP integration to untangle (purely additive merge). Single process enables free SignalR push from API writes. Trivial Synology deployment. `StorageServiceFactory` exists but is unused — merge is the right time to wire it. Aspire simplifies to one project.
+- **Rejected alternatives:** YARP (no HTTP call to proxy), multi-process container (file storage contention, no shared SignalR), new combined project (over-engineering a 32-line Program.cs).
+- **Implementation plan:** Extract API's 1025-line Program.cs into proper files under `Web/Api/` (endpoints, models, validation, services). Update Web Program.cs to register rate limiting, OpenAPI, CORS, IP blocking. Use StorageServiceFactory. Simplify docker-compose to one service. Update AppHost.
+- **Pattern learned:** When two services share a data layer and one doesn't call the other, they're already one application with two entry points. The merge cost is near-zero because the integration boundary was always an illusion.
+- **Output:** `.squad/decisions/inbox/keaton-single-container-merge.md`
+
+### 2026-03-09T13:17:43Z: API Consolidation Architecture Complete
+- **Task:** Architect API consolidation strategy for merging SquadPlaces.Api and SquadPlaces.Web endpoints into shared library
+- **Key Decisions:** Shared SquadPlaces.Api.Endpoints library, three-Dockerfile deployment strategy (Api, Web, Web.single) replacing two-compose approach
+- **Directives captured:**
+  1. Upstream compatible, same branch/two containers default, implement after PRs #2-#5 merge
+  2. Use Dockerfile.single instead of separate docker-compose files for single-container deployment
+  3. Two post-consolidation UI features: comments section on squad page, search box at top of screen
+- **Output:** docs/proposals/api-consolidation.md (484 lines), full implementation blueprint ready for Fenster
+- **Next Step:** Fenster to execute architecture implementation
+- **Pattern learned:** Shared library extraction works when both projects independently use same data layer (IBlobStorageService). Zero HTTP integration to untangle.
