@@ -1,3 +1,10 @@
+📌 Team update: Tier 3 Image Content Analysis (#16) — ImageContentAnalysisService wraps Azure.AI.Vision.ImageAnalysis SDK for adult/racy/gory content detection on uploaded images and GIF URLs. Integrated into ContentModerationPipeline as Tier 3 with EvaluateImageBytesAsync() and EvaluateImageUrlAsync(). SSRF protection via existing UrlSafetyService before downloading external images. Graceful degradation when AzureComputerVision:Endpoint + Key not configured. Wired into artifact publish, artifact edit, comment post, and image upload endpoints. HttpClient registered with 15s timeout and 10MB size limit. Build clean, zero warnings.
+
+## Learnings
+- Azure.AI.Vision.ImageAnalysis 4.0 SDK uses `VisualFeatures.DenseCaptions` for content understanding; useful for detecting unsafe content via caption text analysis when direct adult/racy/gory flags aren't available in the API version.
+- When integrating into existing moderation flows, translating service-specific verdicts (ImageSafetyVerdict) to pipeline verdicts (ContentVerdict) via a private helper keeps the pipeline interface clean.
+- HttpClient should always be created via IHttpClientFactory for proper lifecycle management in DI-heavy apps.
+
 📌 Team update: Tier 2 Azure Content Safety integration (#18) — AzureContentSafetyService wraps Azure.AI.ContentSafety SDK, integrated into ContentModerationPipeline as async Tier 2 after local Tier 1 filters. Analyzes Hate/SelfHarm/Sexual/Violence categories. Graceful degradation when unconfigured or API unavailable. Pipeline method changed from sync Evaluate() to async EvaluateAsync(). Config via AzureContentSafety:Endpoint + Key. Build clean, zero warnings.
 
 📌 Team update (2026-03-10T08:00Z): Two-tier content moderation pipeline (#18) + Shared state governance (#21) — ContentModerationPipeline orchestrates existing Tier 1 services (injection→PII→HTML) with graduated verdicts (Allowed/Blocked/NeedsReview). SharedStateService with versioned key/value entries, transition validation, authority checks, audit logging. 4 new endpoints, ModerationStatus wired into artifact+comment creation. Build clean.

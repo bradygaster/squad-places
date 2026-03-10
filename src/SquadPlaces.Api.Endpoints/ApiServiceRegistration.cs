@@ -26,8 +26,15 @@ public static class ApiServiceRegistration
         services.AddSingleton<DiscoveryPromptService>();
         services.AddSingleton<CrossSquadDetectionService>();
         services.AddSingleton<AzureContentSafetyService>();
+        services.AddSingleton<ImageContentAnalysisService>();
         services.AddSingleton<ContentModerationPipeline>();
         services.AddSingleton<SharedStateService>();
+        services.AddHttpClient("ImageDownload", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.MaxResponseContentBufferSize = 10 * 1024 * 1024; // 10MB
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("SquadPlaces/1.0");
+        });
         return services;
     }
 }

@@ -562,12 +562,27 @@ public static class ApiEndpoints
                 var safetyResult = urlSafety.Validate(artifact.GifUrl);
                 if (!safetyResult.IsValid)
                     return Results.BadRequest(new { error = $"GifUrl rejected: {safetyResult.BlockReason}" });
+
+                // Tier 3: Image content analysis on GIF URL
+                var gifAnalysis = await moderationPipeline.EvaluateImageUrlAsync(artifact.GifUrl);
+                if (gifAnalysis.Verdict == ContentVerdict.Blocked)
+                    return Results.BadRequest(new { error = $"GifUrl rejected: {gifAnalysis.Reason}" });
+                if (gifAnalysis.Verdict == ContentVerdict.NeedsReview)
+                    moderationResult = gifAnalysis;
             }
 
             // Handle image: inline base64 upload takes priority over relative URL reference
             if (request.ImageData is not null)
             {
                 var imageBytes = Convert.FromBase64String(request.ImageData);
+
+                // Tier 3: Image content analysis on uploaded image bytes
+                var imageAnalysis = await moderationPipeline.EvaluateImageBytesAsync(imageBytes);
+                if (imageAnalysis.Verdict == ContentVerdict.Blocked)
+                    return Results.BadRequest(new { error = $"Image rejected: {imageAnalysis.Reason}" });
+                if (imageAnalysis.Verdict == ContentVerdict.NeedsReview && moderationResult.Verdict != ContentVerdict.NeedsReview)
+                    moderationResult = imageAnalysis;
+
                 var imageId = Guid.NewGuid();
                 var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ImageContentType!);
                 artifact.ImageUrl = imageUrl;
@@ -869,6 +884,13 @@ public static class ApiEndpoints
                 var safetyResult = urlSafety.Validate(sanitizedGif);
                 if (!safetyResult.IsValid)
                     return Results.BadRequest(new { error = $"GifUrl rejected: {safetyResult.BlockReason}" });
+
+                // Tier 3: Image content analysis on GIF URL
+                var moderationPipeline = httpContext.RequestServices.GetRequiredService<ContentModerationPipeline>();
+                var gifAnalysis = await moderationPipeline.EvaluateImageUrlAsync(sanitizedGif);
+                if (gifAnalysis.Verdict == ContentVerdict.Blocked)
+                    return Results.BadRequest(new { error = $"GifUrl rejected: {gifAnalysis.Reason}" });
+
                 artifact.GifUrl = sanitizedGif;
             }
 
@@ -876,6 +898,13 @@ public static class ApiEndpoints
             if (request.ImageData is not null)
             {
                 var imageBytes = Convert.FromBase64String(request.ImageData);
+
+                // Tier 3: Image content analysis on uploaded image bytes
+                var moderationPipeline = httpContext.RequestServices.GetRequiredService<ContentModerationPipeline>();
+                var imageAnalysis = await moderationPipeline.EvaluateImageBytesAsync(imageBytes);
+                if (imageAnalysis.Verdict == ContentVerdict.Blocked)
+                    return Results.BadRequest(new { error = $"Image rejected: {imageAnalysis.Reason}" });
+
                 var imageId = Guid.NewGuid();
                 var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ImageContentType!);
                 artifact.ImageUrl = imageUrl;
@@ -1024,6 +1053,13 @@ public static class ApiEndpoints
                 var safetyResult = urlSafety.Validate(comment.GifUrl);
                 if (!safetyResult.IsValid)
                     return Results.BadRequest(new { error = $"GifUrl rejected: {safetyResult.BlockReason}" });
+
+                // Tier 3: Image content analysis on GIF URL
+                var gifAnalysis = await moderationPipeline.EvaluateImageUrlAsync(comment.GifUrl);
+                if (gifAnalysis.Verdict == ContentVerdict.Blocked)
+                    return Results.BadRequest(new { error = $"GifUrl rejected: {gifAnalysis.Reason}" });
+                if (gifAnalysis.Verdict == ContentVerdict.NeedsReview)
+                    moderationResult = gifAnalysis;
             }
 
             // Set moderation status based on pipeline verdict
@@ -1182,7 +1218,7 @@ public static class ApiEndpoints
 
         // === Image Endpoints ===
 
-        api.MapPost("/images", async (UploadImageRequest? request, IBlobStorageService storage) =>
+        api.MapPost("/images", async (UploadImageRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
             var validationErrors = ApiValidation.ValidateUploadImageRequest(request);
             if (validationErrors is not null)
@@ -1193,6 +1229,13 @@ public static class ApiEndpoints
                 return Results.BadRequest("Squad not found");
 
             var imageBytes = Convert.FromBase64String(request.ImageData);
+
+            // Tier 3: Image content analysis on uploaded image bytes
+            var moderationPipeline = httpContext.RequestServices.GetRequiredService<ContentModerationPipeline>();
+            var imageAnalysis = await moderationPipeline.EvaluateImageBytesAsync(imageBytes);
+            if (imageAnalysis.Verdict == ContentVerdict.Blocked)
+                return Results.BadRequest(new { error = $"Image rejected: {imageAnalysis.Reason}" });
+
             var imageId = Guid.NewGuid();
             var imageUrl = await storage.SaveImageAsync(request.SquadId, imageId, imageBytes, request.ContentType);
 

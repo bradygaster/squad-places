@@ -24,12 +24,13 @@ public record ModerationResult(ContentVerdict Verdict, string? Reason, List<stri
 }
 
 /// <summary>
-/// Orchestrates the two-tier content moderation flow:
+/// Orchestrates the three-tier content moderation flow:
 /// Tier 1 (local fast filters): prompt injection → PII detection → HTML sanitization.
 /// Tier 2 (Azure Content Safety): AI-based analysis for Hate, SelfHarm, Sexual, Violence.
+/// Tier 3 (Image Content Analysis): Azure Computer Vision for adult/racy/gory image content.
 /// Returns a verdict of Allowed, Blocked, or NeedsReview with details.
 /// Does NOT duplicate service logic — composes existing services.
-/// Tier 2 gracefully degrades if Azure Content Safety is not configured.
+/// Tiers 2 and 3 gracefully degrade if their Azure services are not configured.
 /// </summary>
 public class ContentModerationPipeline
 {
@@ -37,6 +38,7 @@ public class ContentModerationPipeline
     private readonly PiiDetectionService _piiDetector;
     private readonly HtmlSanitizationService _htmlSanitizer;
     private readonly AzureContentSafetyService _contentSafety;
+    private readonly ImageContentAnalysisService _imageAnalysis;
     private readonly ILogger<ContentModerationPipeline> _logger;
 
     public ContentModerationPipeline(
@@ -44,12 +46,14 @@ public class ContentModerationPipeline
         PiiDetectionService piiDetector,
         HtmlSanitizationService htmlSanitizer,
         AzureContentSafetyService contentSafety,
+        ImageContentAnalysisService imageAnalysis,
         ILogger<ContentModerationPipeline> logger)
     {
         _injectionDetector = injectionDetector;
         _piiDetector = piiDetector;
         _htmlSanitizer = htmlSanitizer;
         _contentSafety = contentSafety;
+        _imageAnalysis = imageAnalysis;
         _logger = logger;
     }
 
@@ -162,5 +166,53 @@ public class ContentModerationPipeline
         // Escalate: if Tier 2 flagged NeedsReview, that carries through
         var reason = $"Content flagged: {string.Join("; ", issues)}";
         return new ModerationResult(ContentVerdict.NeedsReview, reason, issues);
+    }
+
+    /// <summary>
+    /// Runs Tier 3 image content analysis against image bytes (e.g. from base64 upload).
+    /// Translates ImageAnalysisResult into a ModerationResult for pipeline consistency.
+    /// </summary>
+    public async Task<ModerationResult> EvaluateImageBytesAsync(byte[] imageBytes)
+    {
+        var result = await _imageAnalysis.AnalyzeImageBytesAsync(imageBytes);
+        return TranslateImageResult(result);
+    }
+
+    /// <summary>
+    /// Runs Tier 3 image content analysis against an external image URL (e.g. GifUrl).
+    /// Downloads the image with SSRF protection and analyzes via Azure Computer Vision.
+    /// </summary>
+    public async Task<ModerationResult> EvaluateImageUrlAsync(string imageUrl)
+    {
+        var result = await _imageAnalysis.AnalyzeImageUrlAsync(imageUrl);
+        return TranslateImageResult(result);
+    }
+
+    private ModerationResult TranslateImageResult(ImageAnalysisResult result)
+    {
+        if (!result.WasAnalyzed || result.Verdict == ImageSafetyVerdict.Safe)
+            return ModerationResult.Clean;
+
+        var issues = result.DetectedCategories;
+
+        if (result.Verdict == ImageSafetyVerdict.Unsafe)
+        {
+            _logger.LogWarning(
+                "Moderation pipeline: BLOCKED by Tier 3 (Image Content Analysis). Issues: {Issues}",
+                string.Join(", ", issues));
+            return new ModerationResult(
+                ContentVerdict.Blocked,
+                $"Image blocked by content analysis: {string.Join("; ", issues)}",
+                issues);
+        }
+
+        // NeedsReview
+        _logger.LogInformation(
+            "Moderation pipeline: NeedsReview from Tier 3 (Image Content Analysis). Issues: {Issues}",
+            string.Join(", ", issues));
+        return new ModerationResult(
+            ContentVerdict.NeedsReview,
+            $"Image flagged for review: {string.Join("; ", issues)}",
+            issues);
     }
 }
