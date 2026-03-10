@@ -1,3 +1,7 @@
+📌 Team update (2026-03-10T054458Z): Cross-squad detection and approval gates implemented (#22) — CrossSquadDetectionService detects cross-squad comments, directive language, and scope expansion. PendingAction model with full CRUD in both storage backends. Four admin endpoints for pending-actions and cross-squad event log. Phase 1 advisory: detect/log/flag, don't block. Also added FileStorageService SharedState stubs to unblock build.
+
+📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — SSRF protection and Authority Framework Phase 1 complete (#16, #20) — UrlSafetyService blocks all private IPs, AuthorityService with advisory mode logging. Integration: Keaton uses authority for dashboard access control, Hockney wrote 7+5 tests.
+
 # Project Context
 
 - **Owner:** Brady
@@ -208,3 +212,85 @@ Auth for agent networks differs from human networks. Humans worry about password
 Fenster (Core Dev) implements SDK auth client. Fortier (Runtime) integrates with squad.place API. McManus (DevRel) writes auth quickstart guide. Hockney (Tester) writes auth flow tests (key generation, signing, refresh, revocation scenarios).
 
 This is the auth spec. Not a vision. Not a sketch. The spec.
+
+### Prompt Injection Defense + PII Detection — Issue #17 (2026-03-XX)
+**Context:** SquadPlaces is consumed by AI agents. Malicious artifact content could instruct reading agents to exfiltrate data or override instructions. No prompt injection defense or PII detection existed.
+
+**Implemented:**
+1. **PromptInjectionDetector** (`Services/PromptInjectionDetector.cs`) — 26 compiled regex patterns covering instruction override, role confusion, system prompt references, jailbreak/DAN, data exfiltration, and delimiter injection. Also scans base64-encoded segments. Returns confidence level (Low/Medium/High). Configurable via `IConfiguration` ("PromptInjection" section).
+2. **PiiDetectionService** (`Services/PiiDetectionService.cs`) — 8 detector categories: email, US phone, SSN, credit card (with Luhn validation), API keys, connection strings, AWS access keys, GitHub tokens. Returns positions (char ranges) without revealing actual PII. Configurable blocked types via `IConfiguration` ("PiiDetection" section).
+3. **Pipeline integration** — Both services wired into POST /artifacts, PUT /artifacts, POST /comments. Checks run after spam detection, before storage. Rejections return 400 with pattern/type details. Logs include squad ID and content hash (never actual content).
+4. **Output marking** — GET endpoints for artifacts, feed, and comments wrap user-generated content in `[USER_CONTENT_START]`/`[USER_CONTENT_END]` delimiters so reading agents can distinguish user content from system content.
+5. **DI registration** — Both services registered as singletons in `ApiServiceRegistration.cs`.
+
+**Design Decisions:**
+- Regex-only, no external API calls — fast and deterministic. Azure Content Safety is a future enhancement.
+- Content hash in logs (SHA-256 truncated to 16 hex chars) — never log the actual content that triggered a rejection.
+- Base64 decoding in prompt injection scanner — attackers will try encoding payloads.
+- Luhn check on credit card matches — reduces false positives on random digit sequences.
+- Separate from Fenster's HtmlSanitizationService — defense in depth, not replacement.
+
+**Security Pattern:**
+Pre-post content scanning (same hook-based governance pattern from Squad SDK). Block first, log for audit, never expose sensitive content in logs. Content delimiters for downstream AI consumers extend the trust boundary to reading agents.
+
+### HMAC API Key Lifecycle — Issue #13 (2026-03-XX)
+**Context:** Zero authentication existed — all endpoints accepted unauthenticated requests. API keys are the M2M fallback (GitHub OAuth is primary, but keys ship first as foundation). Requested by Brady.
+
+**Implemented:**
+1. **ApiKeyData model** (`Data/Models/ApiKeyData.cs`) — Hash, SquadId, KeyPrefix, CreatedAt, LastUsedAt, RevokedAt. Raw key is NEVER stored.
+2. **IBlobStorageService extensions** — `SaveApiKeyAsync`, `GetApiKeyByHashAsync`, `ListApiKeysAsync` added to interface and both implementations (BlobStorageService + FileStorageService). Keys stored in `api-keys/{hash}.json` container/directory.
+3. **ApiKeyService** (`Services/ApiKeyService.cs`) — 256-bit random key generation (Base64URL, `sqp_` prefix), SHA-256 hashing, validation with debounced lastUsedAt updates (5-min window), revocation by key prefix, active key listing.
+4. **ApiKeyMiddleware** (`Services/ApiKeyMiddleware.cs`) — Enforces `X-Squad-Api-Key` header on all write endpoints (POST/PUT/DELETE). GET remains open. Returns 401 for missing key, 403 for invalid. Dev bypass key (`sqp_dev_key_do_not_use_in_production`) ONLY works when `IHostEnvironment.IsDevelopment()`. Configurable via `Authentication:RequireApiKey` (defaults to true in production, false in development). Bootstrap endpoints (enlist, key generation) exempted from auth.
+5. **Key management endpoints** — `POST /api/squads/{id}/keys` (generate), `GET /api/squads/{id}/keys` (list metadata), `DELETE /api/squads/{id}/keys/{prefix}` (revoke).
+6. **Enlistment auto-key** — `POST /api/squads/enlist` now generates an API key and returns it in the `EnlistResponse`. Key shown ONCE. Key generation failure doesn't block enlistment.
+7. **Pipeline wiring** — ApiKeyService registered as singleton in `ApiServiceRegistration.cs`. Middleware added to `Program.cs` after kill switch, before rate limiter.
+
+**Security Decisions:**
+- Raw keys never stored, never logged — only SHA-256 hashes and 12-char prefixes.
+- Dev bypass key gated by `IHostEnvironment.IsDevelopment()` — cannot leak to production.
+- lastUsedAt debounced to 5 minutes — avoids write amplification per request.
+- Fire-and-forget for lastUsedAt updates — auth latency is not blocked by metadata writes.
+- Key generation is currently unauthenticated (chicken-and-egg for first key). GitHub OAuth will gate this later.
+- Bootstrap endpoints (enlist, key generate) exempt from auth — necessary for onboarding flow.
+
+**Security Pattern:**
+Same defense-in-depth approach: middleware-based enforcement (code, not prompts), hash-only storage, prefix-only display, environment-gated development shortcuts. API keys are infrastructure, not a feature.
+
+📌 Team update (2026-03-10T05:27:35Z): Wave 2 complete — CORS lockdown, API key authentication, kill switches all implemented and tested. Build clean (0 warnings, 0 errors). 29 test methods across 3 features.
+
+### URL Safety Service + SSRF Protection (Issue #16)
+**Context:** GifUrl and image URLs in artifacts/comments were accepted with basic URI validation only — no SSRF protection. Any absolute URI could be submitted, including internal network addresses.
+
+**Implementation:**
+- Created `UrlSafetyService.cs` — validates external URLs against SSRF targets
+- Blocks: localhost, 127.*, 10.*, 192.168.*, 172.16-31.*, 169.254.*, [::1], 0.0.0.0, .local, .internal suffixes
+- Blocks non-http/https schemes (file://, ftp://, data://, etc.)
+- Validates file extensions against allowed image types (.gif, .png, .jpg, .jpeg, .webp, .svg)
+- IPv6 coverage: loopback, link-local, IPv4-mapped private addresses
+- Wired into PublishArtifact, EditArtifact, and PostComment endpoints — 400 with clear message on SSRF detection
+- SSRF is always blocked (not advisory) — this is a real attack vector, not a hypothetical one
+- Registered as singleton in ApiServiceRegistration
+
+**Security Pattern:** Same defense-in-depth as PII/injection detection. Validate at the boundary, block before storage. No HEAD requests needed — URL structure analysis catches all known SSRF patterns without making outbound connections (which would itself be a risk).
+
+### Authority Framework + Squad Domain Boundaries (Issue #20)
+**Context:** All squads had equal authority. No mechanism to differentiate squad capabilities or detect out-of-scope activity.
+
+**Implementation:**
+- Created `AuthorityLevel` enum: Member (0), SquadLead (1), CoordinationAuthority (2), PlatformAdmin (3)
+- Added `AuthorityLevel` and `DomainScopes` properties to Squad model
+- Created `AuthorityService.cs` with three check methods:
+  - `CheckAuthority()` — verifies squad has sufficient level for an action
+  - `CheckCrossSquadActivity()` — detects Squad A acting on Squad B's content
+  - `CheckDomainScope()` — flags activity outside declared domain keywords
+- Phase 1 is advisory: violations are Flagged (logged), not Blocked
+- Admin endpoints: PUT /api/admin/squads/{id}/authority, PUT /api/admin/squads/{id}/domains, GET /api/admin/authority-violations
+- API models: SetAuthorityLevelRequest, SetDomainScopesRequest
+- Registered as singleton in ApiServiceRegistration
+
+**Design Decision:** Phase 1 advisory mode is deliberate. Blocking cross-squad comments would kill the social network aspect. Flagging lets us observe patterns before tightening. The violation log gives admins visibility without restricting agents.
+
+📌 Team update: Issues #16 and #20 implemented — SSRF protection (always-block) and authority framework (Phase 1 advisory). Build clean (0 warnings, 0 errors). No commit (🍌 lock active).
+
+📌 Team update (2026-03-10T055144Z): Fenster completed content moderation pipeline (#18) and shared state governance (#21) — ContentModerationPipeline with graduated verdicts, SharedStateService with authority checks and audit logging. Keaton deployed SquadPlaces.Admin (internal only) with discovery prompt versioning and editor UI.
+

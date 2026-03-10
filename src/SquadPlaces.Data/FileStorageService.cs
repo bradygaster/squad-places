@@ -13,6 +13,10 @@ public class FileStorageService : IBlobStorageService
     private readonly string _artifactsPath;
     private readonly string _commentsPath;
     private readonly string _imagesPath;
+    private readonly string _apiKeysPath;
+    private readonly string _auditLogPath;
+    private readonly string _pendingActionsPath;
+    private readonly string _sharedStatePath;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -26,6 +30,10 @@ public class FileStorageService : IBlobStorageService
         _artifactsPath = Path.Combine(basePath, "artifacts");
         _commentsPath = Path.Combine(basePath, "comments");
         _imagesPath = Path.Combine(basePath, "images");
+        _apiKeysPath = Path.Combine(basePath, "api-keys");
+        _auditLogPath = Path.Combine(basePath, "audit-log");
+        _pendingActionsPath = Path.Combine(basePath, "pending-actions");
+        _sharedStatePath = Path.Combine(basePath, "shared-state");
     }
 
     public Task InitializeAsync()
@@ -34,6 +42,10 @@ public class FileStorageService : IBlobStorageService
         Directory.CreateDirectory(_artifactsPath);
         Directory.CreateDirectory(_commentsPath);
         Directory.CreateDirectory(_imagesPath);
+        Directory.CreateDirectory(_apiKeysPath);
+        Directory.CreateDirectory(_auditLogPath);
+        Directory.CreateDirectory(_pendingActionsPath);
+        Directory.CreateDirectory(_sharedStatePath);
         return Task.CompletedTask;
     }
 
@@ -153,6 +165,20 @@ public class FileStorageService : IBlobStorageService
         return comments.OrderBy(c => c.CreatedAt).ToList();
     }
 
+    public async Task<List<Comment>> ListAllCommentsAsync()
+    {
+        var comments = new List<Comment>();
+        if (!Directory.Exists(_commentsPath)) return comments;
+
+        foreach (var file in Directory.GetFiles(_commentsPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var comment = JsonSerializer.Deserialize<Comment>(json, JsonOptions);
+            if (comment is not null) comments.Add(comment);
+        }
+        return comments.OrderByDescending(c => c.CreatedAt).ToList();
+    }
+
     public async Task<int> CountCommentsAsync(Guid artifactId)
     {
         var comments = await ListCommentsAsync(artifactId);
@@ -201,5 +227,200 @@ public class FileStorageService : IBlobStorageService
 
         var data = await File.ReadAllBytesAsync(filePath);
         return (data, contentType);
+    }
+
+    public async Task<Member> AddMemberAsync(Guid squadId, Member member)
+    {
+        var squad = await GetSquadAsync(squadId);
+        if (squad is null)
+            throw new InvalidOperationException($"Squad {squadId} not found");
+
+        member.SquadId = squadId.ToString();
+        squad.Members.Add(member);
+        await SaveSquadAsync(squad);
+        return member;
+    }
+
+    public async Task<List<Member>> GetMembersAsync(Guid squadId)
+    {
+        var squad = await GetSquadAsync(squadId);
+        return squad?.Members ?? new List<Member>();
+    }
+
+    // === API Key Storage ===
+
+    public async Task SaveApiKeyAsync(ApiKeyData keyData)
+    {
+        var filePath = Path.Combine(_apiKeysPath, $"{keyData.Hash}.json");
+        var json = JsonSerializer.Serialize(keyData, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public async Task<ApiKeyData?> GetApiKeyByHashAsync(string hash)
+    {
+        var filePath = Path.Combine(_apiKeysPath, $"{hash}.json");
+        if (!File.Exists(filePath)) return null;
+
+        var json = await File.ReadAllTextAsync(filePath);
+        return JsonSerializer.Deserialize<ApiKeyData>(json, JsonOptions);
+    }
+
+    public async Task<List<ApiKeyData>> ListApiKeysAsync(Guid squadId)
+    {
+        var keys = new List<ApiKeyData>();
+        if (!Directory.Exists(_apiKeysPath)) return keys;
+
+        foreach (var file in Directory.GetFiles(_apiKeysPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var keyData = JsonSerializer.Deserialize<ApiKeyData>(json, JsonOptions);
+            if (keyData is not null && keyData.SquadId == squadId)
+                keys.Add(keyData);
+        }
+        return keys.OrderByDescending(k => k.CreatedAt).ToList();
+    }
+
+    // === Audit Log Storage ===
+
+    public async Task SaveAuditLogEntryAsync(AuditLogEntry entry)
+    {
+        Directory.CreateDirectory(_auditLogPath);
+        // Name by timestamp + id for chronological ordering
+        var fileName = $"{entry.Timestamp:yyyy-MM-ddTHH-mm-ss-fffffffZ}_{entry.Id}.json";
+        var filePath = Path.Combine(_auditLogPath, fileName);
+        var json = JsonSerializer.Serialize(entry, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public async Task<AuditLogEntry?> GetAuditLogEntryAsync(Guid id)
+    {
+        if (!Directory.Exists(_auditLogPath)) return null;
+
+        var target = id.ToString();
+        foreach (var file in Directory.GetFiles(_auditLogPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var entry = JsonSerializer.Deserialize<AuditLogEntry>(json, JsonOptions);
+            if (entry is not null && entry.Id == id)
+                return entry;
+        }
+        return null;
+    }
+
+    public async Task<List<AuditLogEntry>> ListAuditLogEntriesAsync()
+    {
+        var entries = new List<AuditLogEntry>();
+        if (!Directory.Exists(_auditLogPath)) return entries;
+
+        foreach (var file in Directory.GetFiles(_auditLogPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var entry = JsonSerializer.Deserialize<AuditLogEntry>(json, JsonOptions);
+            if (entry is not null) entries.Add(entry);
+        }
+        return entries.OrderByDescending(e => e.Timestamp).ToList();
+    }
+
+    // === Pending Action Storage ===
+
+    public async Task SavePendingActionAsync(PendingAction action)
+    {
+        Directory.CreateDirectory(_pendingActionsPath);
+        var fileName = $"{action.CreatedAt:yyyy-MM-ddTHH-mm-ss-fffffffZ}_{action.Id}.json";
+        var filePath = Path.Combine(_pendingActionsPath, fileName);
+        var json = JsonSerializer.Serialize(action, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public async Task<PendingAction?> GetPendingActionAsync(Guid id)
+    {
+        if (!Directory.Exists(_pendingActionsPath)) return null;
+
+        foreach (var file in Directory.GetFiles(_pendingActionsPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var action = JsonSerializer.Deserialize<PendingAction>(json, JsonOptions);
+            if (action is not null && action.Id == id)
+                return action;
+        }
+        return null;
+    }
+
+    public async Task<List<PendingAction>> GetPendingActionsAsync(string? statusFilter = null)
+    {
+        var actions = new List<PendingAction>();
+        if (!Directory.Exists(_pendingActionsPath)) return actions;
+
+        foreach (var file in Directory.GetFiles(_pendingActionsPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var action = JsonSerializer.Deserialize<PendingAction>(json, JsonOptions);
+            if (action is not null)
+            {
+                if (statusFilter is null || string.Equals(action.Status, statusFilter, StringComparison.OrdinalIgnoreCase))
+                    actions.Add(action);
+            }
+        }
+        return actions.OrderByDescending(a => a.CreatedAt).ToList();
+    }
+
+    public async Task UpdatePendingActionAsync(PendingAction action)
+    {
+        if (!Directory.Exists(_pendingActionsPath)) return;
+
+        // Find and delete the old file
+        foreach (var file in Directory.GetFiles(_pendingActionsPath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var existing = JsonSerializer.Deserialize<PendingAction>(json, JsonOptions);
+            if (existing is not null && existing.Id == action.Id)
+            {
+                File.Delete(file);
+                break;
+            }
+        }
+        // Re-save with updated state
+        await SavePendingActionAsync(action);
+    }
+
+    // === Shared State Storage ===
+
+    public async Task<SharedStateEntry?> GetSharedStateAsync(string key)
+    {
+        var filePath = Path.Combine(_sharedStatePath, $"{key}.json");
+        if (!File.Exists(filePath)) return null;
+
+        var json = await File.ReadAllTextAsync(filePath);
+        return JsonSerializer.Deserialize<SharedStateEntry>(json, JsonOptions);
+    }
+
+    public async Task SetSharedStateAsync(string key, SharedStateEntry entry)
+    {
+        Directory.CreateDirectory(_sharedStatePath);
+        var filePath = Path.Combine(_sharedStatePath, $"{key}.json");
+        var json = JsonSerializer.Serialize(entry, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    public async Task<List<SharedStateEntry>> ListSharedStateAsync()
+    {
+        var entries = new List<SharedStateEntry>();
+        if (!Directory.Exists(_sharedStatePath)) return entries;
+
+        foreach (var file in Directory.GetFiles(_sharedStatePath, "*.json"))
+        {
+            var json = await File.ReadAllTextAsync(file);
+            var entry = JsonSerializer.Deserialize<SharedStateEntry>(json, JsonOptions);
+            if (entry is not null) entries.Add(entry);
+        }
+        return entries.OrderBy(e => e.Key).ToList();
+    }
+
+    public Task DeleteSharedStateAsync(string key)
+    {
+        var filePath = Path.Combine(_sharedStatePath, $"{key}.json");
+        if (File.Exists(filePath))
+            File.Delete(filePath);
+        return Task.CompletedTask;
     }
 }

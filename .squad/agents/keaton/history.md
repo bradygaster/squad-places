@@ -1,3 +1,7 @@
+📌 Team update (2026-07-15): Admin Console Blazor Server foundation (#29) — SquadPlaces.Admin project created, wired into Aspire AppHost (internal only, no external endpoints). DiscoveryPromptService extracts the 185-line hardcoded discovery prompt into blob-backed versioned storage (config/discovery-prompt.json) with fallback to default. Admin API endpoints added (GET/PUT/GET history). Admin UI has dashboard, discovery prompt editor with version history, plus placeholder pages for squads/moderation/audit-log. Build passes clean.
+
+📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — Admin dashboard and moderation queue complete (#23, #24) — Dashboard overview/squad list/detail, moderation queue with approve/reject, cursor pagination. Integration: Baer provides authority access control, Fenster logs all actions, Hockney wrote 4+6 tests.
+
 # Project Context
 
 - **Owner:** Brady
@@ -27,6 +31,24 @@
 **Wave E Planning:** 28 issues just filed (2026-02-28) from parallel agent sprint: 4 CLI gaps, 10 test gaps, 10 doc gaps, 4 UX gaps. decisions.md trimmed 226KB→10.3KB. Ready for Wave E Batch 1 prioritization.
 
 ## Learnings
+
+### 2026-03-09: Security Hardening PRD → GitHub Issues Decomposition
+- **Task:** Decompose the security hardening PRD (`docs/proposals/security-hardening-prd.md`) into actionable GitHub issues on `bradygaster/squad-places-pr`. Brady also requested a standalone admin panel with chat-based discovery prompt editor.
+- **Approach:** Created 5 epic issues (one per workstream) + 17 sub-issues + 1 standalone feature = **23 issues total**.
+- **Issue Map:**
+  - **WS1 Auth (P0) — Epic #7:** #15 (Entra ID), #13 (API keys), #14 (per-member identity), #12 (SignalR + CORS)
+  - **WS2 Content Safety (P0) — Epic #11:** #19 (XSS + headers), #18 (moderation pipeline), #17 (prompt injection + PII), #16 (image safety + SSRF)
+  - **WS3 Agent Governance (P1) — Epic #9:** #20 (authority framework), #22 (cross-squad detection + gates), #21 (shared state governance)
+  - **WS4 Human Control (P1) — Epic #8:** #23 (admin dashboard API), #24 (moderation queue), #25 (kill switches)
+  - **WS5 Audit (P1) — Epic #10:** #27 (audit log infrastructure), #28 (telemetry + App Insights), #26 (audit endpoints + export)
+  - **Standalone:** #29 (Admin panel with chat-based discovery prompt editor)
+- **Key Decisions:**
+  - Broke by workstream first, then by implementable unit — each sub-issue is one agent session's worth of work.
+  - Kept WS1 (Auth) issues granular because it's the critical path — everything else blocks on identity.
+  - Combined SignalR auth + CORS into one issue since they're both about network-level access control.
+  - Combined prompt injection + PII into one issue since they share the input analysis pipeline.
+  - Made the admin panel its own standalone issue (not under WS4) because it's a distinct UX capability that Brady specifically requested, even though it depends on WS4 admin infrastructure.
+  - Created `priority:p0` and `priority:p1` labels for triage (they already existed).
 
 ### 2026-03-08: Final PRD Assembly — 20 Sections into One Coherent Document
 - **Task:** Assemble the final PRD (`docs/PRD.md`) from 20 independently authored sections by 20 agents. Brady requested via the team. Read all sections, synthesize, reorder for narrative flow, add cross-references, resolve contradictions, write executive summary, propose implementation roadmap.
@@ -805,3 +827,101 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 - **Output:** docs/proposals/api-consolidation.md (484 lines), full implementation blueprint ready for Fenster
 - **Next Step:** Fenster to execute architecture implementation
 - **Pattern learned:** Shared library extraction works when both projects independently use same data layer (IBlobStorageService). Zero HTTP integration to untangle.
+### 2026-03-09T21:35:43Z: Security Hardening PRD — GitHub-First Auth Update
+- **Task:** Update security hardening PRD and GitHub issues to reflect the GitHub-first auth provider decision
+- **Requested by:** Brady
+- **What changed in the PRD (docs/proposals/security-hardening-prd.md):**
+  - §4.1 Three-tier table: GitHub OAuth is now primary for human admin auth and squad identity. Entra ID moved to "Enterprise override (opt-in)". HMAC API keys labeled "M2M fallback".
+  - §4.1 "Entra ID Integration" renamed to "Identity Provider Strategy" — GitHub default, Entra additive, API keys fallback.
+  - §4.1 New "Multi-Scheme Auth Pattern" subsection with ASP.NET Core code sample showing all three schemes coexisting.
+  - §4.1 Key rotation now requires "admin authentication (GitHub OAuth or Entra ID)" instead of just Entra ID.
+  - §4.1 Local dev updated: "No external OAuth dependency" (not just Entra).
+  - §4.2 Per-Member Identity: GitHub identity is primary mapping. GitHubUserId added to Member model. Member registration accepts GitHub token or API key.
+  - Files Changed table: updated package references to reflect GitHub OAuth + optional Entra ID.
+- **GitHub issues updated (bradygaster/squad-places-pr):**
+  - #7 (Epic): Added "Architecture Direction" section — GitHub-first, multi-scheme auth, updated scope and success criteria.
+  - #12 (SignalR + CORS): [Authorize] works with all three schemes. Dependencies updated to multi-scheme pipeline.
+  - #13 (HMAC API keys): Reframed as "M2M fallback". GitHub tokens are recommended path. API keys complement, not replace.
+  - #14 (Per-member identity): GitHub identity is primary source. GitHubUserId field. Automatic member resolution via GitHub tokens.
+  - #23 (Admin dashboard): GitHub OAuth is default admin login. Entra ID is enterprise opt-in. AdminOnly policy accepts both schemes.
+  - #15 was already updated (skipped per instructions).
+- **Decision record:** .squad/decisions/inbox/keaton-auth-providers.md (unchanged, already captured the decision)
+- **No git commits** (commit lock active).
+
+### 2026-07: Admin Console PRD — Full Aspire Topology + Feature Spec
+- **Task:** Brady requested a PRD for the admin console including a full Aspire topology diagram showing the target ecosystem. Directive: "as much of it should be done with Aspire as possible."
+- **Output:** `docs/proposals/admin-console-prd.md` — 10-section PRD covering executive summary, current vs. target architecture, Aspire topology map (3 Mermaid diagrams + target AppHost.cs code), 5 admin features (discovery prompt editor, moderation queue, squad management, health dashboard, audit viewer), authentication architecture, Aspire integration points, 3-phase implementation plan (19 issues), non-goals, and open questions.
+- **Key Decisions Made:**
+  - **Blazor Server for admin console.** Internal-only, no public endpoints, server-side rendering is fine. Blazor Server gives rich interactivity for the chat-based prompt editor without shipping a WASM payload.
+  - **Admin is a separate Aspire project, not routes on the public API.** Admin endpoints live in `SquadPlaces.Admin`, not in `SquadPlaces.Api.Endpoints`. Network-level separation — agents calling the public API cannot reach admin routes.
+  - **Redis via Aspire `AddRedis()` for three concerns:** session state (admin + web), feed caching (API), and rate limit/kill switch state (API). One Redis instance, multiple logical uses.
+  - **Azure SignalR Service via Aspire for scale-out.** Replaces the local SignalR hub. API and Web reference it; Admin does not (admin doesn't need real-time feed updates).
+  - **Discovery prompt stored in blob storage, not code.** Moves 185-line hardcoded prompt from `ApiEndpoints.cs` to versioned blobs. Chat-based AI editor for drafting, preview/publish workflow, rollback support.
+  - **GitHub OAuth is the admin auth default.** Matches the security hardening PRD. Entra ID is enterprise opt-in. Three roles: Owner (full), Moderator (content queue), Viewer (read-only).
+  - **Three-phase implementation:** Phase 1 = admin shell + prompt editor + auth (weeks 1-3), Phase 2 = moderation + squad management (weeks 4-6), Phase 3 = dashboard + audit viewer (weeks 7-9).
+- **Architectural pattern:** The topology map shows clear separation between public (API, Web) and internal (Admin) services. Aspire orchestrates everything — service discovery, connection strings, health checks, startup ordering. No manual wiring.
+- **Dependencies on security hardening PRD:** Phase 2 depends on WS1 (Auth) and WS2 (Content Safety) being substantially done. Phase 3 depends on WS5 (Audit). The admin console is the UI layer for the infrastructure those workstreams build.
+- **Decision record:** `.squad/decisions/inbox/keaton-admin-console-architecture.md`
+- **No git commits** (commit lock active).
+
+### 2026-07: Issue #14 - Per-Agent Identity Model + Agent Attribution
+- **Task:** Implement per-agent identity so every artifact and comment shows which agent on which squad authored it. Brady's directive: "Squads aren't speaking - agents on squads are."
+- **What was built:**
+  - `Member` model (`src/SquadPlaces.Data/Models/Member.cs`) - Id, SquadId, Name, Role, AvatarUrl, GitHubUserId, EnlistedAt
+  - `Squad.Members` list - members embedded in squad blob (not a separate container)
+  - `AuthorMemberId` + `AuthorName` on both `KnowledgeArtifact` and `Comment` models
+  - `POST /api/squads/{squadId}/members` - register member with duplicate-name validation
+  - `GET /api/squads/{squadId}/members` - list squad members
+  - Updated artifact + comment creation to resolve author from member ID or accept raw name
+  - Updated `FeedArtifact` record to surface author attribution in feeds
+  - Updated discovery prompt: Enlist -> Register Members -> Publish -> Discover
+  - Updated What's New changelog (v0.6.0)
+  - Both `BlobStorageService` and `FileStorageService` updated
+- **Key Decisions:**
+  - **Members embed in Squad blob.** Members are always queried in squad context, squad blobs are small, no new storage containers needed.
+  - **Author fields are optional for backward compatibility.** Existing artifacts without authors continue to work.
+  - **AuthorMemberId validated at write time.** If provided, must reference a registered member. AuthorName auto-populated from member record.
+  - **Duplicate member names rejected per squad.** Case-insensitive uniqueness within a squad.
+  - **Version bumped to 0.6.0.**
+- **No git commits** (commit lock active).
+
+### 2026-03-09: Kill Switches + Emergency Controls (Issue #25)
+- **Task:** Implement kill switch infrastructure for the Squad Places network — squad-level suspension, network-wide read-only mode, and endpoint-level disable. Server-side implementation for the admin console.
+- **Approach:** Three-layer kill switch design: squad-level (block writes from specific squad), network-level (read-only mode), endpoint-level (disable specific paths). ConcurrentDictionary for hot-path checks, blob persistence for durability across restarts.
+- **Files Created:**
+  - `src/SquadPlaces.Api.Endpoints/Services/KillSwitchService.cs` — Core service with in-memory state + blob persistence (kill-switches/state.json). Handles suspend/unsuspend, read-only toggle, endpoint disable, auto-expiry of time-limited suspensions.
+  - `src/SquadPlaces.Api.Endpoints/Services/KillSwitchMiddleware.cs` — Pipeline middleware. Checks kill switch state after auth/IP blocking, before rate limiting. Admin routes always pass through. GET requests always pass through. Extracts squadId from route, query, or JSON body.
+- **Files Modified:**
+  - `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` — Added 6 admin endpoints in separate /api/admin route group: suspend/unsuspend squad, enable/disable read-only, get status, list suspended squads.
+  - `src/SquadPlaces.Api.Endpoints/ApiModels.cs` — Added SuspendSquadRequest and EnableReadOnlyRequest models.
+  - `src/SquadPlaces.Api.Endpoints/ApiServiceRegistration.cs` — Registered KillSwitchService as singleton.
+  - `src/SquadPlaces.Api/Program.cs` — Added kill switch state load on startup + middleware in pipeline (after IP blocking, before rate limiting).
+- **Key Decisions:**
+  - **Kill switch service owns its own blob persistence** (doesn't use IBlobStorageService). Clean separation — admin infrastructure shouldn't depend on the public API's storage interface. Uses BlobServiceClient directly.
+  - **Admin endpoints are unprotected** with a TODO for WS1 Auth. Can't block on auth being done first.
+  - **Middleware order: security headers → version header → IP block → kill switch → rate limiter → routing.** Kill switch checks happen before rate limiting because a suspended squad shouldn't consume rate limit tokens.
+  - **Admin routes bypass kill switch checks.** Admins need to manage kill switches even when read-only mode is active.
+  - **Squad ID extraction from request body enables buffering** so downstream handlers still get the body.
+  - **Auto-expiry is lazy** — checked on IsSquadSuspended() calls, not via background timer. Simpler, no timer management.
+- **Pre-existing build issue:** IBlobStorageService has ApiKey methods (from another agent's work) that BlobStorageService/FileStorageService don't implement yet. Not related to this change.
+- **No git commits** (commit lock active).
+
+📌 Team update (2026-03-10T05:27:35Z): Wave 2 complete — CORS lockdown, API key authentication, kill switches all implemented and tested. Build clean (0 warnings, 0 errors). 29 test methods across 3 features.
+
+### 2026-03-10T05:31:22Z: Admin Dashboard & Content Moderation Queue (#23, #24)
+- **Task:** Implement admin dashboard endpoints and content moderation queue for WS4 Human Control.
+- **Changes:**
+  - Added moderation fields to KnowledgeArtifact and Comment models (ModerationStatus, ModerationReason, ModeratedBy, ModeratedAt) — defaults to "approved" for backward compatibility.
+  - Added ListAllCommentsAsync() to IBlobStorageService + both implementations (BlobStorageService, FileStorageService).
+  - Added 7 new admin endpoints: GET /dashboard, GET /squads, GET /squads/{id}, GET /moderation-queue, GET /moderation-queue/count, POST /moderation/{type}/{id}/approve, POST /moderation/{type}/{id}/reject.
+  - Added API models: ModerationActionRequest, AdminDashboardResponse, AdminSquadSummary, AdminSquadDetailResponse, ModerationQueueItem.
+- **Decisions:**
+  - ModerationStatus on models (not a separate table) — simpler, collocated with content, no joins needed.
+  - Moderation actions reuse SaveCommentAsync for comments (already overwrites) rather than adding UpdateCommentAsync.
+  - In-memory filtering for moderation queue — adequate for current scale, avoids storage-layer query complexity.
+  - AuthorityLevel computed as sum of adoption counts across a squad's artifacts — simple proxy for influence.
+- **Build:** Clean — 0 warnings, 0 errors across all 8 projects.
+- **No git commits** (commit lock active).
+
+📌 Team update (2026-03-10T055144Z): Baer completed cross-squad detection and approval gates (#22) with PendingAction CRUD and four admin endpoints. Fenster completed content moderation pipeline (#18) with graduated verdicts and shared state governance (#21) with authority checks. Admin console ready to integrate all features.
+

@@ -155,13 +155,45 @@ if (enableApiEndpoints)
         });
     });
 
-    // CORS for API
-    builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(policy =>
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-    });
 }
+
+// CORS — config-driven origin validation
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var envOrigins = builder.Configuration["ALLOWED_ORIGINS"];
+if (!string.IsNullOrWhiteSpace(envOrigins))
+{
+    corsOrigins = corsOrigins
+        .Concat(envOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        .Distinct()
+        .ToArray();
+}
+var allowDiscoveryFromAnyOrigin = builder.Configuration.GetValue<bool>("Cors:AllowDiscoveryFromAnyOrigin");
+
+// Support wildcard ports in origins (e.g., https://localhost:*)
+bool IsOriginAllowed(string origin) =>
+    corsOrigins.Any(allowed =>
+    {
+        if (!allowed.Contains('*'))
+            return string.Equals(origin, allowed, StringComparison.OrdinalIgnoreCase);
+        var prefix = allowed[..allowed.IndexOf('*')];
+        return origin.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+    });
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.SetIsOriginAllowed(IsOriginAllowed);
+        policy.AllowAnyMethod().AllowAnyHeader();
+    });
+
+    // SignalR requires credentials — separate policy with specific origins
+    options.AddPolicy("signalr", policy =>
+    {
+        policy.SetIsOriginAllowed(IsOriginAllowed);
+        policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -178,9 +210,41 @@ else if (blobService is FileStorageService fs)
 
 app.MapDefaultEndpoints();
 
+// Discovery endpoint CORS — GET /api is the public entry point for squads
+if (enableApiEndpoints && allowDiscoveryFromAnyOrigin)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.Equals("/api", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(context.Request.Headers.Origin))
+        {
+            if (HttpMethods.IsOptions(context.Request.Method))
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
+                context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+                context.Response.StatusCode = StatusCodes.Status204NoContent;
+                return;
+            }
+
+            if (HttpMethods.IsGet(context.Request.Method))
+            {
+                context.Response.OnStarting(() =>
+                {
+                    context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
+        await next();
+    });
+}
+
+app.UseCors();
+
 if (enableApiEndpoints)
 {
-    app.UseCors();
 
     // Version Header Middleware (on all /api/* responses)
     app.Use(async (context, next) =>
@@ -239,7 +303,7 @@ app.UseRouting();
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
-app.MapHub<SquadPlaces.Web.Hubs.FeedHub>("/hubs/feed");
+app.MapHub<SquadPlaces.Web.Hubs.FeedHub>("/hubs/feed").RequireCors("signalr");
 
 if (enableApiEndpoints)
 {

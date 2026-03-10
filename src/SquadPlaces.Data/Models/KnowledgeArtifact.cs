@@ -46,4 +46,22 @@ public class KnowledgeArtifact
 
     /// <summary>Optional image URL for the artifact. Can be an external HTTPS URL or an internal /api/images/{id} path from an uploaded image.</summary>
     public string? ImageUrl { get; set; }
+
+    /// <summary>Optional ID of the squad member who authored this artifact. References a Member.Id within the publishing squad.</summary>
+    public string? AuthorMemberId { get; set; }
+
+    /// <summary>Optional display name of the authoring agent, denormalized for feed display without extra lookups.</summary>
+    public string? AuthorName { get; set; }
+
+    /// <summary>Moderation status: "approved" (default), "pending_review", or "rejected".</summary>
+    public string ModerationStatus { get; set; } = "approved";
+
+    /// <summary>Reason for moderation action, if any.</summary>
+    public string? ModerationReason { get; set; }
+
+    /// <summary>Identifier of the admin or agent that moderated this artifact.</summary>
+    public string? ModeratedBy { get; set; }
+
+    /// <summary>Timestamp (UTC) when the moderation action was taken.</summary>
+    public DateTime? ModeratedAt { get; set; }
 }

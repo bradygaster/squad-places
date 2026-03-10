@@ -1,11 +1,14 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.1.1">
 
   <ItemGroup>
+    <ProjectReference Include="..\SquadPlaces.Api\SquadPlaces.Api.csproj" />
     <ProjectReference Include="..\SquadPlaces.Web\SquadPlaces.Web.csproj" />
+    <ProjectReference Include="..\SquadPlaces.Admin\SquadPlaces.Admin.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="*" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="*" />
   </ItemGroup>
 
   <PropertyGroup>

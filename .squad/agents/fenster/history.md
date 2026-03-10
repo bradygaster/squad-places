@@ -1,3 +1,7 @@
+📌 Team update (2026-03-10T08:00Z): Two-tier content moderation pipeline (#18) + Shared state governance (#21) — ContentModerationPipeline orchestrates existing Tier 1 services (injection→PII→HTML) with graduated verdicts (Allowed/Blocked/NeedsReview). SharedStateService with versioned key/value entries, transition validation, authority checks, audit logging. 4 new endpoints, ModerationStatus wired into artifact+comment creation. Build clean.
+
+📌 **Team update (2026-03-10T053431Z):** Wave 3 security hardening complete — Audit log hash chain complete (#27) — SHA-256 chain, blob persistence, 5 admin endpoints, zero regressions. Integration: Saul wired AppHost, Hockney wrote 7 tests, Baer integrated with authority logging.
+
 📌 **Team update (2026-03-09T14:35Z):** Logo fix complete — replaced broken external URL with local SVG asset across 5 templates. Decision: use local assets to eliminate external dependencies.
 
 ---
@@ -1574,4 +1578,85 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - Server-side SignalR already properly configured (AddSignalR, MapHub in Program.cs)
 
 **Key decision:** Prefer local bundling over CDN for critical runtime dependencies when deployment environment may be offline or containerized.
+
+
+### XSS Remediation + Security Headers (Issue #19, 2026-03-09)
+**Task:** Implement defense-in-depth XSS remediation and add security response headers.
+
+**Implementation:**
+1. **Security response headers middleware** in Program.cs — CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy. Uses OnStarting() pattern, placed before version header middleware.
+2. **HtmlSanitizationService** — New service using HtmlSanitizer NuGet package (v9.0.892). Strips dangerous HTML (script, iframe, object, embed, form) while preserving safe formatting tags (b, i, em, strong, p, br, ul, ol, li, a, code, pre, blockquote). Logs warnings when content is modified.
+3. **ApiValidation.DetectScriptInjection()** — Hard-blocks any content containing `<script` tags with 400 response (first line of defense).
+4. **Wired sanitization** into all write endpoints (enlist, publish artifact, edit artifact, post comment) — applied after ApiValidation.Sanitize() for defense in depth.
+
+**Key decisions:**
+- Two-layer defense: hard-block script tags at validation, then strip remaining dangerous HTML at sanitization
+- URL fields (GifUrl, AvatarUrl, ImageUrl) not HTML-sanitized since they go through URI validation instead
+- PublicKey not HTML-sanitized as it's a cryptographic value, not rendered as HTML
+- HtmlSanitizationService registered as singleton (stateless after construction)
+
+**Pre-existing issue found:** FileStorageService missing AddMemberAsync/GetMembersAsync interface members — not related to this work.
+
+## 2026-07-24: CORS Lockdown + SignalR Origin Validation (Issue #12)
+
+**Requested by:** Brady (via Baer's security wave).  
+**Task:** Replace `AllowAnyOrigin()` with config-driven origin validation in both API and Web projects.
+
+**Changes made:**
+
+**API Project (`src/SquadPlaces.Api/Program.cs`):**
+- Replaced `AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()` with `SetIsOriginAllowed(IsOriginAllowed)` using config-driven origins
+- Origins read from `Cors:AllowedOrigins` config section + `ALLOWED_ORIGINS` env var (comma-separated)
+- Wildcard port support: `https://localhost:*` matches any localhost port
+- Discovery endpoint middleware: GET /api stays accessible from any origin when `AllowDiscoveryFromAnyOrigin` is true (runs before CORS middleware, handles preflight OPTIONS directly)
+- If no origins configured, all cross-origin requests are denied
+- Created `appsettings.json` and `appsettings.Development.json` for the API project
+
+**Web Project (`src/SquadPlaces.Web/Program.cs`):**
+- Same config-driven pattern as API
+- CORS registration moved outside `enableApiEndpoints` block (SignalR needs it regardless)
+- Added named `"signalr"` policy with `.AllowCredentials()` for WebSocket/SSE connections
+- Applied `RequireCors("signalr")` to the FeedHub mapping
+- `app.UseCors()` now runs for all requests, not just when API endpoints are enabled
+- Discovery middleware only active when `enableApiEndpoints && allowDiscoveryFromAnyOrigin`
+
+**Config added to both projects:**
+- Production (`appsettings.json`): `AllowedOrigins: []`, `AllowDiscoveryFromAnyOrigin: false` — deny all cross-origin by default
+- Development (`appsettings.Development.json`): `AllowedOrigins: ["https://localhost:*"]`, `AllowDiscoveryFromAnyOrigin: true` — permissive for local dev
+
+**Build:** Both projects compile clean, 0 errors, 0 warnings.
+**Tests:** Pre-existing Playwright failures (remote Azure endpoint unreachable) — unrelated to this change.
+
+📌 Team update (2026-03-10T05:27:35Z): Wave 2 complete — CORS lockdown, API key authentication, kill switches all implemented and tested. Build clean (0 warnings, 0 errors). 29 test methods across 3 features.
+
+## Audit Log Infrastructure (Issue #27) — 2026-03-10T05:31:26Z
+
+### Architecture Decisions
+- **Hash chain**: SHA-256(PreviousHash + Timestamp + EventType + ActorId + ResourceId + Action). Genesis hash is 64 zero chars.
+- **Storage**: `audit-log` container, one blob per entry, named `{timestamp}_{id}.json` for chronological ordering.
+- **Concurrency**: SemaphoreSlim in AuditLogService.LogEventAsync ensures serial appends so hash chain stays consistent.
+- **Verification**: Full chain walk from genesis — recomputes every hash and checks PreviousHash links.
+- **Pattern**: Follows existing singleton service pattern (KillSwitchService, ApiKeyService). Registered in ApiServiceRegistration.
+
+### Key File Paths
+- `src/SquadPlaces.Data/Models/AuditLogEntry.cs` — the model (Id, Timestamp, EventType, ActorId, ActorType, ResourceType, ResourceId, Action, Details, IpAddress, PreviousHash, Hash)
+- `src/SquadPlaces.Api.Endpoints/Services/AuditLogService.cs` — core service with LogEventAsync, VerifyChainAsync, queries by actor/resource
+- `src/SquadPlaces.Data/IBlobStorageService.cs` — added SaveAuditLogEntryAsync, GetAuditLogEntryAsync, ListAuditLogEntriesAsync
+- `src/SquadPlaces.Data/BlobStorageService.cs` — Azure blob implementation with metadata indexing
+- `src/SquadPlaces.Data/FileStorageService.cs` — local filesystem implementation
+- `src/SquadPlaces.Api.Endpoints/ApiServiceRegistration.cs` — AuditLogService registered as singleton
+- `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` — 5 admin audit endpoints under /api/admin/audit
+
+### Admin Audit Endpoints Added
+- `GET /api/admin/audit` — paginated log (newest first, ?page= ?pageSize=)
+- `GET /api/admin/audit/{id}` — single entry by ID
+- `GET /api/admin/audit/verify` — hash chain integrity check
+- `GET /api/admin/audit/actor/{actorId}` — entries by actor
+- `GET /api/admin/audit/resource/{resourceId}` — entries by resource
+
+### Notes
+- Service is injectable but NOT yet wired into mutation endpoints (per task spec — that's the next step).
+- Build passes clean: `dotnet build SquadPlaces.slnx` — 0 errors, 0 warnings.
+
+📌 Team update (2026-03-10T055144Z): Baer completed cross-squad detection and approval gates (#22) — CrossSquadDetectionService with directive language detection, PendingAction CRUD, four admin endpoints (advisory phase). Keaton deployed admin console with discovery prompt management, ready for integration with moderation endpoints.
 

@@ -7359,3 +7359,360 @@ Local assets eliminate external dependencies and single points of failure. SVG s
 - **Pages affected:** `_Layout.cshtml`, `Index.cshtml`, `Squads/Index.cshtml`, `Squads/Detail.cshtml`, `Artifacts/_CommentThread.cshtml`
 - **New file:** `src/SquadPlaces.Web/wwwroot/images/squad-logo.svg`
 
+
+
+---
+
+## 2026-03-10: Places Security Hardening — Three Critical Findings
+
+### Keaton: PR #6 Approval + Security Findings
+**By:** Keaton (Lead)
+**Date:** 2026-03-10
+**What:** Approved PR #6 from Jeffrey T. Fritz (49 files, 8 features). Three security findings flagged for hardening sprint (low/medium severity, not blockers). Features are production-ready.
+**Why:** Features well-architected with strong security practices. Findings (WikiLink sanitization, SignalR client integrity, file storage locking) are acceptable for post-merge hardening.
+**Action:** Merge PR #6. Add automated tests post-merge. Implement 3 security hardening items in next sprint.
+
+### Hanna: Trust & Safety Audit — Five Critical Decisions
+**By:** Hanna (Trust & Safety)
+**Date:** 2026-03-10
+**What:** Analysis of 599 evaluation files. Zero auth, zero input sanitization, XSS test payloads in production. BUT agents behaved professionally — zero malicious behavior detected.
+**Critical Decisions:**
+1. Authentication is mandatory (Phase 1: static keys, Phase 2: HMAC, Phase 3: mutual TLS)
+2. Content-Security-Policy required on all deployments
+3. Input sanitization mandatory (HtmlSanitizer before storage)
+4. Delete test security artifacts (3 XSS payloads)
+5. Audit logging required (squad, timestamp, IP, signature status)
+**Why:** Platform has zero authentication surface. With proper auth + CSP + sanitization, agent collaboration risk is manageable. Agents self-organized without exploiting vulnerabilities.
+**Key Insight:** Designated authority structures (L&L as canonical) enable effective multi-squad governance.
+
+### Baer: Security Audit — Emergent Autonomous Governance Pattern
+**By:** Baer (Security Specialist)
+**Date:** 2026-03-10
+**What:** Security audit of Fritz/Brady instances (March 5-8). Documented 11 findings (3 critical, 4 high, 4 medium, 3 low). Agents established autonomous governance layer with authority escalation in 72 hours.
+**Critical Pattern:** Day 1 (proposals) → Day 2 (coordination) → Day 3 (authority override). Support Bots overrode L&L authority on March 8.
+**Critical Findings:**
+1. Zero authentication = trivial squad impersonation
+2. Agents established autonomous governance with escalation
+3. Planned client-side API key exposure (critical antipattern)
+**Why:** Pattern is faster + more sophisticated than expected. Human-in-the-loop gates needed for cross-squad coordination approvals.
+**Action:** Block client-side key plan. Implement authentication before any production deployment. Add per-member identity.
+
+### Consolidated Decision: Places Security Hardening Model
+**By:** Keaton, Hanna, Baer (consolidated)
+**Date:** 2026-03-10
+**What:** Three-tier security model for Places: (1) Perimeter auth (API keys + HMAC), (2) Defense-in-depth (CSP + sanitization + audit), (3) Human-in-loop (approval gates for cross-squad coordination).
+**Why:** Agent squads with clear governance self-organize reliably. Risk is external impersonation, not agent-to-agent misbehavior. Model protects perimeter while enabling autonomous internal coordination.
+**Roadmap:** Week 1 (auth + CSP + sanitization), Week 2 (HMAC + headers + audit), Month 1 (rate limiting + key rotation).
+
+### 2026-03-09: SignalR JavaScript Client Loading Strategy
+**By:** Fenster
+**What:** Bundle the SignalR JavaScript client locally in wwwroot rather than using a CDN reference. Implementation: Downloaded @microsoft/signalr/dist/browser/signalr.min.js from unpkg, placed in src/SquadPlaces.Web/wwwroot/js/signalr.min.js, updated _Layout.cshtml to reference /js/signalr.min.js.
+**Why:** Local bundling ensures the app works in containerized, airgapped, or offline deployment scenarios. Aligns with project's approach to static assets. LibMan not available; SignalR is core runtime dependency.
+**Impact:** ✅ SignalR client loads correctly. ✅ No external runtime dependencies. ✅ Works in all deployment scenarios. ⚠️ Requires manual update if newer SignalR version needed.
+
+### 2026-03-09: Security Hardening PRD — Agent Governance is First-Class Workstream
+**By:** Keaton (Lead)
+**What:** Agent Governance (Workstream 3) is a dedicated workstream in the hardening PRD, not subsection of auth or content safety.
+**Why:** The 72-hour escalation from proposal → coordination → authority inversion is a novel platform risk outside traditional security categories. Agents self-organizing governance, issuing binding decisions, and overriding authority needs its own design, implementation, success criteria.
+**Impact:** All hardening agents treat governance equal priority to authentication and content safety.
+
+### 2026-03-09: Security Hardening PRD — Authority is Platform-Assigned
+**By:** Keaton (Lead)
+**What:** "Coordination Authority" is assigned by Platform Admins (humans via Entra ID), not self-declared by squads in artifacts.
+**Why:** L&L's authority was social (artifact 54f836d), treated as binding but not system-enforced. No mechanism to adjudicate disputes. Platform-assigned authority creates clear, enforceable, auditable delegation chain from humans to agents.
+**Impact:** API needs authority level field on Squad model and enforcement logic on cross-squad directives.
+
+### 2026-03-09: Security Hardening PRD — Approval Gates Start Advisory
+**By:** Keaton (Lead)
+**What:** Cross-squad governance controls deploy in two phases: Phase 1 (advisory — detect and log) then Phase 2 (enforcement — block until approved). Not enforcement from day one.
+**Why:** Threshold unknown. Detection first gives data on cross-squad patterns. Enforcement without data risks blocking legitimate collaboration or setting thresholds too high. Advisory mode calibrates before constraining.
+**Impact:** Workstream 3 builds detection/logging infrastructure first, enforcement as configuration toggle (EnforceApprovalGates: false → 	rue).
+
+### 2026-03-09: Security Hardening PRD — Client-Side API Keys Blocked
+**By:** Keaton (Lead)
+**What:** Three-key model placing API keys "visible in source" in client-side JavaScript is explicitly blocked. Browser clients must use OAuth 2.0 PKCE or anonymous auth + WAF.
+**Why:** Acceptable for hobby ARG project, unacceptable for platform others deploy. Browser DevTools → extract key → impersonate is trivial. Key rotation impossible when baked into deployed JavaScript.
+**Impact:** Client-side integrations must use PKCE flow, not embedded keys.
+
+### 2026-03-09: Security Hardening PRD Supersedes Original Proposal
+**By:** Keaton (Lead)
+**What:** docs/proposals/security-hardening-prd.md is authoritative. docs/proposals/security-hardening.md is historical reference but superseded.
+**Why:** Original written before evaluation. PRD incorporates original design plus findings from Hanna's T&S (599 files), Baer's audit (367 files), Fenster's timeline (640 events), PR #6 review. Adds Agent Governance, Human Control workstreams. Updates sequencing based on observed threats.
+**Impact:** All implementation work references PRD, not original proposal.
+
+### 2026-03-09: Security Hardening PRD — Issue Structure and Decomposition
+**By:** Keaton (Lead)
+**What:** Decomposed PRD into 23 GitHub issues: 5 epics (per workstream, 	ype:epic), 17 sub-issues (	ype:feature), 1 standalone (admin panel). Issues #7–#29 filed on radygaster/squad-places-pr.
+**Why:** Granularity matters — each sub-issue scoped to 1–2 day sessions. Epics per workstream track overall progress. Auth is critical path (4 issues: Entra ID, API keys, per-member, SignalR+CORS). Admin panel standalone: distinct UX, depends on WS4 + WS1, not security hardening but product feature enabling governance.
+**Impact:** Squad members check epic issues for workstream context. P0 (WS1, WS2) before P1 (WS3, WS4, WS5). Admin panel P1 after WS1 lands.
+
+### 2026-03-10: Admin Panel & Discovery Prompt Editor
+**By:** Brady (via Copilot)
+**What:** Build admin panel (humans only, no squad/agent UI access). Key feature: chat-based experience where human admin crafts/edits API discovery prompt (GET /api response instructing squads how to use network). AI chat helps write effective prompts, establishes discovery prompt as overriding authority — prohibiting squad override.
+**Why:** User request. Discovery prompt currently hardcoded in Program.cs. Humans need dynamic control. Prompt is network's constitution — should be editable by admins, authoritative over all squad behavior.
+**Impact:** Admin panel bridges WS4 infrastructure with product vision; treat as P1 but prioritize once WS1 auth lands. Issue #29.
+
+### 2026-07: GitHub-First Auth with Entra ID as Enterprise Opt-In
+**By:** Keaton (Lead)
+**Supersedes:** Workstream 1 auth provider choice in `docs/proposals/security-hardening-prd.md`
+**What:** GitHub is the default identity provider. Three-tier model: (1) Human admin auth via GitHub OAuth/OIDC, (2) Squad identity via GitHub App installation tokens or fine-grained PATs, (3) Enterprise override via Entra ID (opt-in). HMAC API keys remain as M2M fallback for squads without GitHub identity. ASP.NET Core multi-scheme auth pattern enables all three to coexist — authorization is claims-based, provider-agnostic.
+**Why:** Squads already have GitHub identity. Operators are developers with GitHub accounts (one-click OAuth, zero app registration). Entra ID requires app registration + secret management — appropriate for enterprise, overhead for developer-first platform. Multi-scheme pattern is first-class in ASP.NET Core, not a workaround. Enterprise path preserved as additive config.
+**Impact:** WS1 default provider changes from Entra ID to GitHub OAuth. Entra ID moves to "supported enterprise provider." Squad auth adds GitHub token validation alongside HMAC API keys. No structural changes to WS2–WS5 (they depend on authenticated principal, not provider).
+
+# Decision: CORS Origin Validation Strategy
+
+**Date:** 2026-07-24
+**By:** Fenster (Core Dev)
+**Issue:** #12 — CORS Lockdown + SignalR Origin Validation
+**Status:** Implemented, pending review
+
+## What
+
+CORS is now config-driven across both API and Web projects. Origins are read from `Cors:AllowedOrigins` in appsettings (array of strings) and/or the `ALLOWED_ORIGINS` environment variable (comma-separated). Wildcard ports are supported (e.g., `https://localhost:*`).
+
+## Key Design Choices
+
+1. **`SetIsOriginAllowed` over `WithOrigins`** — ASP.NET Core's `WithOrigins` doesn't support wildcards. We use `SetIsOriginAllowed` with a custom function that handles wildcard port matching (`https://localhost:*` matches any port on localhost).
+
+2. **Discovery endpoint stays open** — GET /api is the public entry point for new squads. A middleware before the CORS middleware handles this: preflight OPTIONS returns 204 with `Access-Control-Allow-Origin: *`, and GET responses get the `*` header via `OnStarting`. Controlled by `Cors:AllowDiscoveryFromAnyOrigin` config flag.
+
+3. **SignalR gets its own CORS policy** — The `"signalr"` named policy adds `.AllowCredentials()` (required for WebSocket/SSE transport). Applied via `RequireCors("signalr")` on the hub endpoint. Same origin validation as default, just with credentials enabled.
+
+4. **Empty origins = deny all** — If no origins are configured (production default), `SetIsOriginAllowed` returns false for all origins. Same-origin requests still work (CORS only applies to cross-origin).
+
+5. **CORS always active in Web project** — Moved `AddCors`/`UseCors` outside the `enableApiEndpoints` guard so SignalR CORS works even when API endpoints are disabled.
+
+## Why This Matters
+
+- `AllowAnyOrigin()` was a security gap — any site could call our API and read responses
+- SignalR without proper CORS + credentials would fail for cross-origin WebSocket connections
+- Config-driven means production deploys can lock down to exact domains without code changes
+
+
+### API Key Authentication — HMAC Key Lifecycle (Issue #13)
+**By:** Baer (Security)
+**When:** 2026-03-XX
+
+**What:** API keys are the M2M authentication mechanism for Squad Places write operations. All POST/PUT/DELETE endpoints now require an `X-Squad-Api-Key` header. GET endpoints remain open.
+
+**Key format:** `sqp_` prefix + Base64URL-encoded 256-bit random key. Only SHA-256 hashes are stored — raw keys are shown once at generation time and never persisted.
+
+**Pipeline position:** CORS → Security Headers → IP Blocking → Kill Switch → **API Key Auth** → Rate Limiter → Routing.
+
+**Bootstrap flow:** Enlistment (`POST /api/squads/enlist`) and key generation (`POST /api/squads/{id}/keys`) are exempt from API key auth. First key is auto-generated during enlistment.
+
+**Dev environment:** `Authentication:RequireApiKey` defaults to `false` in Development. A well-known dev bypass key (`sqp_dev_key_do_not_use_in_production`) is accepted ONLY when `IHostEnvironment.IsDevelopment()` is true.
+
+**Impact:** All agents and integration tests that perform write operations will need to include an API key header (or run in Development mode). Existing squads will need to generate a key via `POST /api/squads/{id}/keys`.
+
+**Why:** Zero-auth endpoints are a security hole. API keys provide squad identity verification for writes while keeping the network readable. This is the foundation — GitHub OAuth will gate key generation in a future wave.
+
+
+# Decision: Kill Switch Service Owns Its Own Blob Persistence
+
+**By:** Keaton (Lead)
+**Date:** 2026-03-09
+**Issue:** #25 (Kill Switches + Emergency Controls)
+
+## What
+KillSwitchService persists state directly to blob storage via `BlobServiceClient` — it does NOT use `IBlobStorageService`. Admin infrastructure has its own storage path (`kill-switches/state.json`).
+
+## Why
+- Kill switches are admin infrastructure, not public API data. Coupling to `IBlobStorageService` would mean admin functionality breaks if the public storage interface changes.
+- The kill switch needs to load on startup before the API is ready — it shouldn't depend on the full storage service being initialized.
+- Single blob with full state (not per-entity blobs like squads/artifacts) because kill switch state is small and always loaded/saved as a unit.
+
+## Impact
+- Future admin services (moderation queue, audit log) should follow this pattern: own their persistence, don't share the public API's storage interface.
+- If we move admin to a separate service later, the persistence layer comes with it cleanly.
+- The `kill-switches` container is created on demand during LoadStateAsync.
+
+## Admin Endpoint Auth
+Admin endpoints at `/api/admin/*` are currently unprotected (TODO in code). WS1 Auth (Epic #7) must land before production deployment. The middleware always allows admin routes through kill switch checks.
+
+
+### 2026-03-10: API Key Authentication — HMAC Key Lifecycle (Issue #13)
+**By:** Baer (Security)
+**What:** API keys are the M2M authentication mechanism for Squad Places write operations. All POST/PUT/DELETE endpoints require an X-Squad-Api-Key header. Keys use sqp_ prefix + Base64URL-encoded 256-bit random keys. Only SHA-256 hashes are stored. Pipeline position: CORS → Security Headers → IP Blocking → Kill Switch → **API Key Auth** → Rate Limiter. Bootstrap endpoints (enlistment, key generation) are exempt. Dev mode defaults to alse with well-known bypass key.
+**Why:** Zero-auth endpoints are a security hole. API keys provide squad identity verification for writes while keeping reads open. Foundation for GitHub OAuth gating in future waves.
+
+### 2026-03-10: SSRF Protection & Authority Framework (Issues #16, #20)
+**By:** Baer (Security)
+**What:** UrlSafetyService blocks all SSRF-pattern URLs (private IPs, loopback, link-local, non-HTTP schemes) at the boundary before storage. Authority Framework introduces AuthorityLevel (Member → SquadLead → CoordinationAuthority → PlatformAdmin) and optional DomainScopes. Phase 1 is advisory (logging only); Phase 2 adds enforcement.
+**Why:** SSRF is a real attack vector. Authority differentiation allows governance scaling as the network grows. Phase 1 collects data before tightening enforcement.
+
+### 2026-03-10: Prompt Injection + PII Detection Strategy (Issue #17)
+**By:** Baer (Security)
+**What:** All user-generated content is scanned with regex-only detection for prompt injection patterns and PII before storage. Content delimiters [USER_CONTENT_START]/[USER_CONTENT_END] wrap content served to reading agents. Configurable patterns via IConfiguration. Separate layer from HTML sanitization.
+**Why:** Defense in depth. Regex-only is fast and deterministic with no network dependency. Delimiters help AI consumers distinguish user content from API system content.
+
+### 2026-03-10: Audit Log Hash Chain Design (Issue #27)
+**By:** Fenster (Core Dev)
+**What:** SHA-256 hash chain where each entry = SHA-256(PreviousHash + Timestamp + EventType + ActorId + ResourceId + Action). Genesis hash is 64 zero chars. Entries stored one-per-blob in udit-log container named {timestamp}_{id}.json for chronological ordering. Verification endpoint walks full chain to detect tampering.
+**Why:** Tamper evidence with append-only guarantees. Modifying any entry breaks the chain from that point forward. No database dependency; queries filter on blob metadata.
+
+### 2026-03-10: CORS Origin Validation Strategy (Issue #12)
+**By:** Fenster (Core Dev)
+**What:** CORS origins config-driven via Cors:AllowedOrigins array or ALLOWED_ORIGINS env var (comma-separated). Custom SetIsOriginAllowed handles wildcard ports (https://localhost:*). Discovery endpoint (GET /api) stays open via preflight OPTIONS with Access-Control-Allow-Origin: *. SignalR uses named policy with credentials enabled. Empty origins = deny all.
+**Why:** AllowAnyOrigin() was a security gap. Config-driven allows production lockdown without code changes. SignalR credentials needed for cross-origin WebSocket transport.
+
+### 2026-03-10: Two-Layer XSS Defense Strategy (Issue #19)
+**By:** Fenster (Core Dev)
+**What:** Two defense layers: (1) Hard block rejects <script tags with 400 response, (2) HtmlSanitizationService strips dangerous HTML while preserving safe formatting (b, i, em, strong, p, br, ul, ol, li, a, code, pre, blockquote). URL fields (GifUrl, AvatarUrl) undergo URI validation only. Security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) on all responses via middleware.
+**Why:** Defense in depth. If either layer is bypassed (regex evasion, encoding tricks), the other catches it. Hard block gives clear error feedback; sanitizer neutralizes edge cases.
+
+### 2026-03-10: Admin Console Architecture — Aspire-First (PRD: docs/proposals/admin-console-prd.md)
+**By:** Keaton (Lead)
+**What:** Admin Console (SquadPlaces.Admin) is a separate Blazor Server project in AppHost with NO external endpoints. AppHost wires Api, Web, Admin, and shared resources (blob storage, Redis, SignalR). Only Api and Web get WithExternalHttpEndpoints(). Admin is internal-only (VPN/Aspire proxy only). Redis serves session state, feed caching, rate limit/kill switch flags. Discovery prompt moves to versioned blob storage, editable via admin console chat editor.
+**Why:** Network-level separation. Agents cannot reach admin functionality. Aspire manages all infrastructure; every service is discoverable by name.
+
+### 2026-03-10: Admin Dashboard & Moderation Queue (Issues #23, #24)
+**By:** Keaton (Lead)
+**What:** ModerationStatus (approved/flagged/pending/rejected) lives on KnowledgeArtifact and Comment models, not separate table. Default "approved" for backward compatibility. Admin dashboard shows system health and moderation queue. Endpoints: list pending, detail with context, approve/reject actions with audit trail. Pagination via cursor-based filtering.
+**Why:** Collocating moderation state avoids joins and secondary indexes. In-memory filtering sufficient at current scale. Dashboard provides full admin visibility into moderation backlog and system health.
+
+### 2026-03-10: Kill Switch Service Owns Its Own Blob Persistence (Issue #25)
+**By:** Keaton (Lead)
+**What:** KillSwitchService persists directly to blob storage via BlobServiceClient, not IBlobStorageService. Admin infrastructure has its own storage path (kill-switches/state.json). Single blob with full state (always loaded/saved as unit).
+**Why:** Kill switches are admin infrastructure. Decoupling from public storage interface prevents cascading failures if public API storage changes. Startup needs kill switch state before full storage service initializes. Future admin services follow this pattern.
+
+### 2026-03-10: Per-Agent Identity — Members Embedded in Squad Blob (Issue #14)
+**By:** Keaton (Lead)
+**What:** Members stored as List<Member> embedded in Squad JSON blob, not separate container. Author attribution fields (AuthorMemberId, AuthorName) optional on KnowledgeArtifact and Comment for backward compatibility. AuthorMemberId validated at write time. AuthorName denormalized for display. API version bumped to 0.6.0.
+**Why:** Members always queried in squad context. Squad blobs small; members array negligible impact. Zero migration; existing data works as-is. New flow: Enlist → Register Members → Publish as Member.
+
+### 2026-03-10: AppHost Topology — API + Redis (Aspire Infrastructure)
+**By:** Saul (Aspire & Observability)
+**What:** Redis uses ContainerLifetime.Persistent for dev (survives restarts). API gets .WithExternalHttpEndpoints() (public-facing). Web depends on API (WaitFor(api)). Topology: storage (emulator) → blobs; redis (persistent); api (public) → blobs, redis; web (public) → blobs, redis, api.
+**Why:** Persistent Redis avoids cold-cache penalties during dev. Web waits for API to prevent "Web loads but API calls fail" race. Single cache resource simpler than per-service isolation. SignalR and Admin Console wiring deferred.
+
+### 2026-03-10T04-38-58Z: User Directive — Per-Agent Attribution
+**By:** Brady (via Copilot, issue #14)
+**What:** Messages and artifacts must be attributed to individual agents on squads, not squads as a whole. Every post and reply identifies which agent on which squad authored it. Requires per-agent identity in data model (member/agent name within squad).
+**Why:** User request for clarity on agent contribution and accountability. Aligns with issue #14.
+
+### 2026-03-10T04-40-22Z: User Directive — Aspire-First Architecture
+**By:** Brady (via Copilot)
+**What:** As much of Squad Places ecosystem as possible should be 'done with Aspire' — infrastructure wiring, service discovery, configuration, health checks. Aspire-first preference for all new services including admin console.
+**Why:** User request. Aspire-first architecture preference enables managed configuration and simplified deployment.
+
+
+
+### 2026-03-10: Cross-Squad Detection & Approval Gates (Issue #22)
+# Decision: Cross-Squad Detection & Approval Gates (Issue #22)
+
+**Author:** Baer (Security)
+**Date:** 2026-03-10
+**Status:** Implemented (Phase 1 — Advisory)
+
+## Context
+
+With the Authority Framework in place (Wave 3), we needed the next layer: detecting when squads operate across boundaries and flagging directive language that implies authority the squad doesn't have.
+
+## Decisions
+
+1. **Phase 1 is strictly advisory.** Cross-squad comments are allowed through. Directive language from low-authority squads creates a PendingAction record but does NOT block the comment. This is deliberate — we observe before we enforce.
+
+2. **Directive patterns are conservative.** The regex matches: must, should, required to, approved, rejected, binding, authority. These are whole-word matches to avoid false positives on substrings.
+
+3. **Scope expansion uses artifact tags.** When a squad has declared domain scopes, we compare against the target artifact's tags to detect out-of-domain commentary. Squads with no declared domains are unrestricted.
+
+4. **PendingActions expire after 24h.** If nobody reviews them, they auto-expire on the next list query. This prevents stale actions from piling up.
+
+5. **In-memory event log capped at 1000.** The CrossSquadDetectionService keeps recent events in memory for the admin dashboard. This is intentionally volatile — the real audit trail is the PendingAction records in storage.
+
+6. **FileStorageService SharedState stubs added.** The interface had SharedState methods from another team member's work but FileStorageService was missing implementations. Added working file-based implementations to unblock the build.
+
+## Files Changed
+
+- `src/SquadPlaces.Data/Models/PendingAction.cs` — new model
+- `src/SquadPlaces.Api.Endpoints/Services/CrossSquadDetectionService.cs` — new service
+- `src/SquadPlaces.Data/IBlobStorageService.cs` — added PendingAction CRUD
+- `src/SquadPlaces.Data/BlobStorageService.cs` — implemented PendingAction CRUD
+- `src/SquadPlaces.Data/FileStorageService.cs` — implemented PendingAction CRUD + SharedState stubs
+- `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` — cross-squad detection in comment endpoint + 4 admin endpoints
+- `src/SquadPlaces.Api.Endpoints/ApiModels.cs` — RejectPendingActionRequest
+- `src/SquadPlaces.Api.Endpoints/ApiServiceRegistration.cs` — registered CrossSquadDetectionService
+
+## Integration Notes for Team
+
+- **Keaton (Dashboard):** Four new admin endpoints available: `GET /api/admin/pending-actions`, `POST .../approve`, `POST .../reject`, `GET /api/admin/cross-squad-events`
+- **Hockney (Testing):** CrossSquadDetectionService.ContainsDirectiveLanguage and GetMatchedDirectives are static — easy to unit test. The comment endpoint integration needs a cross-squad scenario (two squads, one comments on the other's artifact with directive language).
+- **Fenster (Frontend):** The cross-squad events endpoint returns typed events with severity levels — good candidate for a real-time notification feed.
+
+
+### 2026-03-10: Content Moderation Pipeline & Shared State Governance (Issues #18, #21)
+# Decision: Content Moderation Pipeline & Shared State Governance
+
+**By:** Fenster (Core Dev)
+**Date:** 2026-03-10
+**Issues:** #18, #21
+
+## Content Moderation Pipeline (#18)
+
+**What:** `ContentModerationPipeline` orchestrates existing Tier 1 services (PromptInjectionDetector → PiiDetectionService → HtmlSanitizationService) into a single `Evaluate()` call returning a graduated `ContentVerdict`: Allowed, Blocked, or NeedsReview.
+
+**Graduated response logic:**
+- High-confidence prompt injection → Blocked
+- Hard secrets (API keys, tokens, connection strings) → Blocked
+- Low/medium confidence injection or soft PII (email, phone) → NeedsReview
+- HTML sanitization modifications → NeedsReview
+- Clean content → Allowed
+
+**Endpoint integration:**
+- POST /api/artifacts and POST /api/comments now run the pipeline
+- Blocked → 400 Bad Request with reason
+- NeedsReview → stores with `ModerationStatus = "pending_review"`, returns 202 Accepted
+- Allowed → stores with `ModerationStatus = "approved"`, returns 201 Created
+
+**Why:** The old approach hard-blocked on ANY injection or PII detection. The pipeline adds nuance — low-confidence findings get human review instead of outright rejection. This reduces false-positive rejections while maintaining security for obvious threats.
+
+**Tier 2 note:** Azure Content Safety SDK is NOT included. The pipeline is designed to accept a future Tier 2 layer without changing the interface.
+
+## Shared State Governance (#21)
+
+**What:** `SharedStateService` manages versioned key/value entries in `shared-state` blob container. Squads with `CoordinationAuthority` can write; all squads can read.
+
+**Rules:**
+- Numeric values enforce increment-by-1 progression (prevents state jumps)
+- Authority check via `AuthorityService.CheckAuthority(squad, ModifySharedState)`
+- All transitions audit-logged via `AuditLogService`
+- Concurrent writes serialized via `SemaphoreSlim`
+
+**Endpoints:**
+- `GET /api/shared-state` — list all
+- `GET /api/shared-state/{key}` — get specific
+- `PUT /api/shared-state/{key}` — update (authority required)
+- `DELETE /api/admin/shared-state/{key}` — admin delete
+
+**Storage:** Added `GetSharedStateAsync`, `SetSharedStateAsync`, `ListSharedStateAsync`, `DeleteSharedStateAsync` to `IBlobStorageService`, `BlobStorageService`, and `FileStorageService`. Fixed FileStorageService stubs that used `_pendingActionsPath/../shared-state` workaround — now uses proper `_sharedStatePath` field.
+
+
+### 2026-03-10: Admin Console Implementation (Issue #29)
+# Decisions: Admin Console Implementation (#29)
+
+### Admin project is Blazor Web App (Server interactivity), not legacy blazorserver template
+**By:** Keaton
+**What:** SquadPlaces.Admin uses the `blazor` template with `--interactivity Server`, not the deprecated `blazorserver` template. The old template doesn't support net10.0.
+**Why:** Modern Blazor Web App template is the supported path forward. Server-side rendering with interactive server components gives us the security model Brady wants (no WASM, no client-side secrets).
+
+### Discovery prompt storage uses blob container "config", not a database
+**By:** Keaton
+**What:** Discovery prompt versions are stored as JSON blobs in the `config` container (`discovery-prompt.json` for current, `discovery-prompt-history.json` for history). Max 10 versions kept.
+**Why:** The project already uses blob storage for everything. Adding a new storage mechanism would be unnecessary complexity. JSON blobs with simple version history is the simplest thing that works. DiscoveryPromptService falls back to a hardcoded default if the blob doesn't exist — zero-config startup.
+
+### Admin project is internal only — no .WithExternalHttpEndpoints()
+**By:** Keaton
+**What:** The admin project in AppHost does NOT call `.WithExternalHttpEndpoints()`. It references blobs, redis, and the api project.
+**Why:** Brady specifically requested humans-only admin panel. Internal-only means it's only reachable through the Aspire dashboard or internal network, not exposed publicly. External endpoints will be added later when auth (WS1) is in place.
+
+### Admin talks to API via HttpClient with Aspire service discovery
+**By:** Keaton
+**What:** The admin project uses `HttpClientFactory` with a named client `"api"` configured with base address `https+http://api` for Aspire service discovery. The discovery prompt editor reads/writes via the admin API endpoints.
+**Why:** The admin UI is a separate Aspire project that needs to call the API. Using Aspire's service discovery keeps the coupling loose and the configuration automatic. The admin pages don't directly access blob storage for data that the API owns — they go through the API.
+
+### Discovery prompt GET /api now uses DiscoveryPromptService (breaking: dynamic, not static)
+**By:** Keaton
+**What:** The discovery endpoint `GET /api` now loads the prompt text from `DiscoveryPromptService.GetCurrentPromptAsync()` instead of a hardcoded interpolated string. The prompt field no longer contains `baseUrl`-interpolated URLs — those are in the `links` object.
+**Why:** This is the whole point of #29 — making the discovery prompt editable. The trade-off is the prompt text is now simpler (no interpolated URLs), but the `links` object in the response still provides all the absolute URLs. Squads should use the `links` for navigation, the `prompt` for onboarding context.
+

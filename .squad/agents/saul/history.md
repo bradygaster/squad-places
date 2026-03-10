@@ -1,3 +1,5 @@
+📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — AppHost orchestration complete — API, Redis persistent, Web depends on API. Integration: All services now discoverable by name; Fenster/Baer/Keaton services integrated; Hockney tests run against full stack.
+
 # Saul — History
 
 ## Project Context
@@ -211,3 +213,19 @@
 - **Aspire integration:** Optional via `--profile observability` — dashboard container on port 18888, OTLP gRPC on 4317
 - **Port mapping:** Web on 5100, API on 5200 (matching AppHost convention)
 - Build verified: all 6 projects compile successfully
+
+### AppHost Topology Wiring — Admin Console PRD (2026-03-06)
+- **Task:** Wire Aspire AppHost to match target topology from Admin Console PRD
+- **Changes to `src/SquadPlaces.AppHost/AppHost.cs`:**
+  - Added Redis cache resource (`builder.AddRedis("cache")`) with `ContainerLifetime.Persistent` for dev stability
+  - Added API project (`SquadPlaces_Api`) with `.WithExternalHttpEndpoints()`, blob storage and Redis references
+  - Updated Web project to reference blobs, Redis, and API — Web now `WaitFor(api)` so it starts after API is healthy
+- **Changes to `src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj`:**
+  - Added `<ProjectReference>` for `SquadPlaces.Api.csproj`
+  - Added `Aspire.Hosting.Redis` NuGet package (Version="*")
+- **Verification:**
+  - API project already has `builder.AddServiceDefaults()` wired (line 10 of Program.cs) — Fritz's PR landed correctly
+  - `dotnet build SquadPlaces.slnx` — all 8 projects succeed (Build succeeded in 11.2s)
+- **Not done (by design):** SignalR, Admin Console UI — just API + Redis per Brady's directive
+- **Topology:** storage(emulator) → blobs; redis(persistent); api(public, blobs+redis); web(public, blobs+redis+api)
+

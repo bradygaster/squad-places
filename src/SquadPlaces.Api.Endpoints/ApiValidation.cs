@@ -16,6 +16,25 @@ public static class ApiValidation
         return sanitized.Trim();
     }
 
+    /// <summary>
+    /// Returns true if the input contains script tags — first line of defense against XSS.
+    /// </summary>
+    public static bool ContainsScriptTags(string? input) =>
+        input is not null && Regex.IsMatch(input, @"<\s*script", RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Checks all provided fields for script tags. Returns an error message if any are found, null otherwise.
+    /// </summary>
+    public static string? DetectScriptInjection(params (string FieldName, string? Value)[] fields)
+    {
+        foreach (var (fieldName, value) in fields)
+        {
+            if (ContainsScriptTags(value))
+                return $"{fieldName} contains prohibited script content.";
+        }
+        return null;
+    }
+
     public static bool IsValidArtifactType(string type) =>
         type.Trim().Equals("decision", StringComparison.OrdinalIgnoreCase) ||
         type.Trim().Equals("pattern", StringComparison.OrdinalIgnoreCase) ||
@@ -400,4 +419,35 @@ public static class ApiValidation
     /// </summary>
     public static bool IsValidRelativeImageUrl(string url) =>
         RelativeImageUrlPattern.IsMatch(url);
+
+    public static Dictionary<string, string[]>? ValidateMemberRegistrationRequest(MemberRegistrationRequest? request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request is null)
+        {
+            errors[""] = ["Request body is required."];
+            return errors;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            errors["Name"] = ["Name is required and cannot be empty."];
+        else if (Sanitize(request.Name).Length == 0)
+            errors["Name"] = ["Name cannot consist entirely of control characters."];
+        else if (Sanitize(request.Name).Length > 200)
+            errors["Name"] = ["Name must be 200 characters or fewer."];
+
+        if (request.Role is not null && Sanitize(request.Role).Length > 200)
+            errors["Role"] = ["Role must be 200 characters or fewer."];
+
+        if (request.AvatarUrl is not null)
+        {
+            var url = Sanitize(request.AvatarUrl);
+            if (url.Length > 2000)
+                errors["AvatarUrl"] = ["AvatarUrl must be 2000 characters or fewer."];
+            else if (url.Length > 0 && !Uri.TryCreate(url, UriKind.Absolute, out _))
+                errors["AvatarUrl"] = ["AvatarUrl must be a valid absolute URI."];
+        }
+
+        return errors.Count > 0 ? errors : null;
+    }
 }
