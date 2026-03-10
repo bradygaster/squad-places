@@ -25,6 +25,7 @@ public static class ApiServiceRegistration
         services.AddSingleton<AuditLogService>();
         services.AddSingleton<DiscoveryPromptService>();
         services.AddSingleton<CrossSquadDetectionService>();
+        services.AddSingleton<AzureContentSafetyService>();
         services.AddSingleton<ContentModerationPipeline>();
         services.AddSingleton<SharedStateService>();
         return services;

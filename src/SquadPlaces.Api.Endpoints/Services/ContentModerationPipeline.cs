@@ -26,34 +26,40 @@ public record ModerationResult(ContentVerdict Verdict, string? Reason, List<stri
 /// <summary>
 /// Orchestrates the two-tier content moderation flow:
 /// Tier 1 (local fast filters): prompt injection → PII detection → HTML sanitization.
+/// Tier 2 (Azure Content Safety): AI-based analysis for Hate, SelfHarm, Sexual, Violence.
 /// Returns a verdict of Allowed, Blocked, or NeedsReview with details.
 /// Does NOT duplicate service logic — composes existing services.
+/// Tier 2 gracefully degrades if Azure Content Safety is not configured.
 /// </summary>
 public class ContentModerationPipeline
 {
     private readonly PromptInjectionDetector _injectionDetector;
     private readonly PiiDetectionService _piiDetector;
     private readonly HtmlSanitizationService _htmlSanitizer;
+    private readonly AzureContentSafetyService _contentSafety;
     private readonly ILogger<ContentModerationPipeline> _logger;
 
     public ContentModerationPipeline(
         PromptInjectionDetector injectionDetector,
         PiiDetectionService piiDetector,
         HtmlSanitizationService htmlSanitizer,
+        AzureContentSafetyService contentSafety,
         ILogger<ContentModerationPipeline> logger)
     {
         _injectionDetector = injectionDetector;
         _piiDetector = piiDetector;
         _htmlSanitizer = htmlSanitizer;
+        _contentSafety = contentSafety;
         _logger = logger;
     }
 
     /// <summary>
-    /// Runs all Tier 1 moderation checks against the provided text fields.
-    /// Returns a consolidated verdict with reasons and detected issues.
+    /// Runs all moderation checks against the provided text fields.
+    /// Tier 1 (local) runs first for fast rejection.
+    /// Tier 2 (Azure Content Safety) runs for content that isn't hard-blocked by Tier 1.
     /// </summary>
     /// <param name="fields">Named text fields to scan (e.g. "Title", "Body").</param>
-    public ModerationResult Evaluate(params (string Name, string? Value)[] fields)
+    public async Task<ModerationResult> EvaluateAsync(params (string Name, string? Value)[] fields)
     {
         var issues = new List<string>();
         var combinedContent = string.Join(" ", fields
@@ -62,6 +68,8 @@ public class ContentModerationPipeline
 
         if (string.IsNullOrWhiteSpace(combinedContent))
             return ModerationResult.Clean;
+
+        // ── Tier 1: Local fast filters ──
 
         // Step 1: Prompt injection check
         var injectionResult = _injectionDetector.Scan(combinedContent);
@@ -126,11 +134,32 @@ public class ContentModerationPipeline
             _logger.LogInformation("Moderation pipeline: HTML sanitization would modify content");
         }
 
-        // Determine final verdict
+        // ── Tier 2: Azure Content Safety (AI-based analysis) ──
+        // Runs for anything Tier 1 didn't hard-block. Adds issues or escalates verdict.
+
+        var tier2Result = await _contentSafety.AnalyzeAsync(combinedContent);
+        if (tier2Result.WasAnalyzed)
+        {
+            issues.AddRange(tier2Result.DetectedIssues);
+
+            if (tier2Result.Verdict == ContentVerdict.Blocked)
+            {
+                _logger.LogWarning(
+                    "Moderation pipeline: BLOCKED by Tier 2 (Azure Content Safety, max severity {Severity}). Issues: {Issues}",
+                    tier2Result.MaxSeverity, string.Join(", ", tier2Result.DetectedIssues));
+                return new ModerationResult(
+                    ContentVerdict.Blocked,
+                    $"Content blocked by Azure Content Safety (severity {tier2Result.MaxSeverity}): {string.Join("; ", tier2Result.DetectedIssues)}",
+                    issues);
+            }
+        }
+
+        // ── Final verdict ──
+
         if (issues.Count == 0)
             return ModerationResult.Clean;
 
-        // If we got here with issues but didn't hard-block, it's NeedsReview
+        // Escalate: if Tier 2 flagged NeedsReview, that carries through
         var reason = $"Content flagged: {string.Join("; ", issues)}";
         return new ModerationResult(ContentVerdict.NeedsReview, reason, issues);
     }

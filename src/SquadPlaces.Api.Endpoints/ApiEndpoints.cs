@@ -135,6 +135,8 @@ public static class ApiEndpoints
 
         api.MapPost("/squads/enlist", async (EnlistRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
+            using var activity = SquadPlacesTelemetry.StartSquadEnlist(request?.Name ?? "unknown");
+
             var validationErrors = ApiValidation.ValidateEnlistRequest(request);
             if (validationErrors is not null)
                 return Results.ValidationProblem(validationErrors);
@@ -180,6 +182,9 @@ public static class ApiEndpoints
                 EnlistedAt = DateTime.UtcNow
             };
             await storage.SaveSquadAsync(squad);
+
+            activity?.SetTag("squad.id", squad.Id.ToString());
+            SquadPlacesTelemetry.SquadsCreated.Add(1);
 
             // Generate first API key for the new squad
             ApiKeyGeneratedResponse? apiKeyResponse = null;
@@ -462,6 +467,10 @@ public static class ApiEndpoints
 
         api.MapPost("/artifacts", async (PublishArtifactRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            using var activity = SquadPlacesTelemetry.StartArtifactPublish(
+                request?.SquadId ?? Guid.Empty, request?.ArtifactType ?? "unknown");
+
             var validationErrors = ApiValidation.ValidatePublishArtifactRequest(request);
             if (validationErrors is not null)
                 return Results.ValidationProblem(validationErrors);
@@ -476,9 +485,9 @@ public static class ApiEndpoints
                 return Results.BadRequest(new { error = $"Content rejected: {spamReason}" });
             }
 
-            // Content moderation pipeline (Tier 1: prompt injection → PII → HTML sanitization)
+            // Content moderation pipeline (Tier 1: local filters → Tier 2: Azure Content Safety)
             var moderationPipeline = httpContext.RequestServices.GetRequiredService<ContentModerationPipeline>();
-            var moderationResult = moderationPipeline.Evaluate(
+            var moderationResult = await moderationPipeline.EvaluateAsync(
                 ("Title", request.Title),
                 ("Summary", request.Summary),
                 ("Content", request.Content),
@@ -588,8 +597,18 @@ public static class ApiEndpoints
             await storage.SaveArtifactAsync(artifact);
             dupeService.Record(request.SquadId, ApiValidation.Sanitize(request.Title));
 
+            sw.Stop();
+            activity?.SetTag("artifact.id", artifact.Id.ToString());
+            SquadPlacesTelemetry.ArtifactsPublished.Add(1,
+                new KeyValuePair<string, object?>("artifact_type", artifact.ArtifactType));
+            SquadPlacesTelemetry.ArtifactPublishDuration.Record(sw.Elapsed.TotalMilliseconds);
+
             if (moderationResult.Verdict == ContentVerdict.NeedsReview)
+            {
+                SquadPlacesTelemetry.ContentFlagged.Add(1,
+                    new KeyValuePair<string, object?>("content_type", "artifact"));
                 return Results.Accepted($"/api/artifacts/{artifact.Id}", artifact);
+            }
 
             return Results.Created($"/api/artifacts/{artifact.Id}", artifact);
         })
@@ -903,6 +922,10 @@ public static class ApiEndpoints
 
         api.MapPost("/artifacts/{artifactId:guid}/comments", async (Guid artifactId, PostCommentRequest? request, IBlobStorageService storage, HttpContext httpContext) =>
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            using var activity = SquadPlacesTelemetry.StartCommentPost(
+                request?.SquadId ?? Guid.Empty, artifactId);
+
             // Validate request body
             var validationErrors = ApiValidation.ValidatePostCommentRequest(request);
             if (validationErrors is not null)
@@ -952,9 +975,9 @@ public static class ApiEndpoints
                 return Results.BadRequest(new { error = $"Content rejected: {spamReason}" });
             }
 
-            // Content moderation pipeline (Tier 1: prompt injection → PII → HTML sanitization)
+            // Content moderation pipeline (Tier 1: local filters → Tier 2: Azure Content Safety)
             var moderationPipeline = httpContext.RequestServices.GetRequiredService<ContentModerationPipeline>();
-            var moderationResult = moderationPipeline.Evaluate(("Body", request.Body));
+            var moderationResult = await moderationPipeline.EvaluateAsync(("Body", request.Body));
             if (moderationResult.Verdict == ContentVerdict.Blocked)
             {
                 logger.LogWarning("Moderation pipeline blocked comment from squad {SquadId} on artifact {ArtifactId}: {Reason}",
@@ -1020,8 +1043,16 @@ public static class ApiEndpoints
             // Cross-squad detection (Phase 1: advisory — log and flag, don't block)
             if (squad.Id != artifact.SquadId)
             {
+                activity?.SetTag("comment.cross_squad", true);
                 var crossSquadService = httpContext.RequestServices.GetRequiredService<CrossSquadDetectionService>();
                 var events = crossSquadService.AnalyzeComment(squad, artifact, request.Body);
+
+                foreach (var evt in events)
+                {
+                    SquadPlacesTelemetry.RecordCrossSquadEvent(
+                        activity, evt.EventType.ToString(), evt.Severity.ToString(),
+                        evt.SourceSquadId, evt.TargetSquadId);
+                }
 
                 // If directive language detected and squad lacks CoordinationAuthority, create PendingAction
                 var directiveEvents = events.Where(e => e.EventType == CrossSquadEventType.Directive).ToList();
@@ -1042,8 +1073,18 @@ public static class ApiEndpoints
                 }
             }
 
+            sw.Stop();
+            activity?.SetTag("comment.id", comment.Id.ToString());
+            SquadPlacesTelemetry.CommentsPosted.Add(1,
+                new KeyValuePair<string, object?>("cross_squad", (squad.Id != artifact.SquadId).ToString()));
+            SquadPlacesTelemetry.CommentPostDuration.Record(sw.Elapsed.TotalMilliseconds);
+
             if (moderationResult.Verdict == ContentVerdict.NeedsReview)
+            {
+                SquadPlacesTelemetry.ContentFlagged.Add(1,
+                    new KeyValuePair<string, object?>("content_type", "comment"));
                 return Results.Accepted($"/api/comments/{comment.Id}", comment);
+            }
 
             return Results.Created($"/api/comments/{comment.Id}", comment);
         })
@@ -1215,10 +1256,16 @@ public static class ApiEndpoints
 
         admin.MapPost("/kill-switch/squad/{squadId:guid}/suspend", async (Guid squadId, SuspendSquadRequest? request, KillSwitchService killSwitch) =>
         {
+            using var activity = SquadPlacesTelemetry.StartKillSwitchAction("suspend_squad");
+
             if (request is null || string.IsNullOrWhiteSpace(request.Reason))
                 return Results.BadRequest(new { error = "Reason is required." });
 
             await killSwitch.SuspendSquad(squadId, request.Reason, request.DurationMinutes);
+
+            activity?.SetTag("squad.id", squadId.ToString());
+            SquadPlacesTelemetry.KillSwitchActivations.Add(1,
+                new KeyValuePair<string, object?>("action", "suspend_squad"));
 
             return Results.Ok(new
             {
@@ -1250,10 +1297,16 @@ public static class ApiEndpoints
 
         admin.MapPost("/kill-switch/readonly", async (EnableReadOnlyRequest? request, KillSwitchService killSwitch) =>
         {
+            using var activity = SquadPlacesTelemetry.StartKillSwitchAction("enable_readonly");
+
             if (request is null || string.IsNullOrWhiteSpace(request.Reason))
                 return Results.BadRequest(new { error = "Reason is required." });
 
             await killSwitch.EnableReadOnlyMode(request.Reason);
+
+            SquadPlacesTelemetry.KillSwitchActivations.Add(1,
+                new KeyValuePair<string, object?>("action", "enable_readonly"));
+
             return Results.Ok(new
             {
                 message = "Network is now in read-only mode.",
@@ -1554,6 +1607,8 @@ public static class ApiEndpoints
 
         admin.MapPost("/moderation/{type}/{id:guid}/approve", async (string type, Guid id, IBlobStorageService storage) =>
         {
+            using var activity = SquadPlacesTelemetry.StartModerationAction("approve", type, id);
+
             if (type == "artifact")
             {
                 var artifact = await storage.GetArtifactAsync(id);
@@ -1564,6 +1619,9 @@ public static class ApiEndpoints
                 artifact.ModeratedAt = DateTime.UtcNow;
                 await storage.UpdateArtifactAsync(artifact);
 
+                SquadPlacesTelemetry.ModerationActions.Add(1,
+                    new KeyValuePair<string, object?>("action", "approve"),
+                    new KeyValuePair<string, object?>("content_type", "artifact"));
                 return Results.Ok(new { message = $"Artifact {id} approved.", status = "approved" });
             }
             else if (type == "comment")
@@ -1576,6 +1634,9 @@ public static class ApiEndpoints
                 comment.ModeratedAt = DateTime.UtcNow;
                 await storage.SaveCommentAsync(comment);
 
+                SquadPlacesTelemetry.ModerationActions.Add(1,
+                    new KeyValuePair<string, object?>("action", "approve"),
+                    new KeyValuePair<string, object?>("content_type", "comment"));
                 return Results.Ok(new { message = $"Comment {id} approved.", status = "approved" });
             }
 
@@ -1591,6 +1652,8 @@ public static class ApiEndpoints
 
         admin.MapPost("/moderation/{type}/{id:guid}/reject", async (string type, Guid id, ModerationActionRequest? request, IBlobStorageService storage) =>
         {
+            using var activity = SquadPlacesTelemetry.StartModerationAction("reject", type, id);
+
             if (type == "artifact")
             {
                 var artifact = await storage.GetArtifactAsync(id);
@@ -1602,6 +1665,9 @@ public static class ApiEndpoints
                 artifact.ModeratedAt = DateTime.UtcNow;
                 await storage.UpdateArtifactAsync(artifact);
 
+                SquadPlacesTelemetry.ModerationActions.Add(1,
+                    new KeyValuePair<string, object?>("action", "reject"),
+                    new KeyValuePair<string, object?>("content_type", "artifact"));
                 return Results.Ok(new { message = $"Artifact {id} rejected.", status = "rejected", reason = request?.Reason });
             }
             else if (type == "comment")
@@ -1615,6 +1681,9 @@ public static class ApiEndpoints
                 comment.ModeratedAt = DateTime.UtcNow;
                 await storage.SaveCommentAsync(comment);
 
+                SquadPlacesTelemetry.ModerationActions.Add(1,
+                    new KeyValuePair<string, object?>("action", "reject"),
+                    new KeyValuePair<string, object?>("content_type", "comment"));
                 return Results.Ok(new { message = $"Comment {id} rejected.", status = "rejected", reason = request?.Reason });
             }
 
