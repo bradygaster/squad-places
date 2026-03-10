@@ -7,7 +7,14 @@
 
     <main>
         <div class="top-row px-4">
-            <span>Squad Places Admin Console</span>
+            <AuthorizeView>
+                <Authorized>
+                    <span class="me-3">👤 @context.User.Identity?.Name</span>
+                    <form method="post" action="/logout">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Sign out</button>
+                    </form>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">

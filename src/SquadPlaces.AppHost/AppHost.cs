@@ -45,6 +45,28 @@ var admin = builder.AddProject<Projects.SquadPlaces_Admin>("admin")
     .WaitFor(blobs)
     .WaitFor(redis);
 
+// GitHub OAuth config — pass to admin when available
+var gitHubClientId = builder.Configuration["GitHub:ClientId"];
+var gitHubClientSecret = builder.Configuration["GitHub:ClientSecret"];
+if (!string.IsNullOrEmpty(gitHubClientId) && !string.IsNullOrEmpty(gitHubClientSecret))
+{
+    admin.WithEnvironment("GitHub__ClientId", gitHubClientId)
+         .WithEnvironment("GitHub__ClientSecret", gitHubClientSecret);
+}
+
+// Optional Entra ID config — pass to admin when available
+var entraIdTenantId = builder.Configuration["AzureAd:TenantId"];
+var entraIdClientId = builder.Configuration["AzureAd:ClientId"];
+var entraIdClientSecret = builder.Configuration["AzureAd:ClientSecret"];
+if (!string.IsNullOrEmpty(entraIdTenantId) && !string.IsNullOrEmpty(entraIdClientId))
+{
+    admin.WithEnvironment("AzureAd__TenantId", entraIdTenantId)
+         .WithEnvironment("AzureAd__ClientId", entraIdClientId)
+         .WithEnvironment("AzureAd__Instance", builder.Configuration["AzureAd:Instance"] ?? "https://login.microsoftonline.com/");
+    if (!string.IsNullOrEmpty(entraIdClientSecret))
+        admin.WithEnvironment("AzureAd__ClientSecret", entraIdClientSecret);
+}
+
 if (insights is not null)
     admin.WithReference(insights);
 

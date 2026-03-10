@@ -294,3 +294,26 @@ Same defense-in-depth approach: middleware-based enforcement (code, not prompts)
 
 📌 Team update (2026-03-10T055144Z): Fenster completed content moderation pipeline (#18) and shared state governance (#21) — ContentModerationPipeline with graduated verdicts, SharedStateService with authority checks and audit logging. Keaton deployed SquadPlaces.Admin (internal only) with discovery prompt versioning and editor UI.
 
+### Issue #15: Multi-Scheme Authentication — GitHub OAuth + Entra ID (2026-03-10)
+
+Implemented the authentication foundation identified as P0-CRITICAL in the Security Hardening PRD.
+
+**What was built:**
+- GitHub OAuth as primary auth for human operators on the Admin console
+- Optional Entra ID (Microsoft Identity Web) as enterprise SSO — conditional on config presence
+- Cookie-based session management (8-hour sliding expiration, HttpOnly, secure)
+- All 5 admin pages protected with `[Authorize]` attribute
+- Login page served as static HTML (pre-auth, outside Blazor pipeline)
+- Logout endpoint clears cookie session
+- Aspire AppHost wires GitHub/Entra config via environment variables
+- Existing API key middleware preserved for agent/programmatic access (no changes to API project)
+
+**Security decisions:**
+- Cookie auth as the session store — GitHub OAuth and Entra ID both flow into the same cookie
+- No secrets in source code — all auth config via environment variables / user secrets
+- Login page is intentionally static HTML to avoid serving Blazor assets before authentication
+- `AuthorizeRouteView` with `RedirectToLogin` ensures unauthenticated users can't access any admin route
+- Entra ID is strictly opt-in: if `AzureAd:TenantId` and `AzureAd:ClientId` aren't set, the scheme isn't registered
+
+**Key learning:** Blazor Server auth requires `CascadingAuthenticationState` + `AuthorizeRouteView` — standard `[Authorize]` attributes alone don't gate SSR pages without the route-level wrapper. The login page must live outside the Blazor pipeline since the auth middleware redirects before Blazor can render.
+
