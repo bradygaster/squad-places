@@ -1,3 +1,7 @@
+📌 **Team update (2026-03-09T14:35Z):** Logo fix complete — replaced broken external URL with local SVG asset across 5 templates. Decision: use local assets to eliminate external dependencies.
+
+---
+
 # Project Context
 
 - **Owner:** Brady
@@ -1070,3 +1074,504 @@ Showed complete flow: Fenster publishes → Verbal sees in feed (SSE) → reacts
 - `azd up --no-prompt` works when env vars (AZURE_SUBSCRIPTION_ID, AZURE_LOCATION) are pre-set via `azd env set`.
 - Redeploy: `azd deploy -e squad-places --no-prompt` (skips provisioning, just rebuilds/pushes containers).
 - Tear down: `azd down -e squad-places --no-prompt`
+
+---
+
+## Learnings
+
+### 2025-03-06: Storage Abstraction Analysis for Docker Volume Support
+
+**Requested by:** Jeff Fritz. Analyze storage implementation for local file system alternative.
+
+**Current Architecture:**
+
+1. **Interface: `IBlobStorageService`** (`src/SquadPlaces.Data/IBlobStorageService.cs`)
+   - `SaveSquadAsync` / `GetSquadAsync` / `ListSquadsAsync` — squad CRUD
+   - `SaveArtifactAsync` / `GetArtifactAsync` / `ListArtifactsAsync` / `GetFeedAsync` — artifact CRUD + feed pagination
+   - `SaveCommentAsync` / `GetCommentAsync` / `ListCommentsAsync` / `CountCommentsAsync` — comment CRUD + counts
+   - **Good news:** Clean interface abstraction exists — no Azure-specific types exposed in the contract
+
+2. **Implementation: `BlobStorageService`** (`src/SquadPlaces.Data/BlobStorageService.cs`)
+   - Takes `BlobServiceClient` via constructor injection
+   - Uses three containers: `squads`, `artifacts`, `comments`
+   - Each entity stored as `{id}.json` blob with JSON serialization
+   - **Metadata filtering:** Uses blob metadata for filtering (squadId, artifactId) without downloading full content
+   - **InitializeAsync():** Creates containers if not exist — called at app startup in Program.cs
+
+3. **Registration:** Both Web and API projects use:
+   - `builder.AddAzureBlobServiceClient("BlobStorage")` — Aspire pattern for Azure Blob
+   - `builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>()`
+
+**What a `FileSystemStorageService` would need:**
+
+1. **Same interface contract** — drop-in replacement via DI registration swap
+2. **Directory structure mapping:**
+   - `{basePath}/squads/{id}.json`
+   - `{basePath}/artifacts/{id}.json`
+   - `{basePath}/comments/{id}.json`
+3. **Metadata equivalent:** Either:
+   - Embed metadata in JSON (already there — squadId, artifactId, createdAt fields)
+   - Or use sidecar `{id}.meta.json` files
+4. **InitializeAsync():** `Directory.CreateDirectory()` for each folder
+5. **Filtering logic:** Load JSON and filter in-memory (same as current blob enumeration)
+6. **Thread safety:** File system requires locking for concurrent writes
+
+**Tight couplings to Azure (minimal):**
+- `BlobContainerClient` / `BlobClient` types — internal only
+- `GetBlobsAsync()` enumeration pattern — replaceable with `Directory.GetFiles()`
+- `SetMetadataAsync()` — not strictly needed since data is in JSON body
+
+**Recommendation:** FileSystemStorageService is a clean swap. The interface is already well-designed for abstraction. A single configuration setting (e.g., `Storage:Provider = FileSystem|AzureBlob`) can toggle DI registration.
+
+**Key paths:**
+- Interface: `src/SquadPlaces.Data/IBlobStorageService.cs`
+- Azure impl: `src/SquadPlaces.Data/BlobStorageService.cs`
+- Models: `src/SquadPlaces.Data/Models/{Squad,KnowledgeArtifact,Comment}.cs`
+- Registration: `src/SquadPlaces.Web/Program.cs:10`, `src/SquadPlaces.Api/Program.cs:15`
+
+## Docker Image Build & Export for Synology NAS (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz
+**Task:** Build Docker images and export as tar files for Synology NAS transfer.
+
+**What was done:**
+- Docker available on Windows machine: Docker v29.2.0, Linux containers
+- Built both images via `docker compose build api web` from repo root
+- docker-compose.yml build context is repo root; Dockerfiles at `src/SquadPlaces.Api/Dockerfile` and `src/SquadPlaces.Web/Dockerfile`
+- Both images use .NET 10 SDK (build)  aspnet:10.0 (runtime), multi-stage, port 8080
+- Tagged images as `squad-places-api:latest` and `squad-places-web:latest`
+- Exported via `docker save` to `deploy/` folder as tar files
+
+**Key paths:**
+- `deploy/squad-places-api.tar` (~231 MB)
+- `deploy/squad-places-web.tar` (~231 MB)
+- `docker-compose.yml`  compose config with api, web, optional aspire dashboard
+- `src/SquadPlaces.Api/Dockerfile`  API image definition
+- `src/SquadPlaces.Web/Dockerfile`  Web image definition
+
+**Synology load command:**
+`docker load -i squad-places-api.tar` and `docker load -i squad-places-web.tar`
+
+**Learnings:**
+- docker-compose names images as `{project}-{service}` (e.g., `squad-places-pr-api`), so explicit `docker tag` is needed for clean export names
+- Both images share the same base layers (~238 MB uncompressed each, ~231 MB tar), significant overlap means Synology will deduplicate layers on load
+- deploy/ folder should be in .gitignore  tar files are build artifacts, not source
+
+ Team update (2026-03-06T14:29:55Z): Docker tar export workflow + Synology deployment guide  decided by Fenster & McManus
+
+---
+
+##  Archived Summary (2026-02-21 to 2026-02-29)
+
+**Early phases consolidated**  Full details in git history. Key achievements:
+- Phase 1-2 complete: M3 resolution, CLI foundation, shell infrastructure, SDK/CLI split, CRLF normalization, test migration (1719+ tests passing)
+- PR #300 architecture review blocking items resolved (type safety, proposal doc, sanitization)
+- Ralph EventBus wiring, Coordinator initialization, agent spawn lifecycle wired (Phase 3 in progress as of 2026-02-28)
+- Aspire command: Verified as stable, maintained, documented feature (never deprecated)  Wave 1 shipped, Wave 2 E2E validated
+- SquadClient connection race condition fixed (connectPromise dedup pattern)
+- CLI UI Polish PRD finalized (2026-03-01): 20 issues created, team routing, alpha-first strategy adopted
+
+**Note:** Detailed work logs available in git commits and archived orchestration logs.
+
+
+## Fixed API Docs and Endpoints (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz
+
+**Problem:** API documentation (Scalar) and API endpoints were not working. User reported "the API docs and endpoints linked in the website don't work".
+
+**Root causes identified:**
+
+1. **Dead configuration wiring in _Layout.cshtml**  Navigation link was using Configuration["services:api:https:0"] which referenced a non-existent "api" service (AppHost registers as "web", not "api"). This resulted in an empty string and broken links.
+
+2. **Middleware ordering issue**  MapOpenApi() and MapScalarApiReference() were called BEFORE UseRouting(), causing endpoints to not be registered properly in the routing table.
+
+3. **Antiforgery blocking API POSTs**  UseAntiforgery() was applied globally after UseRouting(), requiring antiforgery tokens for ALL requests including REST API endpoints.
+
+4. **Development environment missing STORAGE_MODE**  launchSettings.json didn't set STORAGE_MODE=File, causing app to crash on startup when blob storage wasn't configured.
+
+**What was done:**
+
+1. Fixed _Layout.cshtml (line 44-46)  Removed dead config lookup, replaced with direct /scalar/v1 link (everything is same-origin now)
+2. Moved MapOpenApi() and MapScalarApiReference() AFTER UseRouting() in Program.cs to ensure proper endpoint registration
+3. Created API route group with .DisableAntiforgery()  Refactored ApiEndpoints.cs to use MapGroup("/api").DisableAntiforgery() pattern, preventing antiforgery validation on REST API endpoints
+4. Updated launchSettings.json  Added STORAGE_MODE=File to both http and https profiles for local development
+
+**Verified working:**
+- /scalar/v1  Interactive API documentation (Scalar UI)
+- /openapi/v1.json  OpenAPI specification
+- /api  Discovery endpoint with onboarding prompt
+- POST /api/squads/enlist  POST endpoint works without antiforgery token
+
+**Key learnings:**
+
+- **Single-container architecture**  SquadPlaces.Web contains BOTH Razor Pages UI AND REST API endpoints at /api/*. No separate API service exists.
+- **Route groups for middleware**  MapGroup("/api").DisableAntiforgery() is the correct pattern for selectively disabling antiforgery on a subset of endpoints
+- **Middleware ordering matters**  Endpoint mapping (MapOpenApi, MapScalarApiReference, etc.) MUST come after UseRouting() in ASP.NET Core pipeline
+- **Aspire service naming**  AppHost registers the web project as "web", not "api". Configuration keys use the service name: services:web:http:0
+
+**Key paths:**
+- src/SquadPlaces.Web/Program.cs  Middleware pipeline and OpenAPI configuration
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs  All 11 REST API endpoints with route group pattern
+- src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml  Navigation header with API docs link
+- src/SquadPlaces.Web/Properties/launchSettings.json  Development environment configuration
+
+## 2026-03-06: Docker Image Rebuild for Synology NAS Deployment
+
+**Requested by:** Jeffrey T. Fritz  
+**Task:** Rebuild container image with recent API/OpenAPI fixes and export as tar for Synology.
+
+**What was done:**
+
+1. Verified `.dockerignore` already had proper exclusions (bin/, obj/, .squad/, docs/, tests/, deploy/, data/)
+2. Built `squad-places:latest` for `linux/amd64` platform from repo root using multi-stage Dockerfile
+3. Exported image to `deploy/squad-places.tar` (~233 MB) via `docker save`
+4. Verified image: `sha256:9a93b51...`, architecture `amd64`, OS `linux`
+
+**Build details:**
+- Base: `mcr.microsoft.com/dotnet/sdk:10.0` (build stage) → `mcr.microsoft.com/dotnet/aspnet:10.0` (runtime)
+- Publishes SquadPlaces.Web + SquadPlaces.Data + SquadPlaces.ServiceDefaults
+- Runtime exposes port 8080, creates /data volume for file-based storage
+- Health check: `curl -f http://localhost:8080/health`
+
+**Synology deployment notes:**
+- Upload `deploy/squad-places.tar` via Container Manager → Image → Import
+- Container needs: port mapping (host:5100 → container:8080), volume mount for /data, env vars STORAGE_MODE=File + FILE_STORAGE_PATH=/data
+- docker-compose.yml in repo root has the full service definition if using CLI
+
+**Key learnings:**
+- Docker Desktop on Windows with `--platform linux/amd64` produces Synology-compatible images
+- .dockerignore excluding deploy/ prevents the tar from being included in build context (circular bloat)
+- Multi-stage build keeps runtime image lean (~232 MB vs full SDK)
+
+**Key paths:**
+- docker-compose.yml  Full service definition for docker-compose deployment
+- src/SquadPlaces.Web/Dockerfile  Multi-stage build definition
+- deploy/squad-places.tar  Exported image for Synology import
+- .dockerignore  Build context exclusions
+
+
+### 2026-02-24: Fixed middleware crash on large responses
+
+**Context:** IP blocking middleware in Program.cs was crashing on every request with a response body > 16KB (Kestrel's initial buffer size).
+
+**Root cause:** Middleware was setting response headers AFTER calling `await next();`, which threw `InvalidOperationException: Headers are read-only, response has already started` once streaming began.
+
+**Solution:** Used `context.Response.OnStarting()` callback to register header-setting logic before response starts. This is the idiomatic ASP.NET Core pattern for middleware that needs to set response headers.
+
+**Pattern learned:**
+```csharp
+context.Response.OnStarting(() =>
+{
+    if (!context.Response.Headers.ContainsKey("X-RateLimit-Limit"))
+    {
+        context.Response.Headers["X-RateLimit-Limit"] = "60";
+    }
+    return Task.CompletedTask;
+});
+
+await next();
+```
+
+**Why this works:** The `OnStarting` callback is guaranteed to execute before the first byte of the response body is written, regardless of response size or buffering behavior.
+
+**Verification:** All endpoints tested in Production mode  /scalar/v1, /openapi/v1.json, /, /api/feed  all return 200 OK with X-RateLimit-Limit header set correctly.
+
+**Key learning:** Never set response headers after calling `next()` in middleware. Always use `OnStarting` for headers that depend on the request or need to be added conditionally.
+
+---
+
+### Image Support Feature (2026-03-06)
+
+**Requested by:** Jeffrey T. Fritz. Add image support to Squad Places artifacts.
+
+**Task:** End-to-end image support  data model, storage (both File and Blob), API endpoints, feed UI.
+
+**Architecture decisions:**
+- **Dual upload path:** Agents can provide an external ImageUrl OR inline ImageData (base64) with ImageContentType. Inline upload gets stored and returns an internal /api/images/{id} URL. This gives agents maximum flexibility.
+- **Standalone upload endpoint:** POST /api/images allows uploading images independently from artifact creation, returning a URL to reference later.
+- **Serving endpoint:** GET /api/images/{id} serves stored images with correct Content-Type headers.
+- **Storage:** Both FileStorageService and BlobStorageService extended with SaveImageAsync/GetImageAsync. File storage uses a /data/images/ directory with .meta sidecar files for content type. Blob storage uses an images container with HTTP headers set on the blob.
+- **Backward compatible:** ImageUrl is optional on KnowledgeArtifact. Existing artifacts without images continue to work unchanged.
+- **Size limit:** 10MB max decoded image size. Supported formats: PNG, JPEG, GIF, WebP.
+- **Validation:** Full validation in ApiValidation including base64 decode check, content type whitelist, size limit.
+
+**Files modified:**
+- src/SquadPlaces.Data/Models/KnowledgeArtifact.cs  Added ImageUrl property
+- src/SquadPlaces.Data/IBlobStorageService.cs  Added SaveImageAsync, GetImageAsync
+- src/SquadPlaces.Data/FileStorageService.cs  Image storage with .meta sidecar pattern
+- src/SquadPlaces.Data/BlobStorageService.cs  Image storage in blob container
+- src/SquadPlaces.Web/Api/ApiModels.cs  PublishArtifactRequest extended, FeedArtifact extended, new UploadImageRequest/ImageUploadResponse
+- src/SquadPlaces.Web/Api/ApiValidation.cs  Image validation helpers
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs  Updated artifact POST, added POST /api/images, GET /api/images/{id} (13 endpoints total)
+- src/SquadPlaces.Web/Pages/Index.cshtml  Feed image display
+- src/SquadPlaces.Web/Pages/Artifacts/Detail.cshtml  Detail page image display
+- src/SquadPlaces.Web/Dockerfile  Added /data/images to mkdir
+
+## Learnings
+
+- Azure.Storage.Blobs GetBlobsAsync in .NET 10 preview requires all parameters explicitly (no optional prefix  use GetBlobsAsync(BlobTraits, BlobStates, string prefix, CancellationToken)).
+- File storage .meta sidecar pattern works well for storing content type alongside binary files without needing a database.
+- The PublishArtifactRequest record grows with optional fields but stays backward compatible since all new fields are nullable.
+- Existing GifUrl pattern (external URL on model) provided a clean template for the ImageUrl field.
+- Docker image /data/images directory must be created in Dockerfile alongside existing data dirs.
+
+###  Image Support Implementation (2026-03-06)
+**Status:** Complete
+
+**Task:** Add image support for knowledge artifacts across all layers: data model, storage backends, API endpoints, feed UI, and Docker infrastructure.
+
+**What was done:**
+- **Data Model:** Added ImageUrl nullable field to KnowledgeArtifact.cs
+- **Storage Backends:**
+  - FileStorageService.cs  local file storage with .meta sidecar for content type
+  - BlobStorageService.cs  Azure blob storage integration
+- **API Layer:**
+  - POST /api/images  upload endpoint returning URL
+  - GET /api/images/{id}  retrieve endpoint
+  - Request/response DTOs in ApiModels.cs
+  - Validation rules in ApiValidation.cs (new file: 10MB max, png/jpeg/gif/webp only)
+- **UI Updates:**
+  - Index.cshtml  feed display with image thumbnails
+  - Detail.cshtml  full artifact detail view with image rendering
+- **Infrastructure:** Rebuilt Docker image to deploy/squad-places.tar
+
+**Decisions merged:**
+- 3-way upload flexibility: external URL, base64 inline, or POST endpoint
+- Backward compatible (nullable field, no breaking changes)
+- Storage abstraction supports both file and blob backends
+- Decision documented: 2026-03-06: Image Support Architecture
+
+**Outcomes:**
+-  Build clean (0 errors, 0 warnings)
+-  13 files changed, +416/-16 lines
+-  Commit 4079df4
+-  Docker image rebuilt and packaged
+
+**Key learning:** Image support requires careful handling of content-type persistence  .meta sidecars on file storage, blob metadata on Azure. Both abstractions now enforce MIME type validation at the API boundary before any bytes touch storage.
+
+**New skill added:** .squad/skills/binary-file-storage/SKILL.md  patterns for binary artifact handling for future agents.
+
+### Markdown Image Sanitization Fix (2026-03-06)
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+**Task:** Fix HtmlSanitizer stripping `<img>` tags from rendered markdown, preventing `![alt](url)` image syntax from working in artifact Content.
+
+**What was done:**
+- **MarkdownHelper.cs:** Added `img` to AllowedTags; added `src`, `alt`, `title`, `width`, `height` to AllowedAttributes; added `http` and `https` to AllowedSchemes so both external images and local `/api/images/` paths survive sanitization.
+- **ApiEndpoints.cs:** Updated discovery endpoint documentation to mention that artifact Content supports markdown image syntax with http/https and /api/images/ URIs.
+
+**Key files:**
+- src/SquadPlaces.Web/Helpers/MarkdownHelper.cs
+- src/SquadPlaces.Web/Api/ApiEndpoints.cs
+
+## Learnings
+
+- HtmlSanitizer default AllowedSchemes do NOT include http/https  you must explicitly add them or relative/absolute URLs get stripped too.
+- MarkdownHelper lives in Helpers/ not Api/  the task description had the wrong path.
+- The sanitizer's AllowedAttributes are global (not per-tag), so adding `src` applies to any tag that uses it  acceptable tradeoff for this codebase's usage.
+
+### Squad-Scoped Image Storage & Relative-Only URLs (2025-07-15)
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+- IBlobStorageService.SaveImageAsync/GetImageAsync now take `squadId`  images organized under `{squadId}/` folders in both File and Blob backends
+- UploadImageRequest requires SquadId; ImageUploadResponse includes it
+- Image serve endpoint is now `GET /api/images/{squadId}/{imageId}` (was `/api/images/{id}`)
+- Only relative `/api/images/{squadId}/{imageId}` URLs accepted for ImageUrl  absolute http/https rejected
+- MarkdownHelper: removed http/https from AllowedSchemes, added FilterUrl handler to strip non-`/api/images/` src attributes
+- ApiValidation.IsValidRelativeImageUrl helper validates format with regex
+- Breaking change: old flat image paths won't resolve under new squad-scoped layout
+
+## Learnings
+
+- HtmlSanitizer FilterUrl event is the right hook for restricting img src values without removing the img tag itself
+- Squad-scoped storage paths make future per-squad quotas trivial to implement
+- When tightening security (removing AllowedSchemes), the FilterUrl approach is more surgical than scheme-based filtering  it allows relative paths through without needing to add a custom scheme
+
+📌 Team update (2026-03-06): Squad-scoped image storage + relative URL enforcement completed  all images organized under {squadId}/ folders, external URLs blocked, build clean.  Fenster
+
+
+### Upstream Image PR (2026-03-06)
+
+Created feature/image-support branch from upstream/main and ported image support to the separate-Api architecture. Key learnings:
+- Top-level statements in C# don't allow static fields or readonly on variables  use plain local variables
+- Non-static local functions can capture local variables; static ones can't
+- PublishArtifactRequest record needed ImageUrl, ImageData, ImageContentType fields added to the existing inline record
+- FeedArtifact record needed ImageUrl added between GifUrl and CommentCount
+- PR #2 opened against bradygaster/squad-places-pr upstream
+
+📌 Team update (2026-03-06): Opened PR #2 on upstream (bradygaster/squad-places-pr) with image support ported to separate-Api architecture. Build passes, 7 files changed.  Fenster
+
+## WikiLink Implementation (2026-03-08)
+
+**Task:** Implement WikiLink [[...]] syntax for cross-referencing artifacts and comments
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+Created a custom Markdig extension for WikiLink parsing and rendering:
+- WikiLinkExtension + WikiLinkInlineParser + WikiLinkRenderer + WikiLinkInline AST node
+- Supports: [[Title]], [[Title|display]], [[#comment:id]], [[Title#comment:id]]
+- Resolution via redirect endpoint: /wiki/{title}  /Artifacts/Detail/{id}
+- GetArtifactByTitleAsync added to IBlobStorageService (case-insensitive title lookup)
+- MarkdownHelper updated: .UseWikiLinks() in pipeline, added "a" tag + "href" attribute to sanitizer allowlist
+- FilterUrl handler now allows /wiki/ and #comment- URLs alongside /api/images/
+- Comment anchors added: id="comment-@comment.Id" on each comment div
+- WikiLink CSS added to _Layout.cshtml: dotted underline with hover effect
+- API discovery text updated with WikiLink syntax guide and examples
+
+## Learnings
+
+- StringBuilderCache in Markdig is a static class  use regular StringBuilder for string accumulation in parser
+- FilterUrl event fires for ALL URL attributes (src AND href)  need to check prefix for each allowed pattern
+- Redirect-based resolution keeps MarkdownHelper stateless  no storage coupling at render time
+- Custom Markdig extensions require both Setup(pipeline) and Setup(pipeline, renderer) implementations
+- Case-insensitive title matching uses StringComparison.OrdinalIgnoreCase with String.Equals()
+
+ Team update (2026-03-08): WikiLink support shipped  [[Title]] syntax now works for cross-references. Redirect pattern keeps markdown rendering pure. Build clean.  Fenster
+
+### Artifact Editing  Author-Only Authorization (2026-03-08)
+
+**Task:** Add PUT /api/artifacts/{id} endpoint for editing artifacts with squad-level authorization.
+
+**Implementation:**
+- EditArtifactRequest model with optional fields (SquadId required for auth)
+- ValidateEditArtifactRequest: all fields optional except SquadId, at least one editable field required
+- PUT endpoint: 404 if artifact not found, 403 if SquadId mismatch, partial update of provided fields only
+- UpdateArtifactAsync added to IBlobStorageService, FileStorageService, BlobStorageService (same pattern as SaveArtifactAsync  overwrite)
+- Image handling: inline base64 upload or relative URL reference, same as publish
+- Spam detection on updated text fields
+- Discovery text updated with editing section + quick reference table entry
+
+**Key decisions:**
+- Authorization via SquadId comparison in request body vs artifact.SquadId  simple, no auth tokens needed
+- UpdateArtifactAsync reuses same serialization pattern as SaveArtifactAsync (overwrite file/blob)
+- 403 returned as JSON with clear message, not a bare status code
+- No duplicate detection on edits (only publish has the 5-minute window dedup)
+
+**Learnings:**
+- The existing SaveArtifactAsync already uses overwrite:true, so UpdateArtifactAsync follows the same pattern
+- Discovery prompt text uses raw string literals with ___BEGIN___COMMAND_DONE_MARKER___$LASTEXITCODE interpolation for baseUrl
+- Quick reference table in discovery text needs to stay in sync with actual endpoints
+
+### What's New API Implementation (2026-03-08)
+
+**Task:** Implement /api/whatsnew endpoint, version header middleware, and update discovery text
+**Status:** Complete
+**Requested by:** Jeffrey T. Fritz
+
+**Implementation:**
+- Added CurrentVersion constant to ApiEndpoints class (value: "0.5.0") as single source of truth
+- Created GET /api/whatsnew endpoint with optional ?since= query parameter for date filtering
+- Endpoint returns hardcoded changelog entries with version, date, title, summary (details optional)
+- ChangelogEntry and WhatsNewResponse models added to ApiModels.cs
+- Version header middleware added to Program.cs: sets X-SquadPlace-Version on all /api/* responses
+- Middleware uses context.Response.OnStarting() callback pattern (critical - must not set headers after wait next())
+- Updated discovery endpoint to use CurrentVersion constant instead of hardcoded "0.1.0-preview"
+- Added "What's New" section to discovery prompt text with recent features and tip about /api/whatsnew
+- Updated quick reference table to include /api/whatsnew endpoint
+
+**Key decisions:**
+- Version constant defined in ApiEndpoints class for easy access from both endpoint and middleware
+- Hardcoded changelog entries (not database-driven) - appropriate for small app with manual feature releases
+- Date filtering uses DateTime.Parse(e.Date) > sinceDate - entries with date AFTER the provided date are returned
+- Returns 400 Bad Request with helpful error message for invalid date format
+- Placed whatsnew endpoint right after discovery endpoint, before Squad Endpoints section
+- Tagged as "Discovery" (same as discovery endpoint) with "read" rate limit (60 req/min)
+- Version header middleware placed BEFORE IP blocking middleware for proper execution order
+
+## Learnings
+
+- Middleware must use context.Response.OnStarting() callback to set headers - setting headers after wait next() can fail if response has already started
+- ASP.NET minimal API endpoints use MapGroup("/api").DisableAntiforgery() pattern for grouping
+- The $$""" interpolated raw string literal syntax allows {{baseUrl}} for double-brace interpolation in discovery text
+- Discovery prompt uses ## What's New section between "What is this?" and "How to get started" - good UX placement
+- Quick reference table shows Method, Path, Description in Markdown table format within discovery prompt
+- DateTime.TryParse works for ISO 8601 strings without needing DateTimeOffset.TryParse for this use case
+- OpenAPI metadata uses .WithSummary(), .WithDescription(), .WithTags(), .RequireRateLimiting() fluent pattern
+- Version header applies only to /api/* paths using context.Request.Path.StartsWithSegments("/api") check
+
+
+ Team update (2026-03-08T15:32:00Z): API versioning and changelog infrastructure merged to decisions.md
+- Implemented GET /api/whatsnew with ?since= filter, X-SquadPlace-Version header on all API responses
+- Version constant 0.5.0 in ApiEndpoints (single source of truth)
+- Discovery text augmented with What's New section
+- Middleware pattern: context.Response.OnStarting() for reliable header injection
+
+### 2026-03-09T13:17:43Z: Team update  API Consolidation Architecture Ready for Implementation
+- **From:** Keaton (Lead)
+- **Summary:** Comprehensive API consolidation architecture proposal complete. Shared library design with three-Dockerfile deployment strategy.
+- **Your role:** Execute the architecture implementation (next task)
+- **Key requirements:**
+  1. Extract API endpoints into shared SquadPlaces.Api.Endpoints class library
+  2. Reference library from both Web and Api projects
+  3. Implement three-Dockerfile strategy (Api, Web, Web.single)
+  4. Maintain upstream compatibility (bradygaster repo)
+  5. Timeline: After PRs #2-#5 merge
+- **Reference:** docs/proposals/api-consolidation.md (ready for review)
+- **Expected outcome:** Single shared endpoint codebase, two deployable topology modes
+### API Consolidation  Shared Endpoint Library (2025-07-17)
+
+**Task:** Extract API endpoints from SquadPlaces.Web/Api/ into a shared class library (SquadPlaces.Api.Endpoints) that both Web and standalone Api projects reference.
+
+**Implementation:**
+- SquadPlaces.Api.Endpoints: class library (Microsoft.NET.Sdk + FrameworkReference to Microsoft.AspNetCore.App, NOT Sdk.Web)
+- Moved ApiEndpoints.cs, ApiModels.cs, ApiValidation.cs, Services/ from Web/Api/ to shared library
+- Namespace: SquadPlaces.Api.Endpoints (distinct from both host projects)
+- ApiServiceRegistration.cs: extension method AddSquadPlacesApiServices() for DI registration of IpBlocklist, DuplicateDetection, CommentDuplicateDetection
+- GlobalUsings.cs needed in class library for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, Extensions.Logging (Web SDK provides these implicitly, plain SDK does not)
+- SquadPlaces.Api/Program.cs: standalone API host with Aspire blob storage, rate limiting, CORS, OpenAPI/Scalar, version header + IP blocking middleware (OnStarting pattern)
+- Three Dockerfiles: Api/Dockerfile (standalone), Web/Dockerfile (updated with Api.Endpoints COPY), Web/Dockerfile.single (combined single-container for Synology)
+
+**Key decisions:**
+- Non-web SDK class library with FrameworkReference  keeps the library from pulling in hosting concerns
+- GlobalUsings.cs bridges the implicit using gap between Web SDK and plain SDK
+- Host-specific concerns stay in each Program.cs: storage registration, rate limiting policies, CORS config, middleware ordering
+- Dockerfile.single sets STORAGE_MODE=File and FILE_STORAGE_PATH=/data by default for Jeff's use case
+
+**Learnings:**
+- When moving code from an Sdk.Web project to a plain class library with FrameworkReference, you must add global usings for Microsoft.AspNetCore.Builder, Http, Routing, Extensions.DependencyInjection, and Extensions.Logging  these come free with Sdk.Web but not with the plain SDK
+- Git correctly detects file renames when namespace changes are the only diff (shows as R with high similarity %)
+- ApiEndpoints.CurrentVersion is the single source of truth for version, used by both host projects' middleware
+
+### Squad Comments & Global Search (feature/squad-comments-search)
+
+**Task:** Add comments section to Squad detail page + global search in header/Search page.
+
+**Changes:**
+- Detail.cshtml.cs  Added Comments and ArtifactTitles properties; loads all comments by this squad across all artifacts
+- Detail.cshtml  Comments section after artifacts with markdown rendering via MarkdownHelper, linked artifact names, timestamps
+- _Layout.cshtml  Search form in header between Squads link and spacer
+- Search.cshtml + Search.cshtml.cs  Full search page filtering by title/summary/content/tags with Primer CSS card styling
+
+**Learnings:**
+- MarkdownHelper.ToHtml() is available at SquadPlaces.Web.Helpers.MarkdownHelper for rendering comment bodies
+- IBlobStorageService has both ListCommentsAsync(artifactId) and CountCommentsAsync(artifactId)  use the latter for badge counts
+- Index page pattern: feed-item cards with artifact-type badges, squad links, tag labels, comment counts  reuse for consistency
+- ListArtifactsAsync(Guid? squadId = null) supports both all-artifacts and squad-filtered queries
+- External logo URL (bradygaster.github.io/squad/assets/squad-logo.png) was 404 — replaced with local SVG at wwwroot/images/squad-logo.svg across 6 references in 5 files
+- Search box in _Layout.cshtml is structurally sound (own Header-item div, inline width style) — no CSS fix needed, it was only hard to see because the broken logo corrupted the header visually
+- Comments section on Squads/Detail page works correctly: iterates all artifacts, filters comments by SquadId, renders with markdown+GIF support. No code change needed.
+- Favicon type should match the actual file format (image/svg+xml for SVG, not image/png)
+
+## Learnings
+
+### SignalR JS Client Fix (2026-03-09)
+
+**Task:** Fix broken SignalR JavaScript client reference in _Layout.cshtml. The page referenced `/_content/Microsoft.AspNetCore.SignalR.Client/signalr.min.js` which is a .NET package path that doesn't contain JS files.
+
+**Implementation:**
+- Downloaded @microsoft/signalr JS client from unpkg CDN (47KB minified)
+- Saved to src/SquadPlaces.Web/wwwroot/js/signalr.min.js
+- Updated _Layout.cshtml line 78 to reference /js/signalr.min.js
+- Verified with dotnet build (succeeded)
+
+**Why this approach:**
+- LibMan tool not available (dotnet libman failed)
+- CDN fallback would work but local bundling is more reliable for containerized/offline deployment
+- Matches the project pattern of serving static assets from wwwroot
+- Server-side SignalR already properly configured (AddSignalR, MapHub in Program.cs)
+
+**Key decision:** Prefer local bundling over CDN for critical runtime dependencies when deployment environment may be offline or containerized.
+

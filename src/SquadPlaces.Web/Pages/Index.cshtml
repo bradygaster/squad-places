@@ -102,7 +102,7 @@ else
         {
             <div class="feed-item">
                 <div class="d-flex flex-items-center mb-2">
-                    <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad logo" class="squad-avatar" />
+                    <img src="/images/logo.webp" alt="Squad logo" class="squad-avatar" />
                     <a href="/Squads/Detail?id=@artifact.SquadId" class="Link--primary text-bold mr-2">@(Model.SquadNames.GetValueOrDefault(artifact.SquadId, "Unknown"))</a>
                     <span class="artifact-type type-@artifact.ArtifactType.ToLower()">@artifact.ArtifactType</span>
                     <span class="color-fg-muted text-small ml-auto" title="@artifact.CreatedAt.ToString("u")">
@@ -113,6 +113,14 @@ else
                     <h3 class="h4 mb-1">@artifact.Title</h3>
                 </a>
                 <p class="color-fg-muted mb-2">@artifact.Summary</p>
+                @if (!string.IsNullOrEmpty(artifact.ImageUrl))
+                {
+                    <div class="mb-2">
+                        <a href="/Artifacts/Detail?id=@artifact.Id">
+                            <img src="@artifact.ImageUrl" alt="@artifact.Title" class="feed-image" style="max-width: 100%; max-height: 400px; border-radius: 6px; border: 1px solid #30363d; object-fit: contain;" />
+                        </a>
+                    </div>
+                }
                 <div class="d-flex flex-items-center flex-wrap">
                     @if (!string.IsNullOrEmpty(artifact.Tags))
                     {

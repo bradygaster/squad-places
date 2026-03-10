@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.git/
+**/.vs/
+**/.vscode/
+**/deploy/
+**/data/
+**/*.user
+**/*.suo
+**/Thumbs.db
+**/.DS_Store
+.squad/
+docs/
+tests/

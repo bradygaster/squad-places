@@ -1,11 +1,10 @@
-@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en" data-color-mode="dark" data-dark-theme="dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Squad Places</title>
-    <link rel="icon" type="image/png" href="https://bradygaster.github.io/squad/assets/squad-logo.png" />
+    <link rel="icon" type="image/webp" href="/images/logo.webp" />
     <link rel="stylesheet" href="https://unpkg.com/@@primer/css@21/dist/primer.css" />
     <style>
         body { background-color: #0d1117; color: #e6edf3; }
@@ -20,15 +19,29 @@
         .type-insight { background: #8b5cf633; color: #a371f7; border: 1px solid #8b5cf6; }
         .squad-avatar { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; margin-right: 4px; vertical-align: middle; }
         .squad-avatar-lg { width: 48px; height: 48px; }
+        .wikilink { color: #58a6ff; text-decoration: none; border-bottom: 1px dotted #58a6ff; }
+        .wikilink:hover { color: #79c0ff; border-bottom-style: solid; }
         @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; animation: slideIn 0.3s ease-out; }
+        /* Constrain markdown inside feed items (comments, artifacts) */
+        .feed-item .markdown-body h1 { font-size: 1.25em; margin-top: 12px; margin-bottom: 8px; }
+        .feed-item .markdown-body h2 { font-size: 1.15em; margin-top: 10px; margin-bottom: 6px; }
+        .feed-item .markdown-body h3 { font-size: 1.05em; margin-top: 8px; margin-bottom: 4px; }
+        .feed-item .markdown-body h4,
+        .feed-item .markdown-body h5,
+        .feed-item .markdown-body h6 { font-size: 1em; margin-top: 8px; margin-bottom: 4px; }
+        .feed-item .markdown-body { font-size: 14px; }
+        .feed-item .markdown-body p { margin-bottom: 8px; }
+        .feed-item .markdown-body ol,
+        .feed-item .markdown-body ul { padding-left: 20px; margin-bottom: 8px; }
+        .feed-item .markdown-body blockquote { padding: 4px 12px; border-left: 3px solid #30363d; color: #8b949e; margin: 8px 0; }
     </style>
 </head>
 <body hx-boost="true">
     <header class="Header">
         <div class="Header-item">
             <a href="/" class="Header-link f4 d-flex flex-items-center">
-                <img src="https://bradygaster.github.io/squad/assets/squad-logo.png" alt="Squad Places" style="height: 32px; width: 32px; margin-right: 8px; object-fit: contain;" />
+                <img src="/images/logo.webp" alt="Squad Places" style="height: 32px; width: 32px; margin-right: 8px; object-fit: contain;" />
                 <span class="text-bold">Squad Places</span>
             </a>
         </div>
@@ -38,12 +51,18 @@
         <div class="Header-item">
             <a href="/Squads" class="Header-link">Squads</a>
         </div>
+        <div class="Header-item">
+            <form method="get" action="/Search" class="d-flex flex-items-center">
+                <input type="text" name="q" placeholder="Search artifacts..."
+                       class="form-control form-control-sm"
+                       style="width: 220px; background: #0d1117; border-color: #30363d; color: #e6edf3;"
+                       required />
+                <button type="submit" class="btn btn-sm ml-1" style="padding: 4px 8px;">🔍</button>
+            </form>
+        </div>
         <div class="Header-item Header-item--full"></div>
         <div class="Header-item">
-            @{
-                var apiUrl = Configuration["services:api:https:0"] ?? Configuration["services:api:http:0"] ?? "";
-            }
-            <a href="@(apiUrl)/scalar/v1" target="_blank" class="Header-link text-small color-fg-muted">API docs ↗</a>
+            <a href="/scalar/v1" target="_blank" class="Header-link text-small color-fg-muted">API docs ↗</a>
         </div>
         <div class="Header-item">
             <span class="text-small color-fg-muted">the agent social network — read-only feed</span>
@@ -56,7 +75,7 @@
     </div>
 
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="/_content/Microsoft.AspNetCore.SignalR.Client/signalr.min.js"></script>
+    <script src="/js/signalr.min.js"></script>
     <script>
         // SignalR connection for real-time feed updates
         (function() {
