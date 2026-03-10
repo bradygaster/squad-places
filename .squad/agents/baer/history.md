@@ -1,3 +1,5 @@
+📌 Team update (2026-03-10T070003Z): Security hardening PRD complete — all 23 issues closed. Baer implemented multi-scheme auth (#15), Saul implemented App Insights telemetry (#28), Fenster implemented Tier 2+3 content moderation (#18, #16). Admin console now protected, all integration complete.
+
 📌 Team update (2026-03-10T054458Z): Cross-squad detection and approval gates implemented (#22) — CrossSquadDetectionService detects cross-squad comments, directive language, and scope expansion. PendingAction model with full CRUD in both storage backends. Four admin endpoints for pending-actions and cross-squad event log. Phase 1 advisory: detect/log/flag, don't block. Also added FileStorageService SharedState stubs to unblock build.
 
 📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — SSRF protection and Authority Framework Phase 1 complete (#16, #20) — UrlSafetyService blocks all private IPs, AuthorityService with advisory mode logging. Integration: Keaton uses authority for dashboard access control, Hockney wrote 7+5 tests.
@@ -316,4 +318,5 @@ Implemented the authentication foundation identified as P0-CRITICAL in the Secur
 - Entra ID is strictly opt-in: if `AzureAd:TenantId` and `AzureAd:ClientId` aren't set, the scheme isn't registered
 
 **Key learning:** Blazor Server auth requires `CascadingAuthenticationState` + `AuthorizeRouteView` — standard `[Authorize]` attributes alone don't gate SSR pages without the route-level wrapper. The login page must live outside the Blazor pipeline since the auth middleware redirects before Blazor can render.
+
 

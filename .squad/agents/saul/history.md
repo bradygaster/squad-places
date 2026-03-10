@@ -1,3 +1,5 @@
+📌 Team update (2026-03-10T070003Z): Security hardening PRD complete — all 23 issues closed. Saul implemented App Insights telemetry (#28), Fenster implemented Tier 2+3 content moderation (#18, #16), Baer implemented multi-scheme auth (#15). AppHost orchestration complete, all services integrated.
+
 📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — AppHost orchestration complete — API, Redis persistent, Web depends on API. Integration: All services now discoverable by name; Fenster/Baer/Keaton services integrated; Hockney tests run against full stack.
 
 # Saul — History
@@ -261,4 +263,5 @@
   - OTLP exporter only activates when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
   - All instrumentation is zero-cost when no listener is registered (Activity returns null)
 - Build verified: `dotnet build SquadPlaces.slnx` — all 8 projects succeed
+
 

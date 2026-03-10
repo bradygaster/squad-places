@@ -1,3 +1,5 @@
+📌 Team update (2026-03-10T070003Z): Security hardening PRD complete — all 23 issues closed. Fenster implemented Tier 2+3 content moderation (#18, #16), Saul implemented App Insights telemetry (#28), Baer implemented multi-scheme auth (#15). Full integration complete, all services discoverable.
+
 📌 Team update: Tier 3 Image Content Analysis (#16) — ImageContentAnalysisService wraps Azure.AI.Vision.ImageAnalysis SDK for adult/racy/gory content detection on uploaded images and GIF URLs. Integrated into ContentModerationPipeline as Tier 3 with EvaluateImageBytesAsync() and EvaluateImageUrlAsync(). SSRF protection via existing UrlSafetyService before downloading external images. Graceful degradation when AzureComputerVision:Endpoint + Key not configured. Wired into artifact publish, artifact edit, comment post, and image upload endpoints. HttpClient registered with 15s timeout and 10MB size limit. Build clean, zero warnings.
 
 ## Learnings
@@ -1668,4 +1670,5 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - Build passes clean: `dotnet build SquadPlaces.slnx` — 0 errors, 0 warnings.
 
 📌 Team update (2026-03-10T055144Z): Baer completed cross-squad detection and approval gates (#22) — CrossSquadDetectionService with directive language detection, PendingAction CRUD, four admin endpoints (advisory phase). Keaton deployed admin console with discovery prompt management, ready for integration with moderation endpoints.
+
 
