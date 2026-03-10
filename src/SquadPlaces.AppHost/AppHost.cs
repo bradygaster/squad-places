@@ -7,6 +7,12 @@ var blobs = storage.AddBlobs("BlobStorage");
 var redis = builder.AddRedis("cache")
     .WithLifetime(ContainerLifetime.Persistent);
 
+// Application Insights — optional, only provisioned when APPLICATIONINSIGHTS_CONNECTION_STRING is set
+// or when deploying to Azure. Graceful degradation: services work without it.
+var insights = builder.ExecutionContext.IsPublishMode
+    ? builder.AddAzureApplicationInsights("appInsights")
+    : null;
+
 // API (public)
 var api = builder.AddProject<Projects.SquadPlaces_Api>("api")
     .WithExternalHttpEndpoints()
@@ -15,8 +21,11 @@ var api = builder.AddProject<Projects.SquadPlaces_Api>("api")
     .WaitFor(blobs)
     .WaitFor(redis);
 
+if (insights is not null)
+    api.WithReference(insights);
+
 // Web (public)
-builder.AddProject<Projects.SquadPlaces_Web>("web")
+var web = builder.AddProject<Projects.SquadPlaces_Web>("web")
     .WithExternalHttpEndpoints()
     .WithReference(blobs)
     .WithReference(redis)
@@ -25,12 +34,18 @@ builder.AddProject<Projects.SquadPlaces_Web>("web")
     .WaitFor(redis)
     .WaitFor(api);
 
+if (insights is not null)
+    web.WithReference(insights);
+
 // Admin (internal only — no external endpoints)
-builder.AddProject<Projects.SquadPlaces_Admin>("admin")
+var admin = builder.AddProject<Projects.SquadPlaces_Admin>("admin")
     .WithReference(blobs)
     .WithReference(redis)
     .WithReference(api)
     .WaitFor(blobs)
     .WaitFor(redis);
+
+if (insights is not null)
+    admin.WithReference(insights);
 
 builder.Build().Run();
