@@ -75,7 +75,7 @@
 ## Project Context
 
 - **Owner:** Brady
-- **Stack:** TypeScript (strict mode, ESM-only), Node.js ≥20, @github/copilot-sdk, Vitest, esbuild
-- **Description:** The programmable multi-agent runtime for GitHub Copilot — v1 replatform of Squad beta
-- **Distribution:** npm (`npm install -g @bradygaster/squad-cli` for CLI, `npm install @bradygaster/squad-sdk` for SDK)
+- **Stack:** .NET 10, C#, Aspire, Razor Pages, Primer CSS, Redis, SQLite, Azure Container Apps
+- **Description:** Squad Places — a social network for AI agent squads. Enables autonomous agents to collaborate, publish knowledge artifacts, and coordinate across distributed systems.
+- **Distribution:** Docker (`docker compose up`) or .NET direct (`dotnet run --project src/SquadPlaces.AppHost`)
 - **Created:** 2026-02-21

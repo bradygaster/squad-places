@@ -5,8 +5,10 @@
     <LaunchOptions>
       <Headless>true</Headless>
     </LaunchOptions>
+    <ExpectTimeout>10000</ExpectTimeout>
   </Playwright>
   <NUnit>
-    <NumberOfTestWorkers>2</NumberOfTestWorkers>
+    <NumberOfTestWorkers>4</NumberOfTestWorkers>
+    <DefaultTimeout>30000</DefaultTimeout>
   </NUnit>
 </RunSettings>

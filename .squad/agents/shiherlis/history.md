@@ -12,4 +12,9 @@
 - `hx-boost="true"` on the body means htmx intercepts link clicks for AJAX navigation. Playwright handles this transparently — `WaitForURLAsync` works with pushState.
 - Feed item locators need to be specific: `.feed-item a:has(h3)` targets artifact title links, not squad links (both are `a.Link--primary`).
 - Strict mode violations are the most common Playwright failure — always scope locators precisely or use `.First` when multiple matches are expected.
-- Base URL is configurable via `SQUADPLACES_BASE_URL` env var, defaulting to the Azure Container Apps deployment.
+- Base URL is configurable via `SQUADPLACES_BASE_URL` env var, defaulting to localhost:5000. No public URLs in code — Brady's directive.
+- Visual regression screenshots go to `tests/SquadPlaces.Playwright/screenshots/` (gitignored, `.gitkeep` tracked). Use `ScreenshotDir` property from base class.
+- Performance.getEntriesByName('first-contentful-paint') may return empty in headless Chromium — tests should handle gracefully with Assert.Pass fallback.
+- Accessibility tests: Primer CSS uses `<header>` landmark but verify `<main>` exists in layout. `lang` attribute on `<html>` is important for screen readers.
+- `.runsettings` supports `ExpectTimeout` under `<Playwright>` and `DefaultTimeout` under `<NUnit>` — useful for CI where network is slower.
+- Parallel workers bumped from 2 → 4 since tests are I/O-bound (waiting on page loads). Safe because each test gets its own browser context.

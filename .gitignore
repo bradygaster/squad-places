@@ -35,3 +35,9 @@ deploy/*.tar
 
 # Place evaluation data (never commit)
 place-data/
+
+# Playwright screenshots (keep .gitkeep only)
+tests/SquadPlaces.Playwright/screenshots/*
+!tests/SquadPlaces.Playwright/screenshots/.gitkeep
+
+site/

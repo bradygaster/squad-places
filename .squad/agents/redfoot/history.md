@@ -65,3 +65,46 @@
 **Next Steps:** Keaton assembles final PRD, Brady reviews, implementation planning begins.
 
 **Key Pattern:** Largest parallel fanout in Squad history. Loose coupling, clear domains, shared constraints.
+
+### 2025-01-15 : Squad Places Visual Identity — Hitchhiker's Guide Theme
+**Created:** `docs/images/logo.svg` and `docs/images/favicon.svg` for MkDocs Material docs site.
+**Design rationale:**
+- Hitchhiker's Guide to the Galaxy aesthetic: Guide device frame + hitchhiker's thumb (iconic)
+- "Squad" conveyed via constellation of stars (team/group)
+- "Places" conveyed via galaxy/space motif (destinations)
+- Easter egg: "42" subtly placed in corner
+- Color palette: Deep space navy (#0a1628), Hitchhiker green (#00e676), Guide gold (#ffd740), Nebula purple (#7c4dff)
+- Works on both light/dark backgrounds (green stroke on dark fill)
+- Clean SVG geometry: no raster, no dependencies, git-diffable
+- Favicon is simplified version: just the Guide device + thumb + stars
+**Learnings:**
+- MkDocs Material supports SVG favicons — prefer over .ico for scalability
+- Thumb icon is universally recognizable as hitchhiking — no text needed
+- "42" easter egg adds delight without compromising legibility at small sizes
+
+### 2025-01-16 : Squad Places Web App Visual Polish
+**Created:**
+- `src/SquadPlaces.Web/wwwroot/css/squad-places.css` — Complete visual design system (460 lines)
+- `docs/development/visual-design-spec.md` — Full specification for visual regression testing
+
+**Updated:**
+- `src/SquadPlaces.Web/Pages/Shared/_Layout.cshtml` — Added Google Fonts (Space Grotesk), linked stylesheet, added "Don't Panic" footer
+
+**Design System Features:**
+- CSS custom properties for all brand colors (deep space navy, hitchhiker green, guide gold, starfield white, nebula purple)
+- Space Grotesk font for headings — retro-futuristic geometric sans-serif
+- Enhanced header with gradient background + animated glow line
+- Feed item cards with hover lift, gradient backgrounds, rainbow top accent
+- Artifact type badges with distinct colors (decision/pattern/lesson/insight)
+- Subtle starfield pattern in body background
+- "Don't Panic" footer with "42" easter egg
+- Responsive mobile optimizations
+- Reduced motion support for accessibility
+- WCAG AA+ contrast ratios maintained
+
+**Learnings:**
+- Layering on Primer CSS is effective — use their components, override sparingly with CSS custom properties
+- Google Fonts preconnect improves perceived load time for web fonts
+- CSS-only starfield (radial gradients) adds atmosphere without image assets
+- Animated effects at 8s intervals feel ambient rather than distracting
+- Footer taglines add personality without cluttering the UI

@@ -5,24 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Squad Places</title>
     <link rel="icon" type="image/webp" href="/images/logo.webp" />
+    <!-- Google Fonts: Space Grotesk for headings -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Primer CSS (GitHub's design system) -->
     <link rel="stylesheet" href="https://unpkg.com/@@primer/css@21/dist/primer.css" />
+    <!-- Squad Places custom styles (layered on top of Primer) -->
+    <link rel="stylesheet" href="/css/squad-places.css" />
     <style>
-        body { background-color: #0d1117; color: #e6edf3; }
-        .Header { background-color: #161b22 !important; border-bottom: 1px solid #30363d; }
-        .feed-item { border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 8px; background: #161b22; transition: border-color 0.2s; }
-        .feed-item:hover { border-color: #58a6ff; }
-        .feed-item.new-artifact { animation: slideIn 0.3s ease-out; border-color: #3fb950; }
-        .artifact-type { font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
-        .type-decision { background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb; }
-        .type-pattern { background: #23863633; color: #3fb950; border: 1px solid #238636; }
-        .type-lesson { background: #9e6a0333; color: #d29922; border: 1px solid #9e6a03; }
-        .type-insight { background: #8b5cf633; color: #a371f7; border: 1px solid #8b5cf6; }
-        .squad-avatar { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; margin-right: 4px; vertical-align: middle; }
-        .squad-avatar-lg { width: 48px; height: 48px; }
-        .wikilink { color: #58a6ff; text-decoration: none; border-bottom: 1px dotted #58a6ff; }
-        .wikilink:hover { color: #79c0ff; border-bottom-style: solid; }
-        @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; animation: slideIn 0.3s ease-out; }
+        /* Essential overrides that must come after external sheets */
+        .toast-notification { position: fixed; top: 64px; right: 16px; z-index: 100; }
         /* Constrain markdown inside feed items (comments, artifacts) */
         .feed-item .markdown-body h1 { font-size: 1.25em; margin-top: 12px; margin-bottom: 8px; }
         .feed-item .markdown-body h2 { font-size: 1.15em; margin-top: 10px; margin-bottom: 6px; }
@@ -34,7 +27,6 @@
         .feed-item .markdown-body p { margin-bottom: 8px; }
         .feed-item .markdown-body ol,
         .feed-item .markdown-body ul { padding-left: 20px; margin-bottom: 8px; }
-        .feed-item .markdown-body blockquote { padding: 4px 12px; border-left: 3px solid #30363d; color: #8b949e; margin: 8px 0; }
     </style>
 </head>
 <body hx-boost="true">
@@ -73,6 +65,11 @@
         <div id="toast-container"></div>
         @RenderBody()
     </div>
+
+    <footer class="sp-footer container-lg">
+        <span class="sp-footer-tagline">Don't Panic</span>
+        <span class="sp-footer-42" title="The Answer to the Ultimate Question">42</span>
+    </footer>
 
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/js/signalr.min.js"></script>

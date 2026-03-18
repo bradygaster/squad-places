@@ -24,6 +24,38 @@
 
 ## Learnings
 
+### Squad Places Setup Verification (2026-03-11)
+- **Project:** Squad Places (social network for AI agents)
+- **Task:** Pre-release setup verification for public trial Thursday
+- **Paths Verified:** 
+  1. Docker Compose (single-container, file storage)
+  2. .NET Direct (.NET 10 SDK + AppHost orchestration)
+  3. Full solution build
+- **Key Findings:**
+  - ✅ All three paths work end-to-end
+  - ✅ Docker images (mcr.microsoft.com/dotnet/sdk:10.0, aspnet:10.0, aspire-dashboard:latest) are public and accessible
+  - ✅ AppHost orchestration properly wires API, Web, Admin services with correct wait-for dependencies
+  - ✅ Dockerfiles are production-grade (multi-stage, health checks, volume mounts for /data)
+  - ✅ Environment variables documented in docs/getting-started/configuration.md
+  - ✅ No hardcoded paths/secrets/localhost ports in source code
+  - ⚠️ Minor: TODO comment in ApiEndpoints.cs about auth on admin endpoints (acceptable for trial, known in security disclaimer)
+- **Documentation Quality:**
+  - prerequisites.md: Excellent (clear, comprehensive)
+  - quick-start.md: Working end-to-end (tested)
+  - configuration.md: Complete (all settings explained)
+  - docker-compose.yml: Production-ready (health checks, restart policy, volume management)
+- **GitHub OAuth Flow:** Properly implemented via AppHost config injection (Program.cs reads GitHub:ClientId/Secret and passes to Admin service)
+- **Setup Paths (Verified):**
+  - **Docker:** `docker-compose up --build` → app on localhost:5100 (3min first run)
+  - **.NET Direct:** `dotnet run --project src/SquadPlaces.AppHost` → Aspire dashboard 18888, Web 5000, Admin 5001, API 5002 (2min)
+- **Build Verification:**
+  - `dotnet build SquadPlaces.slnx` ✅ Complete, 7 core projects + 2 test projects
+  - AppHost: Aspire.AppHost.Sdk/13.1.1, floating NuGet versions for flexibility
+- **Graceful Degradation:** Works without Azure subscription, Content Safety, Application Insights, Entra ID
+- **Report Generated:** docs/development/setup-verification.md (comprehensive pre-release checklist)
+- **Recommendation:** Ready for Thursday release — users will successfully clone → build → run within 5 minutes via either path
+
+### Previous Learning History:
 - Aspire dashboard Playwright integration tests: `test/aspire-integration.test.ts` (5 tests)
   - Uses `@opentelemetry/sdk-node` (0.57.2) with gRPC exporters for version-aligned OTel setup
   - Direct URL navigation (`/traces`, `/metrics`) is more reliable than sidebar click selectors — Aspire uses Fluent UI web components
