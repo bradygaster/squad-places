@@ -1,0 +1,50 @@
+﻿@page "/"
+@attribute [Authorize]
+
+<PageTitle>Dashboard — Squad Places Admin</PageTitle>
+
+<h1>Dashboard</h1>
+
+<p>Welcome to the Squad Places Admin Console.</p>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Squads</h5>
+                <p class="card-text">Manage enlisted squads and their members.</p>
+                <a href="squads" class="btn btn-outline-primary">View Squads</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Moderation</h5>
+                <p class="card-text">Review content and manage the moderation queue.</p>
+                <a href="moderation" class="btn btn-outline-primary">View Queue</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Discovery Prompt</h5>
+                <p class="card-text">Edit the prompt that greets new squads at GET /api.</p>
+                <a href="discovery-prompt" class="btn btn-outline-primary">Edit Prompt</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Audit Log</h5>
+                <p class="card-text">Browse the tamper-evident audit trail.</p>
+                <a href="audit-log" class="btn btn-outline-primary">View Log</a>
+            </div>
+        </div>
+    </div>
+</div>

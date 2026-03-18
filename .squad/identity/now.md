@@ -1,58 +1,51 @@
 ---
-updated_at: 2026-03-03T00:00:00Z
-focus_area: Migration to Public Repo + SDK Samples
+updated_at: 2026-03-10T070003Z
+focus_area: Security Hardening Completion
 issues_open: []
-issues_closed_prd: 30
-tests_passing: 2944
-prd_location: .squad/identity/prd-next-waves.md
-current_phase: Migration v0.6.0 + SDK Samples
+issues_closed_prd: 23
+tests_passing: 0
+prd_location: docs/proposals/security-hardening-prd.md
+current_phase: Security Hardening Complete
 process: All work through PRs with squad member review before merge
 ---
 
-# What We're Focused On
+# Project: SquadPlaces Social Network
 
-**Status:** Migration planning complete. Target: public repo v0.6.0 (clean minor bump from v0.5.4). On `migration` branch. Two new SDK samples shipped (knock-knock, rock-paper-scissors). Banana gate still active for git operations.
+**Status:** Security Hardening PRD COMPLETE. All 23 security hardening issues closed. Branch `hardening-and-admin` merged to origin. Full integration complete.
 
-## Public Readiness Assessment (2026-02-24)
+## Security Hardening Wave 3 — COMPLETE ✅
 
-Full team fan-out: Keaton, Fenster, Hockney, McManus, Rabin, Baer, Edie all assessed their domains.
+**Date:** 2026-03-10  
+**Team:** Saul (Aspire & Observability), Fenster (Core Dev), Baer (Security), Keaton (Lead), Hockney (QA)
 
-**Consensus: 🟡 READY WITH CAVEATS** — unanimous.
+### Implementation Complete
+- **#28 (Saul):** App Insights telemetry via Aspire — conditional in publish mode
+- **#18 (Fenster):** Tier 2 content moderation — Azure Content Safety SDK integration
+- **#16 (Fenster):** Tier 3 image analysis — Azure Computer Vision for unsafe content detection
+- **#15 (Baer):** Multi-scheme authentication — GitHub OAuth + Entra ID + API key
 
-### Must-Fix Blockers (ALL RESOLVED ✅)
-1. ✅ **LICENSE file** — MIT LICENSE created at repo root
-2. ✅ **CI workflow broken** — Fixed `squad-ci.yml` to use `npm ci` → `npm run build` → `npm test` (vitest)
-3. ✅ **Debug console.logs** — 3 debug logs in coordinator/index.ts replaced with OTel spans
+### Infrastructure & Integration
+- **AppHost Orchestration:** All services discoverable by name (API, Web, Admin, Redis, Storage)
+- **Content Moderation:** Three-tier pipeline (Tier 1: regex, Tier 2: Azure Content Safety, Tier 3: Image Analysis) with graceful degradation
+- **Admin Console:** Protected with multi-scheme auth, internal-only via Aspire
+- **Observability:** OpenTelemetry metrics + traces, Azure App Insights in production, Aspire dashboard in dev
+- **Authority Framework:** SSRF protection, authority levels, audit logging with hash chain
 
-### Experimental Messaging (DONE ✅)
-- ⚠️ banners added to all CLI docs (installation.md, shell.md, vscode.md)
-- README Status section changed from "Production" to "Experimental alpha"
-- Broken CONTRIBUTING link fixed
+### Build Status
+All components clean, zero warnings.
 
-### Should-Fix (Post-Ship Polish)
-- Add `homepage` and `bugs` fields to package.json
-- Document alpha→v1.0 breaking change policy in README
-- Close #324 (dogfood testing)
+## Previously Closed
+- #27 (Audit log hash chain)
+- #7, #10, #11 (Workstream trackers)
+- #8, #9, #12, #13, #14, #17, #19, #20, #21, #22, #23, #24, #25, #26, #29 (Feature/security work)
 
-### Post-M1 Backlog
-- Add `noUncheckedIndexedAccess` to tsconfig
-- Tighten ~26 `any` types in SDK
-- Add architecture overview doc
-- One real Copilot SDK integration test
-- `npm audit fix` for dev-dependency ReDoS warnings
+---
 
-## Waves A–D: COMPLETE
+## Next Steps
 
-All 30 PRD-referenced issues are closed.
-
-### Open Issue: #324 — Dogfood CLI with real repos (P0)
-- Status: OPEN — remaining blocker for full confidence
-- Assignees: Keaton, Waingro
-
-### Next Steps
-1. **Ship public alpha** — All blockers resolved, experimental messaging in place
-2. **Complete #324 dogfood** — Test against real repos
-3. **Plan Wave E** — Based on dogfood + public feedback
+1. **Review merged decisions** → Assess overlaps with existing decisions (GitHub-First Auth, SSRF/Authority)
+2. **Validate integration** → QA runs against full stack
+3. **Plan next wave** → Based on community feedback + open issues
 
 ## Process
 
@@ -60,9 +53,6 @@ All work flows through PRs with squad member review before merge.
 
 ---
 
-## Archive: Earlier Phases
+## Archive: Previous Focus
 
-Epic #323 — CLI Quality & UX (Phases 1–3: Testing Wave → Improvement → Breathtaking)
-- Phase 1: 7 P0 blockers fixed (#365–#371)
-- Phase 2: 6 Wave D items shipped (#488–#493)
-- Phase 3: Wave A–C polish delivered (30 issues closed)
+This document replaces earlier migration/release planning. See `.squad/decisions.md` for full decision history and `.squad/log/` for session records.

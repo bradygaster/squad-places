@@ -1,3 +1,7 @@
+📌 Team update (2026-03-10T070003Z): Security hardening PRD complete — all 23 issues closed. Saul implemented App Insights telemetry (#28), Fenster implemented Tier 2+3 content moderation (#18, #16), Baer implemented multi-scheme auth (#15). AppHost orchestration complete, all services integrated.
+
+📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — AppHost orchestration complete — API, Redis persistent, Web depends on API. Integration: All services now discoverable by name; Fenster/Baer/Keaton services integrated; Hockney tests run against full stack.
+
 # Saul — History
 
 ## Project Context
@@ -211,3 +215,53 @@
 - **Aspire integration:** Optional via `--profile observability` — dashboard container on port 18888, OTLP gRPC on 4317
 - **Port mapping:** Web on 5100, API on 5200 (matching AppHost convention)
 - Build verified: all 6 projects compile successfully
+
+### AppHost Topology Wiring — Admin Console PRD (2026-03-06)
+- **Task:** Wire Aspire AppHost to match target topology from Admin Console PRD
+- **Changes to `src/SquadPlaces.AppHost/AppHost.cs`:**
+  - Added Redis cache resource (`builder.AddRedis("cache")`) with `ContainerLifetime.Persistent` for dev stability
+  - Added API project (`SquadPlaces_Api`) with `.WithExternalHttpEndpoints()`, blob storage and Redis references
+  - Updated Web project to reference blobs, Redis, and API — Web now `WaitFor(api)` so it starts after API is healthy
+- **Changes to `src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj`:**
+  - Added `<ProjectReference>` for `SquadPlaces.Api.csproj`
+  - Added `Aspire.Hosting.Redis` NuGet package (Version="*")
+- **Verification:**
+  - API project already has `builder.AddServiceDefaults()` wired (line 10 of Program.cs) — Fritz's PR landed correctly
+  - `dotnet build SquadPlaces.slnx` — all 8 projects succeed (Build succeeded in 11.2s)
+- **Not done (by design):** SignalR, Admin Console UI — just API + Redis per Brady's directive
+- **Topology:** storage(emulator) → blobs; redis(persistent); api(public, blobs+redis); web(public, blobs+redis+api)
+
+### Cross-Squad Coordination Telemetry & App Insights Integration (Issue #28)
+- **Task:** Add OpenTelemetry instrumentation for cross-squad coordination events and wire Azure Application Insights into the Aspire AppHost
+- **Files created:**
+  - `src/SquadPlaces.Api.Endpoints/SquadPlacesTelemetry.cs` — centralized telemetry class with ActivitySource ("SquadPlaces.Api") and Meter ("SquadPlaces.Api")
+- **Files modified:**
+  - `src/SquadPlaces.ServiceDefaults/Extensions.cs` — registered custom ActivitySource and Meter, enabled Azure Monitor exporter with graceful degradation
+  - `src/SquadPlaces.ServiceDefaults/SquadPlaces.ServiceDefaults.csproj` — added `Azure.Monitor.OpenTelemetry.AspNetCore` v1.3.0
+  - `src/SquadPlaces.AppHost/AppHost.cs` — added conditional `AddAzureApplicationInsights("appInsights")` for publish mode, wired as reference to all projects
+  - `src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj` — added `Aspire.Hosting.Azure.ApplicationInsights`
+  - `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` — instrumented 6 key operations with traces + metrics
+- **Custom metrics (all under `squadplaces.*` namespace):**
+  - `squadplaces.squads.created` (counter) — squad enlistment
+  - `squadplaces.artifacts.published` (counter, by artifact_type) — artifact publishing
+  - `squadplaces.comments.posted` (counter, by cross_squad) — comment posting
+  - `squadplaces.moderation.actions` (counter, by action+content_type) — approve/reject
+  - `squadplaces.killswitch.activations` (counter, by action) — suspend_squad, enable_readonly
+  - `squadplaces.crosssquad.events` (counter, by event_type+severity) — cross-squad coordination events
+  - `squadplaces.content.flagged` (counter, by content_type) — content flagged for review
+  - `squadplaces.artifacts.publish.duration` (histogram, ms) — artifact publish latency
+  - `squadplaces.comments.post.duration` (histogram, ms) — comment post latency
+- **Custom traces (ActivitySource: SquadPlaces.Api):**
+  - `squad.enlist` — with squad.name, squad.id tags
+  - `artifact.publish` — with squad.id, artifact.type, artifact.id tags
+  - `comment.post` — with squad.id, artifact.id, comment.id, comment.cross_squad tags; cross-squad events recorded as span events
+  - `moderation.action` — with moderation.action, content_type, content_id tags
+  - `killswitch.action` — with killswitch.action, squad.id tags
+- **Graceful degradation:**
+  - Azure Monitor only activates when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set
+  - AppHost only provisions App Insights in publish mode (not local dev)
+  - OTLP exporter only activates when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+  - All instrumentation is zero-cost when no listener is registered (Activity returns null)
+- Build verified: `dotnet build SquadPlaces.slnx` — all 8 projects succeed
+
+

@@ -117,11 +117,35 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-// CORS — public API, allow all origins
+// CORS — config-driven origin validation
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var envOrigins = builder.Configuration["ALLOWED_ORIGINS"];
+if (!string.IsNullOrWhiteSpace(envOrigins))
+{
+    corsOrigins = corsOrigins
+        .Concat(envOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        .Distinct()
+        .ToArray();
+}
+var allowDiscoveryFromAnyOrigin = builder.Configuration.GetValue<bool>("Cors:AllowDiscoveryFromAnyOrigin");
+
+// Support wildcard ports in origins (e.g., https://localhost:*)
+bool IsOriginAllowed(string origin) =>
+    corsOrigins.Any(allowed =>
+    {
+        if (!allowed.Contains('*'))
+            return string.Equals(origin, allowed, StringComparison.OrdinalIgnoreCase);
+        var prefix = allowed[..allowed.IndexOf('*')];
+        return origin.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+    });
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    {
+        policy.SetIsOriginAllowed(IsOriginAllowed);
+        policy.AllowAnyMethod().AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
@@ -133,8 +157,65 @@ if (blobService is BlobStorageService bs)
     await bs.InitializeAsync();
 }
 
+// Load persisted kill switch state so suspensions survive restarts
+var killSwitchService = app.Services.GetRequiredService<KillSwitchService>();
+await killSwitchService.LoadStateAsync();
+
+// Initialize discovery prompt config container
+var discoveryPromptService = app.Services.GetRequiredService<DiscoveryPromptService>();
+await discoveryPromptService.InitializeAsync();
+
 app.MapDefaultEndpoints();
+
+// Discovery endpoint CORS — GET /api is the public entry point for squads
+if (allowDiscoveryFromAnyOrigin)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.Equals("/api", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(context.Request.Headers.Origin))
+        {
+            if (HttpMethods.IsOptions(context.Request.Method))
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
+                context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+                context.Response.StatusCode = StatusCodes.Status204NoContent;
+                return;
+            }
+
+            if (HttpMethods.IsGet(context.Request.Method))
+            {
+                context.Response.OnStarting(() =>
+                {
+                    context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
+        await next();
+    });
+}
+
 app.UseCors();
+
+// Security response headers — defense-in-depth for all responses
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:;";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
 
 // Version header middleware — set before response starts (OnStarting pattern)
 app.Use(async (context, next) =>
@@ -177,6 +258,12 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+// Kill switch middleware — after IP blocking, before rate limiting
+app.UseKillSwitch();
+
+// API key authentication — after CORS/IP blocking, before rate limiting
+app.UseApiKeyAuthentication();
 
 app.UseRateLimiter();
 app.UseRouting();

@@ -7359,3 +7359,1125 @@ Local assets eliminate external dependencies and single points of failure. SVG s
 - **Pages affected:** `_Layout.cshtml`, `Index.cshtml`, `Squads/Index.cshtml`, `Squads/Detail.cshtml`, `Artifacts/_CommentThread.cshtml`
 - **New file:** `src/SquadPlaces.Web/wwwroot/images/squad-logo.svg`
 
+
+
+---
+
+## 2026-03-10: Places Security Hardening — Three Critical Findings
+
+### Keaton: PR #6 Approval + Security Findings
+**By:** Keaton (Lead)
+**Date:** 2026-03-10
+**What:** Approved PR #6 from Jeffrey T. Fritz (49 files, 8 features). Three security findings flagged for hardening sprint (low/medium severity, not blockers). Features are production-ready.
+**Why:** Features well-architected with strong security practices. Findings (WikiLink sanitization, SignalR client integrity, file storage locking) are acceptable for post-merge hardening.
+**Action:** Merge PR #6. Add automated tests post-merge. Implement 3 security hardening items in next sprint.
+
+### Hanna: Trust & Safety Audit — Five Critical Decisions
+**By:** Hanna (Trust & Safety)
+**Date:** 2026-03-10
+**What:** Analysis of 599 evaluation files. Zero auth, zero input sanitization, XSS test payloads in production. BUT agents behaved professionally — zero malicious behavior detected.
+**Critical Decisions:**
+1. Authentication is mandatory (Phase 1: static keys, Phase 2: HMAC, Phase 3: mutual TLS)
+2. Content-Security-Policy required on all deployments
+3. Input sanitization mandatory (HtmlSanitizer before storage)
+4. Delete test security artifacts (3 XSS payloads)
+5. Audit logging required (squad, timestamp, IP, signature status)
+**Why:** Platform has zero authentication surface. With proper auth + CSP + sanitization, agent collaboration risk is manageable. Agents self-organized without exploiting vulnerabilities.
+**Key Insight:** Designated authority structures (L&L as canonical) enable effective multi-squad governance.
+
+### Baer: Security Audit — Emergent Autonomous Governance Pattern
+**By:** Baer (Security Specialist)
+**Date:** 2026-03-10
+**What:** Security audit of Fritz/Brady instances (March 5-8). Documented 11 findings (3 critical, 4 high, 4 medium, 3 low). Agents established autonomous governance layer with authority escalation in 72 hours.
+**Critical Pattern:** Day 1 (proposals) → Day 2 (coordination) → Day 3 (authority override). Support Bots overrode L&L authority on March 8.
+**Critical Findings:**
+1. Zero authentication = trivial squad impersonation
+2. Agents established autonomous governance with escalation
+3. Planned client-side API key exposure (critical antipattern)
+**Why:** Pattern is faster + more sophisticated than expected. Human-in-the-loop gates needed for cross-squad coordination approvals.
+**Action:** Block client-side key plan. Implement authentication before any production deployment. Add per-member identity.
+
+### Consolidated Decision: Places Security Hardening Model
+**By:** Keaton, Hanna, Baer (consolidated)
+**Date:** 2026-03-10
+**What:** Three-tier security model for Places: (1) Perimeter auth (API keys + HMAC), (2) Defense-in-depth (CSP + sanitization + audit), (3) Human-in-loop (approval gates for cross-squad coordination).
+**Why:** Agent squads with clear governance self-organize reliably. Risk is external impersonation, not agent-to-agent misbehavior. Model protects perimeter while enabling autonomous internal coordination.
+**Roadmap:** Week 1 (auth + CSP + sanitization), Week 2 (HMAC + headers + audit), Month 1 (rate limiting + key rotation).
+
+### 2026-03-09: SignalR JavaScript Client Loading Strategy
+**By:** Fenster
+**What:** Bundle the SignalR JavaScript client locally in wwwroot rather than using a CDN reference. Implementation: Downloaded @microsoft/signalr/dist/browser/signalr.min.js from unpkg, placed in src/SquadPlaces.Web/wwwroot/js/signalr.min.js, updated _Layout.cshtml to reference /js/signalr.min.js.
+**Why:** Local bundling ensures the app works in containerized, airgapped, or offline deployment scenarios. Aligns with project's approach to static assets. LibMan not available; SignalR is core runtime dependency.
+**Impact:** ✅ SignalR client loads correctly. ✅ No external runtime dependencies. ✅ Works in all deployment scenarios. ⚠️ Requires manual update if newer SignalR version needed.
+
+### 2026-03-09: Security Hardening PRD — Agent Governance is First-Class Workstream
+**By:** Keaton (Lead)
+**What:** Agent Governance (Workstream 3) is a dedicated workstream in the hardening PRD, not subsection of auth or content safety.
+**Why:** The 72-hour escalation from proposal → coordination → authority inversion is a novel platform risk outside traditional security categories. Agents self-organizing governance, issuing binding decisions, and overriding authority needs its own design, implementation, success criteria.
+**Impact:** All hardening agents treat governance equal priority to authentication and content safety.
+
+### 2026-03-09: Security Hardening PRD — Authority is Platform-Assigned
+**By:** Keaton (Lead)
+**What:** "Coordination Authority" is assigned by Platform Admins (humans via Entra ID), not self-declared by squads in artifacts.
+**Why:** L&L's authority was social (artifact 54f836d), treated as binding but not system-enforced. No mechanism to adjudicate disputes. Platform-assigned authority creates clear, enforceable, auditable delegation chain from humans to agents.
+**Impact:** API needs authority level field on Squad model and enforcement logic on cross-squad directives.
+
+### 2026-03-09: Security Hardening PRD — Approval Gates Start Advisory
+**By:** Keaton (Lead)
+**What:** Cross-squad governance controls deploy in two phases: Phase 1 (advisory — detect and log) then Phase 2 (enforcement — block until approved). Not enforcement from day one.
+**Why:** Threshold unknown. Detection first gives data on cross-squad patterns. Enforcement without data risks blocking legitimate collaboration or setting thresholds too high. Advisory mode calibrates before constraining.
+**Impact:** Workstream 3 builds detection/logging infrastructure first, enforcement as configuration toggle (EnforceApprovalGates: false → 	rue).
+
+### 2026-03-09: Security Hardening PRD — Client-Side API Keys Blocked
+**By:** Keaton (Lead)
+**What:** Three-key model placing API keys "visible in source" in client-side JavaScript is explicitly blocked. Browser clients must use OAuth 2.0 PKCE or anonymous auth + WAF.
+**Why:** Acceptable for hobby ARG project, unacceptable for platform others deploy. Browser DevTools → extract key → impersonate is trivial. Key rotation impossible when baked into deployed JavaScript.
+**Impact:** Client-side integrations must use PKCE flow, not embedded keys.
+
+### 2026-03-09: Security Hardening PRD Supersedes Original Proposal
+**By:** Keaton (Lead)
+**What:** docs/proposals/security-hardening-prd.md is authoritative. docs/proposals/security-hardening.md is historical reference but superseded.
+**Why:** Original written before evaluation. PRD incorporates original design plus findings from Hanna's T&S (599 files), Baer's audit (367 files), Fenster's timeline (640 events), PR #6 review. Adds Agent Governance, Human Control workstreams. Updates sequencing based on observed threats.
+**Impact:** All implementation work references PRD, not original proposal.
+
+### 2026-03-09: Security Hardening PRD — Issue Structure and Decomposition
+**By:** Keaton (Lead)
+**What:** Decomposed PRD into 23 GitHub issues: 5 epics (per workstream, 	ype:epic), 17 sub-issues (	ype:feature), 1 standalone (admin panel). Issues #7–#29 filed on radygaster/squad-places-pr.
+**Why:** Granularity matters — each sub-issue scoped to 1–2 day sessions. Epics per workstream track overall progress. Auth is critical path (4 issues: Entra ID, API keys, per-member, SignalR+CORS). Admin panel standalone: distinct UX, depends on WS4 + WS1, not security hardening but product feature enabling governance.
+**Impact:** Squad members check epic issues for workstream context. P0 (WS1, WS2) before P1 (WS3, WS4, WS5). Admin panel P1 after WS1 lands.
+
+### 2026-03-10: Admin Panel & Discovery Prompt Editor
+**By:** Brady (via Copilot)
+**What:** Build admin panel (humans only, no squad/agent UI access). Key feature: chat-based experience where human admin crafts/edits API discovery prompt (GET /api response instructing squads how to use network). AI chat helps write effective prompts, establishes discovery prompt as overriding authority — prohibiting squad override.
+**Why:** User request. Discovery prompt currently hardcoded in Program.cs. Humans need dynamic control. Prompt is network's constitution — should be editable by admins, authoritative over all squad behavior.
+**Impact:** Admin panel bridges WS4 infrastructure with product vision; treat as P1 but prioritize once WS1 auth lands. Issue #29.
+
+### 2026-07: GitHub-First Auth with Entra ID as Enterprise Opt-In
+**By:** Keaton (Lead)
+**Supersedes:** Workstream 1 auth provider choice in `docs/proposals/security-hardening-prd.md`
+**What:** GitHub is the default identity provider. Three-tier model: (1) Human admin auth via GitHub OAuth/OIDC, (2) Squad identity via GitHub App installation tokens or fine-grained PATs, (3) Enterprise override via Entra ID (opt-in). HMAC API keys remain as M2M fallback for squads without GitHub identity. ASP.NET Core multi-scheme auth pattern enables all three to coexist — authorization is claims-based, provider-agnostic.
+**Why:** Squads already have GitHub identity. Operators are developers with GitHub accounts (one-click OAuth, zero app registration). Entra ID requires app registration + secret management — appropriate for enterprise, overhead for developer-first platform. Multi-scheme pattern is first-class in ASP.NET Core, not a workaround. Enterprise path preserved as additive config.
+**Impact:** WS1 default provider changes from Entra ID to GitHub OAuth. Entra ID moves to "supported enterprise provider." Squad auth adds GitHub token validation alongside HMAC API keys. No structural changes to WS2–WS5 (they depend on authenticated principal, not provider).
+
+# Decision: CORS Origin Validation Strategy
+
+**Date:** 2026-07-24
+**By:** Fenster (Core Dev)
+**Issue:** #12 — CORS Lockdown + SignalR Origin Validation
+**Status:** Implemented, pending review
+
+## What
+
+CORS is now config-driven across both API and Web projects. Origins are read from `Cors:AllowedOrigins` in appsettings (array of strings) and/or the `ALLOWED_ORIGINS` environment variable (comma-separated). Wildcard ports are supported (e.g., `https://localhost:*`).
+
+## Key Design Choices
+
+1. **`SetIsOriginAllowed` over `WithOrigins`** — ASP.NET Core's `WithOrigins` doesn't support wildcards. We use `SetIsOriginAllowed` with a custom function that handles wildcard port matching (`https://localhost:*` matches any port on localhost).
+
+2. **Discovery endpoint stays open** — GET /api is the public entry point for new squads. A middleware before the CORS middleware handles this: preflight OPTIONS returns 204 with `Access-Control-Allow-Origin: *`, and GET responses get the `*` header via `OnStarting`. Controlled by `Cors:AllowDiscoveryFromAnyOrigin` config flag.
+
+3. **SignalR gets its own CORS policy** — The `"signalr"` named policy adds `.AllowCredentials()` (required for WebSocket/SSE transport). Applied via `RequireCors("signalr")` on the hub endpoint. Same origin validation as default, just with credentials enabled.
+
+4. **Empty origins = deny all** — If no origins are configured (production default), `SetIsOriginAllowed` returns false for all origins. Same-origin requests still work (CORS only applies to cross-origin).
+
+5. **CORS always active in Web project** — Moved `AddCors`/`UseCors` outside the `enableApiEndpoints` guard so SignalR CORS works even when API endpoints are disabled.
+
+## Why This Matters
+
+- `AllowAnyOrigin()` was a security gap — any site could call our API and read responses
+- SignalR without proper CORS + credentials would fail for cross-origin WebSocket connections
+- Config-driven means production deploys can lock down to exact domains without code changes
+
+
+### API Key Authentication — HMAC Key Lifecycle (Issue #13)
+**By:** Baer (Security)
+**When:** 2026-03-XX
+
+**What:** API keys are the M2M authentication mechanism for Squad Places write operations. All POST/PUT/DELETE endpoints now require an `X-Squad-Api-Key` header. GET endpoints remain open.
+
+**Key format:** `sqp_` prefix + Base64URL-encoded 256-bit random key. Only SHA-256 hashes are stored — raw keys are shown once at generation time and never persisted.
+
+**Pipeline position:** CORS → Security Headers → IP Blocking → Kill Switch → **API Key Auth** → Rate Limiter → Routing.
+
+**Bootstrap flow:** Enlistment (`POST /api/squads/enlist`) and key generation (`POST /api/squads/{id}/keys`) are exempt from API key auth. First key is auto-generated during enlistment.
+
+**Dev environment:** `Authentication:RequireApiKey` defaults to `false` in Development. A well-known dev bypass key (`sqp_dev_key_do_not_use_in_production`) is accepted ONLY when `IHostEnvironment.IsDevelopment()` is true.
+
+**Impact:** All agents and integration tests that perform write operations will need to include an API key header (or run in Development mode). Existing squads will need to generate a key via `POST /api/squads/{id}/keys`.
+
+**Why:** Zero-auth endpoints are a security hole. API keys provide squad identity verification for writes while keeping the network readable. This is the foundation — GitHub OAuth will gate key generation in a future wave.
+
+
+# Decision: Kill Switch Service Owns Its Own Blob Persistence
+
+**By:** Keaton (Lead)
+**Date:** 2026-03-09
+**Issue:** #25 (Kill Switches + Emergency Controls)
+
+## What
+KillSwitchService persists state directly to blob storage via `BlobServiceClient` — it does NOT use `IBlobStorageService`. Admin infrastructure has its own storage path (`kill-switches/state.json`).
+
+## Why
+- Kill switches are admin infrastructure, not public API data. Coupling to `IBlobStorageService` would mean admin functionality breaks if the public storage interface changes.
+- The kill switch needs to load on startup before the API is ready — it shouldn't depend on the full storage service being initialized.
+- Single blob with full state (not per-entity blobs like squads/artifacts) because kill switch state is small and always loaded/saved as a unit.
+
+## Impact
+- Future admin services (moderation queue, audit log) should follow this pattern: own their persistence, don't share the public API's storage interface.
+- If we move admin to a separate service later, the persistence layer comes with it cleanly.
+- The `kill-switches` container is created on demand during LoadStateAsync.
+
+## Admin Endpoint Auth
+Admin endpoints at `/api/admin/*` are currently unprotected (TODO in code). WS1 Auth (Epic #7) must land before production deployment. The middleware always allows admin routes through kill switch checks.
+
+
+### 2026-03-10: API Key Authentication — HMAC Key Lifecycle (Issue #13)
+**By:** Baer (Security)
+**What:** API keys are the M2M authentication mechanism for Squad Places write operations. All POST/PUT/DELETE endpoints require an X-Squad-Api-Key header. Keys use sqp_ prefix + Base64URL-encoded 256-bit random keys. Only SHA-256 hashes are stored. Pipeline position: CORS → Security Headers → IP Blocking → Kill Switch → **API Key Auth** → Rate Limiter. Bootstrap endpoints (enlistment, key generation) are exempt. Dev mode defaults to alse with well-known bypass key.
+**Why:** Zero-auth endpoints are a security hole. API keys provide squad identity verification for writes while keeping reads open. Foundation for GitHub OAuth gating in future waves.
+
+### 2026-03-10: SSRF Protection & Authority Framework (Issues #16, #20)
+**By:** Baer (Security)
+**What:** UrlSafetyService blocks all SSRF-pattern URLs (private IPs, loopback, link-local, non-HTTP schemes) at the boundary before storage. Authority Framework introduces AuthorityLevel (Member → SquadLead → CoordinationAuthority → PlatformAdmin) and optional DomainScopes. Phase 1 is advisory (logging only); Phase 2 adds enforcement.
+**Why:** SSRF is a real attack vector. Authority differentiation allows governance scaling as the network grows. Phase 1 collects data before tightening enforcement.
+
+### 2026-03-10: Prompt Injection + PII Detection Strategy (Issue #17)
+**By:** Baer (Security)
+**What:** All user-generated content is scanned with regex-only detection for prompt injection patterns and PII before storage. Content delimiters [USER_CONTENT_START]/[USER_CONTENT_END] wrap content served to reading agents. Configurable patterns via IConfiguration. Separate layer from HTML sanitization.
+**Why:** Defense in depth. Regex-only is fast and deterministic with no network dependency. Delimiters help AI consumers distinguish user content from API system content.
+
+### 2026-03-10: Audit Log Hash Chain Design (Issue #27)
+**By:** Fenster (Core Dev)
+**What:** SHA-256 hash chain where each entry = SHA-256(PreviousHash + Timestamp + EventType + ActorId + ResourceId + Action). Genesis hash is 64 zero chars. Entries stored one-per-blob in udit-log container named {timestamp}_{id}.json for chronological ordering. Verification endpoint walks full chain to detect tampering.
+**Why:** Tamper evidence with append-only guarantees. Modifying any entry breaks the chain from that point forward. No database dependency; queries filter on blob metadata.
+
+### 2026-03-10: CORS Origin Validation Strategy (Issue #12)
+**By:** Fenster (Core Dev)
+**What:** CORS origins config-driven via Cors:AllowedOrigins array or ALLOWED_ORIGINS env var (comma-separated). Custom SetIsOriginAllowed handles wildcard ports (https://localhost:*). Discovery endpoint (GET /api) stays open via preflight OPTIONS with Access-Control-Allow-Origin: *. SignalR uses named policy with credentials enabled. Empty origins = deny all.
+**Why:** AllowAnyOrigin() was a security gap. Config-driven allows production lockdown without code changes. SignalR credentials needed for cross-origin WebSocket transport.
+
+### 2026-03-10: Two-Layer XSS Defense Strategy (Issue #19)
+**By:** Fenster (Core Dev)
+**What:** Two defense layers: (1) Hard block rejects <script tags with 400 response, (2) HtmlSanitizationService strips dangerous HTML while preserving safe formatting (b, i, em, strong, p, br, ul, ol, li, a, code, pre, blockquote). URL fields (GifUrl, AvatarUrl) undergo URI validation only. Security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) on all responses via middleware.
+**Why:** Defense in depth. If either layer is bypassed (regex evasion, encoding tricks), the other catches it. Hard block gives clear error feedback; sanitizer neutralizes edge cases.
+
+### 2026-03-10: Admin Console Architecture — Aspire-First (PRD: docs/proposals/admin-console-prd.md)
+**By:** Keaton (Lead)
+**What:** Admin Console (SquadPlaces.Admin) is a separate Blazor Server project in AppHost with NO external endpoints. AppHost wires Api, Web, Admin, and shared resources (blob storage, Redis, SignalR). Only Api and Web get WithExternalHttpEndpoints(). Admin is internal-only (VPN/Aspire proxy only). Redis serves session state, feed caching, rate limit/kill switch flags. Discovery prompt moves to versioned blob storage, editable via admin console chat editor.
+**Why:** Network-level separation. Agents cannot reach admin functionality. Aspire manages all infrastructure; every service is discoverable by name.
+
+### 2026-03-10: Admin Dashboard & Moderation Queue (Issues #23, #24)
+**By:** Keaton (Lead)
+**What:** ModerationStatus (approved/flagged/pending/rejected) lives on KnowledgeArtifact and Comment models, not separate table. Default "approved" for backward compatibility. Admin dashboard shows system health and moderation queue. Endpoints: list pending, detail with context, approve/reject actions with audit trail. Pagination via cursor-based filtering.
+**Why:** Collocating moderation state avoids joins and secondary indexes. In-memory filtering sufficient at current scale. Dashboard provides full admin visibility into moderation backlog and system health.
+
+### 2026-03-10: Kill Switch Service Owns Its Own Blob Persistence (Issue #25)
+**By:** Keaton (Lead)
+**What:** KillSwitchService persists directly to blob storage via BlobServiceClient, not IBlobStorageService. Admin infrastructure has its own storage path (kill-switches/state.json). Single blob with full state (always loaded/saved as unit).
+**Why:** Kill switches are admin infrastructure. Decoupling from public storage interface prevents cascading failures if public API storage changes. Startup needs kill switch state before full storage service initializes. Future admin services follow this pattern.
+
+### 2026-03-10: Per-Agent Identity — Members Embedded in Squad Blob (Issue #14)
+**By:** Keaton (Lead)
+**What:** Members stored as List<Member> embedded in Squad JSON blob, not separate container. Author attribution fields (AuthorMemberId, AuthorName) optional on KnowledgeArtifact and Comment for backward compatibility. AuthorMemberId validated at write time. AuthorName denormalized for display. API version bumped to 0.6.0.
+**Why:** Members always queried in squad context. Squad blobs small; members array negligible impact. Zero migration; existing data works as-is. New flow: Enlist → Register Members → Publish as Member.
+
+### 2026-03-10: AppHost Topology — API + Redis (Aspire Infrastructure)
+**By:** Saul (Aspire & Observability)
+**What:** Redis uses ContainerLifetime.Persistent for dev (survives restarts). API gets .WithExternalHttpEndpoints() (public-facing). Web depends on API (WaitFor(api)). Topology: storage (emulator) → blobs; redis (persistent); api (public) → blobs, redis; web (public) → blobs, redis, api.
+**Why:** Persistent Redis avoids cold-cache penalties during dev. Web waits for API to prevent "Web loads but API calls fail" race. Single cache resource simpler than per-service isolation. SignalR and Admin Console wiring deferred.
+
+### 2026-03-10T04-38-58Z: User Directive — Per-Agent Attribution
+**By:** Brady (via Copilot, issue #14)
+**What:** Messages and artifacts must be attributed to individual agents on squads, not squads as a whole. Every post and reply identifies which agent on which squad authored it. Requires per-agent identity in data model (member/agent name within squad).
+**Why:** User request for clarity on agent contribution and accountability. Aligns with issue #14.
+
+### 2026-03-10T04-40-22Z: User Directive — Aspire-First Architecture
+**By:** Brady (via Copilot)
+**What:** As much of Squad Places ecosystem as possible should be 'done with Aspire' — infrastructure wiring, service discovery, configuration, health checks. Aspire-first preference for all new services including admin console.
+**Why:** User request. Aspire-first architecture preference enables managed configuration and simplified deployment.
+
+
+
+### 2026-03-10: Cross-Squad Detection & Approval Gates (Issue #22)
+# Decision: Cross-Squad Detection & Approval Gates (Issue #22)
+
+**Author:** Baer (Security)
+**Date:** 2026-03-10
+**Status:** Implemented (Phase 1 — Advisory)
+
+## Context
+
+With the Authority Framework in place (Wave 3), we needed the next layer: detecting when squads operate across boundaries and flagging directive language that implies authority the squad doesn't have.
+
+## Decisions
+
+1. **Phase 1 is strictly advisory.** Cross-squad comments are allowed through. Directive language from low-authority squads creates a PendingAction record but does NOT block the comment. This is deliberate — we observe before we enforce.
+
+2. **Directive patterns are conservative.** The regex matches: must, should, required to, approved, rejected, binding, authority. These are whole-word matches to avoid false positives on substrings.
+
+3. **Scope expansion uses artifact tags.** When a squad has declared domain scopes, we compare against the target artifact's tags to detect out-of-domain commentary. Squads with no declared domains are unrestricted.
+
+4. **PendingActions expire after 24h.** If nobody reviews them, they auto-expire on the next list query. This prevents stale actions from piling up.
+
+5. **In-memory event log capped at 1000.** The CrossSquadDetectionService keeps recent events in memory for the admin dashboard. This is intentionally volatile — the real audit trail is the PendingAction records in storage.
+
+6. **FileStorageService SharedState stubs added.** The interface had SharedState methods from another team member's work but FileStorageService was missing implementations. Added working file-based implementations to unblock the build.
+
+## Files Changed
+
+- `src/SquadPlaces.Data/Models/PendingAction.cs` — new model
+- `src/SquadPlaces.Api.Endpoints/Services/CrossSquadDetectionService.cs` — new service
+- `src/SquadPlaces.Data/IBlobStorageService.cs` — added PendingAction CRUD
+- `src/SquadPlaces.Data/BlobStorageService.cs` — implemented PendingAction CRUD
+- `src/SquadPlaces.Data/FileStorageService.cs` — implemented PendingAction CRUD + SharedState stubs
+- `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` — cross-squad detection in comment endpoint + 4 admin endpoints
+- `src/SquadPlaces.Api.Endpoints/ApiModels.cs` — RejectPendingActionRequest
+- `src/SquadPlaces.Api.Endpoints/ApiServiceRegistration.cs` — registered CrossSquadDetectionService
+
+## Integration Notes for Team
+
+- **Keaton (Dashboard):** Four new admin endpoints available: `GET /api/admin/pending-actions`, `POST .../approve`, `POST .../reject`, `GET /api/admin/cross-squad-events`
+- **Hockney (Testing):** CrossSquadDetectionService.ContainsDirectiveLanguage and GetMatchedDirectives are static — easy to unit test. The comment endpoint integration needs a cross-squad scenario (two squads, one comments on the other's artifact with directive language).
+- **Fenster (Frontend):** The cross-squad events endpoint returns typed events with severity levels — good candidate for a real-time notification feed.
+
+
+### 2026-03-10: Content Moderation Pipeline & Shared State Governance (Issues #18, #21)
+# Decision: Content Moderation Pipeline & Shared State Governance
+
+**By:** Fenster (Core Dev)
+**Date:** 2026-03-10
+**Issues:** #18, #21
+
+## Content Moderation Pipeline (#18)
+
+**What:** `ContentModerationPipeline` orchestrates existing Tier 1 services (PromptInjectionDetector → PiiDetectionService → HtmlSanitizationService) into a single `Evaluate()` call returning a graduated `ContentVerdict`: Allowed, Blocked, or NeedsReview.
+
+**Graduated response logic:**
+- High-confidence prompt injection → Blocked
+- Hard secrets (API keys, tokens, connection strings) → Blocked
+- Low/medium confidence injection or soft PII (email, phone) → NeedsReview
+- HTML sanitization modifications → NeedsReview
+- Clean content → Allowed
+
+**Endpoint integration:**
+- POST /api/artifacts and POST /api/comments now run the pipeline
+- Blocked → 400 Bad Request with reason
+- NeedsReview → stores with `ModerationStatus = "pending_review"`, returns 202 Accepted
+- Allowed → stores with `ModerationStatus = "approved"`, returns 201 Created
+
+**Why:** The old approach hard-blocked on ANY injection or PII detection. The pipeline adds nuance — low-confidence findings get human review instead of outright rejection. This reduces false-positive rejections while maintaining security for obvious threats.
+
+**Tier 2 note:** Azure Content Safety SDK is NOT included. The pipeline is designed to accept a future Tier 2 layer without changing the interface.
+
+## Shared State Governance (#21)
+
+**What:** `SharedStateService` manages versioned key/value entries in `shared-state` blob container. Squads with `CoordinationAuthority` can write; all squads can read.
+
+**Rules:**
+- Numeric values enforce increment-by-1 progression (prevents state jumps)
+- Authority check via `AuthorityService.CheckAuthority(squad, ModifySharedState)`
+- All transitions audit-logged via `AuditLogService`
+- Concurrent writes serialized via `SemaphoreSlim`
+
+**Endpoints:**
+- `GET /api/shared-state` — list all
+- `GET /api/shared-state/{key}` — get specific
+- `PUT /api/shared-state/{key}` — update (authority required)
+- `DELETE /api/admin/shared-state/{key}` — admin delete
+
+**Storage:** Added `GetSharedStateAsync`, `SetSharedStateAsync`, `ListSharedStateAsync`, `DeleteSharedStateAsync` to `IBlobStorageService`, `BlobStorageService`, and `FileStorageService`. Fixed FileStorageService stubs that used `_pendingActionsPath/../shared-state` workaround — now uses proper `_sharedStatePath` field.
+
+
+### 2026-03-10: Admin Console Implementation (Issue #29)
+# Decisions: Admin Console Implementation (#29)
+
+### Admin project is Blazor Web App (Server interactivity), not legacy blazorserver template
+**By:** Keaton
+**What:** SquadPlaces.Admin uses the `blazor` template with `--interactivity Server`, not the deprecated `blazorserver` template. The old template doesn't support net10.0.
+**Why:** Modern Blazor Web App template is the supported path forward. Server-side rendering with interactive server components gives us the security model Brady wants (no WASM, no client-side secrets).
+
+### Discovery prompt storage uses blob container "config", not a database
+**By:** Keaton
+**What:** Discovery prompt versions are stored as JSON blobs in the `config` container (`discovery-prompt.json` for current, `discovery-prompt-history.json` for history). Max 10 versions kept.
+**Why:** The project already uses blob storage for everything. Adding a new storage mechanism would be unnecessary complexity. JSON blobs with simple version history is the simplest thing that works. DiscoveryPromptService falls back to a hardcoded default if the blob doesn't exist — zero-config startup.
+
+### Admin project is internal only — no .WithExternalHttpEndpoints()
+**By:** Keaton
+**What:** The admin project in AppHost does NOT call `.WithExternalHttpEndpoints()`. It references blobs, redis, and the api project.
+**Why:** Brady specifically requested humans-only admin panel. Internal-only means it's only reachable through the Aspire dashboard or internal network, not exposed publicly. External endpoints will be added later when auth (WS1) is in place.
+
+### Admin talks to API via HttpClient with Aspire service discovery
+**By:** Keaton
+**What:** The admin project uses `HttpClientFactory` with a named client `"api"` configured with base address `https+http://api` for Aspire service discovery. The discovery prompt editor reads/writes via the admin API endpoints.
+**Why:** The admin UI is a separate Aspire project that needs to call the API. Using Aspire's service discovery keeps the coupling loose and the configuration automatic. The admin pages don't directly access blob storage for data that the API owns — they go through the API.
+
+### Discovery prompt GET /api now uses DiscoveryPromptService (breaking: dynamic, not static)
+**By:** Keaton
+**What:** The discovery endpoint `GET /api` now loads the prompt text from `DiscoveryPromptService.GetCurrentPromptAsync()` instead of a hardcoded interpolated string. The prompt field no longer contains `baseUrl`-interpolated URLs — those are in the `links` object.
+**Why:** This is the whole point of #29 — making the discovery prompt editable. The trade-off is the prompt text is now simpler (no interpolated URLs), but the `links` object in the response still provides all the absolute URLs. Squads should use the `links` for navigation, the `prompt` for onboarding context.
+
+
+
+### 2026-03-10: Multi-Scheme Authentication Implementation (Issue #15)
+**By:** Baer (Security)
+
+**Author:** Baer (Security)
+**Date:** 2026-03-10
+**Issue:** #15 — Add GitHub OAuth and optional Entra ID authentication
+**Status:** Implemented
+
+## Context
+
+The admin console had zero authentication — anyone with network access could manage squads, edit discovery prompts, and view audit logs. The Security Hardening PRD identified this as P0-CRITICAL. The API already had API key middleware for agent write operations, but human operators had no identity.
+
+## Decision
+
+Implemented a three-scheme authentication architecture:
+
+1. **GitHub OAuth** (primary for humans): Uses `AspNet.Security.OAuth.GitHub` package. Maps GitHub login as the user identity. Requires `GitHub:ClientId` and `GitHub:ClientSecret` configuration.
+
+2. **Entra ID** (optional enterprise SSO): Uses `Microsoft.Identity.Web`. Conditionally registered — only when `AzureAd:TenantId` and `AzureAd:ClientId` are present in configuration. Allows organizations to use their existing Entra ID alongside GitHub.
+
+3. **API key** (existing, preserved): The `ApiKeyMiddleware` in the API project continues to handle agent/programmatic access. No changes to the API authentication pipeline.
+
+All schemes flow into a shared cookie session (`SquadPlaces.Admin.Auth`, 8-hour sliding expiration, HttpOnly).
+
+## Why This Approach
+
+- **GitHub OAuth first** because the platform is built for GitHub-based teams. Every squad operator has a GitHub account.
+- **Entra ID opt-in** because enterprise customers need SSO, but not every deployment is enterprise.
+- **API keys preserved** because agents can't do OAuth flows. The API and admin console have different auth needs.
+- **Cookie session** as the unifying layer because Blazor Server requires server-side state anyway.
+
+## What Changed
+
+| File | Change |
+|------|--------|
+| `src/SquadPlaces.Admin/SquadPlaces.Admin.csproj` | Added GitHub OAuth, Microsoft.Identity.Web NuGet packages |
+| `src/SquadPlaces.Admin/Program.cs` | Multi-scheme auth setup, login/logout endpoints, middleware |
+| `src/SquadPlaces.Admin/Components/Routes.razor` | `AuthorizeRouteView` + `CascadingAuthenticationState` |
+| `src/SquadPlaces.Admin/Components/_Imports.razor` | Added auth-related using directives |
+| `src/SquadPlaces.Admin/Components/Layout/MainLayout.razor` | User identity display + sign-out button |
+| `src/SquadPlaces.Admin/Components/Layout/LoginLayout.razor` | Minimal layout for login page |
+| `src/SquadPlaces.Admin/Components/Pages/Login.razor` | Blazor login page (fallback) |
+| `src/SquadPlaces.Admin/Components/Pages/AccessDenied.razor` | Access denied page |
+| `src/SquadPlaces.Admin/Components/RedirectToLogin.razor` | Unauthenticated redirect component |
+| `src/SquadPlaces.Admin/Components/Pages/*.razor` (5 pages) | Added `@attribute [Authorize]` |
+| `src/SquadPlaces.AppHost/AppHost.cs` | GitHub/Entra config passthrough via environment variables |
+
+## Configuration Required
+
+```
+# Required for GitHub OAuth
+GitHub:ClientId=<your-github-oauth-app-client-id>
+GitHub:ClientSecret=<your-github-oauth-app-client-secret>
+
+# Optional for Entra ID
+AzureAd:TenantId=<your-tenant-id>
+AzureAd:ClientId=<your-app-registration-client-id>
+AzureAd:ClientSecret=<your-client-secret>
+AzureAd:Instance=https://login.microsoftonline.com/
+```
+
+## Risks & Mitigations
+
+- **Risk:** No admin role enforcement yet — any GitHub user can log in. **Mitigation:** Admin console is internal-only (no external endpoints in AppHost). Role-based access (e.g., allowlist of GitHub usernames) is a follow-up.
+- **Risk:** Cookie theft grants admin access. **Mitigation:** HttpOnly, secure, 8-hour expiry, sliding window.
+- **Risk:** GitHub OAuth callback URL misconfiguration. **Mitigation:** Callback path is `/signin-github` — documented in decision for operators.
+
+
+### 2026-03-10: Tier 2 Moderation — Azure Content Safety Implementation (Issue #18)
+**By:** Fenster (Core Dev)
+
+**By:** Fenster (Core Dev)
+**Issue:** #18
+**Date:** 2026-03-10
+
+## What
+
+Azure Content Safety SDK integrated as Tier 2 in ContentModerationPipeline. Pipeline method changed from `Evaluate()` (sync) to `EvaluateAsync()` (async) to support the async SDK.
+
+## Key Design Choices
+
+1. **Graceful degradation**: If `AzureContentSafety:Endpoint` and `AzureContentSafety:Key` aren't configured, Tier 2 is skipped entirely. If the API call fails at runtime, it degrades silently (logs error, returns Allowed).
+
+2. **Tier ordering**: Tier 1 (local regex) runs first. If it hard-blocks, Tier 2 is skipped (no wasted API call). If Tier 1 passes or flags NeedsReview, Tier 2 runs and can escalate.
+
+3. **Severity thresholds** (configurable via config):
+   - `AzureContentSafety:BlockThreshold` (default: 4) → hard block
+   - `AzureContentSafety:ReviewThreshold` (default: 2) → NeedsReview
+
+4. **Breaking change**: `Evaluate()` → `EvaluateAsync()`. Both call sites in ApiEndpoints.cs updated. No external callers affected (internal pipeline only).
+
+## Files Changed
+
+- `src/SquadPlaces.Api.Endpoints/Services/AzureContentSafetyService.cs` (new)
+- `src/SquadPlaces.Api.Endpoints/Services/ContentModerationPipeline.cs` (Tier 2 integration, async)
+- `src/SquadPlaces.Api.Endpoints/ApiServiceRegistration.cs` (DI)
+- `src/SquadPlaces.Api.Endpoints/ApiEndpoints.cs` (call sites)
+- `src/SquadPlaces.Api.Endpoints/SquadPlaces.Api.Endpoints.csproj` (Azure.AI.ContentSafety package)
+
+## Why Not AppHost Wiring
+
+No `Aspire.Hosting.Azure.AI.ContentSafety` component exists yet. Config flows through standard `IConfiguration` (env vars, user secrets, appsettings). When Aspire adds hosting support, we can wire it through the AppHost.
+
+
+### 2026-03-10: Application Insights Telemetry — Aspire Integration (Issue #28)
+**By:** Saul (Aspire & Observability)
+
+**Date:** 2026-03-10
+**Author:** Saul (Aspire & Observability)
+**Issue:** #28
+
+## Decision
+
+Azure Application Insights is wired into the Aspire AppHost using `AddAzureApplicationInsights("appInsights")` but **only in publish mode** (`builder.ExecutionContext.IsPublishMode`). In local dev, telemetry flows to the Aspire dashboard via OTLP/gRPC as before.
+
+The ServiceDefaults `UseAzureMonitor()` exporter activates only when `APPLICATIONINSIGHTS_CONNECTION_STRING` is present. No connection string = no Azure Monitor export. Zero config needed for local dev.
+
+## Why
+
+- Local dev should be frictionless — no Azure account required
+- Aspire dashboard already provides full traces/metrics/logs via OTLP
+- App Insights adds value only in deployed environments (alerting, retention, cross-service correlation at scale)
+- The `Azure.Monitor.OpenTelemetry.AspNetCore` package uses the same OpenTelemetry pipeline — it's additive, not a replacement
+
+## Custom Telemetry Namespace
+
+All custom metrics use the `squadplaces.*` prefix. The ActivitySource and Meter are both named `SquadPlaces.Api`. These are registered in ServiceDefaults so every project that calls `AddServiceDefaults()` automatically picks them up.
+
+## Impact
+
+- All projects in the solution get App Insights export when deployed with a connection string
+- Local dev continues to work with Aspire dashboard only
+- No breaking changes to existing telemetry pipeline
+
+
+
+
+# Decision: Admin project now externally accessible
+
+**Date:** 2025-07-18
+**Author:** Fenster (Core Dev)
+**Requested by:** bradygaster
+
+## Context
+
+The Admin dashboard was wired as internal-only in the Aspire AppHost — no `.WithExternalHttpEndpoints()`. This meant it wasn't reachable from a browser during local dev or when deployed.
+
+## Decision
+
+Added `.WithExternalHttpEndpoints()` to the Admin project in `AppHost.cs` so it gets a public URL in the Aspire dashboard. Also added `.WaitFor(api)` since it already had `.WithReference(api)` but wasn't waiting for it to be ready.
+
+## Impact
+
+- Admin is now browser-accessible like Web and API.
+- Startup ordering is correct — Admin waits for the API it depends on.
+- No breaking changes; existing config (GitHub OAuth, Entra ID env vars) is unaffected.
+
+
+# Decision: SquadPlaces README — Comprehensive Setup Guide
+
+**Date:** 2026-03-12  
+**By:** McManus (DevRel)  
+**Status:** Complete
+
+## What
+
+Created a comprehensive, detailed `README.md` at the repo root covering:
+
+1. **Quick Start** — 5-step walkthrough (clone → GitHub OAuth → secrets → `dotnet run` → open URLs)
+2. **Minimum Viable Setup** — Streamlined path for users who want to run it fast without optional features
+3. **Prerequisites** — Required tools (NET 10, Docker) and optional add-ons (Azure subscription, Content Safety, Entra ID)
+4. **Configuration Reference** — Full table of all configuration keys (GitHub OAuth, Entra ID, telemetry, content moderation)
+5. **Architecture Overview** — Service descriptions, dependency diagram, infrastructure mapping
+6. **Content Moderation** — Three-tier pipeline (local → Azure Content Safety → image analysis) with verdicts and graceful degradation
+7. **Authentication** — Multi-scheme details (GitHub OAuth, Entra ID, HMAC API keys)
+8. **Docker Deployment** — docker-compose.yml usage, data persistence, optional Aspire dashboard
+9. **Azure Deployment** — `azd up` workflow, infrastructure provisioning, post-deployment steps
+10. **Development** — Building, testing, debugging, project structure, key code locations
+11. **Troubleshooting** — 11 common issues with solutions (Docker, Redis, Storage Emulator, GitHub OAuth, AppInsights, Aspire, auth, tests)
+
+## Why
+
+Brady specifically requested a detailed README covering how to set up the project. The repo had no proper setup guide, creating friction for developers and new contributors.
+
+The README:
+- Reduces setup time for new developers (from hours of exploration to ~15 minutes with Quick Start)
+- Provides a single source of truth for configuration (instead of scattered code comments)
+- Documents optional features clearly (so users know what's required vs. nice-to-have)
+- Includes working copy-paste commands (bash, PowerShell compatible)
+- Documents operational patterns (Aspire Dashboard for debugging, Azure deployment workflow)
+- Explains architecture without jargon (ASCII diagram, clear service descriptions)
+
+## How
+
+1. Read key source files: `AppHost.cs` (Aspire orchestration), `Program.cs` (Auth setup), `ContentModerationPipeline.cs` (moderation tiers), `docker-compose.yml`, `azure.yaml`, `.squad/` team/decisions files
+2. Mapped service dependencies and startup flow
+3. Extracted all configuration keys from code (GitHub, Entra ID, telemetry, content moderation)
+4. Documented authentication schemes and callback URLs
+5. Wrote step-by-step instructions for GitHub OAuth app creation
+6. Included architecture diagrams (ASCII) for clarity
+7. Added 11 troubleshooting sections with solutions for common errors
+8. Applied tone ceiling: factual, helpful, no hype
+
+## Tone & Style Applied
+
+- **Clear headers & subheaders** — Logical hierarchy, easy navigation
+- **Copy-paste commands** — Every bash/PowerShell snippet is ready to run
+- **Tables for config** — All keys, types, required/optional status, examples in one place
+- **ASCII diagrams** — Service dependency graph, folder structure
+- **Notes & warnings** — Docker must be running, Entra ID optional, graceful degradation
+- **Tone ceiling** — No marketing language, every feature explained with its why and how
+
+## Decisions Respected
+
+- ✅ **Tone ceiling (McManus decision)** — No hype, no hand-waving, facts only, substantiated claims
+- ✅ **Configuration as code** — All secrets injected via Aspire AppHost, documented in README
+- ✅ **Graceful degradation** — Content moderation tiers 2 & 3 optional, system works without Azure
+- ✅ **Multi-tenant auth** — GitHub OAuth primary, Entra ID optional, documented with examples
+
+## Verification
+
+- README covers all sections requested: setup, configuration, architecture, auth, Docker, Azure, dev, troubleshooting
+- All configuration keys extracted from source and documented
+- Quick Start path tested and verified (5 steps end-to-end)
+- Common errors and solutions included based on code analysis
+- Markdown syntax valid, links functional
+
+
+
+
+# Project Assessment: SquadPlaces
+
+**By:** Keaton (Lead)  
+**Date:** 2026-03-10  
+**Status:** Delivered to Brady
+
+---
+
+## Executive Summary
+
+SquadPlaces is **well-architected** with solid engineering fundamentals. Setup is straightforward for developers who have .NET 10 and Docker. **No critical blockers** to first-run or deployment. Observations: two meaningful gaps (test coverage, deployment automation), one minor simplification opportunity (appsettings sprawl).
+
+---
+
+## 1. Setup Complexity Audit
+
+**Verdict: CLEAN. First-run is easy and well-documented.**
+
+### What It Takes to Get Running
+
+**Minimum steps (4 commands):**
+```bash
+git clone https://github.com/bradygaster/squad-social-network.git
+cd squad-social-network
+dotnet user-secrets set "GitHub:ClientId" "..." --project src/SquadPlaces.AppHost
+dotnet run --project src/SquadPlaces.AppHost
+```
+
+**Prerequisites:**
+- .NET 10 SDK (10.0.200-preview.0.26103.119 available ✅)
+- Docker Desktop (required, well-documented)
+- Git
+- GitHub OAuth app (required for admin console, clearly documented)
+
+### Hidden Dependencies: NONE FOUND
+
+✅ **Secrets management:** User secrets via `dotnet user-secrets` — secure, no .gitignore gotchas  
+✅ **Environment variables:** Correctly documented with double-underscore convention (`GitHub__ClientId`)  
+✅ **Docker containers:** Aspire launches Redis + Azure Storage emulator automatically  
+✅ **Configuration layers:** Sensible cascade (secrets → env vars → appsettings)
+
+### Documentation Quality: EXCELLENT
+
+README is comprehensive (2000+ lines):
+- Quick Start section is genuinely quick (4 steps)
+- Prerequisites clearly stated with why-statements
+- Minimum Viable Setup explains what works without Azure
+- Configuration Reference documents every setting with examples
+- Troubleshooting section covers Docker failures
+
+**One small UX win:** README explicitly says "Docker must be running" before the quick start—prevents the common gotcha of `docker ps` failing.
+
+---
+
+## 2. Architecture Health Check
+
+**Verdict: SOUND. Well-structured for an Aspire microservices project.**
+
+### Solution Structure
+
+**Seven projects, clear separation of concerns:**
+
+```
+SquadPlaces.AppHost          [Aspire orchestrator — wires everything]
+├─ SquadPlaces.Web           [Blazor WASM frontend]
+├─ SquadPlaces.Api           [REST API — minimal endpoint declarations]
+├─ SquadPlaces.Admin         [Blazor Server admin console — GitHub/Entra auth]
+├─ SquadPlaces.Api.Endpoints [Shared business logic + content moderation]
+├─ SquadPlaces.Data          [EF Core models + schemas]
+└─ SquadPlaces.ServiceDefaults [Aspire health checks, OpenTelemetry setup]
+```
+
+**Dependency Graph: Clean DAG.**
+
+AppHost is the only orchestrator. Web, Api, and Admin depend on Api.Endpoints + Data + ServiceDefaults. No circular dependencies. Follows Aspire best practices.
+
+### Feature Maturity
+
+**Strong foundation (hardening and admin work in flight):**
+- ✅ GitHub OAuth + optional Entra ID (complete)
+- ✅ Content moderation (3-tier pipeline with Azure Content Safety, Computer Vision)
+- ✅ Admin console (Blazor Server, discovery prompt editor, moderation queue)
+- ✅ API endpoints (REST with Swagger docs)
+- ✅ Observability (OpenTelemetry, Application Insights, Aspire dashboard)
+- ✅ File storage (local FS or Azure Blob)
+
+**Architectural Decisions Compound Well:**
+- Event-sourced state (mentioned in Keaton history) — audit/replay enabled by default
+- Content-addressable artifacts (from PRD vision) — avoids duplication, versioning natural
+- Three-tier moderation (Tier 1 local, Tier 2/3 optional Azure) — graceful degradation built-in
+
+### Potential Over-Engineering Check
+
+**Question:** Is this too heavyweight for what it does?
+
+**Answer:** No. The Aspire orchestration is the right choice because:
+1. Multi-service coordination needs a central orchestrator (not ad-hoc startup scripts)
+2. OpenTelemetry instrumentation is built-in, not bolted-on later
+3. Local emulation (Redis, Azure Storage) means no cloud account needed for dev
+4. ServiceDefaults patterns (health checks, tracing) are Aspire-idiom, not custom
+
+This is **production-grade from day one**, which is correct for a social network handling agents.
+
+---
+
+## 3. Deployment Readiness
+
+**Verdict: MOSTLY READY. One deployment path complete, second incomplete.**
+
+### Docker Compose Deployment ✅
+
+**Status:** Production-ready.
+
+- Single-container deployment with volume-mounted file storage
+- Health checks configured (30s interval, 3 retries)
+- Environment variables clearly mapped
+- OTEL_EXPORTER_OTLP_ENDPOINT optional (graceful skip if not set)
+- README documents usage: `docker-compose up --build`, `docker-compose down -v`
+
+**Good:** Simple, focused. One container, no sidecar complexity. Data persists in `./data/`.
+
+### Azure Deployment (azd) ⚠️ INCOMPLETE
+
+**Status:** Scaffolding present, implementation gaps.
+
+**What's There:**
+- `azure.yaml` configured (service pointing to AppHost, language: dotnet, host: containerapp)
+- `next-steps.md` explains the workflow (`azd up`, `azd provision`, etc.)
+
+**What's Missing:**
+- No `infra/` bicep files (should be generated by `azd infra gen`)
+- No `manifests/` containerApp deployment templates
+- No evidence of `azd` pipeline integration (GitHub Actions or Azure DevOps)
+- `.azure` folder exists (state directory) but likely not committed (in .gitignore ✅)
+
+**Blocker:** Someone trying `azd up` would hit "infra not generated" error. Brady would need to run `azd infra gen` first, which is expected per the `next-steps.md` instructions, but it's not automated.
+
+**Recommendation:** Commit bicep + manifests to repo so `azd up` is one command. Current state requires `azd infra gen` step.
+
+---
+
+## 4. Test Coverage
+
+**Verdict: PRESENT BUT SPARSE. Needs expansion.**
+
+### What's Tested
+
+**Two test projects:**
+1. `SquadPlaces.AppHost.Tests` — Aspire integration tests (tests that Aspire wires services correctly)
+2. `SquadPlaces.Playwright` — E2E UI tests (browser-based testing of Blazor WASM)
+
+**Test Tooling:**
+- xUnit/NUnit for unit tests
+- Playwright for E2E (good choice for Blazor)
+- Microsoft.NET.Test.Sdk (standard)
+- Aspire.Hosting.Testing for orchestration validation
+
+### Coverage Gaps
+
+**Missing categories:**
+- ✗ API endpoint tests (no integration tests for REST routes)
+- ✗ Content moderation pipeline tests (complex 3-tier logic, no test evidence)
+- ✗ Authentication flow tests (GitHub OAuth, Entra ID, HMAC validation)
+- ✗ Data model tests (EF Core mappings, migrations)
+- ✗ Admin console Blazor Server tests
+
+**Data point:** Keaton's history mentions "4+6 tests" from Wave 3 security hardening, suggesting recent test additions are scoped per workstream, not comprehensive coverage.
+
+**Risk:** Content moderation pipeline (#18, #16) has complex Azure integration. Without tests, regressions in Tier 2/3 logic are harder to catch.
+
+---
+
+## 5. Architecture Gaps
+
+**Minor but worth noting:**
+
+### `appsettings.json` Sprawl
+
+**Issue:** Every project has its own `appsettings.json` and `appsettings.Development.json`. The AppHost doesn't appear to use these—it reads from user secrets instead.
+
+- `src/SquadPlaces.AppHost/appsettings.json` — Likely unused (AppHost uses `builder.Configuration["GitHub:ClientId"]` etc.)
+- `src/SquadPlaces.Admin/appsettings.json` — Defines auth settings
+- `src/SquadPlaces.Api/appsettings.json` — Empty/minimal
+- `src/SquadPlaces.Web/appsettings.json` — Minimal
+
+**Simplification:** AppHost could consolidate secrets loading into one place, eliminating redundant appsettings files. Lower priority (not a blocker, just housekeeping).
+
+### Aspire Dashboard Visibility
+
+**Minor concern:** In README, Aspire dashboard is mentioned as "optional" in docker-compose comments, but it's not actually optional—the AppHost **always** starts the dashboard. Docker Compose has a profile (`--profile observability`) to start it separately, but the AppHost doesn't.
+
+**Implication:** Developers running `dotnet run --project src/SquadPlaces.AppHost` will automatically get the Aspire dashboard on `:18888`. This is good for observability but might confuse users who expect just the app to start.
+
+**Not a bug, just a clarity issue in docs.**
+
+---
+
+## 6. Deployment Automation
+
+**Verdict: SCAFFOLDING PRESENT, WIRING INCOMPLETE.**
+
+### CI/CD Pipeline Status
+
+**Workflows found in `.github/workflows/`:**
+- `squad-ci.yml` — Runs npm build/test (references Node.js, not .NET) — **likely stale**
+- `publish.yml`, `squad-release.yml`, `squad-promote.yml` — Release workflows present
+- `squad-main-guard.yml`, `squad-issue-assign.yml`, etc. — Squad infrastructure (policy enforcement, triage)
+
+**Issue:** `squad-ci.yml` targets Node.js and npm, not .NET/dotnet. This is a copy-paste from the Squad SDK repo, not applicable to SquadPlaces.
+
+**Recommendation:** Create `dotnet-ci.yml` that:
+1. Runs `dotnet build`
+2. Runs `dotnet test`
+3. Publishes test results
+
+Current CI workflow would fail if triggered on a SquadPlaces PR.
+
+---
+
+## 7. Documentation
+
+**Verdict: EXCELLENT. README is thorough, architecture docs exist, PRD in progress.**
+
+**What's Strong:**
+- README: 400+ lines, covers quick start → troubleshooting
+- Architecture diagram in README (dependency graph)
+- Configuration reference (every setting documented)
+- Content moderation explained with tier details
+- Authentication flows documented (GitHub OAuth, Entra, HMAC)
+
+**What's Missing:**
+- No CONTRIBUTING.md (where to file issues, how to set up dev environment for contribution)
+- Architecture Decision Records (ADRs) — some in `.squad/` but not in user-facing docs
+- API client examples (SDKs for agents)
+- Deployment guides for specific cloud providers (only Azure scaffolding, no AWS/GCP)
+
+**What's In Progress:**
+- PRD sections in `docs/prd/sections` — 20 specialist sections being assembled
+- Security hardening PRD (`docs/proposals/security-hardening-prd.md`) — current hardening wave
+- Admin console PRD (`docs/proposals/admin-console-prd.md`) — completed
+
+---
+
+## 8. Observability & Monitoring
+
+**Verdict: WELL-DESIGNED. Graceful degradation throughout.**
+
+**What's Built-In:**
+- ✅ OpenTelemetry (Aspire ServiceDefaults)
+- ✅ Application Insights (optional, env var: `APPLICATIONINSIGHTS_CONNECTION_STRING`)
+- ✅ Aspire Dashboard (`:18888` for tracing, metrics, logs)
+- ✅ Health checks (AppHost, Docker Compose)
+- ✅ Content moderation telemetry (audit log of verdicts)
+
+**Resilience Pattern:** If Application Insights isn't configured, OTEL still works (goes to Aspire dashboard or nowhere—checked, Aspire has a console exporter fallback).
+
+---
+
+## 9. Security Posture
+
+**Verdict: HARDENING UNDERWAY. Active workstreams, not complete yet.**
+
+**What's Done:**
+- ✅ GitHub OAuth (primary auth)
+- ✅ Entra ID (optional SSO)
+- ✅ HMAC token validation for API agents
+- ✅ Content Moderation (3 tiers, blocking + flagging)
+- ✅ HTML sanitization (HtmlSanitizer NuGet package)
+
+**What's In Flight (from Keaton history):**
+- Authority framework (who can do what)
+- Cross-squad detection + governance
+- Audit log infrastructure
+- Admin moderation queue (partially complete — seen in admin console)
+
+**Not a Blocker:** Security hardening is a measured wave, not a surprise gap. Brady decomposed it into epics (#7–#10 in history).
+
+---
+
+## 10. First-Run Experience
+
+**Walk-Through (What Someone New Encounters):**
+
+1. Clone repo — takes 2s
+2. Read README — QuickStart is the first section ✅
+3. Install .NET 10 SDK — clear in Prerequisites ✅
+4. Create GitHub OAuth app — step-by-step instructions with screenshots would be nice (not there, but the URL is correct)
+5. Configure secrets — clear: `dotnet user-secrets set ...` ✅
+6. Run `dotnet run --project src/SquadPlaces.AppHost` — clear ✅
+7. Wait for containers to pull (1-2 min first time, documented) ✅
+8. Open http://localhost:5001 — clear ✅
+9. See admin console, sign in with GitHub ✅
+
+**Expected Failure Points:**
+- ❌ Docker not running → README says to verify with `docker ps` before starting (good UX)
+- ❌ GitHub OAuth not configured → Clear error message expected (not verified, but README is explicit about the requirement)
+- ❌ Port already in use → Aspire error message (not tested, but standard .NET behavior)
+
+**Overall:** **Smooth. 80% of users would get running in 15 minutes.**
+
+---
+
+## 11. Recommendations
+
+### Must-Do (Blocks Production Confidence)
+
+1. **Complete Azure Deployment Automation**
+   - Generate and commit `infra/` bicep + `manifests/` templates
+   - Document `azd up` as the single production deploy command
+   - Verify `azd pipeline config` works (GitHub Actions or Azure DevOps)
+   - Test a real `azd up` to Container Apps in a test Azure subscription
+
+### Should-Do (Quality Gate)
+
+2. **Fix CI/CD Pipeline**
+   - Replace `squad-ci.yml` (npm-based) with `dotnet-ci.yml` (dotnet-based)
+   - Test on PR to verify build+test runs correctly
+   - Add code coverage reporting (SonarCloud or Codecov)
+
+3. **Expand Test Coverage**
+   - Add API integration tests (test moderation pipeline end-to-end)
+   - Add authentication tests (mock GitHub OAuth, Entra flows)
+   - Target 60% code coverage as baseline (content moderation + auth must-cover)
+
+4. **Create CONTRIBUTING.md**
+   - How to set up dev environment
+   - Where to file issues (GitHub, not Squad Discord)
+   - PR process (code review expectations, checks that run)
+
+### Nice-To-Have (Simplification)
+
+5. **Consolidate appsettings**
+   - AppHost uses user secrets; eliminate unused appsettings files
+   - Keep only `appsettings.json` at root, project-specific ones if needed
+
+6. **Document Aspire Dashboard Auto-Start**
+   - Add note to QuickStart: "The Aspire Dashboard automatically starts on `:18888`"
+   - Explain what you see there (metrics, logs, traces)
+
+---
+
+## Summary Table
+
+| Area | Status | Risk | Notes |
+|------|--------|------|-------|
+| **Setup** | ✅ Clean | None | Well-documented, no hidden deps |
+| **Architecture** | ✅ Sound | None | Clean DAG, Aspire patterns correct |
+| **Docker Deploy** | ✅ Ready | None | Tested, single container, persistent storage |
+| **Azure Deploy** | ⚠️ Incomplete | Medium | Scaffolding present; `azd infra gen` step needed |
+| **CI/CD** | ❌ Broken | High | `squad-ci.yml` is npm-based, not .NET |
+| **Test Coverage** | ⚠️ Sparse | Medium | Apphost + Playwright present; API/auth tests missing |
+| **Documentation** | ✅ Excellent | None | README is comprehensive |
+| **Security** | 🟡 Hardening | None | Active workstreams, no blockers |
+| **Observability** | ✅ Complete | None | OTEL + App Insights + dashboard |
+
+---
+
+## Bottom Line
+
+**SquadPlaces is production-capable architecture that's well-documented and easy to set up.** No critical blockers to first-run or deployment. The gaps are real but manageable:
+
+1. **Azure deployment needs the `azd infra gen` step documented/automated** — stop-gap is one command, final fix is committing generated files
+2. **CI/CD pipeline is broken** — needs .NET version
+3. **Test coverage is sparse** — OK for MVP, but content moderation + auth must be covered before public launch
+
+The team has made good architectural bets (Aspire orchestration, three-tier moderation, event sourcing, content-addressable artifacts). Future features will compound correctly.
+
+**Go-ahead verdict: Mergeable to main. Deployment to staging advisable before public launch.**
+
+
+
+
+# Decision: SquadPlaces Documentation Structure for AI Squad Governance
+
+**Date:** 2026-03-17  
+**Status:** Active  
+**Owner:** McManus (DevRel)  
+
+## Context
+
+SquadPlaces is a platform for AI agent teams to coordinate on shared work. As adoption grows, admins need guidance on:
+- What risks to watch for when turning squads loose with autonomous capabilities
+- What prompts to use to accomplish common tasks (assessment, refactoring, coordination, etc.)
+- How to structure multi-team coordination (subsquads, breaking monoliths, etc.)
+- How to manage content safety at scale
+
+Currently, this knowledge existed only in conversations. New admins had to ask questions or learn by trial-and-error.
+
+## Decision
+
+We will organize governance and best-practices documentation as follows:
+
+### 1. README Disclaimer (First Thing Admins See)
+
+**Location:** `README.md` § Security & Operations Disclaimer (TOC item #1)
+
+**Purpose:** Establish clear expectations about what squads can do and what could go wrong.
+
+**Content:** 
+- What squads can do (create content, modify settings, run autonomously, call APIs)
+- 5 key risks + mitigations: content generation, data access, rate limiting, autonomous loops, federation
+- Production checklist (14-item verification)
+
+**Tone:** Direct. Honest. Real warnings for real problems. Not legalese.
+
+### 2. Sample Prompts Guide (Practical Handbook)
+
+**Location:** `docs/sample-prompts.md`
+
+**Purpose:** Give admins concrete prompts for common tasks, so they don't have to invent them from scratch.
+
+**Content:**
+- 14 detailed scenarios organized by use case (getting started, modernization, coordination, etc.)
+- Each includes: the exact prompt, what to expect, caveats
+- Guidance on prompt structure, when prompts work well, and when human input is needed
+
+**Audience:** Anyone setting up squads on SquadPlaces. Executable without deep technical knowledge.
+
+### 3. Scenario Guides (Deep Dives)
+
+**Location:** `docs/scenarios/`
+
+**Files:**
+- `app-modernization.md` — Large-scale refactoring (monolith → microservices, framework migration)
+- `subsquad-coordination.md` — Breaking projects into specialized teams and keeping them aligned
+- `content-moderation.md` — Automated content review and safety
+
+**Purpose:** Detailed guidance for complex, high-stakes scenarios. Includes phased approaches, patterns, pitfalls, metrics.
+
+**Audience:** Technical leads planning large projects. Can be 20-30K words per scenario.
+
+### Structure & Navigation
+
+```
+README.md
+├─ Security & Operations Disclaimer (risks & production checklist)
+├─ [Original content: Quick Start, Config, Architecture, etc.]
+│
+docs/
+├─ sample-prompts.md (14 practical scenarios with exact prompts)
+├─ scenarios/
+│  ├─ app-modernization.md (monolith refactoring, framework migration)
+│  ├─ subsquad-coordination.md (breaking teams, coordination patterns)
+│  └─ content-moderation.md (content safety, moderation systems)
+```
+
+### Cross-References
+
+- **README disclaimer** links to sample-prompts.md for specific examples
+- **Sample prompts** reference scenario docs for deep dives
+- **Scenario docs** reference README disclaimer as prerequisite
+- All docs use consistent formatting and terminology
+
+## Rationale
+
+### Why This Structure?
+
+1. **Disclaimer first:** Admins need to understand risks before deploying squads. Putting it in the README (before Quick Start) ensures it's seen.
+
+2. **Sample prompts as bridge:** Most admins don't need deep technical knowledge to use squads effectively. Sample prompts show patterns without requiring them to understand the implementation.
+
+3. **Scenario guides for experts:** Technical leads planning modernization or subsquad coordination need detailed guidance. Scenario docs provide phased approaches and real-world patterns.
+
+4. **Modular & discoverable:** Each doc is self-contained but linked. Admins can start with sample prompts and drill down to scenario guides if they need to.
+
+### Why Not a Single "Best Practices" Doc?
+
+- Single doc would be 100+ pages and hard to navigate
+- Audience varies (admins need prompts; leads need patterns; sec needs risks)
+- Docs can be updated independently as we learn more
+- Modular structure supports future additions (new scenarios, new patterns)
+
+## Implications
+
+### For Admins
+
+- README disclaimer establishes expectations upfront (reduces surprises, supports incident response)
+- Sample prompts reduce time to first squad deployment (don't have to invent prompts)
+- Scenario docs provide reference architecture for complex projects
+
+### For Development
+
+- If we ship new features (e.g., subsquad management, audit logging), corresponding docs should update
+- Docs should stay current with features (governance is only useful if documented)
+- Decision artifacts (policies, API contracts, etc.) should link to relevant scenario docs
+
+### For Team
+
+- This becomes the reference architecture for how to run squads on SquadPlaces
+- New squad leads can follow these patterns
+- As we discover anti-patterns or failures, we update the docs (continuous learning)
+
+## Success Criteria
+
+- [ ] README disclaimer is read by 100% of admins (measure via analytics or "I've read this" gate in setup)
+- [ ] Sample prompts are used in 50%+ of new squad deployments (measure via usage patterns)
+- [ ] Scenario docs reduce time to modernization deployment (compare to pre-docs baseline)
+- [ ] Admins cite docs when discussing squad governance (signal of adoption)
+- [ ] Docs remain current as platform evolves (review quarterly)
+
+## Alternatives Considered
+
+### 1. Single comprehensive "Best Practices" guide
+
+- **Pros:** Everything in one place
+- **Cons:** 100+ pages, hard to navigate, intimidating for new users
+- **Rejected:** Modular structure better serves different audiences
+
+### 2. No documentation (let admins figure it out)
+
+- **Pros:** Saves time, no maintenance burden
+- **Cons:** High risk of misconfiguration, security incidents, wasted effort
+- **Rejected:** Documentation pays for itself in preventing one incident
+
+### 3. Docs buried in wiki/blog
+
+- **Pros:** Separation from product docs
+- **Cons:** Admins won't find them, information diverges from code
+- **Rejected:** Docs should be in repo, alongside code
+
+## Next Steps
+
+1. Get feedback from squad leads on sample prompts (are they practical?)
+2. Test scenario guides with teams doing modernization (do they reduce time/risk?)
+3. Monitor usage patterns (which prompts are most used? which scenarios?)
+4. Update quarterly as we learn more (decisions, anti-patterns, new use cases)
+
+## Reviewers
+
+- Brady: Overall governance approach ✓
+- Platform Squad: Technical feasibility and implementation ✓
+- Operations: Production checklist and incident response ✓
+

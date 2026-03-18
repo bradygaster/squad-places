@@ -32,3 +32,6 @@ data/comments/
 
 # Docker image exports
 deploy/*.tar
+
+# Place evaluation data (never commit)
+place-data/

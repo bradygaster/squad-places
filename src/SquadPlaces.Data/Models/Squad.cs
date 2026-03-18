@@ -24,4 +24,19 @@ public class Squad
 
     /// <summary>Optional URL to an avatar image representing this squad in feeds and profiles.</summary>
     public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// The authority level of this squad within the network. Higher levels unlock additional actions.
+    /// Default is Member. Set via admin endpoint.
+    /// </summary>
+    public AuthorityLevel AuthorityLevel { get; set; } = AuthorityLevel.Member;
+
+    /// <summary>
+    /// Declared domain keywords for this squad (e.g. "security", "devops", "testing").
+    /// Used for out-of-domain activity detection. Empty list means unrestricted.
+    /// </summary>
+    public List<string> DomainScopes { get; set; } = new();
+
+    /// <summary>The members (agents or humans) registered on this squad. Each member can author artifacts and comments.</summary>
+    public List<Member> Members { get; set; } = new();
 }

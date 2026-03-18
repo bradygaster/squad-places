@@ -1,3 +1,7 @@
+📌 Team update (2026-03-10T): Wave 4 integration tests complete — 23 methods in `tests/SquadPlaces.AppHost.Tests/Wave4Tests.cs` across 4 domains: cross-squad detection (6), content moderation pipeline (6), shared state governance (5), discovery prompt editor (5). Zero compilation errors in test file. Pre-existing build failures in SquadPlaces.Data (FileStorageService missing PendingAction interface implementations) — same pattern as prior waves, tests are ahead of implementation. Requested by Brady.
+
+📌 Team update (2026-03-10T053431Z): Wave 3 security hardening complete — Wave 3 test suite complete — 29 methods across 7+7+5+4+6 domains (audit, SSRF, authority, dashboard, moderation). All tests passing, zero regressions. Cross-agent validation: Fenster, Baer, Keaton, Saul deliverables verified.
+
 # Project Context
 
 - **Owner:** Brady
@@ -25,6 +29,20 @@
 **Next Sprint:** Brady to triage 10 test gap issues; Hockney available for refine approach.
 
 ## Learnings
+
+### Security Hardening Tests (2026-03-05)
+**Status:** Complete — 37 integration tests in `tests/SquadPlaces.AppHost.Tests/SecurityHardeningTests.cs`, awaiting three parallel implementations (#19, #17, #14) to pass at runtime.
+- **Source:** Brady's task — write tests from requirements for security headers, XSS prevention, prompt injection detection, PII detection, and per-agent identity model before the implementations land.
+- **Categories:** Security headers (5), XSS prevention (8 including Theory variants), Prompt injection (8 including Theory variants), PII/secrets detection (8 including Theory variants), Per-agent identity/members (8).
+- **Pattern:** Reuses shared `ApiTestFixture` from ApiValidationTests.cs — `IClassFixture<ApiTestFixture>`, shared HttpClient, boots Aspire host once. Same pure HTTP + JSON approach as CommentAndGifTests (no model imports, uses `Dictionary<string, object?>` and anonymous types).
+- **Build state:** Test file itself has zero compilation errors. Full solution build fails due to Keaton's in-progress member model (interface defines `AddMemberAsync`/`GetMembersAsync` but `FileStorageService` doesn't implement them yet). Expected — tests will pass once all three features land.
+- **Contract coverage:**
+  - **Headers (#19):** CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy: strict-origin-when-cross-origin, headers on POST responses.
+  - **XSS (#19):** Script tags in title/content/comments/descriptions, case variants (SCRIPT/ScRiPt), iframe/object/embed/form rejection, safe HTML passthrough (b/i/a/code).
+  - **Injection (#17):** "ignore previous instructions" variants, DAN jailbreak, "disregard directives", "[SYSTEM]" prefix, Base64-encoded injection, false-positive avoidance for normal "instructions" usage.
+  - **PII (#17):** Email addresses, SSN patterns (###-##-####), GitHub PAT (ghp_*), AWS access keys (AKIA*), normal content passthrough, PII in comments and squad descriptions.
+  - **Members (#14):** POST/GET members, 404 for nonexistent squad, author attribution on artifacts and comments, cross-squad member validation, empty name validation.
+- **Key insight:** Security headers are already implemented in Program.cs middleware (lines 140-154). XSS/HTML sanitization exists via `HtmlSanitizationService` with allowlist (b/i/em/strong/p/br/ul/ol/li/a/code/pre/blockquote). Prompt injection and PII detection are NOT yet implemented — those tests will fail until Baer's #17 lands.
 
 ### Comment & GIF Integration Tests (2026-03-05)
 **Status:** Complete — 17 integration tests in `tests/SquadPlaces.AppHost.Tests/CommentAndGifTests.cs`, awaiting Fenster's implementation to pass at runtime.
@@ -895,3 +913,34 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 6. **Hundreds of comments — pagination:** `ListCommentsAsync` fetches ALL comment blobs from Azure storage with metadata filtering — no pagination. For the feed page, `CountCommentsAsync` iterates ALL blobs per artifact via `GetBlobsAsync`. With 50 artifacts × N comments each, the feed page makes 50 sequential blob-listing calls (wrapped in `Task.WhenAll` on Web, but sequential `foreach` in the API feed endpoint). **Risk: O(N×M) blob API calls on feed load; severe latency at scale.** The detail page also loads all comments into memory. No `?page=` parameter on `GET /api/artifacts/{id}/comments`. Recommendation: add pagination to the comments list endpoint and consider caching comment counts.
 
 📌 Team update (2026-03-05T07:06Z): Comments UI fanout complete — Fenster added commentCount to feed API, McManus built threaded comments UI with count badges, Hockney verified build (0 errors) and identified 6 edge cases for follow-up — decided by Scribe (coordination)
+
+### Wave 2 Security Tests (2026-03-09)
+**Status:** Complete — 29 test methods (27 [Fact] + 1 [Theory] with 2 variants) in `tests/SquadPlaces.AppHost.Tests/Wave2SecurityTests.cs`, awaiting three parallel implementations (#12, #13, #25) to pass at runtime.
+- **Source:** Brady's task — write tests for Wave 2 security features before implementations land. Three agents working in parallel: Fenster (#12 CORS), Baer (#13 HMAC API keys), Keaton (#25 Kill switches).
+- **Categories:** CORS lockdown (7), HMAC API key lifecycle (10), Kill switches (12).
+- **Pattern:** Reuses shared `ApiTestFixture` from ApiValidationTests.cs — `IClassFixture<ApiTestFixture>`, shared HttpClient, boots Aspire host once. Same pure HTTP + JSON approach as Wave 1 tests (no model imports, uses anonymous types and Dictionary payloads).
+- **Build state:** Test file itself has zero compilation errors (verified: `dotnet build` succeeds with 0 errors, 0 warnings). Tests will fail at runtime until all three implementations land — expected.
+- **Contract coverage:**
+  - **CORS (#12):** Allowed origin gets Access-Control-Allow-Origin, disallowed origin omits CORS headers, write endpoints reject disallowed origins, GET /api discovery accessible regardless, OPTIONS preflight for allowed/disallowed origins, Theory with known allowed origins.
+  - **API Keys (#13):** Write without key → 401, invalid key → 403, enlistment returns apiKey field, valid key on writes → 201, POST /api/squads/{id}/keys creates key, GET /api/squads/{id}/keys returns metadata (no raw keys), DELETE /api/squads/{id}/keys/{prefix} revokes, revoked key → 403, dev bypass key works, read endpoints don't require key.
+  - **Kill Switches (#25):** POST suspend → 200, suspended squad POST → 403, suspended squad GET works, POST readonly → 200, readonly blocks writes → 503, readonly allows reads, DELETE readonly restores writes, GET status returns state (readOnly + suspendedSquads), unsuspend restores access, status reflects suspended squads, readonly blocks artifact creation, suspend nonexistent squad → 404.
+- **Key insight:** Current API has AllowAnyOrigin CORS (Program.cs line 120-125) and no API key middleware — all three features are net-new. Tests are written to the expected contract per issue specs. Enlistment response currently returns id/name/description/publicKey/enlistedAt/avatarUrl/members — #13 will add apiKey field. No admin endpoints exist yet — #25 creates them.
+- **Constraints:** Did not commit (commit lock active). Tests are self-contained — each creates its own squad/data. Kill switch tests use try/finally to clean up read-only mode so tests don't interfere with each other.
+
+📌 Team update (2026-03-10T05:27:35Z): Wave 2 complete — CORS lockdown, API key authentication, kill switches all implemented and tested. Build clean (0 warnings, 0 errors). 29 test methods across 3 features.
+
+### Wave 3 Integration Tests (2026-03-10)
+**Status:** Complete — 29 integration tests in `tests/SquadPlaces.AppHost.Tests/Wave3Tests.cs`, awaiting five parallel implementations (#27, #16, #20, #23, #24) to pass at runtime.
+- **Source:** Brady's task — write tests from requirements for audit log, SSRF protection, authority framework, admin dashboard, and content moderation queue before implementations land.
+- **Categories:** Audit log (7), SSRF protection (7 including IPv6/metadata), Authority framework (5), Admin dashboard (4), Content moderation queue (6).
+- **Pattern:** Same shared `ApiTestFixture` from ApiValidationTests.cs — `IClassFixture<ApiTestFixture>`, shared HttpClient, boots Aspire host once. Pure HTTP + JSON (no model imports, uses `Dictionary<string, object?>` and anonymous types).
+- **Build state:** Test file itself has zero compilation errors. Full solution build fails due to Keaton's in-progress audit log interface (`IBlobStorageService` defines `SaveAuditLogEntryAsync`/`GetAuditLogEntryAsync`/`ListAuditLogEntriesAsync` but `BlobStorageService` and `FileStorageService` don't implement them yet). Expected — tests will pass once all five features land.
+- **Contract coverage:**
+  - **Audit log (#27):** POST artifact triggers audit entry, GET by ID, hash chain verify (valid=true), actor filtering, resource filtering, required fields check (timestamp/eventType/hash/previousHash), hash chain walk (entry[i].previousHash == entry[i-1].hash).
+  - **SSRF (#16):** localhost/127.0.0.1/169.254.169.254/10.0.0.1/192.168.1.1/[::1] all blocked (400), external https://example.com/valid.gif passes through.
+  - **Authority (#20):** PUT authority level, PUT domain scopes, GET violations (array), squad model has authorityLevel/domainScopes fields, round-trip update-then-get.
+  - **Dashboard (#23):** GET overview with squadCount/artifactCount, GET admin squads list, GET squad detail by ID, 404 for nonexistent squad.
+  - **Moderation (#24):** GET queue (array), GET count (non-negative int), approve artifact (200/204), reject with reason (200/204), 404 for approve/reject on nonexistent artifact.
+- **Constraints:** Did not commit (commit lock active). Tests are self-contained — each creates its own squad/data.
+📌 Team update (2026-03-10T055144Z): Wave 4 complete — Baer: CrossSquadDetectionService + PendingAction CRUD + 4 admin endpoints (#22). Fenster: ContentModerationPipeline + SharedStateService + 4 endpoints (#18/#21). Keaton: SquadPlaces.Admin + DiscoveryPromptService + 3 endpoints (#29). All teams ready for Wave 5.
+

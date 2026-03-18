@@ -28,6 +28,125 @@
 
 ## Learnings
 
+### 2026-03-17: SquadPlaces Documentation Suite — Risks, Prompts, and Scenarios
+
+**Status:** Complete. Added 4 major documentation artifacts for managing AI squads on SquadPlaces.
+
+**Deliverables:**
+
+1. **README.md Security & Operations Disclaimer** (added to top of README)
+   - Positioned at TOC item #1, before Quick Start
+   - Covers 5 key risks: autonomous content generation, data access/privacy, rate limiting, autonomous loops, federation
+   - Includes mitigation strategies for each
+   - Production deployment checklist (14-item verification)
+   - Tone: Direct and honest, not legalese. Real warnings for real problems.
+
+2. **docs/sample-prompts.md** (new file, 25K LOC equivalent)
+   - 14 detailed scenarios with practical prompts
+   - Organized by use case: Getting Started, Content Moderation, App Modernization, Subsquad Coordination, Feature Development, Deployment, Governance
+   - Each prompt includes: the exact text to use, what to expect, and caveats
+   - Sample prompts cover: project assessment, breaking monoliths, framework migration, API contracts, content audits, incident response, etc.
+   - Includes guidance on effective prompts, when they work well, and when human input is needed
+
+3. **docs/scenarios/app-modernization.md** (new file, 22K)
+   - Two detailed scenarios: monolith-to-microservices and framework migration
+   - Phased approach with squad prompts for each phase
+   - Pattern: dual-write for validation, feature flags for rollback, decision documentation
+   - Common pitfalls: underestimating shared infrastructure, data consistency, no rollback plan
+   - Metrics to track throughout modernization
+   - Practical examples (how Frontend/Backend coordinate on API contracts while working in parallel)
+
+4. **docs/scenarios/subsquad-coordination.md** (new file, 23K)
+   - Four scenarios: organizing into subsquads, managing dependencies, surfacing hidden dependencies, coordinating major releases
+   - Pattern: decision documents + comment periods (2-3 days) instead of meetings
+   - Tools: API contract documents, dependency mapping, review checklists, conflict resolution protocol
+   - Detailed example of real-time collaboration feature (spanning 3 subsquads, 8 weeks)
+   - Pitfalls: analysis paralysis, cargo cult decisions, communication breakdown, unclear ownership
+
+5. **docs/scenarios/content-moderation.md** (new file, 20K)
+   - Five scenarios: basic setup, handling false positives, detecting spam campaigns, learning from data, incident response
+   - Three-tier moderation approach: local checks, Azure Content Safety, image analysis
+   - Key pattern: automated flagging + human review (hybrid approach)
+   - Decision logging and policy versioning
+   - Training squads on community standards
+   - Pitfalls: over-reliance on automation, unfair appeals, cultural insensitivity, reviewer burnout
+
+**Key Patterns Established:**
+
+- **Decision-driven coordination:** All cross-squad decisions published to `.squad/decisions/` with comment windows (not ad-hoc meetings)
+- **Phased implementation:** Break big projects into phases with validation checkpoints (dual-write, feature flags, staged rollout)
+- **Documentation as source of truth:** Policies, API contracts, team structure—all in decision artifacts so they're discoverable and versioned
+- **Hybrid automation:** Automate routine tasks, but always have human judgment in critical decisions (moderation, policy changes, major deployments)
+- **Metrics-driven iteration:** Track patterns in decisions, moderation data, and performance to improve systems continuously
+
+**Architecture Knowledge Captured:**
+
+- SquadPlaces is purpose-built for coordinating AI squads on shared projects
+- Its value comes from making decisions/artifacts discoverable (so subsquads don't duplicate work)
+- It's NOT a framework migration tool; it's a coordination tool
+- It works best when paired with strong governance (clear decision rights, review processes, escalation paths)
+
+**Document Structure & Navigation:**
+
+- README disclaimer is first thing admins see (before Quick Start) — establishes expectations
+- sample-prompts.md has 14 organized use cases + tips for effective prompting
+- Each scenario doc is standalone but references others via "See Also"
+- All docs link back to README disclaimer as prerequisite reading
+- Docs use consistent formatting: scenario description, phases/steps, prompts, patterns, pitfalls, metrics, references
+
+**Tone & Style Applied:**
+
+- Tone ceiling enforced: No hype ("amazing", "revolutionary"). Facts only. Every claim has rationale.
+- Audience: Admins/leads setting up squads, not developers using the platform
+- Emphasis on "what could go wrong" paired with concrete mitigations
+- Practical examples over theory (real code, real timelines, real mistakes)
+- Decision-centric framing (how to decide, not how to implement)
+
+### 2026-03-12: SquadPlaces README — comprehensive setup guide completed
+
+**Status:** Complete. Full README.md written for squad-social-network (a different project context from squad-sdk).
+
+**Project discovered:**
+- **What:** SquadPlaces is a .NET 10 social network for AI agent teams, built with Aspire microservices orchestration
+- **Key components:** AppHost (Aspire orchestrator), Web (Blazor WASM), Admin (Blazor Server auth-protected), API (REST), Data models, ServiceDefaults (OpenTelemetry)
+- **Architecture:** Multi-service with Docker-based local dev (Redis + Azure Storage emulator), Azure Container Apps deployment
+- **Authentication:** Multi-scheme (GitHub OAuth primary, optional Entra ID, HMAC for agents)
+- **Content moderation:** Three-tier pipeline (Tier 1 local: injection detection + PII, Tier 2 Azure Content Safety, Tier 3 image analysis)
+
+**README sections delivered:**
+1. Project overview (clear positioning of what SquadPlaces does)
+2. Prerequisites table (tools, versions, optional features)
+3. Quick Start (5 concrete steps: clone, Docker check, GitHub OAuth setup, `dotnet run`, open URLs)
+4. Minimum Viable Setup (streamlined path for rapid testing without optional features)
+5. Configuration Reference (comprehensive table of all config keys: GitHub, Entra ID, telemetry, content moderation)
+6. Architecture Overview (service descriptions, dependency graph ASCII diagram, external infra)
+7. Content Moderation (three-tier explanation with verdicts, graceful degradation)
+8. Authentication (multi-scheme details: GitHub OAuth, Entra ID, cookie auth, endpoints)
+9. Docker guide (Compose usage, data persistence, optional Aspire dashboard)
+10. Azure deployment (azd workflow, prerequisites, post-deployment steps)
+11. Development (building, testing, debugging, project structure, common tasks)
+12. Troubleshooting (Docker, Redis, Storage Emulator, GitHub OAuth, AppInsights, Aspire, signing in, tests)
+
+**Documentation patterns applied:**
+- Tone: Clear, factual, helpful. No hype. Every claim has a why or a reference.
+- Structure: Hierarchical headers, tables for config, code blocks with copy-paste commands, ASCII diagrams for architecture
+- Accessibility: Includes links (Prerequisites download URLs, GitHub issue links, official docs), example commands, common errors and fixes
+- Discoverability: Detailed TOC, multiple entry points (Quick Start for impatient users, Minimum Viable Setup for core-only users, Development for contributors)
+
+**Key learnings embedded in the README:**
+- User secrets are the right place for GitHub OAuth (security, not in code)
+- Docker must be running before `dotnet run` (common gotcha)
+- Three-tier moderation gracefully degrades when Azure isn't configured (operational reality)
+- Aspire Dashboard is the debugging hub for microservices (observability story)
+- GitHub OAuth callback URL must match exactly, including trailing slash (common OAuth headache)
+- Entra ID is optional; GitHub OAuth is sufficient for local dev (reduction of cognitive load)
+
+**Compliance with squad decisions:**
+- Tone ceiling enforced: No marketing language, no "amazing" or "revolutionary," facts only
+- Every feature mentioned with configuration steps: Entra ID, Application Insights, Content Safety, Computer Vision
+- Graceful degradation documented: Azure services are optional, system works without them
+- Minimal viable path clear: Users can follow Quick Start or Minimum Viable Setup without feeling overwhelmed
+
 ### 2026-03-06: CLI help vs README audit — command reference corrected
 
 **Status:** Complete. README.md "All Commands" section updated to match CLI --help output.
@@ -1166,3 +1285,8 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 - Recommendations recorded: PR checklist, doc templates, experimental banner linting, feature ownership model, versioning strategy, monthly audits
 
 **Note:** Detailed work logs available in git commits and archived orchestration logs.
+
+📌 Team update (2026-03-10T073026Z): Comprehensive README.md written covering setup, architecture, auth, deployment, and troubleshooting (27K+ chars) — decided by McManus (DevRel)
+
+📌 Team update (2026-03-18T01:15:00Z): SquadPlaces documentation suite complete (README disclaimer, sample prompts, scenario guides) — provides governance framework for AI squad admins — by McManus
+

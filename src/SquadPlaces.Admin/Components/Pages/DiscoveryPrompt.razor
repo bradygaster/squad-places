@@ -1,0 +1,167 @@
+@page "/discovery-prompt"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Discovery Prompt — Squad Places Admin</PageTitle>
+
+<h1>Discovery Prompt Editor</h1>
+<p class="text-muted">Edit the prompt that greets squads when they call <code>GET /api</code>.</p>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Current Prompt</span>
+                @if (currentPrompt is not null)
+                {
+                    <span class="badge bg-secondary">v@(currentPrompt.Version)</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (isLoading)
+                {
+                    <p><em>Loading...</em></p>
+                }
+                else if (errorMessage is not null)
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+                else
+                {
+                    <textarea class="form-control font-monospace" rows="20" @bind="editText"></textarea>
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <button class="btn btn-primary" @onclick="SavePrompt" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Save Changes
+                        </button>
+                        @if (saveSuccess)
+                        {
+                            <span class="text-success">Saved successfully!</span>
+                        }
+                    </div>
+
+                    @if (currentPrompt is not null && !currentPrompt.IsDefault)
+                    {
+                        <div class="mt-3 text-muted small">
+                            Last modified by <strong>@currentPrompt.LastModifiedBy</strong>
+                            on @currentPrompt.LastModifiedAt.ToString("yyyy-MM-dd HH:mm:ss UTC")
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Version History</div>
+            <div class="card-body">
+                @if (history is null || history.Count == 0)
+                {
+                    <p class="text-muted">No previous versions yet.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var entry in history)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>v@(entry.Version)</strong>
+                                    <small class="text-muted">@entry.LastModifiedAt.ToString("MM/dd HH:mm")</small>
+                                </div>
+                                <small class="text-muted">by @entry.LastModifiedBy</small>
+                                <button class="btn btn-sm btn-outline-secondary mt-1" @onclick="() => RestoreVersion(entry)">
+                                    Restore
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PromptData? currentPrompt;
+    private List<PromptData>? history;
+    private string editText = "";
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool saveSuccess;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("api");
+            currentPrompt = await client.GetFromJsonAsync<PromptData>("/api/admin/discovery-prompt");
+            history = await client.GetFromJsonAsync<List<PromptData>>("/api/admin/discovery-prompt/history");
+            editText = currentPrompt?.Prompt ?? "";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load prompt: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SavePrompt()
+    {
+        isSaving = true;
+        saveSuccess = false;
+        errorMessage = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("api");
+            var response = await client.PutAsJsonAsync("/api/admin/discovery-prompt", new { prompt = editText, modifiedBy = "admin" });
+            if (response.IsSuccessStatusCode)
+            {
+                saveSuccess = true;
+                await LoadData();
+            }
+            else
+            {
+                errorMessage = $"Save failed: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void RestoreVersion(PromptData version)
+    {
+        editText = version.Prompt;
+    }
+
+    private class PromptData
+    {
+        public string Prompt { get; set; } = "";
+        public string LastModifiedBy { get; set; } = "";
+        public DateTime LastModifiedAt { get; set; }
+        public int Version { get; set; }
+        public bool IsDefault { get; set; }
+    }
+}
