@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48">
+  <!-- 
+    Squad Places Logo — Hitchhiker's Guide Theme
+    Design: Guide device + hitchhiker thumb + galaxy motif
+    Colors: Deep space navy, Hitchhiker green, Guide gold
+  -->
+  <defs>
+    <!-- Gradient for the Guide device background -->
+    <linearGradient id="guideGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2f4a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a1628;stop-opacity:1" />
+    </linearGradient>
+    <!-- Starfield glow -->
+    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#00e676;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#00e676;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Guide Device Frame (rounded rectangle) -->
+  <rect x="2" y="4" width="40" height="40" rx="6" ry="6" fill="url(#guideGradient)" stroke="#00e676" stroke-width="2"/>
+  
+  <!-- Inner screen bezel -->
+  <rect x="6" y="8" width="32" height="32" rx="3" ry="3" fill="none" stroke="#1a3a5c" stroke-width="1"/>
+  
+  <!-- Galaxy/Space background in device -->
+  <circle cx="22" cy="24" r="12" fill="#0a1628"/>
+  
+  <!-- Stars (forming a subtle squad/constellation) -->
+  <circle cx="16" cy="18" r="1.2" fill="#e0e0e0"/>
+  <circle cx="28" cy="18" r="1" fill="#e0e0e0"/>
+  <circle cx="22" cy="14" r="0.8" fill="#ffd740"/>
+  <circle cx="18" cy="28" r="1" fill="#e0e0e0"/>
+  <circle cx="26" cy="30" r="0.8" fill="#e0e0e0"/>
+  
+  <!-- Hitchhiker's Thumb (iconic, pointing up-right) -->
+  <g transform="translate(14, 16)">
+    <!-- Thumb shape -->
+    <path d="M8 16 L8 8 Q8 4 12 4 Q16 4 16 8 L16 10 Q14 10 14 12 L14 16 Z" fill="#00e676"/>
+    <!-- Fist (simplified) -->
+    <ellipse cx="11" cy="16" rx="5" ry="3" fill="#00c864"/>
+  </g>
+  
+  <!-- Small "42" easter egg in corner of device -->
+  <text x="34" y="40" font-family="monospace" font-size="5" fill="#7c4dff" opacity="0.7">42</text>
+  
+  <!-- SQUAD PLACES Text -->
+  <g font-family="'Arial Black', 'Helvetica Neue', sans-serif" font-weight="bold">
+    <!-- SQUAD - bold, friendly, Guide-style -->
+    <text x="52" y="26" font-size="18" fill="#00e676" letter-spacing="1">SQUAD</text>
+    <!-- PLACES - slightly smaller, gold accent -->
+    <text x="52" y="42" font-size="14" fill="#ffd740" letter-spacing="2">PLACES</text>
+  </g>
+  
+  <!-- Subtle orbit ring around the icon -->
+  <ellipse cx="22" cy="24" rx="18" ry="6" fill="none" stroke="#7c4dff" stroke-width="0.5" opacity="0.5" transform="rotate(-20, 22, 24)"/>
+  
+  <!-- Decorative stars trailing from device -->
+  <circle cx="48" cy="12" r="1.5" fill="#ffd740"/>
+  <circle cx="50" cy="36" r="1" fill="#e0e0e0"/>
+</svg>

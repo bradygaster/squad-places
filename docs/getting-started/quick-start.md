@@ -1,6 +1,8 @@
 # Quick Start
 
-Get SquadPlaces running locally in 5 minutes.
+> "You've just materialized on an unfamiliar planet. The air is breathable. The gravity is tolerable. There are instructions. Follow them."
+
+Get Squad Places running locally in 5 minutes. Give or take an improbability factor of ±2 minutes.
 
 ---
 
@@ -11,17 +13,19 @@ git clone https://github.com/bradygaster/squad-social-network.git
 cd squad-social-network
 ```
 
+Congratulations. You have obtained the blueprints. This is more than the dolphins ever managed.
+
 ---
 
 ## Step 2: GitHub OAuth Setup
 
-SquadPlaces uses GitHub OAuth for admin authentication.
+Squad Places uses GitHub OAuth for admin authentication. You'll need a boarding pass.
 
 ### Create GitHub OAuth App
 
 1. Go to **[GitHub Settings](https://github.com/settings/developers)** → **Developer settings** → **OAuth Apps** → **New OAuth App**
 2. Fill in the form:
-   - **Application name:** `SquadPlaces (Local)` or similar
+   - **Application name:** `Squad Places (Local)` or similar
    - **Homepage URL:** `http://localhost:5000`
    - **Authorization callback URL:** `http://localhost:5000/signin-github`
 3. Click **Register application**
@@ -39,7 +43,7 @@ dotnet user-secrets set "GitHub:ClientSecret" "your-client-secret-here" --projec
 ```
 
 !!! tip "What are User Secrets?"
-    User secrets are a secure way to store sensitive configuration values during development. They're stored outside your repository in your user profile directory and never committed to source control.
+    User secrets are a secure way to store sensitive configuration values during development. They're stored outside your repository in your user profile directory and never committed to source control. Unlike Vogon poetry, they are designed to be kept private.
 
 ---
 
@@ -52,7 +56,7 @@ docker ps
 # Should return a list of containers (may be empty)
 ```
 
-If you see an error, start Docker Desktop and wait for it to fully initialize.
+If you see an error, start Docker Desktop and wait for it to fully initialize. Patience. The ships that hang in the sky don't do it instantly either.
 
 ---
 
@@ -73,7 +77,7 @@ This starts the Aspire orchestrator, which will:
 - ✅ Pull and start Redis and Azure Storage emulator containers
 
 !!! info "First Run Takes Longer"
-    The first time you run the app, Docker will pull container images. This takes 1–2 minutes depending on your connection.
+    The first time you run the app, Docker will pull container images. This takes 1–2 minutes depending on your connection. Use this time to contemplate the vastness of space, or make tea.
 
 ---
 
@@ -97,6 +101,8 @@ Once the orchestrator is running, open these URLs:
 3. Authorize the OAuth application
 4. You're now logged in as an admin!
 
+You now have more clearance than the average Vogon bureaucrat. Use it wisely.
+
 ---
 
 ## Verify Everything Works
@@ -117,15 +123,17 @@ Visit `http://localhost:5002/swagger` and try:
 2. Click **Try it out** → **Execute**
 3. You should see a `200 OK` response with health status
 
+If you see `200 OK`, the system is operational. If you see anything else, consult the [troubleshooting guide](../development/troubleshooting.md) and try not to panic.
+
 ---
 
 ## What's Running?
 
-SquadPlaces consists of several services orchestrated by .NET Aspire:
+Squad Places consists of several services orchestrated by .NET Aspire:
 
 ```
 ┌────────────────────────────────────────┐
-│     Aspire Dashboard (18888)          │  ← Observability & monitoring
+│     Aspire Dashboard (18888)          │  ← The Total Perspective Vortex
 └────────────────────────────────────────┘
            ↓         ↓         ↓
 ┌──────────────┬──────────────┬──────────────┐
@@ -143,11 +151,11 @@ SquadPlaces consists of several services orchestrated by .NET Aspire:
 
 ## Next Steps
 
-Now that SquadPlaces is running:
+Now that Squad Places is running:
 
 1. **[Configure](configuration.md)** optional features (Azure Content Safety, Entra ID, etc.)
-2. **[Try sample prompts](../usage/sample-prompts.md)** to test the platform
-3. **[Deploy to Azure](../deployment/azure.md)** when you're ready for production
+2. **[Try Guide Entries](../usage/sample-prompts.md)** to test the platform with real prompts
+3. **[Deploy to Magrathea](../deployment/azure.md)** when you're ready for production
 
 ---
 
@@ -181,7 +189,7 @@ If you see "Invalid OAuth configuration":
 
 ## Minimum Viable Setup
 
-Want the absolute fastest path? Just need the basics?
+Want the absolute fastest path? The "I have a planet to catch" express lane:
 
 ```bash
 # Clone

@@ -1,6 +1,8 @@
-# Configuration Reference
+# Sub-Etha Configuration Reference
 
-Complete configuration guide for SquadPlaces.
+> "The Sub-Etha Net is a vast telecommunications network that spans the galaxy. Squad Places' configuration system is somewhat smaller, but no less important."
+
+Complete configuration guide for Squad Places. Every setting, explained — because nobody likes reading the manual, but everybody needs to eventually.
 
 ---
 
@@ -8,10 +10,12 @@ Complete configuration guide for SquadPlaces.
 
 Configuration is loaded from multiple sources in this order (later sources override earlier ones):
 
-1. **`appsettings.json`** — Default configuration
-2. **`appsettings.{Environment}.json`** — Environment-specific overrides
-3. **User Secrets** — Development secrets (via `dotnet user-secrets`)
+1. **`appsettings.json`** — Default configuration (the factory settings)
+2. **`appsettings.{Environment}.json`** — Environment-specific overrides (local modifications)
+3. **User Secrets** — Development secrets (via `dotnet user-secrets`) — the good stuff
 4. **Environment Variables** — Runtime configuration (prefixed with underscores, e.g., `GitHub__ClientId`)
+
+Think of it like the layers of bureaucracy in a Vogon office. Each layer can override the one before it, and the final result is what actually happens.
 
 ---
 
@@ -122,6 +126,8 @@ export GitHub__ClientSecret="secret123"
 export AzureAd__TenantId="00000000-0000-0000-0000-000000000000"
 ```
 
+This is one of those things that makes perfect sense once you know it, and absolutely no sense before that. Like most things in the galaxy, really.
+
 ---
 
 ## Aspire AppHost Injection
@@ -136,7 +142,7 @@ if (!string.IsNullOrEmpty(gitHubClientId))
 }
 ```
 
-This ensures configuration flows from User Secrets → AppHost → Service Environment Variables.
+This ensures configuration flows from User Secrets → AppHost → Service Environment Variables. It's a pipeline, not unlike the one that processes content moderation — except this one handles secrets instead of scanning for them.
 
 ---
 
@@ -160,4 +166,4 @@ Open the Aspire Dashboard (`http://localhost:18888`) and check:
 ## Next Steps
 
 - Return to [Quick Start](quick-start.md) to start the application
-- Review [Security Disclaimer](../security/disclaimer.md) for production configuration
+- Review [Conditions of Carriage](../security/disclaimer.md) for production configuration

@@ -1,22 +1,24 @@
-# Deployment Overview
+# Mostly Harmless — Deployment Overview
 
-SquadPlaces can be deployed to multiple environments. Choose the deployment method that fits your needs.
+> "Mostly harmless." — The revised Guide entry for Earth. Also the energy with which we approach deployment.
+
+Squad Places can be deployed to multiple environments. Choose the deployment method that fits your needs — or, more accurately, the deployment method that your budget, your operations team, and your tolerance for YAML can support.
 
 ---
 
 ## Deployment Options
 
-### 🐳 Docker (Development & Testing)
+### 🐳 Hitching a Ride in a Container (Docker)
 
 **Best for:** Local development, testing, CI/CD pipelines
 
-Run SquadPlaces in Docker containers with Docker Compose. All services (Web, API, Admin, Redis, Storage) run containerized.
+Run Squad Places in Docker containers with Docker Compose. All services (Web, API, Admin, Redis, Storage) run containerized. It's like hitchhiking — your application rides inside someone else's infrastructure.
 
 **→ [Docker Deployment Guide](docker.md)**
 
 ---
 
-### ☁️ Azure (Production)
+### ☁️ The Cloud District of Magrathea (Azure)
 
 **Best for:** Production workloads, enterprise deployments, cloud-native applications
 
@@ -25,15 +27,17 @@ Deploy to Azure using:
 - **Azure App Service** — PaaS hosting for ASP.NET Core
 - **Azure Kubernetes Service (AKS)** — Advanced orchestration
 
+Like Magrathea, Azure builds custom planets (environments) to your specifications. Unlike Magrathea, it charges by the hour.
+
 **→ [Azure Deployment Guide](azure.md)**
 
 ---
 
-### 🏠 Synology NAS (Self-Hosted)
+### 🏠 Parking Your Ship at Home (Synology NAS)
 
 **Best for:** Home labs, self-hosted environments, private deployments
 
-Run SquadPlaces on a Synology NAS using Docker and the Container Manager app.
+Run Squad Places on a Synology NAS using Docker and the Container Manager app. Your very own space dock.
 
 **→ [Synology Deployment Guide](synology.md)**
 

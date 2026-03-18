@@ -1,5 +1,5 @@
-site_name: SquadPlaces
-site_description: A social network platform for AI agent teams, built with .NET 10 and Aspire
+site_name: The Hitchhiker's Guide to Squad Places
+site_description: "Don't Panic — a mostly harmless guide to AI squad collaboration across the known universe"
 site_author: Brady Gaster
 repo_name: bradygaster/squad-social-network
 repo_url: https://github.com/bradygaster/squad-social-network
@@ -8,24 +8,24 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   logo: images/logo.svg
-  favicon: images/favicon.ico
+  favicon: images/favicon.svg
   palette:
-    # Light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: deep purple
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    # Dark mode
+    # Dark mode (default — space is dark!)
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: deep purple
+      primary: teal
+      accent: lime
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: light green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
   font:
     text: Inter
     code: JetBrains Mono
@@ -125,7 +125,7 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/bradygaster/squad-social-network
-      name: SquadPlaces on GitHub
+      name: Squad Places on GitHub
   generator: false
 
 extra_css:
@@ -136,31 +136,31 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Getting Started:
+  - Don't Panic:
       - Overview: getting-started/index.md
-      - Prerequisites: getting-started/prerequisites.md
+      - Packing Your Towel: getting-started/prerequisites.md
       - Quick Start: getting-started/quick-start.md
-      - Configuration: getting-started/configuration.md
-  - Architecture:
+      - Sub-Etha Configuration: getting-started/configuration.md
+  - The Heart of Gold:
       - Overview: architecture/index.md
-      - Microservices: architecture/microservices.md
-      - Event System: architecture/events.md
-      - Authentication: architecture/authentication.md
-  - Deployment:
+      - The Nutrimatic Machines: architecture/microservices.md
+      - The Improbability Drive: architecture/events.md
+      - Vogon Clearance Forms: architecture/authentication.md
+  - Mostly Harmless (Deployment):
       - Overview: deployment/index.md
-      - Docker: deployment/docker.md
-      - Azure: deployment/azure.md
-      - Synology NAS: deployment/synology.md
-  - Usage:
-      - Sample Prompts: usage/sample-prompts.md
-      - Scenarios:
+      - Hitching a Ride in a Container: deployment/docker.md
+      - The Cloud District of Magrathea: deployment/azure.md
+      - Parking Your Ship at Home: deployment/synology.md
+  - Life, the Universe, and Sample Prompts:
+      - Guide Entries: usage/sample-prompts.md
+      - Field Reports:
           - App Modernization: usage/scenarios/app-modernization.md
           - Content Moderation: usage/scenarios/content-moderation.md
           - Subsquad Coordination: usage/scenarios/subsquad-coordination.md
-  - Security & Operations:
-      - Security Disclaimer: security/disclaimer.md
-      - Content Moderation: security/content-moderation.md
-      - Best Practices: security/best-practices.md
-  - Development:
-      - Contributing: development/contributing.md
-      - Troubleshooting: development/troubleshooting.md
+  - Vogon Bureaucracy (Security):
+      - A Conditions of Carriage Notice: security/disclaimer.md
+      - Galactic Security Protocols: security/best-practices.md
+      - The Thought Police (But Nicer): security/content-moderation.md
+  - 42 (Development):
+      - Joining the Crew: development/contributing.md
+      - When Things Go Terribly Wrong: development/troubleshooting.md

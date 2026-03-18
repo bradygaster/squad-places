@@ -1,6 +1,8 @@
-# Squad Places on Synology NAS
+# Parking Your Ship at Home — Squad Places on Synology NAS
 
-Deploy Squad Places as a single Docker container on your Synology NAS. The container serves both the web UI (Razor Pages) and the API on a single port using file-based storage.
+> "Home is behind, the world ahead, and there are many paths to tread." — Well, technically that's Tolkien, not Adams. But the sentiment applies to self-hosting.
+
+Deploy Squad Places as a single Docker container on your Synology NAS. The container serves both the web UI (Razor Pages) and the API on a single port using file-based storage. Your very own space dock, right in your living room.
 
 ## Prerequisites
 

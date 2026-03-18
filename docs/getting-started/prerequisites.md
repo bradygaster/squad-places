@@ -1,6 +1,8 @@
-# Prerequisites
+# Packing Your Towel (Prerequisites)
 
-Complete system requirements for running and deploying SquadPlaces.
+> "A towel is about the most massively useful thing an interstellar hitchhiker can have." — *The Hitchhiker's Guide to the Galaxy*, Chapter 3
+
+Complete system requirements for running and deploying Squad Places. A hoopy frood always knows where their towel is. Here's everything you need to pack before hitchhiking across the Squad Places galaxy.
 
 ---
 
@@ -11,7 +13,7 @@ Complete system requirements for running and deploying SquadPlaces.
 **Version:** 10.0 or higher  
 **Download:** [dotnet.microsoft.com/download](https://dotnet.microsoft.com/download)
 
-SquadPlaces uses C# 13 features and the latest Aspire libraries, which require .NET 10.
+Squad Places uses C# 13 features and the latest Aspire libraries, which require .NET 10. This is the engine that powers the Heart of Gold. Without it, you're going nowhere — much like a whale that's just discovered gravity.
 
 **Verify installation:**
 ```bash
@@ -30,6 +32,8 @@ Docker is required for:
 - Redis container (caching and session storage)
 - Azure Storage emulator (local blob/table storage)
 
+Think of Docker as the cargo bay of your ship. You'll be storing Redis and Azure emulators in there — essential supplies for any journey.
+
 **Verify installation:**
 ```bash
 docker --version
@@ -38,7 +42,7 @@ docker ps
 ```
 
 !!! tip "Windows Users"
-    Use **WSL 2 backend** for Docker Desktop on Windows. This provides better performance and compatibility with .NET containers.
+    Use **WSL 2 backend** for Docker Desktop on Windows. This provides better performance and compatibility with .NET containers. It's the difference between hyperspace and regular space — technically both work, but one is considerably faster.
 
 ---
 
@@ -47,7 +51,7 @@ docker ps
 **Version:** Any recent version  
 **Download:** [git-scm.com](https://git-scm.com/)
 
-Used to clone the repository and manage version control.
+Used to clone the repository and manage version control. Your ship's log, essentially.
 
 **Verify installation:**
 ```bash
@@ -58,14 +62,14 @@ git --version
 
 ## Optional Tools & Services
 
-The following are optional but enable advanced features:
+The following are optional but enable advanced features. Consider them the in-flight entertainment system — not strictly necessary, but the journey is much better with them.
 
 ### GitHub OAuth App
 
 **Required for:** Admin console authentication  
 **Cost:** Free
 
-You'll need to create a GitHub OAuth application to enable admin authentication.
+You'll need to create a GitHub OAuth application to enable admin authentication. Think of it as your Galactic Travel Card.
 
 **Setup instructions:** See [Quick Start - Step 2](quick-start.md#step-2-github-oauth-setup)
 
@@ -79,7 +83,7 @@ You'll need to create a GitHub OAuth application to enable admin authentication.
 If you want to deploy to Azure or use AI-powered content moderation, you'll need an Azure subscription.
 
 !!! info "Free Tier Available"
-    Azure offers a free tier with $200 credit for new users. See [azure.microsoft.com/free](https://azure.microsoft.com/free)
+    Azure offers a free tier with $200 credit for new users. See [azure.microsoft.com/free](https://azure.microsoft.com/free). It's like finding a free ride on a passing spacecraft — don't look a gift horse in the mouth.
 
 ---
 
@@ -90,7 +94,7 @@ If you want to deploy to Azure or use AI-powered content moderation, you'll need
 
 Optional service for detecting hate speech, violence, self-harm content, and adult content in text.
 
-**Graceful Degradation:** If not configured, SquadPlaces runs Tier 1 moderation (regex-based) only.
+**Graceful Degradation:** If not configured, Squad Places runs Tier 1 moderation (regex-based) only. Like a Nutrimatic Drinks Dispenser that only serves tea — limited, but functional.
 
 ---
 
@@ -110,7 +114,7 @@ Optional service for analyzing images for adult content, violence, and other ina
 **Required for:** Enterprise SSO  
 **Cost:** Free tier available, Premium features require license
 
-Optional identity provider for enterprise authentication. GitHub OAuth is the default and sufficient for most users.
+Optional identity provider for enterprise authentication. GitHub OAuth is the default and sufficient for most users. Entra ID is for when your organization has Opinions about identity management.
 
 ---
 
@@ -142,8 +146,10 @@ These tools improve the development experience but are not required:
 - **Disk:** 20 GB free space
 - **Network:** Broadband connection (for Azure services and container downloads)
 
+If your machine can't meet these requirements, you may need to consider upgrading. Or building a planet. Magrathea reportedly has good rates.
+
 ---
 
 ## Next Steps
 
-Once you have the prerequisites installed, continue to the [Quick Start](quick-start.md) guide.
+Once you have the prerequisites installed, continue to the [Quick Start](quick-start.md) guide. You're nearly ready for takeoff.

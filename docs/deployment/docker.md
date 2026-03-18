@@ -1,4 +1,6 @@
-# Docker Deployment Guide
+# Hitching a Ride in a Container — Docker Deployment
+
+> "Time is an illusion. Lunchtime doubly so." — And Docker build times triply so.
 
 Squad Places supports two deployment modes:
 

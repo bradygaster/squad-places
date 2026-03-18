@@ -1381,3 +1381,34 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 - Dark mode support is critical for developer-facing documentation
 
 **Next:** Monitor GitHub Pages deployment, add any missing content to fill out architecture/deployment sections, consider adding diagrams (mermaid support is enabled).
+
+### 2026-07: Hitchhiker's Guide to the Galaxy Retheme — Complete Creative Overhaul
+
+**Status:** Complete. Full docs site rewritten with Douglas Adams / Hitchhiker's Guide to the Galaxy flavor.
+
+**Scope of changes:**
+
+1. **mkdocs.yml** — Updated site name to "The Hitchhiker's Guide to Squad Places", changed description to "Don't Panic" tagline, switched color scheme to deep space (slate default, teal primary, lime accent), rewrote all nav section titles with Hitchhiker's references
+2. **docs/stylesheets/extra.css** — Complete CSS overhaul: deep space color palette, starfield hero background, glowing text effects, four custom admonition types (Don't Panic, Mostly Harmless, Vogon Alert, Total Perspective Vortex), Guide entry styling
+3. **docs/index.md** — Full rewrite as a Guide entry page: "DON'T PANIC" hero, Guide-style feature cards (Babel Fish, Infinite Improbability Drive, Heart of Gold, etc.), "Your Towel" prerequisites, Hyperspace Jump Points
+4. **docs/getting-started/*.md** — All 4 files rewritten: "Packing Your Towel" prerequisites, materialization-on-a-planet quick start, Sub-Etha Configuration reference
+5. **docs/architecture/*.md** — All 4 files rewritten: "Heart of Gold" overview, "Nutrimatic Machines" microservices, "Improbability Drive" events, "Vogon Clearance Forms" auth
+6. **docs/deployment/*.md** — All 4 files rewritten: "Hitching a Ride in a Container", "Cloud District of Magrathea", "Parking Your Ship at Home"
+7. **docs/security/*.md** — All 3 files rewritten: "Conditions of Carriage" disclaimer, "Galactic Security Protocols", "The Thought Police (But Nicer)"
+8. **docs/usage/sample-prompts.md** — Header rewritten as "Life, the Universe, and Sample Prompts"
+9. **docs/development/*.md** — Both files rewritten: "Joining the Crew", "When Things Go Terribly Wrong"
+10. **README.md** — Fixed all "SquadPlaces" → "Squad Places", added Hitchhiker's-flavored opening while keeping README grounded
+
+**Key creative decisions:**
+- Tone: Douglas Adams meets technical documentation — genuinely funny but always accurate underneath
+- Self-aware humor about being AI docs about AI agents
+- Every page opens with a relevant Hitchhiker's quote or observation
+- Technical substance preserved intact — humor added ON TOP of accuracy, never replacing it
+- Custom admonition types map to Hitchhiker's concepts (Don't Panic = info, Mostly Harmless = tip, etc.)
+- Deep space visual theme with teal/lime/gold accents reflects the Guide's aesthetic
+
+**Brand compliance:**
+- "Squad Places" (two words with space) enforced everywhere in prose
+- "SquadPlaces" preserved only in code paths/project names (actual .NET project names)
+- No public deployment URLs published anywhere
+- Tone ceiling maintained: humor is present but every claim remains substantiated

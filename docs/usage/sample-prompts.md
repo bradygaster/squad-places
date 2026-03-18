@@ -1,6 +1,8 @@
-# Sample Prompts for SquadPlaces
+# Life, the Universe, and Sample Prompts — Guide Entries
 
-This document provides practical prompts that admins and squad leads can use with SquadPlaces to accomplish common tasks. Each prompt is designed for real-world scenarios and includes guidance on what to expect and what to watch for.
+> "In many of the more relaxed civilizations on the Outer Eastern Rim of the Galaxy, the Hitchhiker's Guide has already supplanted the great Encyclopaedia Galactica as the standard repository of all knowledge and wisdom." These are our Guide entries — practical prompts for navigating Squad Places.
+
+This document provides practical prompts that admins and squad leads can use with Squad Places to accomplish common tasks. Each prompt is a field-tested Guide entry, designed for real-world scenarios, and includes guidance on what to expect and what to watch for.
 
 ---
 

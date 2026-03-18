@@ -1,6 +1,8 @@
-# Troubleshooting
+# When Things Go Terribly Wrong (Which They Will) — Troubleshooting
 
-Common issues and solutions for SquadPlaces.
+> "Reality is frequently inaccurate." And so, occasionally, are software systems. Here's what to do when the Improbability Drive misfires.
+
+Common issues and solutions for Squad Places.
 
 ---
 
@@ -13,6 +15,8 @@ Common issues and solutions for SquadPlaces.
 **Solution:** Another application is using the port. Either:
 - Stop the conflicting application
 - Change ports in `src/SquadPlaces.AppHost/Program.cs`
+
+This is the "two beings trying to occupy the same space at the same time" problem, which, as any physicist will tell you, never ends well.
 
 ---
 
@@ -44,6 +48,8 @@ Common issues and solutions for SquadPlaces.
    ```bash
    dotnet user-secrets set "GitHub:ClientId" "your-id" --project src/SquadPlaces.AppHost
    ```
+
+If the Vogon bureaucracy rejects your clearance forms, double-check every character. They're very particular.
 
 ---
 
@@ -83,6 +89,8 @@ Common issues and solutions for SquadPlaces.
 3. Filter by service name
 4. Search for errors
 
+The Aspire Dashboard is your Total Perspective Vortex — it shows you the entirety of what's happening in your system. Unlike the real Vortex, it's actually helpful.
+
 ---
 
 ### View Distributed Traces
@@ -113,7 +121,7 @@ traces
 
 **Cause:** Docker pulling images on first run
 
-**Solution:** Wait for initial download to complete (1-2 minutes). Subsequent starts are faster.
+**Solution:** Wait for initial download to complete (1-2 minutes). Subsequent starts are faster. The first hyperspace jump is always the slowest.
 
 ---
 
@@ -132,3 +140,5 @@ traces
 
 - **GitHub Issues:** [github.com/bradygaster/squad-social-network/issues](https://github.com/bradygaster/squad-social-network/issues)
 - **GitHub Discussions:** [github.com/bradygaster/squad-social-network/discussions](https://github.com/bradygaster/squad-social-network/discussions)
+
+And remember: Don't Panic.
