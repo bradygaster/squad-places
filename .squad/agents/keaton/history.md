@@ -40,6 +40,29 @@
 
 ## Learnings
 
+### 2025-07: Thursday Release Readiness Audit — Public Trial Go/No-Go
+- **Task:** Brady wants to release Squad Places for public trial on Thursday. Full audit: README, security, Docker, .NET setup, docs, Squad team config. Plus design FTUE flow and create human-in-the-loop test issues.
+- **Approach:** Systematic audit of all critical files. Security scan for hardcoded secrets/URLs. Build verification. Gap analysis against "what would a reviewer complain about" standard.
+- **Key Findings:**
+  - **🔴 BLOCKER: squad-ci.yml is npm-based** — Copy-paste from squad-sdk TypeScript repo. Uses `npm ci`/`npm test` on a .NET project. Will fail on every PR. Must replace with `dotnet build`/`dotnet test`.
+  - **🔴 BLOCKER: .squad/team.md Project Context wrong** — Says TypeScript/Node.js/squad-sdk. This is a .NET/Aspire project. First thing agents read. Completely wrong context.
+  - **🟡 HIGH: .squad/routing.md has TypeScript module ownership** — References `src/adapter/`, `src/cli/`, etc. These don't exist.
+  - **🟡 HIGH: .squad/decisions.md is 424KB** — Mostly squad-sdk TypeScript decisions. Needs archival.
+  - **🟡 HIGH: Azure Container Apps URLs in .squad/ history files** — Exposed deployment infrastructure.
+  - **🟡 MEDIUM: Dev bypass API key hardcoded** — `sqp_dev_key_do_not_use_in_production` in ApiKeyMiddleware.cs. Properly gated by IsDevelopment. Acceptable but noted.
+  - **✅ FIXED: PlaywrightTestBase.cs hardcoded Azure URL** — Line 17 had live Azure Container Apps URL as fallback. Changed to localhost:5000.
+  - **✅ README is excellent** — 33KB, comprehensive security disclaimer, quick start, full config reference.
+  - **✅ Quick start docs are strong** — 5-step flow, Hitchhiker's Guide themed, no hidden gotchas.
+  - **✅ Docker compose is production-ready** — Health checks, volumes, optional observability sidecar.
+  - **✅ Aspire AppHost is clean** — Proper WaitFor chains, optional App Insights, secrets forwarding.
+  - **✅ Build passes clean** — 0 warnings, 0 errors, < 2 seconds.
+- **Deliverables:**
+  - `docs/getting-started/first-time-experience.md` — FTUE design (4 phases: greeting → open run → secure → production)
+  - `docs/development/release-readiness.md` — Full audit report with risk matrix
+  - `.squad/decisions/inbox/keaton-release-readiness.md` — Go/no-go decision
+  - 7 GitHub issues (#2-#8) with `squad` label for Brady's manual testing
+- **Verdict:** 🟡 Ship Thursday after fixing 2 blockers. Architecture is sound, docs are strong, FTUE is designed.
+
 ### 2026-03-10: SquadPlaces Project Assessment — Setup, Architecture, Deployment Readiness
 - **Task:** Brady requested comprehensive assessment: setup complexity, architecture health, deployment readiness, gaps, simplification opportunities. Walk-through first-run, identify hidden dependencies, verify infrastructure-as-code completeness.
 - **Approach:** Read README, examine src structure (7 projects), review docker-compose.yml and azure.yaml, trace dependencies in csproj files, test .NET environment, review CI/CD workflows, audit test coverage, identify configuration gaps.
