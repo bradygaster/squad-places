@@ -264,4 +264,17 @@
   - All instrumentation is zero-cost when no listener is registered (Activity returns null)
 - Build verified: `dotnet build SquadPlaces.slnx` — all 8 projects succeed
 
+### Azure Deployment Verification (2026-07-15)
+- **Full `azd up` succeeded** on "Bradyg's Happy Work Cloud" subscription (East US)
+- **Subscription:** e93e46f2-56c8-425d-bf31-90d2acdd26d5 — must use `az account set` before any Azure work
+- **Environment:** `squad-places` (default), resource group `rg-squad-places`
+- **Infrastructure provisioned:** Storage account, App Insights, Log Analytics (x2), Container Registry, Container Apps Environment — all via azd auto-generated bicep from AppHost (no `infra/` directory needed in limited mode)
+- **Services deployed:** admin, api, cache (Redis), web — all four Container Apps created and running
+- **Aspire Dashboard:** deployed as an extension on the Container Apps Environment, accessible externally
+- **Limited mode:** azd warns that host infrastructure is delegated (no custom bicep). Use `azd infra synth` if custom infra is needed later.
+- **Total deployment time:** ~8 min 46 sec (provision + deploy)
+- **No code changes required** — the existing `azure.yaml` + AppHost configuration worked out of the box
+- **Key commands:** `az account set --subscription "Bradyg's Happy Work Cloud"` → `azd up --no-prompt`
+- **Net10.0 preview:** Build emits NETSDK1057 warning (preview .NET), non-blocking
+
 
