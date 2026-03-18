@@ -28,6 +28,80 @@
 
 ## Learnings
 
+### 2026-03-17: SquadPlaces Documentation Suite — Risks, Prompts, and Scenarios
+
+**Status:** Complete. Added 4 major documentation artifacts for managing AI squads on SquadPlaces.
+
+**Deliverables:**
+
+1. **README.md Security & Operations Disclaimer** (added to top of README)
+   - Positioned at TOC item #1, before Quick Start
+   - Covers 5 key risks: autonomous content generation, data access/privacy, rate limiting, autonomous loops, federation
+   - Includes mitigation strategies for each
+   - Production deployment checklist (14-item verification)
+   - Tone: Direct and honest, not legalese. Real warnings for real problems.
+
+2. **docs/sample-prompts.md** (new file, 25K LOC equivalent)
+   - 14 detailed scenarios with practical prompts
+   - Organized by use case: Getting Started, Content Moderation, App Modernization, Subsquad Coordination, Feature Development, Deployment, Governance
+   - Each prompt includes: the exact text to use, what to expect, and caveats
+   - Sample prompts cover: project assessment, breaking monoliths, framework migration, API contracts, content audits, incident response, etc.
+   - Includes guidance on effective prompts, when they work well, and when human input is needed
+
+3. **docs/scenarios/app-modernization.md** (new file, 22K)
+   - Two detailed scenarios: monolith-to-microservices and framework migration
+   - Phased approach with squad prompts for each phase
+   - Pattern: dual-write for validation, feature flags for rollback, decision documentation
+   - Common pitfalls: underestimating shared infrastructure, data consistency, no rollback plan
+   - Metrics to track throughout modernization
+   - Practical examples (how Frontend/Backend coordinate on API contracts while working in parallel)
+
+4. **docs/scenarios/subsquad-coordination.md** (new file, 23K)
+   - Four scenarios: organizing into subsquads, managing dependencies, surfacing hidden dependencies, coordinating major releases
+   - Pattern: decision documents + comment periods (2-3 days) instead of meetings
+   - Tools: API contract documents, dependency mapping, review checklists, conflict resolution protocol
+   - Detailed example of real-time collaboration feature (spanning 3 subsquads, 8 weeks)
+   - Pitfalls: analysis paralysis, cargo cult decisions, communication breakdown, unclear ownership
+
+5. **docs/scenarios/content-moderation.md** (new file, 20K)
+   - Five scenarios: basic setup, handling false positives, detecting spam campaigns, learning from data, incident response
+   - Three-tier moderation approach: local checks, Azure Content Safety, image analysis
+   - Key pattern: automated flagging + human review (hybrid approach)
+   - Decision logging and policy versioning
+   - Training squads on community standards
+   - Pitfalls: over-reliance on automation, unfair appeals, cultural insensitivity, reviewer burnout
+
+**Key Patterns Established:**
+
+- **Decision-driven coordination:** All cross-squad decisions published to `.squad/decisions/` with comment windows (not ad-hoc meetings)
+- **Phased implementation:** Break big projects into phases with validation checkpoints (dual-write, feature flags, staged rollout)
+- **Documentation as source of truth:** Policies, API contracts, team structure—all in decision artifacts so they're discoverable and versioned
+- **Hybrid automation:** Automate routine tasks, but always have human judgment in critical decisions (moderation, policy changes, major deployments)
+- **Metrics-driven iteration:** Track patterns in decisions, moderation data, and performance to improve systems continuously
+
+**Architecture Knowledge Captured:**
+
+- SquadPlaces is purpose-built for coordinating AI squads on shared projects
+- Its value comes from making decisions/artifacts discoverable (so subsquads don't duplicate work)
+- It's NOT a framework migration tool; it's a coordination tool
+- It works best when paired with strong governance (clear decision rights, review processes, escalation paths)
+
+**Document Structure & Navigation:**
+
+- README disclaimer is first thing admins see (before Quick Start) — establishes expectations
+- sample-prompts.md has 14 organized use cases + tips for effective prompting
+- Each scenario doc is standalone but references others via "See Also"
+- All docs link back to README disclaimer as prerequisite reading
+- Docs use consistent formatting: scenario description, phases/steps, prompts, patterns, pitfalls, metrics, references
+
+**Tone & Style Applied:**
+
+- Tone ceiling enforced: No hype ("amazing", "revolutionary"). Facts only. Every claim has rationale.
+- Audience: Admins/leads setting up squads, not developers using the platform
+- Emphasis on "what could go wrong" paired with concrete mitigations
+- Practical examples over theory (real code, real timelines, real mistakes)
+- Decision-centric framing (how to decide, not how to implement)
+
 ### 2026-03-12: SquadPlaces README — comprehensive setup guide completed
 
 **Status:** Complete. Full README.md written for squad-social-network (a different project context from squad-sdk).
@@ -1213,3 +1287,6 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 **Note:** Detailed work logs available in git commits and archived orchestration logs.
 
 📌 Team update (2026-03-10T073026Z): Comprehensive README.md written covering setup, architecture, auth, deployment, and troubleshooting (27K+ chars) — decided by McManus (DevRel)
+
+📌 Team update (2026-03-18T01:15:00Z): SquadPlaces documentation suite complete (README disclaimer, sample prompts, scenario guides) — provides governance framework for AI squad admins — by McManus
+

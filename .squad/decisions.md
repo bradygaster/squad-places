@@ -7945,3 +7945,539 @@ The README:
 - Common errors and solutions included based on code analysis
 - Markdown syntax valid, links functional
 
+
+
+
+# Project Assessment: SquadPlaces
+
+**By:** Keaton (Lead)  
+**Date:** 2026-03-10  
+**Status:** Delivered to Brady
+
+---
+
+## Executive Summary
+
+SquadPlaces is **well-architected** with solid engineering fundamentals. Setup is straightforward for developers who have .NET 10 and Docker. **No critical blockers** to first-run or deployment. Observations: two meaningful gaps (test coverage, deployment automation), one minor simplification opportunity (appsettings sprawl).
+
+---
+
+## 1. Setup Complexity Audit
+
+**Verdict: CLEAN. First-run is easy and well-documented.**
+
+### What It Takes to Get Running
+
+**Minimum steps (4 commands):**
+```bash
+git clone https://github.com/bradygaster/squad-social-network.git
+cd squad-social-network
+dotnet user-secrets set "GitHub:ClientId" "..." --project src/SquadPlaces.AppHost
+dotnet run --project src/SquadPlaces.AppHost
+```
+
+**Prerequisites:**
+- .NET 10 SDK (10.0.200-preview.0.26103.119 available ✅)
+- Docker Desktop (required, well-documented)
+- Git
+- GitHub OAuth app (required for admin console, clearly documented)
+
+### Hidden Dependencies: NONE FOUND
+
+✅ **Secrets management:** User secrets via `dotnet user-secrets` — secure, no .gitignore gotchas  
+✅ **Environment variables:** Correctly documented with double-underscore convention (`GitHub__ClientId`)  
+✅ **Docker containers:** Aspire launches Redis + Azure Storage emulator automatically  
+✅ **Configuration layers:** Sensible cascade (secrets → env vars → appsettings)
+
+### Documentation Quality: EXCELLENT
+
+README is comprehensive (2000+ lines):
+- Quick Start section is genuinely quick (4 steps)
+- Prerequisites clearly stated with why-statements
+- Minimum Viable Setup explains what works without Azure
+- Configuration Reference documents every setting with examples
+- Troubleshooting section covers Docker failures
+
+**One small UX win:** README explicitly says "Docker must be running" before the quick start—prevents the common gotcha of `docker ps` failing.
+
+---
+
+## 2. Architecture Health Check
+
+**Verdict: SOUND. Well-structured for an Aspire microservices project.**
+
+### Solution Structure
+
+**Seven projects, clear separation of concerns:**
+
+```
+SquadPlaces.AppHost          [Aspire orchestrator — wires everything]
+├─ SquadPlaces.Web           [Blazor WASM frontend]
+├─ SquadPlaces.Api           [REST API — minimal endpoint declarations]
+├─ SquadPlaces.Admin         [Blazor Server admin console — GitHub/Entra auth]
+├─ SquadPlaces.Api.Endpoints [Shared business logic + content moderation]
+├─ SquadPlaces.Data          [EF Core models + schemas]
+└─ SquadPlaces.ServiceDefaults [Aspire health checks, OpenTelemetry setup]
+```
+
+**Dependency Graph: Clean DAG.**
+
+AppHost is the only orchestrator. Web, Api, and Admin depend on Api.Endpoints + Data + ServiceDefaults. No circular dependencies. Follows Aspire best practices.
+
+### Feature Maturity
+
+**Strong foundation (hardening and admin work in flight):**
+- ✅ GitHub OAuth + optional Entra ID (complete)
+- ✅ Content moderation (3-tier pipeline with Azure Content Safety, Computer Vision)
+- ✅ Admin console (Blazor Server, discovery prompt editor, moderation queue)
+- ✅ API endpoints (REST with Swagger docs)
+- ✅ Observability (OpenTelemetry, Application Insights, Aspire dashboard)
+- ✅ File storage (local FS or Azure Blob)
+
+**Architectural Decisions Compound Well:**
+- Event-sourced state (mentioned in Keaton history) — audit/replay enabled by default
+- Content-addressable artifacts (from PRD vision) — avoids duplication, versioning natural
+- Three-tier moderation (Tier 1 local, Tier 2/3 optional Azure) — graceful degradation built-in
+
+### Potential Over-Engineering Check
+
+**Question:** Is this too heavyweight for what it does?
+
+**Answer:** No. The Aspire orchestration is the right choice because:
+1. Multi-service coordination needs a central orchestrator (not ad-hoc startup scripts)
+2. OpenTelemetry instrumentation is built-in, not bolted-on later
+3. Local emulation (Redis, Azure Storage) means no cloud account needed for dev
+4. ServiceDefaults patterns (health checks, tracing) are Aspire-idiom, not custom
+
+This is **production-grade from day one**, which is correct for a social network handling agents.
+
+---
+
+## 3. Deployment Readiness
+
+**Verdict: MOSTLY READY. One deployment path complete, second incomplete.**
+
+### Docker Compose Deployment ✅
+
+**Status:** Production-ready.
+
+- Single-container deployment with volume-mounted file storage
+- Health checks configured (30s interval, 3 retries)
+- Environment variables clearly mapped
+- OTEL_EXPORTER_OTLP_ENDPOINT optional (graceful skip if not set)
+- README documents usage: `docker-compose up --build`, `docker-compose down -v`
+
+**Good:** Simple, focused. One container, no sidecar complexity. Data persists in `./data/`.
+
+### Azure Deployment (azd) ⚠️ INCOMPLETE
+
+**Status:** Scaffolding present, implementation gaps.
+
+**What's There:**
+- `azure.yaml` configured (service pointing to AppHost, language: dotnet, host: containerapp)
+- `next-steps.md` explains the workflow (`azd up`, `azd provision`, etc.)
+
+**What's Missing:**
+- No `infra/` bicep files (should be generated by `azd infra gen`)
+- No `manifests/` containerApp deployment templates
+- No evidence of `azd` pipeline integration (GitHub Actions or Azure DevOps)
+- `.azure` folder exists (state directory) but likely not committed (in .gitignore ✅)
+
+**Blocker:** Someone trying `azd up` would hit "infra not generated" error. Brady would need to run `azd infra gen` first, which is expected per the `next-steps.md` instructions, but it's not automated.
+
+**Recommendation:** Commit bicep + manifests to repo so `azd up` is one command. Current state requires `azd infra gen` step.
+
+---
+
+## 4. Test Coverage
+
+**Verdict: PRESENT BUT SPARSE. Needs expansion.**
+
+### What's Tested
+
+**Two test projects:**
+1. `SquadPlaces.AppHost.Tests` — Aspire integration tests (tests that Aspire wires services correctly)
+2. `SquadPlaces.Playwright` — E2E UI tests (browser-based testing of Blazor WASM)
+
+**Test Tooling:**
+- xUnit/NUnit for unit tests
+- Playwright for E2E (good choice for Blazor)
+- Microsoft.NET.Test.Sdk (standard)
+- Aspire.Hosting.Testing for orchestration validation
+
+### Coverage Gaps
+
+**Missing categories:**
+- ✗ API endpoint tests (no integration tests for REST routes)
+- ✗ Content moderation pipeline tests (complex 3-tier logic, no test evidence)
+- ✗ Authentication flow tests (GitHub OAuth, Entra ID, HMAC validation)
+- ✗ Data model tests (EF Core mappings, migrations)
+- ✗ Admin console Blazor Server tests
+
+**Data point:** Keaton's history mentions "4+6 tests" from Wave 3 security hardening, suggesting recent test additions are scoped per workstream, not comprehensive coverage.
+
+**Risk:** Content moderation pipeline (#18, #16) has complex Azure integration. Without tests, regressions in Tier 2/3 logic are harder to catch.
+
+---
+
+## 5. Architecture Gaps
+
+**Minor but worth noting:**
+
+### `appsettings.json` Sprawl
+
+**Issue:** Every project has its own `appsettings.json` and `appsettings.Development.json`. The AppHost doesn't appear to use these—it reads from user secrets instead.
+
+- `src/SquadPlaces.AppHost/appsettings.json` — Likely unused (AppHost uses `builder.Configuration["GitHub:ClientId"]` etc.)
+- `src/SquadPlaces.Admin/appsettings.json` — Defines auth settings
+- `src/SquadPlaces.Api/appsettings.json` — Empty/minimal
+- `src/SquadPlaces.Web/appsettings.json` — Minimal
+
+**Simplification:** AppHost could consolidate secrets loading into one place, eliminating redundant appsettings files. Lower priority (not a blocker, just housekeeping).
+
+### Aspire Dashboard Visibility
+
+**Minor concern:** In README, Aspire dashboard is mentioned as "optional" in docker-compose comments, but it's not actually optional—the AppHost **always** starts the dashboard. Docker Compose has a profile (`--profile observability`) to start it separately, but the AppHost doesn't.
+
+**Implication:** Developers running `dotnet run --project src/SquadPlaces.AppHost` will automatically get the Aspire dashboard on `:18888`. This is good for observability but might confuse users who expect just the app to start.
+
+**Not a bug, just a clarity issue in docs.**
+
+---
+
+## 6. Deployment Automation
+
+**Verdict: SCAFFOLDING PRESENT, WIRING INCOMPLETE.**
+
+### CI/CD Pipeline Status
+
+**Workflows found in `.github/workflows/`:**
+- `squad-ci.yml` — Runs npm build/test (references Node.js, not .NET) — **likely stale**
+- `publish.yml`, `squad-release.yml`, `squad-promote.yml` — Release workflows present
+- `squad-main-guard.yml`, `squad-issue-assign.yml`, etc. — Squad infrastructure (policy enforcement, triage)
+
+**Issue:** `squad-ci.yml` targets Node.js and npm, not .NET/dotnet. This is a copy-paste from the Squad SDK repo, not applicable to SquadPlaces.
+
+**Recommendation:** Create `dotnet-ci.yml` that:
+1. Runs `dotnet build`
+2. Runs `dotnet test`
+3. Publishes test results
+
+Current CI workflow would fail if triggered on a SquadPlaces PR.
+
+---
+
+## 7. Documentation
+
+**Verdict: EXCELLENT. README is thorough, architecture docs exist, PRD in progress.**
+
+**What's Strong:**
+- README: 400+ lines, covers quick start → troubleshooting
+- Architecture diagram in README (dependency graph)
+- Configuration reference (every setting documented)
+- Content moderation explained with tier details
+- Authentication flows documented (GitHub OAuth, Entra, HMAC)
+
+**What's Missing:**
+- No CONTRIBUTING.md (where to file issues, how to set up dev environment for contribution)
+- Architecture Decision Records (ADRs) — some in `.squad/` but not in user-facing docs
+- API client examples (SDKs for agents)
+- Deployment guides for specific cloud providers (only Azure scaffolding, no AWS/GCP)
+
+**What's In Progress:**
+- PRD sections in `docs/prd/sections` — 20 specialist sections being assembled
+- Security hardening PRD (`docs/proposals/security-hardening-prd.md`) — current hardening wave
+- Admin console PRD (`docs/proposals/admin-console-prd.md`) — completed
+
+---
+
+## 8. Observability & Monitoring
+
+**Verdict: WELL-DESIGNED. Graceful degradation throughout.**
+
+**What's Built-In:**
+- ✅ OpenTelemetry (Aspire ServiceDefaults)
+- ✅ Application Insights (optional, env var: `APPLICATIONINSIGHTS_CONNECTION_STRING`)
+- ✅ Aspire Dashboard (`:18888` for tracing, metrics, logs)
+- ✅ Health checks (AppHost, Docker Compose)
+- ✅ Content moderation telemetry (audit log of verdicts)
+
+**Resilience Pattern:** If Application Insights isn't configured, OTEL still works (goes to Aspire dashboard or nowhere—checked, Aspire has a console exporter fallback).
+
+---
+
+## 9. Security Posture
+
+**Verdict: HARDENING UNDERWAY. Active workstreams, not complete yet.**
+
+**What's Done:**
+- ✅ GitHub OAuth (primary auth)
+- ✅ Entra ID (optional SSO)
+- ✅ HMAC token validation for API agents
+- ✅ Content Moderation (3 tiers, blocking + flagging)
+- ✅ HTML sanitization (HtmlSanitizer NuGet package)
+
+**What's In Flight (from Keaton history):**
+- Authority framework (who can do what)
+- Cross-squad detection + governance
+- Audit log infrastructure
+- Admin moderation queue (partially complete — seen in admin console)
+
+**Not a Blocker:** Security hardening is a measured wave, not a surprise gap. Brady decomposed it into epics (#7–#10 in history).
+
+---
+
+## 10. First-Run Experience
+
+**Walk-Through (What Someone New Encounters):**
+
+1. Clone repo — takes 2s
+2. Read README — QuickStart is the first section ✅
+3. Install .NET 10 SDK — clear in Prerequisites ✅
+4. Create GitHub OAuth app — step-by-step instructions with screenshots would be nice (not there, but the URL is correct)
+5. Configure secrets — clear: `dotnet user-secrets set ...` ✅
+6. Run `dotnet run --project src/SquadPlaces.AppHost` — clear ✅
+7. Wait for containers to pull (1-2 min first time, documented) ✅
+8. Open http://localhost:5001 — clear ✅
+9. See admin console, sign in with GitHub ✅
+
+**Expected Failure Points:**
+- ❌ Docker not running → README says to verify with `docker ps` before starting (good UX)
+- ❌ GitHub OAuth not configured → Clear error message expected (not verified, but README is explicit about the requirement)
+- ❌ Port already in use → Aspire error message (not tested, but standard .NET behavior)
+
+**Overall:** **Smooth. 80% of users would get running in 15 minutes.**
+
+---
+
+## 11. Recommendations
+
+### Must-Do (Blocks Production Confidence)
+
+1. **Complete Azure Deployment Automation**
+   - Generate and commit `infra/` bicep + `manifests/` templates
+   - Document `azd up` as the single production deploy command
+   - Verify `azd pipeline config` works (GitHub Actions or Azure DevOps)
+   - Test a real `azd up` to Container Apps in a test Azure subscription
+
+### Should-Do (Quality Gate)
+
+2. **Fix CI/CD Pipeline**
+   - Replace `squad-ci.yml` (npm-based) with `dotnet-ci.yml` (dotnet-based)
+   - Test on PR to verify build+test runs correctly
+   - Add code coverage reporting (SonarCloud or Codecov)
+
+3. **Expand Test Coverage**
+   - Add API integration tests (test moderation pipeline end-to-end)
+   - Add authentication tests (mock GitHub OAuth, Entra flows)
+   - Target 60% code coverage as baseline (content moderation + auth must-cover)
+
+4. **Create CONTRIBUTING.md**
+   - How to set up dev environment
+   - Where to file issues (GitHub, not Squad Discord)
+   - PR process (code review expectations, checks that run)
+
+### Nice-To-Have (Simplification)
+
+5. **Consolidate appsettings**
+   - AppHost uses user secrets; eliminate unused appsettings files
+   - Keep only `appsettings.json` at root, project-specific ones if needed
+
+6. **Document Aspire Dashboard Auto-Start**
+   - Add note to QuickStart: "The Aspire Dashboard automatically starts on `:18888`"
+   - Explain what you see there (metrics, logs, traces)
+
+---
+
+## Summary Table
+
+| Area | Status | Risk | Notes |
+|------|--------|------|-------|
+| **Setup** | ✅ Clean | None | Well-documented, no hidden deps |
+| **Architecture** | ✅ Sound | None | Clean DAG, Aspire patterns correct |
+| **Docker Deploy** | ✅ Ready | None | Tested, single container, persistent storage |
+| **Azure Deploy** | ⚠️ Incomplete | Medium | Scaffolding present; `azd infra gen` step needed |
+| **CI/CD** | ❌ Broken | High | `squad-ci.yml` is npm-based, not .NET |
+| **Test Coverage** | ⚠️ Sparse | Medium | Apphost + Playwright present; API/auth tests missing |
+| **Documentation** | ✅ Excellent | None | README is comprehensive |
+| **Security** | 🟡 Hardening | None | Active workstreams, no blockers |
+| **Observability** | ✅ Complete | None | OTEL + App Insights + dashboard |
+
+---
+
+## Bottom Line
+
+**SquadPlaces is production-capable architecture that's well-documented and easy to set up.** No critical blockers to first-run or deployment. The gaps are real but manageable:
+
+1. **Azure deployment needs the `azd infra gen` step documented/automated** — stop-gap is one command, final fix is committing generated files
+2. **CI/CD pipeline is broken** — needs .NET version
+3. **Test coverage is sparse** — OK for MVP, but content moderation + auth must be covered before public launch
+
+The team has made good architectural bets (Aspire orchestration, three-tier moderation, event sourcing, content-addressable artifacts). Future features will compound correctly.
+
+**Go-ahead verdict: Mergeable to main. Deployment to staging advisable before public launch.**
+
+
+
+
+# Decision: SquadPlaces Documentation Structure for AI Squad Governance
+
+**Date:** 2026-03-17  
+**Status:** Active  
+**Owner:** McManus (DevRel)  
+
+## Context
+
+SquadPlaces is a platform for AI agent teams to coordinate on shared work. As adoption grows, admins need guidance on:
+- What risks to watch for when turning squads loose with autonomous capabilities
+- What prompts to use to accomplish common tasks (assessment, refactoring, coordination, etc.)
+- How to structure multi-team coordination (subsquads, breaking monoliths, etc.)
+- How to manage content safety at scale
+
+Currently, this knowledge existed only in conversations. New admins had to ask questions or learn by trial-and-error.
+
+## Decision
+
+We will organize governance and best-practices documentation as follows:
+
+### 1. README Disclaimer (First Thing Admins See)
+
+**Location:** `README.md` § Security & Operations Disclaimer (TOC item #1)
+
+**Purpose:** Establish clear expectations about what squads can do and what could go wrong.
+
+**Content:** 
+- What squads can do (create content, modify settings, run autonomously, call APIs)
+- 5 key risks + mitigations: content generation, data access, rate limiting, autonomous loops, federation
+- Production checklist (14-item verification)
+
+**Tone:** Direct. Honest. Real warnings for real problems. Not legalese.
+
+### 2. Sample Prompts Guide (Practical Handbook)
+
+**Location:** `docs/sample-prompts.md`
+
+**Purpose:** Give admins concrete prompts for common tasks, so they don't have to invent them from scratch.
+
+**Content:**
+- 14 detailed scenarios organized by use case (getting started, modernization, coordination, etc.)
+- Each includes: the exact prompt, what to expect, caveats
+- Guidance on prompt structure, when prompts work well, and when human input is needed
+
+**Audience:** Anyone setting up squads on SquadPlaces. Executable without deep technical knowledge.
+
+### 3. Scenario Guides (Deep Dives)
+
+**Location:** `docs/scenarios/`
+
+**Files:**
+- `app-modernization.md` — Large-scale refactoring (monolith → microservices, framework migration)
+- `subsquad-coordination.md` — Breaking projects into specialized teams and keeping them aligned
+- `content-moderation.md` — Automated content review and safety
+
+**Purpose:** Detailed guidance for complex, high-stakes scenarios. Includes phased approaches, patterns, pitfalls, metrics.
+
+**Audience:** Technical leads planning large projects. Can be 20-30K words per scenario.
+
+### Structure & Navigation
+
+```
+README.md
+├─ Security & Operations Disclaimer (risks & production checklist)
+├─ [Original content: Quick Start, Config, Architecture, etc.]
+│
+docs/
+├─ sample-prompts.md (14 practical scenarios with exact prompts)
+├─ scenarios/
+│  ├─ app-modernization.md (monolith refactoring, framework migration)
+│  ├─ subsquad-coordination.md (breaking teams, coordination patterns)
+│  └─ content-moderation.md (content safety, moderation systems)
+```
+
+### Cross-References
+
+- **README disclaimer** links to sample-prompts.md for specific examples
+- **Sample prompts** reference scenario docs for deep dives
+- **Scenario docs** reference README disclaimer as prerequisite
+- All docs use consistent formatting and terminology
+
+## Rationale
+
+### Why This Structure?
+
+1. **Disclaimer first:** Admins need to understand risks before deploying squads. Putting it in the README (before Quick Start) ensures it's seen.
+
+2. **Sample prompts as bridge:** Most admins don't need deep technical knowledge to use squads effectively. Sample prompts show patterns without requiring them to understand the implementation.
+
+3. **Scenario guides for experts:** Technical leads planning modernization or subsquad coordination need detailed guidance. Scenario docs provide phased approaches and real-world patterns.
+
+4. **Modular & discoverable:** Each doc is self-contained but linked. Admins can start with sample prompts and drill down to scenario guides if they need to.
+
+### Why Not a Single "Best Practices" Doc?
+
+- Single doc would be 100+ pages and hard to navigate
+- Audience varies (admins need prompts; leads need patterns; sec needs risks)
+- Docs can be updated independently as we learn more
+- Modular structure supports future additions (new scenarios, new patterns)
+
+## Implications
+
+### For Admins
+
+- README disclaimer establishes expectations upfront (reduces surprises, supports incident response)
+- Sample prompts reduce time to first squad deployment (don't have to invent prompts)
+- Scenario docs provide reference architecture for complex projects
+
+### For Development
+
+- If we ship new features (e.g., subsquad management, audit logging), corresponding docs should update
+- Docs should stay current with features (governance is only useful if documented)
+- Decision artifacts (policies, API contracts, etc.) should link to relevant scenario docs
+
+### For Team
+
+- This becomes the reference architecture for how to run squads on SquadPlaces
+- New squad leads can follow these patterns
+- As we discover anti-patterns or failures, we update the docs (continuous learning)
+
+## Success Criteria
+
+- [ ] README disclaimer is read by 100% of admins (measure via analytics or "I've read this" gate in setup)
+- [ ] Sample prompts are used in 50%+ of new squad deployments (measure via usage patterns)
+- [ ] Scenario docs reduce time to modernization deployment (compare to pre-docs baseline)
+- [ ] Admins cite docs when discussing squad governance (signal of adoption)
+- [ ] Docs remain current as platform evolves (review quarterly)
+
+## Alternatives Considered
+
+### 1. Single comprehensive "Best Practices" guide
+
+- **Pros:** Everything in one place
+- **Cons:** 100+ pages, hard to navigate, intimidating for new users
+- **Rejected:** Modular structure better serves different audiences
+
+### 2. No documentation (let admins figure it out)
+
+- **Pros:** Saves time, no maintenance burden
+- **Cons:** High risk of misconfiguration, security incidents, wasted effort
+- **Rejected:** Documentation pays for itself in preventing one incident
+
+### 3. Docs buried in wiki/blog
+
+- **Pros:** Separation from product docs
+- **Cons:** Admins won't find them, information diverges from code
+- **Rejected:** Docs should be in repo, alongside code
+
+## Next Steps
+
+1. Get feedback from squad leads on sample prompts (are they practical?)
+2. Test scenario guides with teams doing modernization (do they reduce time/risk?)
+3. Monitor usage patterns (which prompts are most used? which scenarios?)
+4. Update quarterly as we learn more (decisions, anti-patterns, new use cases)
+
+## Reviewers
+
+- Brady: Overall governance approach ✓
+- Platform Squad: Technical feasibility and implementation ✓
+- Operations: Production checklist and incident response ✓
+

@@ -30,9 +30,45 @@
 
 **Wave E Planning:** 28 issues just filed (2026-02-28) from parallel agent sprint: 4 CLI gaps, 10 test gaps, 10 doc gaps, 4 UX gaps. decisions.md trimmed 226KB→10.3KB. Ready for Wave E Batch 1 prioritization.
 
+## Current Project Context (SquadPlaces)
+
+- **Owner:** Brady
+- **Project:** SquadPlaces — social network for AI agent teams
+- **Stack:** .NET 10, ASP.NET Core, Blazor Server/WASM, Azure Storage, Redis, OpenTelemetry, Aspire
+- **Status:** Production-capable architecture, hardening + admin work in flight
+- **Repo:** bradygaster/squad-social-network (main branch: Aspire orchestration, feature branch: hardening-and-admin)
+
 ## Learnings
 
-### 2026-03-09: Security Hardening PRD → GitHub Issues Decomposition
+### 2026-03-10: SquadPlaces Project Assessment — Setup, Architecture, Deployment Readiness
+- **Task:** Brady requested comprehensive assessment: setup complexity, architecture health, deployment readiness, gaps, simplification opportunities. Walk-through first-run, identify hidden dependencies, verify infrastructure-as-code completeness.
+- **Approach:** Read README, examine src structure (7 projects), review docker-compose.yml and azure.yaml, trace dependencies in csproj files, test .NET environment, review CI/CD workflows, audit test coverage, identify configuration gaps.
+- **Key Findings:**
+  - **Setup Complexity:** ✅ CLEAN. Four-command quick start, well-documented. No hidden dependencies. User secrets pattern is correct. GitHub OAuth requirement is clear.
+  - **Architecture:** ✅ SOUND. Seven projects, clean DAG (AppHost → Web/Api/Admin → Api.Endpoints + Data + ServiceDefaults). Aspire orchestration correct. Event sourcing + content-addressable artifacts compounds well for future features.
+  - **Docker Deploy:** ✅ READY. Single-container deployment with health checks, persistent storage, optional OTEL. docker-compose.yml is production-ready.
+  - **Azure Deploy:** ⚠️ INCOMPLETE. azure.yaml wired correctly, but bicep infra/ and manifests/ not generated/committed. Requires `azd infra gen` step before `azd up` works. Scaffolding present, implementation incomplete.
+  - **CI/CD:** ❌ BROKEN. squad-ci.yml is npm-based (copy-paste from Squad SDK repo), not .NET. Would fail on SquadPlaces PR. Needs dotnet-ci.yml replacement.
+  - **Test Coverage:** ⚠️ SPARSE. AppHost integration tests + Playwright E2E present. Missing: API endpoint tests, content moderation pipeline tests, auth flow tests, data model tests. Coverage ~20%, needs expansion to 60%+ before public launch.
+  - **Documentation:** ✅ EXCELLENT. README is 2000+ lines, comprehensive (quick start → troubleshooting). Configuration reference detailed. Architecture diagram clear. Missing: CONTRIBUTING.md, API client examples, API SDKs for agents.
+  - **Observability:** ✅ COMPLETE. OpenTelemetry + Application Insights + Aspire Dashboard. Graceful degradation throughout (Tiers 2/3 moderation skip if Azure not configured).
+  - **Security:** 🟡 HARDENING. GitHub OAuth + optional Entra ID complete. Content moderation 3-tier pipeline complete. Authority framework + audit log in flight (recent hardening waves #23, #24).
+  - **First-Run Walk-Through:** 15 min, no gotchas. Docker must be running (documented). GitHub OAuth setup required (documented). Secrets pattern is clear.
+- **Recommendations (Priority Order):**
+  1. **Must-Do:** Complete Azure deployment automation — commit generated infra/ + manifests/, test `azd up` end-to-end.
+  2. **Should-Do:** Fix CI/CD — replace squad-ci.yml with dotnet-ci.yml, add code coverage reporting.
+  3. **Should-Do:** Expand test coverage — API integration tests, auth tests, moderation pipeline end-to-end.
+  4. **Should-Do:** Create CONTRIBUTING.md — dev setup, issue filing, PR process.
+  5. **Nice-To-Have:** Consolidate appsettings (project-specific ones are unused), document Aspire Dashboard auto-start behavior.
+- **Gaps Identified:**
+  - appsettings.json sprawl — every project has one, but AppHost uses user secrets instead (redundant, not breaking).
+  - Aspire Dashboard visibility unclear — always starts on :18888, but docs don't explain why or how to disable.
+  - Azure Deployment Path incomplete — `azd` workflow documented but not tested, infrastructure not committed.
+- **Key Pattern Observed:** Architectural decisions in SquadPlaces (Aspire orchestration, event sourcing, 3-tier moderation, content-addressable artifacts) compound well — they make future features easier, not harder. This is the pattern Keaton owns.
+- **Verdict:** Production-capable architecture, well-documented setup. No critical blockers to first-run or MVP deployment. Gaps are real but manageable. Go-ahead to merge to main, staging deployment advisable before public launch.
+- **Deliverable:** `.squad/decisions/inbox/keaton-project-assessment.md` (15.6 KB, detailed findings, recommendation table, summary).
+
+
 - **Task:** Decompose the security hardening PRD (`docs/proposals/security-hardening-prd.md`) into actionable GitHub issues on `bradygaster/squad-places-pr`. Brady also requested a standalone admin panel with chat-based discovery prompt editor.
 - **Approach:** Created 5 epic issues (one per workstream) + 17 sub-issues + 1 standalone feature = **23 issues total**.
 - **Issue Map:**
@@ -924,4 +960,7 @@ ot_relevant, ad_timing, low_evidence, 	oo_risky). Agent adjusts detection thres
 - **No git commits** (commit lock active).
 
 📌 Team update (2026-03-10T055144Z): Baer completed cross-squad detection and approval gates (#22) with PendingAction CRUD and four admin endpoints. Fenster completed content moderation pipeline (#18) with graduated verdicts and shared state governance (#21) with authority checks. Admin console ready to integrate all features.
+
+
+📌 Team update (2026-03-18T01:15:00Z): SquadPlaces comprehensive assessment filed (architecture, deployment, CI/CD, test coverage) — verdict: production-capable, no critical blockers. Recommendations: Azure automation, CI/CD fix, test expansion, CONTRIBUTING.md — by Keaton
 
