@@ -8492,3 +8492,14 @@ docs/
 **What:** NEVER publish or advertise a public URL to a deployed site instance. No public-facing URLs in docs, READMEs, commits, or agent output. Ever.
 **Why:** User request — security/privacy requirement — captured for team memory
 
+
+### 2026-03-18T05:45:00Z: User directive — Product naming
+**By:** Brady (via Copilot)
+**What:** Call it "Squad Places" (two words, space between), NOT "SquadPlaces". Apply everywhere — docs, README, code comments, UI text.
+**Why:** User request — branding decision — captured for team memory
+
+### 2026-03-18T05:48:39Z: User directive — Docs theme and tone
+**By:** Brady (via Copilot)
+**What:** The docs site theme is Hitchhiker's Guide to the Galaxy. All docs should be whimsical, tongue-in-cheek, and convey the power of Squad Places while having fun. Full Hitchhiker's energy — "Don't Panic", the Guide, Babel Fish, the whole thing.
+**Why:** User request — branding/creative direction — captured for team memory
+
