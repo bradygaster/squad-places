@@ -1,0 +1,174 @@
+/* Custom styles for SquadPlaces documentation */
+
+:root {
+  --squad-gradient-start: #667eea;
+  --squad-gradient-end: #764ba2;
+  --squad-accent: #f093fb;
+}
+
+/* Hero section styling */
+.hero {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, var(--squad-gradient-start) 0%, var(--squad-gradient-end) 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 3rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hero p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-button {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.hero-button.primary {
+  background: white;
+  color: var(--squad-gradient-end);
+}
+
+.hero-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+}
+
+.hero-button.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+}
+
+.hero-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Features grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.feature-card {
+  background: var(--md-code-bg-color);
+  border-radius: 8px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--md-accent-fg-color);
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  color: var(--md-accent-fg-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Quick links section */
+.quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.quick-link {
+  background: linear-gradient(135deg, var(--squad-gradient-start) 0%, var(--squad-gradient-end) 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  display: block;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quick-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+/* Code blocks enhancement */
+.md-typeset pre > code {
+  border-radius: 6px;
+}
+
+/* Admonition styling improvements */
+.md-typeset .admonition {
+  border-radius: 6px;
+  border-left-width: 4px;
+}
+
+/* Typography enhancements */
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 2.5rem;
+}
+
+/* Enhanced spacing */
+.md-typeset p {
+  line-height: 1.7;
+  margin-bottom: 1.2em;
+}
+
+/* Navigation tabs styling */
+.md-tabs {
+  background: linear-gradient(135deg, var(--squad-gradient-start) 0%, var(--squad-gradient-end) 100%);
+}
+
+/* Footer enhancement */
+.md-footer {
+  background: linear-gradient(135deg, var(--squad-gradient-start) 0%, var(--squad-gradient-end) 100%);
+}
+
+/* Search results enhancement */
+.md-search-result__meta {
+  background: linear-gradient(90deg, var(--squad-gradient-start) 0%, var(--squad-gradient-end) 100%);
+}
