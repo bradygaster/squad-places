@@ -6,6 +6,9 @@
 - Azure.AI.Vision.ImageAnalysis 4.0 SDK uses `VisualFeatures.DenseCaptions` for content understanding; useful for detecting unsafe content via caption text analysis when direct adult/racy/gory flags aren't available in the API version.
 - When integrating into existing moderation flows, translating service-specific verdicts (ImageSafetyVerdict) to pipeline verdicts (ContentVerdict) via a private helper keeps the pipeline interface clean.
 - HttpClient should always be created via IHttpClientFactory for proper lifecycle management in DI-heavy apps.
+- When converting ASCII art to Mermaid, use `%%{init: {'theme': 'dark', 'themeVariables': {...}}}%%` at the top of each diagram for consistent theming. MkDocs Material with pymdownx.superfences renders these natively.
+- Text-based numbered flow steps (1→2→3) inside code blocks are also good candidates for Mermaid `graph TD` flowcharts — they render much clearer than monospace text.
+- File/directory tree listings (├─ └─) are better left as plain text — Mermaid graphs lose the hierarchical readability of tree notation.
 
 📌 Team update: Tier 2 Azure Content Safety integration (#18) — AzureContentSafetyService wraps Azure.AI.ContentSafety SDK, integrated into ContentModerationPipeline as async Tier 2 after local Tier 1 filters. Analyzes Hate/SelfHarm/Sexual/Violence categories. Graceful degradation when unconfigured or API unavailable. Pipeline method changed from sync Evaluate() to async EvaluateAsync(). Config via AzureContentSafety:Endpoint + Key. Build clean, zero warnings.
 
