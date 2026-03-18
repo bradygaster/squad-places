@@ -8481,3 +8481,14 @@ docs/
 - Platform Squad: Technical feasibility and implementation ✓
 - Operations: Production checklist and incident response ✓
 
+
+### 2026-03-18T01:30:00Z: User directive — Azure subscription
+**By:** Brady (via Copilot)
+**What:** Use "bradyg happy work cloud" Azure subscription for all deployments — no other subscription, ever.
+**Why:** User request — captured for team memory
+
+### 2026-03-18T01:31:00Z: User directive — No public URLs
+**By:** Brady (via Copilot)
+**What:** NEVER publish or advertise a public URL to a deployed site instance. No public-facing URLs in docs, READMEs, commits, or agent output. Ever.
+**Why:** User request — security/privacy requirement — captured for team memory
+
