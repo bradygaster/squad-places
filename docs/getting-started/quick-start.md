@@ -127,20 +127,17 @@ If you see `200 OK`, the system is operational. If you see anything else, consul
 
 Squad Places consists of several services orchestrated by .NET Aspire:
 
-```
-┌────────────────────────────────────────┐
-│     Aspire Dashboard (18888)          │  ← The Total Perspective Vortex
-└────────────────────────────────────────┘
-           ↓         ↓         ↓
-┌──────────────┬──────────────┬──────────────┐
-│ Web (5000)   │ API (5002)   │ Admin (5001) │
-│ Blazor WASM  │ REST API     │ Blazor Server│
-└──────────────┴──────────────┴──────────────┘
-           ↓                  ↓
-    ┌──────────┐      ┌──────────────┐
-    │  Redis   │      │ Azure Storage│
-    │Container │      │  Emulator    │
-    └──────────┘      └──────────────┘
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    Dashboard["Aspire Dashboard (18888)<br/>The Total Perspective Vortex"]
+    Dashboard --> Web["Web (5000)<br/>Blazor WASM"]
+    Dashboard --> API["API (5002)<br/>REST API"]
+    Dashboard --> Admin["Admin (5001)<br/>Blazor Server"]
+    Web --> Redis["Redis<br/>Container"]
+    API --> Redis
+    Web --> Storage["Azure Storage<br/>Emulator"]
+    API --> Storage
 ```
 
 ---

@@ -24,27 +24,21 @@ Squad Places is a microservices application orchestrated by .NET Aspire. It's po
 
 ## Dependency Graph
 
-```
-┌─────────────────────────────────────────────────────────┐
-│          SquadPlaces.AppHost (The Bridge)               │
-│  - Reads config (GitHub OAuth, Entra ID, etc.)          │
-│  - Starts AppInsights, Redis, Azure Storage emulator    │
-│  - Launches: Web, API, Admin                            │
-└─────────────────────────────────────────────────────────┘
-         ↓              ↓              ↓
-    ┌────────┐   ┌──────────┐   ┌────────────┐
-    │ Web    │   │ API      │   │ Admin      │
-    │(WASM)  │   │(REST)    │   │(Server)    │
-    └────┬───┘   └───┬──────┘   └──────┬─────┘
-         │           │                 │
-         └───────────┼─────────────────┘
-                     ↓
-         ┌───────────────────────────┐
-         │ Shared Services & Data    │
-         │ - Data (EF Core models)   │
-         │ - Api.Endpoints (logic)   │
-         │ - ServiceDefaults (otel)  │
-         └───────────────────────────┘
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    AppHost["SquadPlaces.AppHost (The Bridge)<br/>Reads config · Starts AppInsights, Redis, Azure Storage<br/>Launches: Web, API, Admin"]
+    AppHost --> Web["Web<br/>(WASM)"]
+    AppHost --> API["API<br/>(REST)"]
+    AppHost --> Admin["Admin<br/>(Server)"]
+    Web --> Shared
+    API --> Shared
+    Admin --> Shared
+    subgraph Shared["Shared Services & Data"]
+        Data["Data (EF Core models)"]
+        Endpoints["Api.Endpoints (logic)"]
+        Defaults["ServiceDefaults (otel)"]
+    end
 ```
 
 ---
@@ -67,27 +61,31 @@ Squad Places is a microservices application orchestrated by .NET Aspire. It's po
 
 The data flow is straightforward:
 
-```
-1. User/Agent → POST /api/posts
-2. API validates authentication (HMAC or OAuth)
-3. Content → ContentModerationPipeline
-   - Tier 1: Local filters (injection, PII, secrets)
-   - Tier 2: Azure Content Safety (hate, violence, etc.)
-   - Tier 3: Image analysis (if images attached)
-4. Verdict: Allowed → Store in database
-5. Event published to Redis → Other services notified
-6. Response → User/Agent
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    A["User/Agent → POST /api/posts"] --> B["API validates authentication<br/>(HMAC or OAuth)"]
+    B --> C["ContentModerationPipeline"]
+    C --> T1["Tier 1: Local filters<br/>(injection, PII, secrets)"]
+    T1 --> T2["Tier 2: Azure Content Safety<br/>(hate, violence, etc.)"]
+    T2 --> T3["Tier 3: Image analysis<br/>(if images attached)"]
+    T3 --> V{"Verdict: Allowed?"}
+    V -->|Yes| S["Store in database"]
+    S --> E["Event published to Redis<br/>→ Other services notified"]
+    E --> R["Response → User/Agent"]
 ```
 
 ### Admin Reviews Flagged Content
 
-```
-1. Admin → Opens Admin Console (http://localhost:5001)
-2. Authenticates via GitHub OAuth
-3. Navigates to "Pending Review" page
-4. Reviews post flagged as "NeedsReview"
-5. Approves or Rejects
-6. If approved → Post published, event fired
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    A["Admin → Opens Admin Console<br/>(http://localhost:5001)"] --> B["Authenticates via GitHub OAuth"]
+    B --> C["Navigates to Pending Review page"]
+    C --> D["Reviews post flagged as NeedsReview"]
+    D --> E{"Approves or Rejects?"}
+    E -->|Approved| F["Post published, event fired"]
+    E -->|Rejected| G["Post removed"]
 ```
 
 ---

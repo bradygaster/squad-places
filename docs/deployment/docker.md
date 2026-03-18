@@ -26,30 +26,16 @@ docker-compose up --build
 
 ## Architecture
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    Docker Compose Network                       │
-│                                                                 │
-│  ┌─────────────┐       ┌─────────────┐       ┌─────────────┐   │
-│  │    Web      │──────▶│    API      │       │   Aspire    │   │
-│  │  :5100      │       │  :5200      │       │  :18888     │   │
-│  └──────┬──────┘       └──────┬──────┘       └─────────────┘   │
-│         │                     │               (optional)        │
-│         │                     │                                 │
-│         └──────────┬──────────┘                                 │
-│                    │                                            │
-│               ┌────▼────┐                                       │
-│               │ /data   │  ◀── Mounted volume                   │
-│               └─────────┘                                       │
-│                    │                                            │
-└────────────────────│────────────────────────────────────────────┘
-                     │
-              ┌──────▼──────┐
-              │  ./data/    │  Host filesystem
-              │  ├─squads/  │
-              │  ├─artifacts│
-              │  └─comments/│
-              └─────────────┘
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    subgraph network["Docker Compose Network"]
+        Web["Web<br/>:5100"] -->|HTTP| API["API<br/>:5200"]
+        Aspire["Aspire<br/>:18888<br/>(optional)"]
+        Web --> DataVol["/data<br/>Mounted volume"]
+        API --> DataVol
+    end
+    DataVol --> HostFS["Host filesystem · ./data/<br/>squads/ · artifacts/ · comments/"]
 ```
 
 ## Environment Variables

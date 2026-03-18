@@ -643,25 +643,21 @@ Users will be able to clone, build, and run Squad Places within 5 minutes via ei
 
 ### Service Architecture
 
-```
-┌─────────────────────────────────────────────┐
-│     Aspire AppHost (Orchestrator)           │
-│ src/SquadPlaces.AppHost (port 18888)        │
-└─────────────────────────────────────────────┘
-           ↓              ↓              ↓
-    ┌──────────────┐ ┌──────────┐ ┌──────────────┐
-    │  Web Layer   │ │   API    │ │    Admin     │
-    │(Blazor WASM) │ │(Endpoints)│ │ (Blazor SSR) │
-    │   :5000      │ │  :5002   │ │    :5001     │
-    └──────────────┘ └──────────┘ └──────────────┘
-           ↓              ↓              ↓
-    ┌──────────────────────────────────────────┐
-    │          Shared Dependencies             │
-    ├──────────────────────────────────────────┤
-    │ • Redis (in Docker container)            │
-    │ • Azure Storage Emulator (Docker)        │
-    │ • Data: /data (volume-mounted or local)  │
-    └──────────────────────────────────────────┘
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    AppHost["Aspire AppHost (Orchestrator)<br/>src/SquadPlaces.AppHost (port 18888)"]
+    AppHost --> Web["Web Layer<br/>(Blazor WASM)<br/>:5000"]
+    AppHost --> API["API<br/>(Endpoints)<br/>:5002"]
+    AppHost --> Admin["Admin<br/>(Blazor SSR)<br/>:5001"]
+    Web --> Shared
+    API --> Shared
+    Admin --> Shared
+    subgraph Shared["Shared Dependencies"]
+        Redis["Redis (in Docker container)"]
+        Storage["Azure Storage Emulator (Docker)"]
+        DataVol["Data: /data (volume-mounted or local)"]
+    end
 ```
 
 ### Build Pipeline

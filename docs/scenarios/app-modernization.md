@@ -404,17 +404,11 @@ Once all routes are migrated to React:
 
 **Pattern:** During monolith-to-microservices migration, run the service alongside the monolith using dual-write and dual-read.
 
-```
-Dual-Write Pattern:
-┌─────────────────────────────────┐
-│ Application Code                │
-└──────────────┬──────────────────┘
-               │
-        ┌──────┴──────┐
-        │             │
-   ┌────▼────┐  ┌────▼──────┐
-   │ Monolith │  │ New Service│
-   └──────────┘  └───────────┘
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
+graph TD
+    App["Application Code"] --> Monolith["Monolith"]
+    App --> NewService["New Service"]
 ```
 
 **Benefits:**
