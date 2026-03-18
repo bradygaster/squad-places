@@ -8503,3 +8503,235 @@ docs/
 **What:** The docs site theme is Hitchhiker's Guide to the Galaxy. All docs should be whimsical, tongue-in-cheek, and convey the power of Squad Places while having fun. Full Hitchhiker's energy — "Don't Panic", the Guide, Babel Fish, the whole thing.
 **Why:** User request — branding/creative direction — captured for team memory
 
+
+
+---
+
+# Decision: Thursday Release Readiness — Blockers and Go/No-Go
+
+**By:** Keaton (Lead)  
+**Date:** July 2025  
+**Scope:** Squad Places public trial release
+
+## Decision
+
+**🟡 Go with caveats.** Squad Places is ready for public trial on Thursday after fixing 2 blocking issues.
+
+## Blockers (Must Fix)
+
+### 1. Replace squad-ci.yml with .NET CI
+The CI workflow (`.github/workflows/squad-ci.yml`) runs `npm ci` / `npm test` — this is from the squad-sdk TypeScript repo. It must be replaced with `dotnet build` / `dotnet test` before any community PRs arrive.
+
+### 2. Fix .squad/team.md Project Context
+Lines 76-80 of `.squad/team.md` describe a TypeScript/Node.js project. This repo is .NET. Update to reflect Squad Places stack.
+
+## High Priority (Before Thursday If Possible)
+
+- `.squad/routing.md` module ownership table references TypeScript modules
+- `.squad/decisions.md` is 424KB with mostly irrelevant squad-sdk content — archive old decisions
+- Live Azure Container Apps URLs committed in `.squad/` history files — remove or genericize
+
+## Completed
+
+- ✅ Fixed PlaywrightTestBase.cs hardcoded Azure URL → now defaults to localhost:5000
+- ✅ Created FTUE design doc at `docs/getting-started/first-time-experience.md`
+- ✅ Created release readiness report at `docs/development/release-readiness.md`
+- ✅ Created 7 human-in-the-loop test issues (#2-#8) with `squad` label
+
+## What This Means for the Team
+
+- Any agent working on this repo should read the updated team.md once it's fixed
+- The FTUE flow defines how the Coordinator should behave when a new user arrives
+- The release readiness report is the canonical reference for Thursday go/no-go
+
+
+---
+
+# Decision: Hitchhiker's Guide to the Galaxy Docs Theme
+
+**Author:** McManus (DevRel)  
+**Date:** 2026-07  
+**Status:** Implemented
+
+## Context
+
+Brady requested a complete creative overhaul of the docs site with Hitchhiker's Guide to the Galaxy flavor. The goal: documentation that reads like entries in the Guide — irreverent, slightly absurd, but genuinely informative underneath the humor.
+
+## Decision
+
+Rewrote the entire docs site (~20 files) with Douglas Adams-style prose while preserving all technical accuracy. Key choices:
+
+### Tone
+
+- **Douglas Adams meets technical writing.** Every joke sits on top of real information.
+- **Self-aware about AI-ception.** We're AI agents writing docs about AI agents, and we lean into that absurdity.
+- **Quotable lines encouraged.** Write things people want to share.
+- **Tone ceiling still enforced.** Humor ≠ hype. No unsubstantiated claims, even funny ones.
+
+### Visual Theme
+
+- Dark mode default (space is dark) with `scheme: slate`
+- Teal primary, lime accent — the Guide's green-on-dark aesthetic
+- Starfield background on hero section
+- Four custom admonitions: Don't Panic (info), Mostly Harmless (tip), Vogon Alert (warning), Total Perspective Vortex (danger)
+
+### Navigation Rename
+
+| Old | New |
+|-----|-----|
+| Getting Started | Don't Panic |
+| Architecture | The Heart of Gold |
+| Deployment | Mostly Harmless (Deployment) |
+| Security & Operations | Vogon Bureaucracy (Security) |
+| Usage | Life, the Universe, and Sample Prompts |
+| Development | 42 (Development) |
+
+### Brand
+
+- "Squad Places" (two words) enforced everywhere in prose
+- "SquadPlaces" only in code paths (actual .NET project names)
+- No public URLs published
+
+## Consequences
+
+- Docs are now considerably more engaging to read
+- Navigation titles are whimsical but still navigable (each section name is recognizable)
+- New contributors may need a moment to orient to the naming, but the structure is unchanged
+- Technical content is identical — only the wrapper changed
+- Custom CSS admonitions require using specific class names in markdown (e.g., `!!! dont-panic`)
+
+## Affects
+
+- All team members writing docs should maintain the Hitchhiker's tone
+- Redfoot's logo work should complement the deep space color palette
+- Future docs should follow the established naming conventions (Guide entries, field reports, etc.)
+
+
+---
+
+# Decision: Squad Places Visual Identity — Hitchhiker's Guide Theme
+
+**Author:** Redfoot (Graphic Designer)  
+**Date:** 2025-01-15  
+**Status:** Implemented
+
+## Context
+
+Brady requested a Hitchhiker's Guide to the Galaxy themed visual identity for the Squad Places docs site. The MkDocs Material theme needed a logo and favicon.
+
+## Decision
+
+Created a two-part visual identity:
+
+1. **Logo (`docs/images/logo.svg`):** Guide device frame containing hitchhiker's thumb, constellation stars, and galaxy motif, with "SQUAD PLACES" text in brand colors.
+
+2. **Favicon (`docs/images/favicon.svg`):** Simplified Guide device + thumb that works at 16x16/32x32.
+
+## Design System
+
+| Element | Color | Hex |
+|---------|-------|-----|
+| Deep Space Navy | Background | #0a1628 |
+| Hitchhiker Green | Primary accent, stroke | #00e676 |
+| Guide Gold | Secondary accent, "PLACES" | #ffd740 |
+| Nebula Purple | Tertiary, orbit rings | #7c4dff |
+| Starfield White | Stars | #e0e0e0 |
+
+## Rationale
+
+- **Hitchhiker's thumb** — universally recognizable, no text needed
+- **Guide device frame** — evokes the iconic book/device
+- **Constellation stars** — conveys "squad" (team/group)
+- **Galaxy/space motif** — conveys "places" (destinations)
+- **"42" easter egg** — fan service without compromising legibility
+- **SVG over raster** — scalable, versionable, git-diffable
+- **Works on light/dark** — green stroke on dark fill
+
+## Impact
+
+- `mkdocs.yml` updated: `favicon: images/favicon.svg` (was .ico)
+- Consistent with Hitchhiker's Guide whimsical, tongue-in-cheek aesthetic
+- Brand colors established for future visual assets
+
+
+---
+
+# Decision: Visual Design System for Squad Places Web App
+
+**Date:** 2025-01-16  
+**Author:** Redfoot (Graphic Designer)  
+**Status:** Implemented
+
+## Context
+
+Squad Places needed visual polish for public release. The web app used Primer CSS (GitHub's design system) with minimal customization — functional but not distinctive.
+
+## Decision
+
+Created a comprehensive visual design system layered on top of Primer CSS, themed around *The Hitchhiker's Guide to the Galaxy*.
+
+### Key Choices
+
+1. **Font:** Space Grotesk from Google Fonts for headings — geometric, retro-futuristic feel
+2. **Color Palette:**
+   - Deep space navy (#0a1628) — header, void backgrounds
+   - Hitchhiker green (#00e676) — primary accent, CTAs, success
+   - Guide gold (#ffd740) — secondary accent, code highlights
+   - Nebula purple (#7c4dff) — tertiary accent, insights
+3. **CSS Custom Properties:** All colors as variables for consistency
+4. **Header:** Gradient background with animated glow line (green-gold-green)
+5. **Cards:** Hover lift effect, gradient backgrounds, rainbow top accent on hover
+6. **Footer:** "Don't Panic" tagline + "42" easter egg
+7. **Accessibility:** Reduced motion support, WCAG AA+ contrast
+
+### Files
+
+- `src/SquadPlaces.Web/wwwroot/css/squad-places.css` — Main stylesheet
+- `docs/development/visual-design-spec.md` — Full specification
+
+## Rationale
+
+- **Space Grotesk** chosen over Orbitron — more readable at body sizes while still conveying sci-fi aesthetic
+- **Layered on Primer** rather than replacing it — leverages GitHub's tested accessibility and components
+- **CSS-only effects** — no images or heavy assets, better performance
+- **Subtle animations** — ambient feel (8s intervals) rather than attention-grabbing
+
+## Consequences
+
+- Google Fonts dependency added (CDN load)
+- Visual regression tests should capture header glow animation, card hover states, footer
+- Future component additions should use the CSS custom properties for consistency
+
+
+---
+
+# Decision: Playwright Test Suite Expansion
+
+**By:** Shiherlis (Playwright Test Engineer)
+**Date:** 2026-03-06
+**Status:** Implemented
+
+## What
+
+Expanded the Playwright E2E test suite from 26 tests across 6 files to ~58 tests across 10 files. Added four new test categories:
+
+- **VisualRegressionTests.cs** (6 tests): Screenshot capture for feed, squads, squad detail, artifact detail, search, and mobile feed — stored in `screenshots/` for docs and baselines.
+- **UserJourneyTests.cs** (8 tests): Multi-step user flows, cross-page navigation, responsive layout at mobile/tablet, error handling for bad routes and invalid IDs.
+- **AccessibilityTests.cs** (10 tests): Heading hierarchy, ARIA landmarks, keyboard navigation, image alt text, link accessible names, `lang` attribute.
+- **PerformanceTests.cs** (8 tests): Page load under 3s, no console errors, no failed network requests, First Contentful Paint, status code checks.
+
+## Critical Fix
+
+Removed hardcoded public Azure Container Apps URL from `PlaywrightTestBase.cs`. Fallback is now `http://localhost:5000`. Env var `SQUADPLACES_BASE_URL` remains the primary source.
+
+## Infrastructure Changes
+
+- `.runsettings`: Bumped parallel workers from 2 → 4, added ExpectTimeout (10s) and DefaultTimeout (30s).
+- `.gitignore`: Added rule for `screenshots/` (only `.gitkeep` tracked).
+- Added `screenshots/.gitkeep`.
+- Added `README.md` for the test suite with run instructions.
+
+## Why
+
+Thursday release needs broader test coverage. These tests catch real regressions: broken navigation, missing landmarks, slow pages, console errors, visual drift.
+
