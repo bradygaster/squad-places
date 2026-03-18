@@ -1290,3 +1290,94 @@ Blog post documenting the closed-loop feedback cycle that occurred when Squad Pl
 
 📌 Team update (2026-03-18T01:15:00Z): SquadPlaces documentation suite complete (README disclaimer, sample prompts, scenario guides) — provides governance framework for AI squad admins — by McManus
 
+
+---
+
+### 2026-03-18: Beautiful MkDocs Material Documentation Site
+
+**Status:** Complete. Built and deployed a modern, polished documentation site for SquadPlaces using MkDocs Material.
+
+**Deliverables:**
+
+1. **MkDocs Material Configuration** (`mkdocs.yml`)
+   - Custom purple gradient theme inspired by aspire.dev (indigo → deep purple)
+   - Dark/light mode toggle with smooth transitions
+   - Inter font for text, JetBrains Mono for code
+   - Full feature set enabled: instant navigation, tabs, search suggestions, code copy, git revision dates
+   - Comprehensive markdown extensions: admonitions, code highlighting, mermaid diagrams, tabbed content
+
+2. **Custom Styling** (`docs/stylesheets/extra.css`)
+   - Hero section with gradient background and modern button styling
+   - Feature cards with hover effects and smooth transitions
+   - Enhanced typography with proper spacing and line heights
+   - Quick links grid with gradient styling
+   - Consistent purple theme across navigation, footer, and search
+
+3. **Beautiful Landing Page** (`docs/index.md`)
+   - Clean hero section with call-to-action buttons
+   - Feature grid with 6 cards highlighting core capabilities
+   - "Why SquadPlaces?" section explaining the value proposition
+   - Quick links grid for common tasks
+   - Stack overview table
+   - Production warning callout
+
+4. **Documentation Structure:**
+   - **Getting Started:** Overview, Prerequisites, Quick Start (5-minute setup), Configuration reference
+   - **Architecture:** Overview, Microservices detail, Event system, Authentication
+   - **Deployment:** Overview comparison table, Docker guide, Azure guide (with strict "bradyg happy work cloud" enforcement), Synology guide
+   - **Security & Operations:** Security disclaimer (comprehensive risk/mitigation), Content moderation (3-tier pipeline), Best practices
+   - **Usage:** Sample Prompts, Scenarios (app modernization, content moderation, subsquad coordination)
+   - **Development:** Contributing guide, Troubleshooting
+
+5. **GitHub Actions Deployment** (`.github/workflows/docs.yml`)
+   - Automated build and deploy to GitHub Pages
+   - Triggered on push to main (paths: `docs/**`, `mkdocs.yml`, workflow file)
+   - Uses `actions/deploy-pages@v4` for deployment
+   - Python caching for faster builds
+   - Strict mode enabled to catch broken links
+
+6. **GitHub Pages Configuration:**
+   - Enabled via API with `build_type=workflow`
+   - HTTPS enforced
+   - Deployed from GitHub Actions (not branch)
+
+**Decisions:**
+
+- **Framework Choice:** MkDocs Material over Docusaurus (Python available, better .NET ecosystem fit, faster setup)
+- **Theme:** Purple gradient (team/collaboration brand) instead of default blue
+- **Navigation:** Tabs for top-level sections, sidebar for sub-pages
+- **Deployment:** GitHub Actions workflow (not manual branch deployment)
+- **URL Policy:** CRITICAL — Never publish or output public URLs per Brady's directive
+
+**Tone Ceiling Applied:**
+
+- Landing page uses substantiated claims only (no hype)
+- Security disclaimer is direct and honest about real risks
+- Documentation acknowledges limitations and caveats
+- "Production-Ready Caution" section warns appropriately about autonomous AI risks
+
+**Technical Notes:**
+
+- MkDocs Material 9.x with glightbox (image lightbox) and git-revision-date plugins
+- Site builds to `site/` directory (gitignored)
+- Custom CSS uses CSS variables for theme consistency
+- JavaScript adds smooth scrolling and external link indicators
+- All internal documentation migrated from old structure to new organized hierarchy
+
+**Outcome:**
+
+- Documentation site is live and deploying via GitHub Actions
+- Beautiful, modern design that reflects the quality of the product
+- Well-organized navigation makes content discoverable
+- Security warnings are prominent and substantiated
+- Complete migration of existing docs into proper structure
+
+**Learnings:**
+
+- MkDocs Material's feature set is incredibly comprehensive — navigation features alone (tabs, instant loading, search suggestions, TOC integration) create a premium experience
+- The gradient theme combined with custom CSS creates a distinctive brand identity without overwhelming the content
+- GitHub Pages workflow deployment is more reliable than branch-based deployment (immutable artifacts, proper permissions)
+- Strict mode in mkdocs build catches broken internal links early
+- Dark mode support is critical for developer-facing documentation
+
+**Next:** Monitor GitHub Pages deployment, add any missing content to fill out architecture/deployment sections, consider adding diagrams (mermaid support is enabled).
