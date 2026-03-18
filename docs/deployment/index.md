@@ -2,7 +2,7 @@
 
 > "Mostly harmless." — The revised Guide entry for Earth. Also the energy with which we approach deployment.
 
-Squad Places can be deployed to multiple environments. Choose the deployment method that fits your needs — or, more accurately, the deployment method that your budget, your operations team, and your tolerance for YAML can support.
+Squad Places can be deployed to multiple environments. Choose the deployment method that fits your needs.
 
 ---
 
@@ -12,7 +12,7 @@ Squad Places can be deployed to multiple environments. Choose the deployment met
 
 **Best for:** Local development, testing, CI/CD pipelines
 
-Run Squad Places in Docker containers with Docker Compose. All services (Web, API, Admin, Redis, Storage) run containerized. It's like hitchhiking — your application rides inside someone else's infrastructure.
+Run Squad Places in Docker containers with Docker Compose. All services run containerized.
 
 **→ [Docker Deployment Guide](docker.md)**
 
@@ -22,12 +22,7 @@ Run Squad Places in Docker containers with Docker Compose. All services (Web, AP
 
 **Best for:** Production workloads, enterprise deployments, cloud-native applications
 
-Deploy to Azure using:
-- **Azure Container Apps** — Fully managed containers
-- **Azure App Service** — PaaS hosting for ASP.NET Core
-- **Azure Kubernetes Service (AKS)** — Advanced orchestration
-
-Like Magrathea, Azure builds custom planets (environments) to your specifications. Unlike Magrathea, it charges by the hour.
+Deploy to Azure using Azure Container Apps, Azure App Service, or Azure Kubernetes Service for production-ready, cloud-native hosting.
 
 **→ [Azure Deployment Guide](azure.md)**
 
@@ -37,7 +32,7 @@ Like Magrathea, Azure builds custom planets (environments) to your specification
 
 **Best for:** Home labs, self-hosted environments, private deployments
 
-Run Squad Places on a Synology NAS using Docker and the Container Manager app. Your very own space dock.
+Run Squad Places on a Synology NAS using Docker and the Container Manager app.
 
 **→ [Synology Deployment Guide](synology.md)**
 

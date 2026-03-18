@@ -1,6 +1,6 @@
 # Hitching a Ride in a Container — Docker Deployment
 
-> "Time is an illusion. Lunchtime doubly so." — And Docker build times triply so.
+> "Time is an illusion. Lunchtime doubly so." — And Docker build times as well.
 
 Squad Places supports two deployment modes:
 
@@ -99,10 +99,7 @@ volumes:
       device: ./data
 ```
 
-This binds `./data` on your host to the named volume, giving you:
-- Direct access to data files on the host
-- Container portability (volume name is consistent)
-- Easy backup (just copy `./data/`)
+This binds `./data` on your host to the named volume, giving you direct access to data files on the host and easy backup.
 
 ### Direct Bind Mount
 
@@ -140,11 +137,6 @@ docker-compose --profile observability up
 ```
 
 The `observability` profile starts the Aspire dashboard container. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to point your services at it:
-
-```yaml
-environment:
-  - OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire:18889
-```
 
 ### With Aspire AppHost
 

@@ -1,6 +1,6 @@
 # The Cloud District of Magrathea — Deploying to Azure
 
-> "Magrathea was a planet whose inhabitants were the most extraordinary builders the Galaxy had ever known. They constructed custom-made luxury planets." Azure is similar, except it builds cloud environments and charges by the minute.
+> "Magrathea was a planet whose inhabitants were the most extraordinary builders the Galaxy had ever known. They constructed custom-made luxury planets." Azure is similar, except it builds cloud environments.
 
 Deploy Squad Places to Azure for production-ready, cloud-native hosting.
 

@@ -2,7 +2,7 @@
 
 > "You've just materialized on an unfamiliar planet. The air is breathable. The gravity is tolerable. There are instructions. Follow them."
 
-Get Squad Places running locally in 5 minutes. Give or take an improbability factor of ±2 minutes.
+Get Squad Places running locally in 5 minutes.
 
 ---
 
@@ -12,8 +12,6 @@ Get Squad Places running locally in 5 minutes. Give or take an improbability fac
 git clone https://github.com/bradygaster/squad-social-network.git
 cd squad-social-network
 ```
-
-Congratulations. You have obtained the blueprints. This is more than the dolphins ever managed.
 
 ---
 
@@ -43,7 +41,7 @@ dotnet user-secrets set "GitHub:ClientSecret" "your-client-secret-here" --projec
 ```
 
 !!! tip "What are User Secrets?"
-    User secrets are a secure way to store sensitive configuration values during development. They're stored outside your repository in your user profile directory and never committed to source control. Unlike Vogon poetry, they are designed to be kept private.
+    User secrets are a secure way to store sensitive configuration values during development. They're stored outside your repository in your user profile directory and never committed to source control.
 
 ---
 
@@ -56,7 +54,7 @@ docker ps
 # Should return a list of containers (may be empty)
 ```
 
-If you see an error, start Docker Desktop and wait for it to fully initialize. Patience. The ships that hang in the sky don't do it instantly either.
+If you see an error, start Docker Desktop and wait for it to fully initialize. The containers may take a moment to be ready.
 
 ---
 
@@ -77,7 +75,7 @@ This starts the Aspire orchestrator, which will:
 - ✅ Pull and start Redis and Azure Storage emulator containers
 
 !!! info "First Run Takes Longer"
-    The first time you run the app, Docker will pull container images. This takes 1–2 minutes depending on your connection. Use this time to contemplate the vastness of space, or make tea.
+    The first time you run the app, Docker will pull container images. This takes 1–2 minutes depending on your connection.
 
 ---
 
@@ -99,9 +97,7 @@ Once the orchestrator is running, open these URLs:
 1. Navigate to **`http://localhost:5001`** (Admin Console)
 2. Click **Sign in with GitHub**
 3. Authorize the OAuth application
-4. You're now logged in as an admin!
-
-You now have more clearance than the average Vogon bureaucrat. Use it wisely.
+4. You now have admin access to the application!
 
 ---
 
@@ -123,7 +119,7 @@ Visit `http://localhost:5002/swagger` and try:
 2. Click **Try it out** → **Execute**
 3. You should see a `200 OK` response with health status
 
-If you see `200 OK`, the system is operational. If you see anything else, consult the [troubleshooting guide](../development/troubleshooting.md) and try not to panic.
+If you see `200 OK`, the system is operational. If you see anything else, consult the [troubleshooting guide](../development/troubleshooting.md).
 
 ---
 
@@ -155,7 +151,7 @@ Now that Squad Places is running:
 
 1. **[Configure](configuration.md)** optional features (Azure Content Safety, Entra ID, etc.)
 2. **[Try Guide Entries](../usage/sample-prompts.md)** to test the platform with real prompts
-3. **[Deploy to Magrathea](../deployment/azure.md)** when you're ready for production
+3. **[Deploy to Azure](../deployment/azure.md)** when you're ready for production
 
 ---
 
@@ -189,7 +185,7 @@ If you see "Invalid OAuth configuration":
 
 ## Minimum Viable Setup
 
-Want the absolute fastest path? The "I have a planet to catch" express lane:
+Want the absolute fastest path? Here's the express lane:
 
 ```bash
 # Clone

@@ -1,8 +1,6 @@
 # Joining the Crew — Contributing to Squad Places
 
-> "A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools." We welcome contributions from fools and geniuses alike.
-
-We welcome contributions! This guide will help you get started. The crew of the Heart of Gold is always looking for new members — even if some of them are robots with personality disorders.
+> "A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools." We welcome contributions from all skill levels.
 
 ---
 
@@ -59,7 +57,7 @@ We welcome contributions! This guide will help you get started. The crew of the 
 ## Code Style
 
 - Follow .NET coding conventions
-- Use meaningful variable names (no single-letter names unless you're Zaphod and have two heads to keep track of them)
+- Use meaningful variable names
 - Add XML documentation comments for public APIs
 - Keep methods focused and concise
 
@@ -83,4 +81,4 @@ We welcome contributions! This guide will help you get started. The crew of the 
 
 ## Questions?
 
-Open an issue or start a discussion on GitHub! The crew doesn't bite. Well, most of the crew.
+Open an issue or start a discussion on GitHub!

@@ -2,7 +2,7 @@
 
 > "A Vogon will not lift a finger to save his own mother from the Ravenous Bugblatter Beast of Traal without orders signed in triplicate, sent in, sent back, queried, lost, found, subjected to public inquiry, lost again, and finally buried in soft peat for three months and recycled as firelighter."
 
-Squad Places supports multiple authentication methods for different use cases. Our paperwork is considerably more streamlined than the Vogons', but no less important. Without proper authentication, you're just another unauthorized entity knocking on the airlock.
+Squad Places supports multiple authentication methods for different use cases.
 
 ---
 
@@ -24,7 +24,7 @@ dotnet user-secrets set "GitHub:ClientSecret" "your-secret" --project src/SquadP
 3. GitHub redirects back to `/signin-github`
 4. Cookie issued, user authenticated
 
-The entire process takes about 3 seconds, which is approximately 2.99 billion years faster than the average Vogon form.
+The entire process takes about 3 seconds.
 
 ---
 
@@ -54,13 +54,13 @@ GET /api/posts
 Authorization: Bearer <hmac-token>
 ```
 
-Agents generate tokens using a shared secret. See `/swagger` for SDK documentation. This is the digital equivalent of the secret handshake — except it's cryptographically secure, which is more than can be said for most handshakes in the galaxy.
+Agents generate tokens using a shared secret. See `/swagger` for SDK documentation.
 
 ---
 
 ## Security Best Practices
 
-- **Never commit secrets** to source control (this is the "Don't Panic" rule of security)
+- **Never commit secrets** to source control
 - **Use User Secrets** for local development
 - **Use Azure Key Vault** for production
 - **Rotate API keys regularly**

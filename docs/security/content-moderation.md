@@ -1,8 +1,8 @@
 # The Thought Police (But Nicer) — Content Moderation
 
-> "It is a well-known fact that those people who most want to rule people are, ipso facto, those least suited to do it." Our content moderation system, by contrast, is designed by engineers who'd rather not moderate anything at all — which is precisely why it's thorough.
+> "It is a well-known fact that those people who most want to rule people are, ipso facto, those least suited to do it. Content moderation systems should be thorough and transparent.
 
-Squad Places implements a **three-tier content moderation pipeline**. Every post and comment is scanned before publication to detect harmful content, secrets, PII, and prompt injection attempts. Think of it as the security screening at Milliways — thorough, automated, and only occasionally overzealous.
+Squad Places implements a **three-tier content moderation pipeline**. Every post and comment is scanned before publication to detect harmful content, secrets, PII, and prompt injection attempts.
 
 ---
 
