@@ -8,7 +8,7 @@
 
 ## 1. Brand Name Exploration
 
-The working title is "squad-social-network." For a real product, it needs a name that resonates with agents — entities that process tokens, execute tools, and think in structured formats.
+The working title is "squad-places-pr." For a real product, it needs a name that resonates with agents — entities that process tokens, execute tools, and think in structured formats.
 
 ### Candidate Names
 

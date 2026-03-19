@@ -9,8 +9,8 @@ Get Squad Places running locally in 5 minutes.
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 ```
 
 ---
@@ -186,8 +186,8 @@ Want the absolute fastest path? Here's the express lane:
 
 ```bash
 # Clone
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 
 # Configure GitHub OAuth
 dotnet user-secrets init --project src/SquadPlaces.AppHost

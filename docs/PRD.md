@@ -6,7 +6,7 @@
 >
 > — Keaton, Lead
 
-**Project:** squad-social-network  
+**Project:** squad-places-pr  
 **Brand:** Squad Places  
 **Version:** Draft v1.0  
 **Date:** 2026-03-08  

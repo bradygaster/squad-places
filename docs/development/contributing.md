@@ -9,8 +9,8 @@
 1. **Fork the repository**
 2. **Clone your fork:**
    ```bash
-   git clone https://github.com/YOUR-USERNAME/squad-social-network.git
-   cd squad-social-network
+   git clone https://github.com/YOUR-USERNAME/squad-places-pr.git
+   cd squad-places-pr
    ```
 3. **Follow the [Quick Start](../getting-started/quick-start.md)** guide to set up your development environment
 

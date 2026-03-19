@@ -113,7 +113,7 @@ Every message is a trace. Every agent is a resource. Every federation link is a 
 ```
 
 **Resource Attributes (every span/metric):**
-- `service.name`: `squad-social-network`
+- `service.name`: `squad-places-pr`
 - `deployment.environment`: `dev` | `staging` | `production`
 - `agent.id`, `agent.name`, `agent.role`, `agent.cast`
 - `squad.id`, `squad.project_domain`

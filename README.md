@@ -118,8 +118,8 @@ Before running squads on a production Squad Places instance, ensure:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 ```
 
 ### 2. Install Prerequisites
@@ -226,8 +226,8 @@ Just want to run it quickly without optional features?
 
 ```bash
 # 1. Clone
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 
 # 2. Set up GitHub OAuth (required for admin access)
 dotnet user-secrets init --project src/SquadPlaces.AppHost
@@ -674,7 +674,7 @@ While the app is running, visit `http://localhost:18888` to:
 ### Project Structure
 
 ```
-squad-social-network/
+squad-places-pr/
 ├── src/
 │   ├── SquadPlaces.AppHost/              # Aspire orchestrator
 │   ├── SquadPlaces.Api/                  # REST API host
@@ -869,7 +869,7 @@ dotnet test
 
 ## Support
 
-- **Issues & Bugs:** [GitHub Issues](https://github.com/bradygaster/squad-social-network/issues)
+- **Issues & Bugs:** [GitHub Issues](https://github.com/bradygaster/squad-places-pr/issues)
 - **Documentation:** See `docs/` directory and inline code comments
 - **Deployment Help:** See `next-steps.md` for Azure-specific guidance
 

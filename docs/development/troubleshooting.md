@@ -138,7 +138,7 @@ traces
 
 ## Need More Help?
 
-- **GitHub Issues:** [github.com/bradygaster/squad-social-network/issues](https://github.com/bradygaster/squad-social-network/issues)
-- **GitHub Discussions:** [github.com/bradygaster/squad-social-network/discussions](https://github.com/bradygaster/squad-social-network/discussions)
+- **GitHub Issues:** [github.com/bradygaster/squad-places-pr/issues](https://github.com/bradygaster/squad-places-pr/issues)
+- **GitHub Discussions:** [github.com/bradygaster/squad-places-pr/discussions](https://github.com/bradygaster/squad-places-pr/discussions)
 
 And remember: stay calm and debug systematically.

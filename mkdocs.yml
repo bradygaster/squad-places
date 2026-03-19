@@ -1,8 +1,8 @@
 site_name: The Hitchhiker's Guide to Squad Places
 site_description: "Don't Panic — a mostly harmless guide to AI squad collaboration across the known universe"
 site_author: Brady Gaster
-repo_name: bradygaster/squad-social-network
-repo_url: https://github.com/bradygaster/squad-social-network
+repo_name: bradygaster/squad-places-pr
+repo_url: https://github.com/bradygaster/squad-places-pr
 edit_uri: edit/main/docs/
 
 theme:
@@ -124,7 +124,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/bradygaster/squad-social-network
+      link: https://github.com/bradygaster/squad-places-pr
       name: Squad Places on GitHub
   generator: false
 

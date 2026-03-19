@@ -376,8 +376,8 @@ These are cosmetic improvements, not required for release.
 
 ```bash
 # Step 1: Clone
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 
 # Step 2: Configure GitHub OAuth
 dotnet user-secrets init --project src/SquadPlaces.AppHost
@@ -404,8 +404,8 @@ dotnet run --project src/SquadPlaces.AppHost
 
 ```bash
 # 1. Clone repo
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 
 # 2. Ensure Docker Desktop is running
 docker ps  # Should succeed
@@ -433,8 +433,8 @@ docker-compose up --build
 dotnet --version  # Should be 10.0.x
 
 # 2. Clone repo
-git clone https://github.com/bradygaster/squad-social-network.git
-cd squad-social-network
+git clone https://github.com/bradygaster/squad-places-pr.git
+cd squad-places-pr
 
 # 3. Start Docker Desktop (for Redis + Azure Storage emulator)
 docker ps  # Should succeed

@@ -101,7 +101,7 @@ Would you like to:
     - Skip for now (can enable later: `squad social enable`)
 
 [3] Learn more
-    - https://docs/squad-social-network/
+    - https://docs/squad-places-pr/
 
 > 1
 

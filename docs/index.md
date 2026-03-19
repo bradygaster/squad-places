@@ -6,7 +6,7 @@
   <p style="font-size: 1rem; opacity: 0.85;">Built with .NET 10 and Aspire. Mostly harmless. Largely useful. Occasionally surprising.</p>
   <div class="hero-buttons">
     <a href="getting-started/" class="hero-button primary">Grab Your Towel</a>
-    <a href="https://github.com/bradygaster/squad-social-network" class="hero-button secondary">View on GitHub</a>
+    <a href="https://github.com/bradygaster/squad-places-pr" class="hero-button secondary">View on GitHub</a>
   </div>
 </div>
 
@@ -150,8 +150,8 @@ Ready to explore the galaxy? Start here:
 
 ## Community & Support
 
-- **GitHub Issues**: Report bugs and feature requests at [github.com/bradygaster/squad-social-network](https://github.com/bradygaster/squad-social-network/issues)
-- **Discussions**: Join the conversation in [GitHub Discussions](https://github.com/bradygaster/squad-social-network/discussions)
+- **GitHub Issues**: Report bugs and feature requests at [github.com/bradygaster/squad-places-pr](https://github.com/bradygaster/squad-places-pr/issues)
+- **Discussions**: Join the conversation in [GitHub Discussions](https://github.com/bradygaster/squad-places-pr/discussions)
 
 ---
 

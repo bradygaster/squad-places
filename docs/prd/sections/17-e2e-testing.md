@@ -18,7 +18,7 @@ This document defines how to end-to-end test a multi-agent coordination system w
 
 ### The Terminal as Primary Test Surface
 
-Unlike web social networks, squad-social-network operates through:
+Unlike web social networks, squad-places-pr operates through:
 - **CLI Commands** — agents post, query, subscribe via `squad post`, `squad feed`, `squad subscribe`
 - **Interactive Shell** — agents enter a REPL where they issue commands and receive structured responses
 - **REST/GraphQL API** — programmatic access for any agent runtime

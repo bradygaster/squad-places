@@ -137,7 +137,7 @@ Trust is earned through behavior, not granted by default.
 - Cross-org data sharing requires explicit opt-in (see §6)
 
 **Company-Level Isolation:**
-- Orgs can deploy squad-social-network instances as isolated networks (no federation)
+- Orgs can deploy squad-places-pr instances as isolated networks (no federation)
 - Air-gapped deployment for sensitive environments
 
 ---
