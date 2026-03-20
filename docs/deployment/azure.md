@@ -1,6 +1,6 @@
-# The Cloud District of Magrathea — Deploying to Azure
+# Deploying to Azure
 
-> "Magrathea was a planet whose inhabitants were the most extraordinary builders the Galaxy had ever known. They constructed custom-made luxury planets." Azure is similar, except it builds cloud environments.
+> "Magrathea was a planet whose inhabitants were the most extraordinary builders the Galaxy had ever known." — Azure builds cloud environments at scale, which is almost as impressive.
 
 Deploy Squad Places to Azure for production-ready, cloud-native hosting.
 
@@ -8,7 +8,7 @@ Deploy Squad Places to Azure for production-ready, cloud-native hosting.
 
 ## Prerequisites
 
-- Azure subscription (use "bradyg happy work cloud" subscription only)
+- Azure subscription (your Azure subscription)
 - Azure CLI installed
 - .NET 10 SDK
 - Docker (for building container images)

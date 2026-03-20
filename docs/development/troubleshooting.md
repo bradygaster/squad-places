@@ -1,6 +1,6 @@
-# When Things Go Terribly Wrong (Which They Will) — Troubleshooting
+# Troubleshooting
 
-> "Reality is frequently inaccurate." Software systems occasionally are too. Here's what to do when issues occur.
+> "Reality is frequently inaccurate." — Software systems occasionally are too.
 
 Common issues and solutions for Squad Places.
 
@@ -49,7 +49,7 @@ This is the problem of two applications using the same port, which never ends we
    dotnet user-secrets set "GitHub:ClientId" "your-id" --project src/SquadPlaces.AppHost
    ```
 
-If the Vogon bureaucracy rejects your clearance forms, double-check every character.
+If authentication rejects your credentials, double-check every character.
 
 ---
 

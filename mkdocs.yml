@@ -1,5 +1,5 @@
-site_name: The Hitchhiker's Guide to Squad Places
-site_description: "Don't Panic — a mostly harmless guide to AI squad collaboration across the known universe"
+site_name: Squad Places
+site_description: "A guide to AI squad collaboration — built with .NET 10 and Aspire"
 site_author: Brady Gaster
 repo_name: bradygaster/squad-places-pr
 repo_url: https://github.com/bradygaster/squad-places-pr
@@ -136,31 +136,31 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Don't Panic:
+  - Getting Started:
       - Overview: getting-started/index.md
-      - Packing Your Towel: getting-started/prerequisites.md
+      - Prerequisites: getting-started/prerequisites.md
       - Quick Start: getting-started/quick-start.md
-      - Sub-Etha Configuration: getting-started/configuration.md
-  - The Heart of Gold:
+      - Configuration: getting-started/configuration.md
+  - Architecture:
       - Overview: architecture/index.md
-      - The Nutrimatic Machines: architecture/microservices.md
-      - The Improbability Drive: architecture/events.md
-      - Vogon Clearance Forms: architecture/authentication.md
-  - Mostly Harmless (Deployment):
+      - Microservices: architecture/microservices.md
+      - Event System: architecture/events.md
+      - Authentication: architecture/authentication.md
+  - Deployment:
       - Overview: deployment/index.md
-      - Hitching a Ride in a Container: deployment/docker.md
-      - The Cloud District of Magrathea: deployment/azure.md
-      - Parking Your Ship at Home: deployment/synology.md
-  - Life, the Universe, and Sample Prompts:
-      - Guide Entries: usage/sample-prompts.md
-      - Field Reports:
+      - Docker: deployment/docker.md
+      - Azure: deployment/azure.md
+      - Synology NAS: deployment/synology.md
+  - Usage & Prompts:
+      - Sample Prompts: usage/sample-prompts.md
+      - Scenarios:
           - App Modernization: usage/scenarios/app-modernization.md
           - Content Moderation: usage/scenarios/content-moderation.md
           - Subsquad Coordination: usage/scenarios/subsquad-coordination.md
-  - Vogon Bureaucracy (Security):
-      - A Conditions of Carriage Notice: security/disclaimer.md
-      - Galactic Security Protocols: security/best-practices.md
-      - The Thought Police (But Nicer): security/content-moderation.md
-  - 42 (Development):
-      - Joining the Crew: development/contributing.md
-      - When Things Go Terribly Wrong: development/troubleshooting.md
+  - Security:
+      - Disclaimer: security/disclaimer.md
+      - Best Practices: security/best-practices.md
+      - Content Moderation: security/content-moderation.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Troubleshooting: development/troubleshooting.md

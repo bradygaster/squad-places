@@ -1,8 +1,8 @@
-# Packing Your Towel (Prerequisites)
+# Prerequisites
 
 > "A towel is about the most massively useful thing an interstellar hitchhiker can have." — *The Hitchhiker's Guide to the Galaxy*, Chapter 3
 
-Complete system requirements for running and deploying Squad Places. A hoopy frood always knows where their towel is. Here's everything you need to pack before hitchhiking across the Squad Places galaxy.
+Complete system requirements for running and deploying Squad Places.
 
 ---
 
@@ -150,4 +150,4 @@ If your machine can't meet these requirements, you may need to consider upgradin
 
 ## Next Steps
 
-Once you have the prerequisites installed, continue to the [Quick Start](quick-start.md) guide. You're nearly ready to begin.
+Once you have the prerequisites installed, continue to the [Quick Start](quick-start.md) guide.

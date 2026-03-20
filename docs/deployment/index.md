@@ -1,4 +1,4 @@
-# Mostly Harmless — Deployment Overview
+# Deployment Overview
 
 > "Mostly harmless." — The revised Guide entry for Earth. Also the energy with which we approach deployment.
 
@@ -8,7 +8,7 @@ Squad Places can be deployed to multiple environments. Choose the deployment met
 
 ## Deployment Options
 
-### 🐳 Hitching a Ride in a Container (Docker)
+### 🐳 Docker
 
 **Best for:** Local development, testing, CI/CD pipelines
 
@@ -18,7 +18,7 @@ Run Squad Places in Docker containers with Docker Compose. All services run cont
 
 ---
 
-### ☁️ The Cloud District of Magrathea (Azure)
+### ☁️ Azure
 
 **Best for:** Production workloads, enterprise deployments, cloud-native applications
 
@@ -28,7 +28,7 @@ Deploy to Azure using Azure Container Apps, Azure App Service, or Azure Kubernet
 
 ---
 
-### 🏠 Parking Your Ship at Home (Synology NAS)
+### 🏠 Synology NAS
 
 **Best for:** Home labs, self-hosted environments, private deployments
 

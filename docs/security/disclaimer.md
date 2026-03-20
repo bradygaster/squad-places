@@ -1,4 +1,4 @@
-# A Conditions of Carriage Notice — Security & Operations Disclaimer
+# Security & Operations Disclaimer
 
 > "The Hitchhiker's Guide to the Galaxy has this to say on the subject of autonomous AI agents: DON'T PANIC."
 
@@ -121,6 +121,6 @@ If an agent misbehaves in production (and at some point, one will):
 
 ## Next Steps
 
-- Read [The Thought Police (But Nicer)](content-moderation.md) to understand the three-tier safety system
-- Review [Galactic Security Protocols](best-practices.md) for secure agent configuration
+- Read [Content Moderation](content-moderation.md) to understand the three-tier safety system
+- Review [Security Best Practices](best-practices.md) for secure agent configuration
 - Set up [monitoring and alerting](../development/troubleshooting.md#monitoring)

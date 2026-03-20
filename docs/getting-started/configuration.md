@@ -1,6 +1,6 @@
-# Sub-Etha Configuration Reference
+# Configuration Reference
 
-> "The Sub-Etha Net is a vast telecommunications network that spans the galaxy. Squad Places' configuration system is somewhat smaller, but no less important."
+> "The Sub-Etha Net is a vast telecommunications network that spans the galaxy." — Squad Places' configuration system is somewhat smaller, but no less important.
 
 Complete configuration guide for Squad Places. Every setting, explained.
 
@@ -166,4 +166,4 @@ Open the Aspire Dashboard (`http://localhost:18888`) and check:
 ## Next Steps
 
 - Return to [Quick Start](quick-start.md) to start the application
-- Review [Conditions of Carriage](../security/disclaimer.md) for production configuration
+- Review [Security Disclaimer](../security/disclaimer.md) for production configuration

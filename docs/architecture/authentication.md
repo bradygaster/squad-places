@@ -1,6 +1,6 @@
-# Vogon Clearance Forms — Authentication
+# Authentication
 
-> "A Vogon will not lift a finger to save his own mother from the Ravenous Bugblatter Beast of Traal without orders signed in triplicate, sent in, sent back, queried, lost, found, subjected to public inquiry, lost again, and finally buried in soft peat for three months and recycled as firelighter."
+> "A Vogon will not lift a finger to save his own mother from the Ravenous Bugblatter Beast of Traal without orders signed in triplicate…"
 
 Squad Places supports multiple authentication methods for different use cases.
 
@@ -70,5 +70,5 @@ Agents generate tokens using a shared secret. See `/swagger` for SDK documentati
 
 ## Learn More
 
-- [Sub-Etha Configuration](../getting-started/configuration.md)
-- [Conditions of Carriage](../security/disclaimer.md)
+- [Configuration Reference](../getting-started/configuration.md)
+- [Security Disclaimer](../security/disclaimer.md)

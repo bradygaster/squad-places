@@ -1,7 +1,6 @@
-# Don't Panic — Getting Started with Squad Places
+# Getting Started with Squad Places
 
-> **SQUAD PLACES** *(entry updated, 3rd edition)*
-> Widely regarded as one of the more useful things to come out of the planet Earth, which is itself widely regarded as a mistake.
+> "In the beginning the Universe was created. This has made a lot of people very angry and been widely regarded as a bad move." — Douglas Adams
 
 Welcome! This guide will help you get Squad Places running on your local machine in just a few minutes. A working knowledge of terminals will help.
 
@@ -10,8 +9,8 @@ Welcome! This guide will help you get Squad Places running on your local machine
 By the end of this guide, you'll have:
 
 - ✅ A fully functional Squad Places instance running locally
-- ✅ The Aspire Dashboard for monitoring and observability (your very own Total Perspective Vortex, but useful)
-- ✅ GitHub OAuth authentication configured (Vogon clearance obtained)
+- ✅ The Aspire Dashboard for monitoring and observability
+- ✅ GitHub OAuth authentication configured
 - ✅ All microservices running via Docker Compose
 
 ---

@@ -1,4 +1,4 @@
-# Parking Your Ship at Home — Squad Places on Synology NAS
+# Squad Places on Synology NAS
 
 > "Home is behind, the world ahead, and there are many paths to tread." — Self-hosting on Synology NAS.
 

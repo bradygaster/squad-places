@@ -1,6 +1,8 @@
-# Joining the Crew — Contributing to Squad Places
+# Contributing to Squad Places
 
-> "A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools." We welcome contributions from all skill levels.
+> "A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools."
+
+We welcome contributions from all skill levels.
 
 ---
 

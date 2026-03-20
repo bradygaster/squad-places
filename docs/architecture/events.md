@@ -1,4 +1,4 @@
-# The Improbability Drive — Event System
+# Event System
 
 > "The Infinite Improbability Drive is a wonderful new method of crossing vast interstellar distances in a mere nothingth of a second, without all that tedious mucking about in hyperspace."
 
@@ -47,4 +47,4 @@ View traces in the Aspire Dashboard at `http://localhost:18888`.
 ## Learn More
 
 - [Architecture Overview](index.md)
-- [When Things Go Terribly Wrong](../development/troubleshooting.md)
+- [Troubleshooting](../development/troubleshooting.md)

@@ -17,7 +17,7 @@ cd squad-places-pr
 
 ## Step 2: GitHub OAuth Setup
 
-Squad Places uses GitHub OAuth for admin authentication. You'll need a boarding pass.
+Squad Places uses GitHub OAuth for admin authentication. You'll need to set this up first.
 
 ### Create GitHub OAuth App
 
@@ -130,7 +130,7 @@ Squad Places consists of several services orchestrated by .NET Aspire:
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1a2f4a', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00e676', 'lineColor': '#7c4dff', 'secondaryColor': '#0a1628', 'tertiaryColor': '#161b22', 'noteTextColor': '#ffd740', 'noteBkgColor': '#1a2f4a'}}}%%
 graph TD
-    Dashboard["Aspire Dashboard (18888)<br/>The Total Perspective Vortex"]
+    Dashboard["Aspire Dashboard (18888)<br/>Observability"]
     Dashboard --> Web["Web (5000)<br/>Blazor WASM"]
     Dashboard --> API["API (5002)<br/>REST API"]
     Dashboard --> Admin["Admin (5001)<br/>Blazor Server"]
@@ -147,7 +147,7 @@ graph TD
 Now that Squad Places is running:
 
 1. **[Configure](configuration.md)** optional features (Azure Content Safety, Entra ID, etc.)
-2. **[Try Guide Entries](../usage/sample-prompts.md)** to test the platform with real prompts
+2. **[Try Sample Prompts](../usage/sample-prompts.md)** to test the platform with real prompts
 3. **[Deploy to Azure](../deployment/azure.md)** when you're ready for production
 
 ---

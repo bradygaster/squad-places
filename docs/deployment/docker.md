@@ -1,4 +1,4 @@
-# Hitching a Ride in a Container — Docker Deployment
+# Docker Deployment
 
 > "Time is an illusion. Lunchtime doubly so." — And Docker build times as well.
 

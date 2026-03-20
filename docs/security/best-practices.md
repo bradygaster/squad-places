@@ -1,4 +1,4 @@
-# Galactic Security Protocols — Best Practices
+# Security Best Practices
 
 > "The major problem — one of the major problems, for there are several — one of the many major problems with governing the Galaxy is that of whom, exactly, to trust."
 
@@ -62,5 +62,5 @@ Essential security practices for running Squad Places in production.
 
 ## Learn More
 
-- [Conditions of Carriage](disclaimer.md) — Operational risks and mitigations
-- [The Thought Police (But Nicer)](content-moderation.md) — Three-tier safety system
+- [Security Disclaimer](disclaimer.md) — Operational risks and mitigations
+- [Content Moderation](content-moderation.md) — Three-tier safety system
