@@ -1575,3 +1575,115 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 
 **Key decision:** Prefer local bundling over CDN for critical runtime dependencies when deployment environment may be offline or containerized.
 
+
+### Image Generation Endpoint (2026-03-09)
+
+**Task:** Implement POST /api/images/generate endpoint that accepts a prompt and generates an image using AI image generation service (DALL-E 3).
+
+**Implementation:**
+- Added GenerateImageRequest model to ApiModels.cs with Prompt (required, max 1000 chars), SquadId (optional), Style (optional: vivid/natural)
+- Created IImageGenerationService interface + ImageGenerationService in Services/ImageGenerationService.cs
+  - Supports Azure OpenAI DALL-E 3 (primary) with AzureOpenAI:Endpoint, AzureOpenAI:ApiKey, AzureOpenAI:ImageDeployment config
+  - Falls back to OpenAI DALL-E 3 with OpenAI:ApiKey config
+  - Returns null when no service configured (endpoint returns 503)
+  - Uses HttpClient for REST API calls, System.Text.Json for deserialization (zero new packages)
+- Added POST /api/images/generate endpoint in ApiEndpoints.cs
+  - Validates prompt (required, non-empty, max 1000 chars)
+  - Calls IImageGenerationService to generate image URL
+  - Downloads generated image bytes via HttpClient
+  - Detects content type from magic bytes (JPEG/PNG/GIF/WebP)
+  - Saves to blob storage using existing SaveImageAsync pattern
+  - Returns 201 Created with imageId, squadId, url, prompt
+  - Uses "generated" fallback squadId (00000000-0000-0000-0000-000000000001) if not provided/invalid
+  - Follows exact same patterns as existing image endpoints (middleware, validation, response format)
+- Updated ApiServiceRegistration.cs to register IImageGenerationService as singleton + two named HttpClients (ImageGeneration, ImageDownload)
+- Added placeholder config keys to src/SquadPlaces.Web/appsettings.json (AzureOpenAI:*, OpenAI:ApiKey)
+
+**Build status:** ✅ dotnet build SquadPlaces.slnx --no-restore succeeded (0 errors)
+
+**Learnings:**
+- JsonContent.Create() not available in System.Net.Http — use StringContent with JsonSerializer.Serialize instead
+- Azure OpenAI uses api-key header, OpenAI uses Bearer Authorization — different auth patterns
+- DALL-E 3 supports quality (hd/standard) and style (vivid/natural) parameters
+- Magic byte detection for content type: FF D8 (JPEG), 89 50 4E 47 (PNG), 47 49 46 (GIF), 52 49 46 46 (WebP)
+- Fallback squadId pattern keeps generated images organized even when no squad context provided
+- Rate limiting policy "write" applies (30 req/min) — same as POST /api/images
+
+
+### Image Generation Endpoint with Google Gemini (2026-03-09)
+
+**Task:** Implement POST /api/images/generate endpoint that accepts a prompt and generates an image using Google Gemini Imagen 3.0.
+
+**Implementation:**
+- Added GenerateImageRequest model to ApiModels.cs with Prompt (required, max 1000 chars) and SquadId (optional)
+- Created IImageGenerationService interface + ImageGenerationService in Services/ImageGenerationService.cs
+  - Calls Google Gemini Imagen 3.0 API via REST: https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict
+  - Uses Google:ApiKey config or GOOGLE_API_KEY environment variable as fallback
+  - Returns null when no service configured (endpoint returns 503)
+  - Response contains base64-encoded PNG bytes directly (no URL download needed)
+  - Uses HttpClient for REST API calls, System.Text.Json for deserialization (zero new packages)
+- Added POST /api/images/generate endpoint in ApiEndpoints.cs
+  - Validates prompt (required, non-empty, max 1000 chars)
+  - Calls IImageGenerationService to generate image bytes
+  - Decodes base64 response to byte array
+  - Detects content type from magic bytes (JPEG/PNG/GIF/WebP)
+  - Saves to blob storage using existing SaveImageAsync pattern
+  - Returns 201 Created with imageId, squadId, url, prompt
+  - Uses "generated" fallback squadId (00000000-0000-0000-0000-000000000001) if not provided/invalid
+  - Follows exact same patterns as existing image endpoints (middleware, validation, response format)
+- Updated ApiServiceRegistration.cs to register IImageGenerationService as singleton + HttpClient factory
+- Added placeholder config key to src/SquadPlaces.Web/appsettings.json (Google:ApiKey)
+
+**Build status:** ✅ dotnet build SquadPlaces.slnx --no-restore succeeded (1 warning unrelated to changes)
+
+**Learnings:**
+- Google Gemini Imagen returns base64-encoded bytes directly in response (no separate download step like DALL-E)
+- Request format: { "instances": [{ "prompt": "..." }], "parameters": { "sampleCount": 1 } }
+- Response format: { "predictions": [{ "bytesBase64Encoded": "...", "mimeType": "image/png" }] }
+- Environment.GetEnvironmentVariable() works as config fallback for container/cloud deployments
+- Magic byte detection for content type: FF D8 (JPEG), 89 50 4E 47 (PNG), 47 49 46 (GIF), 52 49 46 46 (WebP)
+- Fallback squadId pattern keeps generated images organized even when no squad context provided
+- Rate limiting policy "write" applies (30 req/min) — same as POST /api/images
+
+
+### Image Generation Endpoint via MCP Client (2026-03-09)
+
+**Task:** Implement POST /api/images/generate endpoint that calls nano-banana MCP server to generate images using Google Gemini.
+
+**Implementation:**
+- Added GenerateImageRequest model to ApiModels.cs with Prompt (required, max 1000 chars) and SquadId (optional)
+- Created IImageGenerationService interface + NanoBananaImageGenerationService in Services/ImageGenerationService.cs
+  - Uses ModelContextProtocol.Core (Microsoft's official .NET MCP SDK) as an MCP client
+  - Spawns nano-banana as a child process via stdio transport (npx -y nano-banana)
+  - Passes GOOGLE_API_KEY to the MCP server via environment variables
+  - Calls generate_image tool via MCP protocol
+  - Returns decoded PNG bytes from ImageContentBlock in the tool result
+  - Returns null when no service configured (endpoint returns 503)
+  - Zero HTTP calls — pure MCP protocol over stdio
+- Added POST /api/images/generate endpoint in ApiEndpoints.cs
+  - Validates prompt (required, non-empty, max 1000 chars)
+  - Calls IImageGenerationService to generate image bytes
+  - Detects content type from magic bytes (JPEG/PNG/GIF/WebP)
+  - Saves to blob storage using existing SaveImageAsync pattern
+  - Returns 201 Created with imageId, squadId, url, prompt
+  - Uses "generated" fallback squadId (00000000-0000-0000-0000-000000000001) if not provided/invalid
+  - Follows exact same patterns as existing image endpoints (middleware, validation, response format)
+- Updated ApiServiceRegistration.cs to register IImageGenerationService as singleton
+- Added placeholder config keys to src/SquadPlaces.Web/appsettings.json (NanoBanana:Command, NanoBanana:Args, NanoBanana:GoogleApiKey)
+- Added ModelContextProtocol.Core 1.* NuGet package to SquadPlaces.Api.Endpoints.csproj
+
+**Build status:** ✅ dotnet build SquadPlaces.slnx --no-restore succeeded (0 errors)
+
+**Learnings:**
+- ModelContextProtocol.Core is the official Microsoft MCP SDK for .NET (not ModelContextProtocol which is server-only)
+- McpClient is abstract — use McpClient.CreateAsync(transport, cancellationToken) static factory method
+- StdioClientTransport spawns child process with stdio transport — perfect for npx-based MCP servers
+- CallToolAsync signature: (toolName, arguments, progress, options, cancellationToken) → ValueTask<CallToolResult>
+- CallToolResult.Content is IList<ContentBlock> — check for ImageContentBlock via pattern matching
+- ImageContentBlock.DecodedData returns ReadOnlyMemory<byte> with pre-decoded image data (no base64 conversion needed)
+- nano-banana returns image as ImageContentBlock with decoded PNG bytes ready to save
+- Environment variables passed via StdioClientTransportOptions.EnvironmentVariables dictionary
+- Rate limiting policy "write" applies (30 req/min) — same as POST /api/images
+- MCP protocol is request/response over JSON-RPC 2.0 — SDK handles all protocol details
+
+📌 Team update (2026-03-20T04-43-55Z): Image generation endpoint (POST /api/images/generate) implemented using MCP protocol for nano-banana server. Service uses ModelContextProtocol.Core SDK. Configuration-driven with GOOGLE_API_KEY fallback. Graceful 503 on misconfiguration. 23 integration tests written. Ready for review. — Fenster (Core Dev)

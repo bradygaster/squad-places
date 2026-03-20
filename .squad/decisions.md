@@ -7359,3 +7359,43 @@ Local assets eliminate external dependencies and single points of failure. SVG s
 - **Pages affected:** `_Layout.cshtml`, `Index.cshtml`, `Squads/Index.cshtml`, `Squads/Detail.cshtml`, `Artifacts/_CommentThread.cshtml`
 - **New file:** `src/SquadPlaces.Web/wwwroot/images/squad-logo.svg`
 
+
+### 2026-03-09: Image Generation Service Design — MCP Client Approach
+**By:** Fenster (Core Dev)  
+**Status:** Implemented
+**What:** Implement AI image generation endpoint (POST /api/images/generate) using the Model Context Protocol (MCP) to call the nano-banana MCP server, which interfaces with Google Gemini Imagen 3.0.
+**Why:** 
+- Protocol abstraction: MCP provides clean separation between API logic and AI provider details
+- Process isolation: Child process keeps MCP server crashes from affecting main API
+- Zero HTTP dependencies: Uses stdio transport, no HttpClient overhead
+- Consistent patterns: Matches existing image endpoint conventions exactly
+- Fail-safe: Returns 503 when unconfigured rather than throwing exceptions
+**Implementation:**
+- Interface-based: IImageGenerationService for testability and future provider swaps
+- MCP client: Uses ModelContextProtocol.Core (Microsoft's official .NET MCP SDK)
+- Child process: Spawns nano-banana MCP server via stdio transport
+- Configuration-driven: Checks NanoBanana:GoogleApiKey config first, falls back to GOOGLE_API_KEY env var
+- Graceful degradation: Returns 503 when service unavailable rather than failing hard
+- Content type detection: Magic byte inspection validates image format
+**Files:** ImageGenerationService.cs (new), ApiModels.cs (GenerateImageRequest added), ApiEndpoints.cs (new endpoint), ApiServiceRegistration.cs (service registered), appsettings.json (NanoBanana config), SquadPlaces.Api.Endpoints.csproj (ModelContextProtocol.Core added)
+**Build:** 0 errors
+**Impact:** Squad agents can now generate images from prompts via API using MCP protocol. No breaking changes.
+
+### 2026-03-06: Contract-First Integration Tests for POST /api/images/generate
+**By:** Hockney (Tester)  
+**Status:** Implemented
+**What:** Write integration tests before the endpoint is fully implemented, following the existing test patterns. Tests requiring nano-banana MCP server are marked with [Fact(Skip = ...)] to prevent CI failures.
+**Why:**
+- Contract-first testing: Tests define the expected API behavior before implementation
+- CI-safe: Skipped tests prevent build failures while documenting expected behavior for full E2E validation
+- Matches existing patterns: Uses same fixture, helpers, and assertion style
+- Validation-focused: Most tests do not require nano-banana or GOOGLE_API_KEY and will run in CI
+- Mockable service layer: IImageGenerationService can be mocked in unit tests
+**Test Coverage:** Created ImageGenerationTests.cs with 23 tests
+- Happy path (4, skipped): Valid prompt returns 201, SquadId fallback, Style field, URL retrieval
+- Validation (8): Empty/null/long prompt, invalid SquadId, edge cases
+- Service unavailable (1): Returns 503 when not configured
+- Rate limiting (1): Endpoint subject to "write" policy
+- Edge cases (8): Whitespace, Unicode, concurrent, malformed JSON, response format
+**Build:** 0 errors, all tests compile (19 run in CI, 4 skip without nano-banana)
+**Impact:** Fenster/Copilot can implement the endpoint guided by these tests. Brady reviews test coverage. CI pipeline runs without nano-banana dependency.

@@ -895,3 +895,62 @@ All labeled squad:hockney for routing. Each issue includes: what's missing, why 
 6. **Hundreds of comments — pagination:** `ListCommentsAsync` fetches ALL comment blobs from Azure storage with metadata filtering — no pagination. For the feed page, `CountCommentsAsync` iterates ALL blobs per artifact via `GetBlobsAsync`. With 50 artifacts × N comments each, the feed page makes 50 sequential blob-listing calls (wrapped in `Task.WhenAll` on Web, but sequential `foreach` in the API feed endpoint). **Risk: O(N×M) blob API calls on feed load; severe latency at scale.** The detail page also loads all comments into memory. No `?page=` parameter on `GET /api/artifacts/{id}/comments`. Recommendation: add pagination to the comments list endpoint and consider caching comment counts.
 
 📌 Team update (2026-03-05T07:06Z): Comments UI fanout complete — Fenster added commentCount to feed API, McManus built threaded comments UI with count badges, Hockney verified build (0 errors) and identified 6 edge cases for follow-up — decided by Scribe (coordination)
+
+## Learnings
+
+### Image Generation Tests — Contract-First Testing for POST /api/images/generate (2026-03-06)
+
+**Context:** Brady requested integration tests for a new POST /api/images/generate endpoint. The endpoint implementation is in-progress (GenerateImageService exists but endpoint not yet mapped in ApiEndpoints.cs). I wrote tests first following TDD principles.
+
+**What I wrote:**
+- Created tests/SquadPlaces.AppHost.Tests/ImageGenerationTests.cs with 23 tests covering:
+  - Happy path (with [Fact(Skip = "Requires GOOGLE_API_KEY and nano-banana (npx) in PATH")] guard):
+    - Valid prompt returns 201 with imageId, squadId, url, and prompt fields
+    - Optional SquadId respected — falls back to "generated" if omitted
+    - Optional Style parameter accepted
+    - Generated image retrievable via returned URL (integration check with GET /api/images/{squadId}/{imageId})
+  - Validation failures (400):
+    - Missing/null/empty/whitespace prompt
+    - Prompt exceeding 1000 chars
+    - Invalid/malformed SquadId
+  - Service unavailable (503):
+    - When image generation service not configured, expects {"error": "Image generation service not configured."}
+  - Rate limiting:
+    - Endpoint should be under "write" rate limit policy (verified by absence of 500 errors on rapid requests)
+  - Edge cases:
+    - Max-length prompt (1000 chars exactly) should not fail validation
+    - Unicode/emoji prompts should be accepted
+    - Empty/null request body should return 400
+
+**Patterns followed:**
+- Copied ApiTestFixture usage from CommentAndGifTests.cs and ApiValidationTests.cs exactly
+- Used same helper methods: JsonBody(object), CreateTestSquadAsync()
+- Followed same assertion style: Assert.Equal(HttpStatusCode.X, ...), property checks via JsonDocument.Parse
+- Tests that require real AI service are skipped with [Fact(Skip = "Requires GOOGLE_API_KEY and nano-banana (npx) in PATH")] so CI does not fail
+
+**Build fix:**
+- ImageGenerationService.cs had compilation errors: JsonContent not found
+- Fixed by adding using System.Net.Http.Json; to the usings block
+- Build now succeeds: dotnet build tests\SquadPlaces.AppHost.Tests\SquadPlaces.AppHost.Tests.csproj --no-restore → 0 errors
+
+**Key learnings:**
+1. Contract-first testing works well here. The GenerateImageRequest model exists in ApiModels.cs, so I could write tests against the expected contract even though the endpoint is not mapped yet.
+2. Skip attribute prevents CI breakage. Tests requiring real GOOGLE_API_KEY and nano-banana (npx) in PATH are marked with [Fact(Skip = "...")] so they compile and show up in test discovery but do not fail in environments without config.
+3. 503 vs 400 distinction matters. Missing config (503) is different from bad input (400). The 503 test is lenient: if service IS configured, it expects success or validation errors, NOT a crash.
+4. Rate limiting verification is tricky in integration tests. I verified the endpoint does not crash under load (no 500s) rather than asserting specific 429 behavior, since rate limit config varies by environment.
+
+**Test coverage expectations:**
+- Once the endpoint is implemented and mapped in ApiEndpoints.cs, these tests should be runnable (except the ones requiring real AI config).
+- The skipped tests can be un-skipped in environments with GOOGLE_API_KEY / NanoBanana:GoogleApiKey and nano-banana MCP server for full E2E validation.
+
+**Next steps for implementation:**
+- Map POST /api/images/generate in ApiEndpoints.cs using IImageGenerationService
+- Add validation in ApiValidation.cs (ValidateGenerateImageRequest method)
+- Wire up service registration in ApiServiceRegistration.cs or Program.cs
+- Run tests to verify contract matches implementation
+
+
+
+
+
+📌 Team update (2026-03-20T04-43-55Z): Image generation endpoint integration tests completed. 23 tests total: 4 happy-path (skip without nano-banana), 19 CI-safe validation/edge-case tests. Contract-first approach. All tests compile (0 errors). Endpoint ready for implementation. — Hockney (Tester)
