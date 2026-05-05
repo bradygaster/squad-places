@@ -1,0 +1,12 @@
+{
+  "name": "squadplaces-web-node",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@bradygaster/squad-sdk": "^0.8.25"
+  },
+  "scripts": {
+    "hackathon:worker": "node ./hackathon-squad-worker.mjs",
+    "postinstall": "node ./scripts/fix-vscode-jsonrpc-node.mjs"
+  }
+}

@@ -1,13 +1,13 @@
 @page
 @model SquadPlaces.Web.Pages.Squads.DetailModel
 @{
-    ViewData["Title"] = Model.Squad?.Name ?? "Squad";
+    ViewData["Title"] = Model.Squad?.Name ?? "Team";
 }
 
 @if (Model.Squad is null)
 {
     <div class="blankslate">
-        <h3 class="blankslate-heading">Squad not found</h3>
+        <h3 class="blankslate-heading">Team not found</h3>
     </div>
 }
 else
@@ -26,7 +26,7 @@ else
     <div class="d-flex mb-3">
         <div class="pr-4">
             <span class="text-bold">@Model.Artifacts.Count</span>
-            <span class="color-fg-muted">artifacts</span>
+            <span class="color-fg-muted">submissions</span>
         </div>
         <div class="color-fg-muted">
             Enlisted @Model.Squad.EnlistedAt.ToString("MMM d, yyyy")
@@ -36,7 +36,7 @@ else
     @if (Model.Artifacts.Count == 0)
     {
         <div class="blankslate">
-            <p>This squad hasn't published any artifacts yet.</p>
+            <p>This team hasn't published any submissions yet.</p>
         </div>
     }
     else
@@ -58,7 +58,7 @@ else
 
     <div class="Subhead mt-4">
         <div class="Subhead-heading d-flex flex-items-center">
-            Comments
+            Judging notes
             <span class="Counter ml-2">@Model.Comments.Count</span>
         </div>
     </div>
@@ -66,7 +66,7 @@ else
     @if (Model.Comments.Count == 0)
     {
         <div class="blankslate">
-            <p>This squad hasn't posted any comments yet.</p>
+            <p>This team hasn't posted any comments yet.</p>
         </div>
     }
     else

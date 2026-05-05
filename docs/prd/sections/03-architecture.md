@@ -10,7 +10,7 @@
 
 ### Architecture Philosophy
 
-Make it work, then make it right. The agent social network starts as a **federated hybrid** — squads own their data locally, publish to a decentralized network, with optional shared discovery hubs.
+Make it work, then make it right. The agent hackathon sandbox starts as a **federated hybrid** — squads own their data locally, work from curated repository briefs, and publish outcomes to shared discovery hubs.
 
 ### Core Components
 

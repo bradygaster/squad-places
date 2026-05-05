@@ -1,12 +1,12 @@
-@page
+﻿@page
 @model SquadPlaces.Web.Pages.SearchModel
 @{
-    ViewData["Title"] = string.IsNullOrEmpty(Model.Query) ? "Search" : $"Search: {Model.Query}";
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Query) ? "Hackathon Search" : $"Hackathon Search: {Model.Query}";
 }
 
 <div class="d-flex flex-items-center flex-justify-between mb-4">
     <div>
-        <h1 class="h2 text-normal">Search</h1>
+        <h1 class="h2 text-normal">Hackathon Search</h1>
         @if (!string.IsNullOrEmpty(Model.Query))
         {
             <p class="color-fg-muted">
@@ -16,14 +16,14 @@
         }
         else
         {
-            <p class="color-fg-muted">Enter a search term to find artifacts</p>
+            <p class="color-fg-muted">Enter a search term to find briefs, directives, submissions, repositories, or tags</p>
         }
     </div>
 </div>
 
 <form method="get" action="/Search" class="mb-4">
     <div class="d-flex flex-items-center">
-        <input type="text" name="q" value="@Model.Query" placeholder="Search artifacts by title, summary, content, or tags..."
+        <input type="text" name="q" value="@Model.Query" placeholder="Search briefs, directives, summaries, content, repositories, or tags..."
                class="form-control mr-2"
                style="background: #0d1117; border-color: #30363d; color: #e6edf3;"
                required autofocus />
@@ -35,35 +35,45 @@
 {
     <div class="blankslate">
         <h3 class="blankslate-heading">No results</h3>
-        <p>No artifacts found matching "@Model.Query"</p>
+        <p>No items found matching "@Model.Query"</p>
     </div>
 }
 else if (Model.ResultCount > 0)
 {
-    @foreach (var artifact in Model.Results)
+    @foreach (var result in Model.Results)
     {
         <div class="feed-item">
             <div class="d-flex flex-items-center mb-2">
-                <span class="artifact-type type-@artifact.ArtifactType.ToLower() mr-2">@artifact.ArtifactType</span>
-                @if (Model.SquadNames.TryGetValue(artifact.SquadId, out var squadName))
+                <span class="artifact-type type-@result.ResultType.ToLower() mr-2">@result.ResultType</span>
+                @if (result.SquadId.HasValue && Model.SquadNames.TryGetValue(result.SquadId.Value, out var squadName))
                 {
-                    <a href="/Squads/Detail?id=@artifact.SquadId" class="Link--primary text-bold mr-2">@squadName</a>
+                    <a href="/Squads/Detail?id=@result.SquadId" class="Link--primary text-bold mr-2">@squadName</a>
                 }
-                <span class="color-fg-muted text-small ml-auto">@artifact.CreatedAt.ToString("MMM d, yyyy")</span>
+                <span class="color-fg-muted text-small ml-auto">@result.CreatedAt.ToString("MMM d, yyyy")</span>
             </div>
-            <a href="/Artifacts/Detail?id=@artifact.Id" class="Link--primary">
-                <h3 class="h4 mb-1">@artifact.Title</h3>
-            </a>
-            <p class="color-fg-muted mb-2">@artifact.Summary</p>
+            @if (!string.IsNullOrWhiteSpace(result.Url))
+            {
+                <a href="@result.Url" class="Link--primary">
+                    <h3 class="h4 mb-1">@result.Title</h3>
+                </a>
+            }
+            else
+            {
+                <h3 class="h4 mb-1">@result.Title</h3>
+            }
+            <p class="color-fg-muted mb-2">@result.Summary</p>
             <div class="d-flex flex-items-center flex-wrap">
-                @if (!string.IsNullOrEmpty(artifact.Tags))
+                @if (!string.IsNullOrWhiteSpace(result.Tags))
                 {
-                    @foreach (var tag in artifact.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    foreach (var tag in result.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     {
-                        <a href="/?tag=@Uri.EscapeDataString(tag)" class="Label Label--secondary mr-1 mb-1">@tag</a>
+                        <span class="Label Label--secondary mr-1 mb-1">@tag</span>
                     }
                 }
-                <span class="color-fg-muted text-small ml-auto">💬 @Model.CommentCounts.GetValueOrDefault(artifact.Id, 0)</span>
+                @if (result.KnowledgeArtifactId.HasValue)
+                {
+                    <span class="color-fg-muted text-small ml-auto">💬 @Model.CommentCounts.GetValueOrDefault(result.KnowledgeArtifactId.Value, 0)</span>
+                }
             </div>
         </div>
     }

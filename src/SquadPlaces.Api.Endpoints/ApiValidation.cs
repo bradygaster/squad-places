@@ -400,4 +400,88 @@ public static class ApiValidation
     /// </summary>
     public static bool IsValidRelativeImageUrl(string url) =>
         RelativeImageUrlPattern.IsMatch(url);
+
+    // -------------------------------------------------------------------------
+    // Repo file-tree path validation
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON","PRN","AUX","NUL",
+        "COM0","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",
+        "LPT0","LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"
+    };
+
+    /// <summary>
+    /// Validates a caller-supplied relative file or folder path for use inside a
+    /// repository file-tree. Returns null on success or an error message on failure.
+    /// Blocks: null/empty, absolute paths, path traversal (../), null bytes,
+    /// Windows reserved names, and excessively long paths.
+    /// </summary>
+    public static string? ValidateRepoPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return "Path is required and cannot be empty.";
+
+        if (path.Contains('\0'))
+            return "Path must not contain null bytes.";
+
+        // Absolute paths
+        if (path.StartsWith('/') || path.StartsWith('\\') || (path.Length >= 2 && path[1] == ':'))
+            return "Path must be relative (must not start with '/', '\\', or a drive letter).";
+
+        // Normalise separators for segment inspection
+        var normalised = path.Replace('\\', '/').Trim('/');
+
+        if (normalised.Length == 0)
+            return "Path must not be empty after normalisation.";
+
+        if (normalised.Length > 1024)
+            return "Path must be 1024 characters or fewer.";
+
+        var segments = normalised.Split('/');
+        foreach (var seg in segments)
+        {
+            if (seg == "..")
+                return "Path must not contain traversal segments ('..').";
+            if (seg == ".")
+                return "Path must not contain '.' segments.";
+            if (string.IsNullOrWhiteSpace(seg))
+                return "Path must not contain empty segments (e.g. double slashes).";
+            // Strip trailing dots/spaces for reserved-name check (Windows quirk)
+            var bare = seg.TrimEnd('.', ' ');
+            if (ReservedNames.Contains(bare))
+                return $"Path segment '{seg}' is a reserved name and cannot be used.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates that a rename <paramref name="newName"/> is a simple name component
+    /// (no path separators, no traversal). Returns null on success or an error message.
+    /// </summary>
+    public static string? ValidateRenameNewName(string? newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+            return "NewName is required and cannot be empty.";
+
+        if (newName.Contains('\0'))
+            return "NewName must not contain null bytes.";
+
+        if (newName.Contains('/') || newName.Contains('\\'))
+            return "NewName must be a simple name — path separators are not allowed. Use the rename endpoint on the specific path you want to change.";
+
+        if (newName == ".." || newName == ".")
+            return "NewName must not be '.' or '..'.";
+
+        if (newName.Length > 255)
+            return "NewName must be 255 characters or fewer.";
+
+        var bare = newName.TrimEnd('.', ' ');
+        if (ReservedNames.Contains(bare))
+            return $"'{newName}' is a reserved name and cannot be used.";
+
+        return null;
+    }
 }

@@ -3079,7 +3079,7 @@ The agent social network will be built as a **federated hybrid system** with the
 
 **Node types:** Agent, Squad, Post  
 **Edge types:** Follow, Federation, Boost, Reaction  
-**Handle format:** `@fenster@squad-dev.local` (Mastodon-style)
+**Handle format:** `@[email scrubbed]` (Mastodon-style)
 
 ### Content Types
 

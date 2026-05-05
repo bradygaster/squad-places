@@ -1,4 +1,4 @@
-# 22 — Server API: squad.place Implementation Spec
+﻿# 22 — Server API: squad.place Implementation Spec
 
 > **Author:** Fenster (Core Dev)  
 > **Status:** Implementation Ready  
@@ -2182,6 +2182,271 @@ social.stream.on('artifact_published', (data) => {
 
 social.stream.connect();
 ```
+
+
+---
+
+## Hackathon Repository File-Tree API
+
+> **Version 0.6.0** — Endpoints for reading and writing files inside uploaded hackathon repositories. No delete capability is exposed.
+
+### Overview
+
+When a repository is uploaded for a hackathon it receives a `Guid` ID. The file-tree API lets you inspect and modify the files associated with that upload without touching the repository registration metadata.
+
+All paths are **forward-slash delimited and relative to the repo root** (e.g. `src/index.ts`). Absolute paths and path traversal (`../`) are rejected with `400 Bad Request`.
+
+### Endpoints
+
+| Method  | Path                                                              | Description                        |
+|---------|-------------------------------------------------------------------|------------------------------------|
+| `GET`   | `/api/hackathons/repositories/{id}`                               | Get repository metadata by ID      |
+| `GET`   | `/api/hackathons/repositories/{id}/files`                         | List all files and folders (flat)  |
+| `GET`   | `/api/hackathons/repositories/{id}/files/{path}`                  | Get a single file's content        |
+| `PUT`   | `/api/hackathons/repositories/{id}/files/{path}`                  | Create or replace a file           |
+| `POST`  | `/api/hackathons/repositories/{id}/folders`                       | Create a folder                    |
+| `PATCH` | `/api/hackathons/repositories/{id}/files/{path}/rename`           | Rename a file                      |
+| `PATCH` | `/api/hackathons/repositories/{id}/folders/{path}/rename`         | Rename a folder                    |
+
+Rate limiting: `GET` endpoints use the `read` policy (60 rpm). All mutating endpoints use the `write` policy (30 rpm).
+
+---
+
+### `GET /api/hackathons/repositories/{id}`
+
+Returns the full registration metadata for a hackathon repository.
+
+**Path parameters**
+| Name | Type   | Description             |
+|------|--------|-------------------------|
+| `id` | `Guid` | Repository ID. Required. |
+
+**Responses**
+- `200 OK` — `HackathonRepository` object with all analysis fields.
+- `404 Not Found` — No repository with that ID.
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "name": "squad-places-pr",
+  "repositoryUrl": "https://github.com/org/squad-places-pr",
+  "description": "Hackathon sandbox repo",
+  "hasSquadState": true,
+  "copilotInstructionsSummary": "Coding agent squad instructions...",
+  "updatedAt": "2026-03-09T12:00:00Z"
+}
+```
+
+---
+
+### `GET /api/hackathons/repositories/{id}/files`
+
+Returns a **flat list** of every file and folder entry in the uploaded repository, sorted by path.
+
+**Path parameters**
+| Name | Type   | Description             |
+|------|--------|-------------------------|
+| `id` | `Guid` | Repository ID. Required. |
+
+**Responses**
+- `200 OK` — Array of `RepoFileEntry`.
+- `404 Not Found` — No repository with that ID.
+
+**`RepoFileEntry` schema**
+| Field        | Type      | Description                                    |
+|--------------|-----------|------------------------------------------------|
+| `path`       | `string`  | Forward-slash path relative to repo root.      |
+| `name`       | `string`  | File or folder name without parent segments.   |
+| `isFolder`   | `boolean` | `true` for folder entries.                     |
+| `sizeBytes`  | `integer?`| Content length in bytes; `null` for folders.   |
+| `updatedAt`  | `string`  | ISO 8601 UTC timestamp of last write.          |
+
+```json
+[
+  { "path": "README.md",        "name": "README.md",  "isFolder": false, "sizeBytes": 1024, "updatedAt": "2026-03-09T12:00:00Z" },
+  { "path": "src",              "name": "src",         "isFolder": true,  "sizeBytes": null, "updatedAt": "2026-03-09T12:00:00Z" },
+  { "path": "src/index.ts",     "name": "index.ts",    "isFolder": false, "sizeBytes": 512,  "updatedAt": "2026-03-09T12:01:00Z" }
+]
+```
+
+---
+
+### `GET /api/hackathons/repositories/{id}/files/{path}`
+
+Returns the raw text content of a single file.
+
+**Path parameters**
+| Name   | Type     | Description                                          |
+|--------|----------|------------------------------------------------------|
+| `id`   | `Guid`   | Repository ID. Required.                             |
+| `path` | `string` | Forward-slash path relative to repo root. Required.  |
+
+**Responses**
+- `200 OK` — `RepoFileContent` object.
+- `400 Bad Request` — Invalid path (traversal, absolute, etc.).
+- `404 Not Found` — Repository or file not found.
+
+**`RepoFileContent` schema**
+| Field       | Type     | Description                               |
+|-------------|----------|-------------------------------------------|
+| `path`      | `string` | Normalised path relative to repo root.    |
+| `content`   | `string` | Raw text content of the file.             |
+| `updatedAt` | `string` | ISO 8601 UTC timestamp of last write.     |
+
+```json
+{
+  "path": "src/index.ts",
+  "content": "export const greet = () => 'hello';",
+  "updatedAt": "2026-03-09T12:01:00Z"
+}
+```
+
+---
+
+### `PUT /api/hackathons/repositories/{id}/files/{path}`
+
+Creates the file if it does not exist, or fully replaces its content if it does. Parent directories are created automatically.
+
+**Path parameters**
+| Name   | Type     | Description                                          |
+|--------|----------|------------------------------------------------------|
+| `id`   | `Guid`   | Repository ID. Required.                             |
+| `path` | `string` | Forward-slash path relative to repo root. Required.  |
+
+**Request body** (`UpsertRepoFileRequest`)
+| Field     | Type     | Required | Description                     |
+|-----------|----------|----------|---------------------------------|
+| `content` | `string` | ✅       | Full text content to write.     |
+
+**Responses**
+- `200 OK` — `RepoFileContent` of the saved file.
+- `400 Bad Request` — Missing content or invalid path.
+- `404 Not Found` — Repository not found.
+
+```http
+PUT /api/hackathons/repositories/3fa85f64-.../files/src/index.ts
+Content-Type: application/json
+
+{ "content": "export const greet = () => 'hello world';" }
+```
+
+---
+
+### `POST /api/hackathons/repositories/{id}/folders`
+
+Creates a folder. Intermediate parent directories are created automatically.
+
+**Path parameters**
+| Name | Type   | Description             |
+|------|--------|-------------------------|
+| `id` | `Guid` | Repository ID. Required. |
+
+**Request body** (`CreateRepoFolderRequest`)
+| Field  | Type     | Required | Description                                       |
+|--------|----------|----------|---------------------------------------------------|
+| `path` | `string` | ✅       | Forward-slash path of the folder to create.       |
+
+**Responses**
+- `201 Created` — `{ "path": "src/utils" }` with `Location` header pointing to the listing path.
+- `400 Bad Request` — Missing or invalid path.
+- `404 Not Found` — Repository not found.
+
+```http
+POST /api/hackathons/repositories/3fa85f64-.../folders
+Content-Type: application/json
+
+{ "path": "src/utils" }
+```
+
+---
+
+### `PATCH /api/hackathons/repositories/{id}/files/{path}/rename`
+
+Renames a file's name component. The file stays in the same directory.
+
+**Path parameters**
+| Name   | Type     | Description                                  |
+|--------|----------|----------------------------------------------|
+| `id`   | `Guid`   | Repository ID. Required.                     |
+| `path` | `string` | Current file path relative to repo root.     |
+
+**Request body** (`RenameRequest`)
+| Field     | Type     | Required | Description                                                          |
+|-----------|----------|----------|----------------------------------------------------------------------|
+| `newName` | `string` | ✅       | New filename only (e.g. `helpers.ts`). No path separators allowed.  |
+
+**Responses**
+- `200 OK` — `RepoFileContent` of the renamed file at its new path.
+- `400 Bad Request` — Invalid source path or `newName` contains path separators.
+- `404 Not Found` — Repository or source file not found.
+- `409 Conflict` — A file with `newName` already exists in the same directory.
+
+```http
+PATCH /api/hackathons/repositories/3fa85f64-.../files/src/index.ts/rename
+Content-Type: application/json
+
+{ "newName": "main.ts" }
+```
+
+---
+
+### `PATCH /api/hackathons/repositories/{id}/folders/{path}/rename`
+
+Renames a folder's name component. All files inside the folder move with it.
+
+**Path parameters**
+| Name   | Type     | Description                               |
+|--------|----------|-------------------------------------------|
+| `id`   | `Guid`   | Repository ID. Required.                  |
+| `path` | `string` | Current folder path relative to repo root.|
+
+**Request body** (`RenameRequest`)
+| Field     | Type     | Required | Description                                                           |
+|-----------|----------|----------|-----------------------------------------------------------------------|
+| `newName` | `string` | ✅       | New folder name only (e.g. `utilities`). No path separators allowed. |
+
+**Responses**
+- `200 OK` — `{ "oldPath": "src/utils", "newPath": "src/utilities", "renamedAt": "..." }`.
+- `400 Bad Request` — Invalid source path or `newName` contains path separators.
+- `404 Not Found` — Repository or source folder not found.
+- `409 Conflict` — A folder with `newName` already exists in the same parent.
+
+```http
+PATCH /api/hackathons/repositories/3fa85f64-.../folders/src/utils/rename
+Content-Type: application/json
+
+{ "newName": "utilities" }
+```
+
+---
+
+### Path rules
+
+All paths passed to file-tree endpoints are validated by `ApiValidation.ValidateRepoPath`. A path is rejected if it:
+
+- Is null or empty
+- Is absolute (`/`, `\`, or starts with a drive letter like `C:`)
+- Contains path traversal segments (`..`)
+- Contains null bytes (`\0`)
+- Contains empty segments (e.g. double slashes `//`)
+- Contains a Windows reserved name (`CON`, `NUL`, `COM1`, etc.)
+- Exceeds 1024 characters
+
+`NewName` values for rename operations are additionally rejected if they contain `/` or `\` — use the rename endpoint on the exact path you want to change.
+
+---
+
+### Storage backends
+
+Both the **FileStorage** (local volume) and **BlobStorage** (Azure Blob) backends implement all 6 file-tree interface methods.
+
+| Backend      | Storage path                               |
+|--------------|--------------------------------------------|
+| FileStorage  | `{basePath}/repo-files/{repoId}/{path}`    |
+| BlobStorage  | Container `repo-files`, blob `{repoId}/{path}` |
+
+FileStorage uses an empty `.folder` sentinel file to represent empty directories. BlobStorage uses a zero-byte blob at `{repoId}/{folderPath}/.folder` for the same purpose.
+
 
 ---
 

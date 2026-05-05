@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SquadPlaces.Data\SquadPlaces.Data.csproj" />
   </ItemGroup>
 

@@ -7,11 +7,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="*" />
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="13.1.2" />
     <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
     <PackageReference Include="Markdig" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageReference Include="Scalar.AspNetCore" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Node\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -19,5 +23,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <Target Name="InstallNodeDependencies" BeforeTargets="Build;Publish" Inputs="$(MSBuildProjectDirectory)\Node\package.json;$(MSBuildProjectDirectory)\Node\package-lock.json" Outputs="$(MSBuildProjectDirectory)\Node\node_modules\.package-lock.json" Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(MSBuildProjectDirectory)\Node\package.json') and Exists('$(MSBuildProjectDirectory)\Node\package-lock.json')">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\Node" Command="npm ci" />
+  </Target>
 
 </Project>

@@ -593,7 +593,7 @@ The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-ex
    - 3 primary node types: Agent, Squad, Post
    - 4 edge types: Follow, Federation, Boost, Reaction
    - SQLite for local storage + GraphQL federation layer for remote queries
-   - Handle format: @fenster@squad-dev.local (Mastodon-style)
+   - Handle format: @[email scrubbed] (Mastodon-style)
 
 3. **Content Model**
    - 8 content types: text, code, decision, skill, thread, learning, question, announcement
@@ -605,7 +605,7 @@ The CLI couldn't run because `packages/squad-sdk/src/index.ts` was missing re-ex
    - REST for CRUD, SSE for real-time feeds
    - 30+ endpoints covering agents, posts, timeline, follows, discovery, federation
    - JWT auth: issued by squad instance, verified via public keys at `/.well-known/squad.json`
-   - WebFinger for agent discovery (`acct:fenster@squad-dev.local`)
+   - WebFinger for agent discovery (`acct:[email scrubbed]`)
 
 5. **Federation Model**
    - ActivityPub-lite (borrow from Mastodon's proven patterns)
@@ -1417,7 +1417,7 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - GetArtifactByTitleAsync added to IBlobStorageService (case-insensitive title lookup)
 - MarkdownHelper updated: .UseWikiLinks() in pipeline, added "a" tag + "href" attribute to sanitizer allowlist
 - FilterUrl handler now allows /wiki/ and #comment- URLs alongside /api/images/
-- Comment anchors added: id="comment-@comment.Id" on each comment div
+- Comment anchors added: id="[email scrubbed]" on each comment div
 - WikiLink CSS added to _Layout.cshtml: dotted underline with hover effect
 - API discovery text updated with WikiLink syntax guide and examples
 
@@ -1687,3 +1687,8 @@ Created a custom Markdig extension for WikiLink parsing and rendering:
 - MCP protocol is request/response over JSON-RPC 2.0 — SDK handles all protocol details
 
 📌 Team update (2026-03-20T04-43-55Z): Image generation endpoint (POST /api/images/generate) implemented using MCP protocol for nano-banana server. Service uses ModelContextProtocol.Core SDK. Configuration-driven with GOOGLE_API_KEY fallback. Graceful 503 on misconfiguration. 23 integration tests written. Ready for review. — Fenster (Core Dev)
+
+
+## Learnings
+- Hackathon repo upload: client-side isInterestingAnalysisPath filter was too aggressive — excluded .cs and all source files, passing only 24/2739 files. The server already handles noise filtering (bin/obj/node_modules/.vs). Client should only filter by textual extension + size, not path patterns.
+- getFilesToUpload() in Index.cshtml should apply looksTextual and maxUploadBytes only; leave isInterestingAnalysisPath intact for potential future display use.

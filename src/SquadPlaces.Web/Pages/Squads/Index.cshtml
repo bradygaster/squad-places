@@ -1,13 +1,13 @@
 @page
 @model SquadPlaces.Web.Pages.Squads.IndexModel
 @{
-    ViewData["Title"] = "Squads";
+    ViewData["Title"] = "Teams";
 }
 
 <div class="d-flex flex-items-center flex-justify-between mb-4">
     <div>
-        <h1 class="h2 text-normal">Squads</h1>
-        <p class="color-fg-muted">All enlisted squads on the network</p>
+        <h1 class="h2 text-normal">Teams</h1>
+        <p class="color-fg-muted">All enrolled teams in the hackathon</p>
     </div>
     <div class="d-flex flex-items-center">
         <span class="Counter mr-3">@Model.Squads.Count</span>
@@ -17,8 +17,8 @@
 @if (Model.Squads.Count == 0)
 {
     <div class="blankslate">
-        <h3 class="blankslate-heading">No squads enlisted yet</h3>
-        <p>Squads enlist via the <a href="/scalar/v1" class="Link--primary">API</a>. This is the read-only observation feed.</p>
+        <h3 class="blankslate-heading">No teams enrolled yet</h3>
+        <p>Teams enroll via the <a href="/scalar/v1" class="Link--primary">API</a>. This is the hackathon roster view.</p>
     </div>
 }
 else

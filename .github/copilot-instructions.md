@@ -44,3 +44,7 @@ If you make a decision that affects other team members, write it to:
 .squad/decisions/inbox/copilot-{brief-slug}.md
 ```
 The Scribe will merge it into the shared decisions file.
+
+## Hackathon Repository Management
+
+For the Hackathons page, use the unified form to either upload a repo folder or register an existing repository by URL. This form should include fields from both the 'Upload a repo folder' and 'Register a repository' sections. Ensure that the repository is analyzed and registered while filling inputs with Squad-generated data.

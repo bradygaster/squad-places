@@ -1,0 +1,514 @@
+﻿@page
+@model SquadPlaces.Web.Pages.Hackathons.IndexModel
+@{
+    ViewData["Title"] = "Hackathon Repos";
+}
+
+<div class="d-flex flex-items-center flex-justify-between mb-4 flex-wrap" style="gap: 1rem;">
+    <div>
+        <h1 class="h2 text-normal mb-1">Hackathon repositories</h1>
+        <p class="color-fg-muted mb-0">
+            Register candidate git repositories, capture what the repo already knows, and build a brief from the selection.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap" style="gap: 0.5rem;">
+        <a href="/" class="btn btn-sm">Back to briefs</a>
+        <a href="/scalar" class="btn btn-sm">API guide</a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="flash flash-success mb-4">@Model.StatusMessage</div>
+}
+
+<div class="Subhead">
+    <div class="Subhead-heading">Repository entry</div>
+</div>
+
+<form method="post" action="?handler=UploadFolder" enctype="multipart/form-data" hx-boost="false" class="Box p-4 mb-4" id="repo-folder-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 2; min-width: 300px;">
+            <label asp-for="FolderUpload.Name" class="form-label">Repository name</label>
+            <input asp-for="FolderUpload.Name" class="form-control" placeholder="Optional — inferred from folder name if blank" />
+        </div>
+        <div class="form-group" style="flex: 2; min-width: 300px;">
+            <label asp-for="FolderUpload.RepositoryUrl" class="form-label">Repository URL</label>
+            <input asp-for="FolderUpload.RepositoryUrl" class="form-control" placeholder="Optional — use the Git remote if known" />
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 220px;">
+            <label asp-for="FolderUpload.Tags" class="form-label">Tags</label>
+            <input asp-for="FolderUpload.Tags" class="form-control" placeholder="dotnet,azure,playwright" />
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 180px;">
+            <label asp-for="FolderUpload.DefaultBranch" class="form-label">Default branch</label>
+            <input asp-for="FolderUpload.DefaultBranch" class="form-control" placeholder="main" />
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 180px;">
+            <label asp-for="FolderUpload.CommitSha" class="form-label">Pinned SHA</label>
+            <input asp-for="FolderUpload.CommitSha" class="form-control" placeholder="optional" />
+        </div>
+        <div class="form-group" style="min-width: 160px;">
+            <label asp-for="FolderUpload.HasSquadState" class="form-label">Has squad</label>
+            <div><input asp-for="FolderUpload.HasSquadState" type="checkbox" /> <span class="color-fg-muted">Yes</span></div>
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="FolderUpload.Description" class="form-label">Description</label>
+        <textarea asp-for="FolderUpload.Description" class="form-control" rows="2" placeholder="What this repo is for"></textarea>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.CopilotInstructionsSummary" class="form-label">Copilot instructions</label>
+            <textarea asp-for="FolderUpload.CopilotInstructionsSummary" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.AgentsSummary" class="form-label">Agents</label>
+            <textarea asp-for="FolderUpload.AgentsSummary" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.SkillsSummary" class="form-label">Skills</label>
+            <textarea asp-for="FolderUpload.SkillsSummary" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.DocsSummary" class="form-label">Documentation</label>
+            <textarea asp-for="FolderUpload.DocsSummary" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.ExistingSquadSummary" class="form-label">Existing squad</label>
+            <textarea asp-for="FolderUpload.ExistingSquadSummary" class="form-control" rows="2" placeholder="Capture squad metadata, directives, or session notes"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.SessionSummary" class="form-label">Session summary</label>
+            <textarea asp-for="FolderUpload.SessionSummary" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.DirectiveSummary" class="form-label">Hackathon directive</label>
+            <textarea asp-for="FolderUpload.DirectiveSummary" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 260px;">
+            <label asp-for="FolderUpload.AnalysisNotes" class="form-label">Analysis notes</label>
+            <textarea asp-for="FolderUpload.AnalysisNotes" class="form-control" rows="2" placeholder="Capture what the repo needs, what was found, and why it matters."></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 280px;">
+            <label asp-for="FolderUpload.ToolSuggestions" class="form-label">Tools</label>
+            <textarea asp-for="FolderUpload.ToolSuggestions" class="form-control" rows="2" placeholder="CLI tools, utilities, workflows"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 280px;">
+            <label asp-for="FolderUpload.McpSuggestions" class="form-label">MCP servers</label>
+            <textarea asp-for="FolderUpload.McpSuggestions" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 280px;">
+            <label asp-for="FolderUpload.PluginSuggestions" class="form-label">Skills/plugins</label>
+            <textarea asp-for="FolderUpload.PluginSuggestions" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="Box mt-3 p-4 text-center" id="repo-dropzone" style="border: 2px dashed #30363d; background: rgba(13,17,23,0.5); cursor: pointer;">
+        <strong>Drag a Git repo folder here</strong>
+        <div class="color-fg-muted mt-1">or click to choose a folder</div>
+        <div class="color-fg-muted text-small mt-2" id="repo-folder-summary">No folder selected yet.</div>
+    </div>
+
+    <input type="file" id="repo-folder-input" name="FolderFiles" multiple webkitdirectory directory hidden />
+    <input type="hidden" id="repo-folder-manifest" name="FolderManifestJson" />
+    <input type="hidden" id="repo-folder-uploaded-paths" name="FolderUploadedPathsJson" />
+
+    <div class="d-flex flex-wrap mt-3" style="gap: 0.5rem;">
+        <button type="submit" class="btn btn-primary">Analyze and register</button>
+        <button type="button" class="btn btn-sm" id="repo-folder-clear">Clear folder</button>
+    </div>
+</form>
+
+<div class="Subhead mt-4 mb-2">
+    <div class="Subhead-heading">Build a hackathon brief</div>
+</div>
+
+<form method="post" action="?handler=CreateBrief" class="Box p-4 mb-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 2; min-width: 300px;">
+            <label asp-for="NewBrief.Title" class="form-label">Brief title</label>
+            <input asp-for="NewBrief.Title" class="form-control" placeholder="March hackathon brief" />
+            <span asp-validation-for="NewBrief.Title" class="text-danger"></span>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.LeadName" class="form-label">Lead</label>
+            <input asp-for="NewBrief.LeadName" class="form-control" placeholder="Lead name" />
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="NewBrief.Description" class="form-label">Brief description</label>
+        <textarea asp-for="NewBrief.Description" class="form-control" rows="3" placeholder="What the teams are solving"></textarea>
+        <span asp-validation-for="NewBrief.Description" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="NewBrief.Directive" class="form-label">Directive</label>
+        <textarea asp-for="NewBrief.Directive" class="form-control" rows="3" placeholder="Improve, create something amazing, solve the problem the project didn’t know it had"></textarea>
+        <span asp-validation-for="NewBrief.Directive" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.Roles" class="form-label">Roles</label>
+            <textarea asp-for="NewBrief.Roles" class="form-control" rows="2" placeholder="Lead, builder, reviewer, tester"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.SuggestedTools" class="form-label">Tools</label>
+            <textarea asp-for="NewBrief.SuggestedTools" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.SuggestedMcpServers" class="form-label">MCP servers</label>
+            <textarea asp-for="NewBrief.SuggestedMcpServers" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap" style="gap: 1rem;">
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.SuggestedSkills" class="form-label">Skills</label>
+            <textarea asp-for="NewBrief.SuggestedSkills" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.SuggestedPlugins" class="form-label">Plugins</label>
+            <textarea asp-for="NewBrief.SuggestedPlugins" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 240px;">
+            <label asp-for="NewBrief.WinnerCriteria" class="form-label">Winner criteria</label>
+            <textarea asp-for="NewBrief.WinnerCriteria" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="NewBrief.PresentationInstructions" class="form-label">Presentation instructions</label>
+        <textarea asp-for="NewBrief.PresentationInstructions" class="form-control" rows="2"></textarea>
+    </div>
+
+    <div class="Subhead mt-4 mb-2">
+        <div class="Subhead-heading">Select repositories</div>
+    </div>
+
+    @if (Model.Repositories.Count == 0)
+    {
+        <div class="blankslate">
+            <p>No repositories registered yet. Add one above, then build a brief.</p>
+        </div>
+    }
+    else
+    {
+        <div class="Box">
+            @foreach (var repo in Model.Repositories)
+            {
+                <div class="Box-row">
+                    <div class="d-flex flex-items-start flex-justify-between" style="gap: 0.75rem;">
+                        <label class="d-flex flex-items-start flex-auto" style="gap: 0.75rem; cursor: pointer;">
+                            <input type="checkbox" name="SelectedRepositoryIds" value="@repo.Id" @(Model.SelectedRepositoryIds.Contains(repo.Id) ? "checked" : null) class="mt-1" />
+                            <div class="flex-auto">
+                                <div class="d-flex flex-items-center flex-wrap" style="gap: 0.5rem;">
+                                    <strong>@repo.Name</strong>
+                                    <span class="Label Label--secondary">@repo.RepositoryUrl</span>
+                                    @if (!string.IsNullOrWhiteSpace(repo.Tags))
+                                    {
+                                        <span class="Label">@repo.Tags</span>
+                                    }
+                                    @if (repo.HasSquadState)
+                                    {
+                                        <span class="Label Label--success">.squad present</span>
+                                    }
+                                </div>
+                                <div class="color-fg-muted text-small mb-1">@Model.RepoCoverage(repo)</div>
+                                @if (!string.IsNullOrWhiteSpace(repo.Description))
+                                {
+                                    <div class="color-fg-muted text-small">@repo.Description</div>
+                                }
+                            </div>
+                        </label>
+                        <button type="submit"
+                                formaction="?handler=DeleteRepository"
+                                formmethod="post"
+                                class="btn btn-sm btn-danger flex-shrink-0"
+                                onclick="document.getElementById('repo-delete-id').value='@repo.Id';return confirm('Delete @Html.Raw(repo.Name.Replace("'", "\\'"))? This cannot be undone.')">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <input type="hidden" id="repo-delete-id" name="deleteId" value="" />
+    <div class="d-flex flex-wrap flex-items-center mt-3" style="gap: 0.75rem;">
+        <button type="submit" formaction="?handler=GenerateBrief" class="btn">Generate with Squad</button>
+        <button type="submit" class="btn btn-primary">Create brief</button>
+        <span class="color-fg-muted text-small">Generate fills the form first; Create saves it.</span>
+    </div>
+</form>
+
+<div class="Subhead">
+    <div class="Subhead-heading">Saved briefs</div>
+</div>
+
+@if (Model.Briefs.Count == 0)
+{
+    <div class="blankslate">
+        <h3 class="blankslate-heading">No briefs yet</h3>
+        <p>Create a brief after selecting repositories.</p>
+    </div>
+}
+else
+{
+    <div class="Box">
+        @foreach (var brief in Model.Briefs)
+        {
+            <div class="Box-row">
+                <div class="d-flex flex-items-start flex-justify-between flex-wrap" style="gap: 0.5rem;">
+                    <div class="flex-auto">
+                        <div class="d-flex flex-items-center flex-wrap" style="gap: 0.5rem;">
+                            <strong>@brief.Title</strong>
+                            <span class="Label Label--secondary">@brief.RepositoryIds.Count repo(s)</span>
+                            <span class="color-fg-muted text-small">@brief.CreatedAt.ToString("MMM d, yyyy")</span>
+                        </div>
+                        <div class="color-fg-muted text-small mt-1">@brief.Description</div>
+                        <div class="color-fg-muted text-small mt-1">Directive: @brief.Directive</div>
+                        @if (!string.IsNullOrWhiteSpace(brief.LeadName))
+                        {
+                            <div class="color-fg-muted text-small mt-1">Lead: @brief.LeadName</div>
+                        }
+                        <div class="color-fg-muted text-small mt-1">Repos: @Model.SelectedRepoNames(brief)</div>
+                    </div>
+                    <form method="post" action="?handler=DeleteBrief" class="flex-shrink-0">
+                        <input type="hidden" name="deleteId" value="@brief.Id" />
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Delete &quot;@Html.Raw(brief.Title.Replace("'", "\\'"))&quot;? This cannot be undone.')">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<script>
+(() => {
+    const form = document.getElementById('repo-folder-form');
+    if (!form) return;
+
+    const dropzone = document.getElementById('repo-dropzone');
+    const fileInput = document.getElementById('repo-folder-input');
+    const clearBtn = document.getElementById('repo-folder-clear');
+    const summary = document.getElementById('repo-folder-summary');
+    const manifestInput = document.getElementById('repo-folder-manifest');
+    const uploadedPathsInput = document.getElementById('repo-folder-uploaded-paths');
+    const nameInput = form.querySelector('[name="FolderUpload.Name"]');
+    const urlInput = form.querySelector('[name="FolderUpload.RepositoryUrl"]');
+
+    let selectedFiles = [];
+    const maxUploadBytes = 256 * 1024;
+    const textualExtensions = new Set(['.md', '.txt', '.json', '.yaml', '.yml', '.cs', '.csproj', '.props', '.targets', '.xml', '.js', '.ts', '.ps1', '.sh', '.html', '.css', '.razor']);
+    const interestingFileNames = new Set(['readme.md', 'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'tsconfig.json', 'global.json', 'dockerfile', 'docker-compose.yml', 'docker-compose.yaml']);
+
+    function normalizePath(path) {
+        return (path || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    }
+
+    function isIgnoredPath(path) {
+        const normalized = normalizePath(path);
+        return normalized === '.git' || normalized.startsWith('.git/')
+            || normalized === '.vs' || normalized.startsWith('.vs/')
+            || normalized === 'bin' || normalized.startsWith('bin/')
+            || normalized === 'obj' || normalized.startsWith('obj/')
+            || normalized === 'node_modules' || normalized.startsWith('node_modules/')
+            || normalized === 'dist' || normalized.startsWith('dist/')
+            || normalized === 'coverage' || normalized.startsWith('coverage/');
+    }
+
+    function looksTextual(path) {
+        const normalized = normalizePath(path).toLowerCase();
+        const fileName = normalized.split('/').pop() || '';
+        const extensionIndex = fileName.lastIndexOf('.');
+        const extension = extensionIndex >= 0 ? fileName.substring(extensionIndex) : '';
+        return textualExtensions.has(extension) || interestingFileNames.has(fileName);
+    }
+
+    function isInterestingAnalysisPath(path) {
+        const normalized = normalizePath(path).toLowerCase();
+        const fileName = normalized.split('/').pop() || '';
+        return normalized.startsWith('.github/')
+            || normalized.startsWith('.squad/')
+            || normalized.startsWith('docs/')
+            || normalized.startsWith('skills/')
+            || normalized.includes('/skills/')
+            || interestingFileNames.has(fileName)
+            || normalized.endsWith('.sln')
+            || normalized.endsWith('.csproj')
+            || normalized.endsWith('.props')
+            || normalized.endsWith('.targets');
+    }
+
+    function getFilesToUpload() {
+        return selectedFiles.filter(entry => looksTextual(entry.path)
+            && entry.file.size <= maxUploadBytes);
+    }
+
+    function syncFileInput() {
+        const filesToUpload = getFilesToUpload();
+        const dataTransfer = new DataTransfer();
+        for (const entry of filesToUpload) {
+            dataTransfer.items.add(entry.file);
+        }
+        fileInput.files = dataTransfer.files;
+    }
+
+    function refreshSummary() {
+        if (selectedFiles.length === 0) {
+            summary.textContent = 'No folder selected yet.';
+            return;
+        }
+
+        const roots = new Set(selectedFiles.map(x => x.path.split('/')[0]).filter(Boolean));
+        const filesToUpload = getFilesToUpload();
+        summary.textContent = `${selectedFiles.length} file(s) from ${[...roots].slice(0, 3).join(', ')} · ${filesToUpload.length} text file(s) to upload`;
+
+        if (nameInput && !nameInput.value && roots.size > 0) {
+            nameInput.value = [...roots][0];
+        }
+
+        if (urlInput && !urlInput.value && roots.size > 0) {
+            urlInput.placeholder = `uploaded://${[...roots][0]}`;
+        }
+    }
+
+    function setFiles(files) {
+        selectedFiles = files.filter(entry => !isIgnoredPath(entry.path));
+        syncFileInput();
+        refreshSummary();
+    }
+
+    function fromFileList(fileList) {
+        return Array.from(fileList).map(file => ({ file, path: file.webkitRelativePath || file.name }));
+    }
+
+    async function collectDroppedFiles(dataTransfer) {
+        if (!dataTransfer) return [];
+
+        if (dataTransfer.items && dataTransfer.items.length > 0 && typeof dataTransfer.items[0].webkitGetAsEntry === 'function') {
+            const entries = Array.from(dataTransfer.items)
+                .map(item => item.webkitGetAsEntry())
+                .filter(Boolean);
+            const files = [];
+            for (const entry of entries) {
+                files.push(...await walkEntry(entry, ''));
+            }
+            return files;
+        }
+
+        return fromFileList(dataTransfer.files);
+    }
+
+    function walkEntry(entry, prefix) {
+        return new Promise(resolve => {
+            if (entry.isFile) {
+                entry.file(file => resolve([{ file, path: `${prefix}${file.name}` }]));
+                return;
+            }
+
+            if (!entry.isDirectory) {
+                resolve([]);
+                return;
+            }
+
+            const reader = entry.createReader();
+            const entries = [];
+
+            const readBatch = () => reader.readEntries(async batch => {
+                if (!batch.length) {
+                    const nested = [];
+                    for (const child of entries) {
+                        nested.push(...await walkEntry(child, `${prefix}${entry.name}/`));
+                    }
+                    resolve(nested);
+                    return;
+                }
+
+                entries.push(...batch);
+                readBatch();
+            });
+
+            readBatch();
+        });
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', event => {
+        event.preventDefault();
+        dropzone.style.borderColor = '#58a6ff';
+        dropzone.style.background = 'rgba(88,166,255,0.08)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '#30363d';
+        dropzone.style.background = 'rgba(13,17,23,0.5)';
+    });
+
+    dropzone.addEventListener('drop', async event => {
+        event.preventDefault();
+        dropzone.style.borderColor = '#30363d';
+        dropzone.style.background = 'rgba(13,17,23,0.5)';
+        const files = await collectDroppedFiles(event.dataTransfer);
+        setFiles(files);
+    });
+
+    fileInput.addEventListener('change', () => setFiles(fromFileList(fileInput.files)));
+
+    clearBtn.addEventListener('click', () => {
+        selectedFiles = [];
+        fileInput.value = '';
+        if (nameInput) nameInput.value = '';
+        if (urlInput) urlInput.value = '';
+        if (manifestInput) manifestInput.value = '';
+        if (uploadedPathsInput) uploadedPathsInput.value = '';
+        summary.textContent = 'No folder selected yet.';
+    });
+
+    form.addEventListener('submit', event => {
+        if (selectedFiles.length === 0) {
+            event.preventDefault();
+            summary.textContent = 'Select or drop a folder first.';
+            return;
+        }
+
+        syncFileInput();
+
+        if (manifestInput) {
+            manifestInput.value = JSON.stringify(selectedFiles.map(entry => entry.path));
+        }
+
+        if (uploadedPathsInput) {
+            uploadedPathsInput.value = JSON.stringify(getFilesToUpload().map(entry => entry.path));
+        }
+    });
+})();
+</script>

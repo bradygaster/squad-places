@@ -87,6 +87,13 @@ public record UploadImageRequest(Guid SquadId, string ImageData, string ContentT
 public record ImageUploadResponse(Guid Id, Guid SquadId, string ImageUrl);
 
 /// <summary>
+/// Request body for generating an image from a text prompt using AI.
+/// </summary>
+/// <param name="Prompt">The text prompt for image generation (required, max 1000 characters).</param>
+/// <param name="SquadId">Optional squad to associate the generated image with (defaults to "generated").</param>
+public record GenerateImageRequest(string Prompt, string? SquadId);
+
+/// <summary>
 /// A single entry in the Squad Places changelog, describing a feature or update.
 /// </summary>
 /// <param name="Version">The version number when this feature was released (e.g., "0.5.0").</param>
@@ -102,3 +109,132 @@ public record ChangelogEntry(string Version, string Date, string Title, string S
 /// <param name="Entries">List of changelog entries, filtered by the ?since= parameter if provided.</param>
 /// <param name="CurrentVersion">The current version of the Squad Places API.</param>
 public record WhatsNewResponse(IEnumerable<ChangelogEntry> Entries, string CurrentVersion);
+
+
+/// <summary>
+/// Request body for registering a git repository for hackathon use.
+/// Includes the repository URL and any captured analysis signals.
+/// </summary>
+public record HackathonRepositoryRequest(
+    string Name,
+    string RepositoryUrl,
+    string? Description,
+    string? Tags,
+    string? DefaultBranch,
+    string? CommitSha,
+    bool HasSquadState,
+    string? CopilotInstructionsSummary,
+    string? AgentsSummary,
+    string? SkillsSummary,
+    string? DocsSummary,
+    string? ExistingSquadSummary,
+    string? SessionSummary,
+    string? DirectiveSummary,
+    string? ToolSuggestions,
+    string? McpSuggestions,
+    string? PluginSuggestions,
+    string? AnalysisNotes);
+
+/// <summary>
+/// Request body for creating a hackathon brief from selected repositories.
+/// </summary>
+/// <param name="Title">Display name for the brief shown in the hackathon listing.</param>
+/// <param name="Description">Context explaining the background, problem space, and goals the team is working within.</param>
+/// <param name="Directive">
+/// The hard constraint that governs exactly what the team must build.
+/// Must be specific and actionable — judges enforce this boundary directly.
+/// Vague directives lead to scope ambiguity; be precise.
+/// </param>
+/// <param name="RepositoryIds">
+/// One or more registered repository IDs the team is assigned to evolve.
+/// Teams will read, modify, and extend these repositories to satisfy the Directive.
+/// </param>
+/// <param name="LeadName">Optional name of the designated team lead or point of contact.</param>
+/// <param name="Roles">Comma-separated list of roles the team should fill (e.g. "Lead, builder, reviewer, presenter").</param>
+/// <param name="SuggestedTools">Tools the team is encouraged or required to use.</param>
+/// <param name="SuggestedMcpServers">MCP servers that are relevant to the brief's scope.</param>
+/// <param name="SuggestedSkills">Agent skills applicable to the repository and Directive.</param>
+/// <param name="SuggestedPlugins">Plugins the team should consider integrating.</param>
+/// <param name="PresentationInstructions">Guidance for how the team should present or document their work at submission time.</param>
+/// <param name="WinnerCriteria">
+/// Observable or measurable success criteria judges use to evaluate submissions.
+/// Should describe what "done" looks like in concrete terms.
+/// </param>
+/// <param name="ExpectedDeliverables">
+/// Concrete outputs the team must produce (e.g. specific files to create, features to implement).
+/// Submissions that omit required deliverables are considered incomplete.
+/// </param>
+/// <param name="OutOfScope">
+/// Explicit list of areas, approaches, or features teams must NOT work on.
+/// Violations may result in disqualification.
+/// </param>
+/// <param name="CheckInSchedule">
+/// Describes how often and in what form judges will check in during the hackathon
+/// (e.g. "Every 30 minutes" or "At milestone completion"). Teams must be prepared
+/// to respond to judge comments on this schedule.
+/// </param>
+public record HackathonBriefRequest(
+    string Title,
+    string Description,
+    string Directive,
+    List<Guid> RepositoryIds,
+    string? LeadName,
+    string? Roles,
+    string? SuggestedTools,
+    string? SuggestedMcpServers,
+    string? SuggestedSkills,
+    string? SuggestedPlugins,
+    string? PresentationInstructions,
+    string? WinnerCriteria,
+    string? ExpectedDeliverables,
+    string? OutOfScope,
+    string? CheckInSchedule);
+
+// =============================================================================
+// Hackathon Repository File-Tree API models
+// =============================================================================
+
+/// <summary>
+/// A single entry in a repository's uploaded file tree � either a file or a folder.
+/// Returned by GET /api/hackathons/repositories/{id}/files.
+/// </summary>
+/// <param name="Path">Forward-slash delimited path relative to the repo root (e.g. "src/index.ts").</param>
+/// <param name="Name">File or folder name without parent path segments (e.g. "index.ts").</param>
+/// <param name="IsFolder">True when this entry represents a folder rather than a file.</param>
+/// <param name="SizeBytes">Content size in bytes; null for folder entries.</param>
+/// <param name="UpdatedAt">UTC timestamp of the last write.</param>
+public record RepoFileEntry(string Path, string Name, bool IsFolder, long? SizeBytes, DateTime UpdatedAt);
+
+/// <summary>
+/// The text content of a single repository file.
+/// Returned by GET /api/hackathons/repositories/{id}/files/{**path}.
+/// </summary>
+/// <param name="Path">Forward-slash delimited path relative to the repo root.</param>
+/// <param name="Content">Raw text content of the file.</param>
+/// <param name="UpdatedAt">UTC timestamp of the last write.</param>
+public record RepoFileContent(string Path, string Content, DateTime UpdatedAt);
+
+/// <summary>
+/// Request body for creating or replacing a file in a repository.
+/// Used by PUT /api/hackathons/repositories/{id}/files/{**path}.
+/// </summary>
+/// <param name="Content">The full text content to write. Required.</param>
+public record UpsertRepoFileRequest(string Content);
+
+/// <summary>
+/// Request body for creating a folder in a repository.
+/// Used by POST /api/hackathons/repositories/{id}/folders.
+/// </summary>
+/// <param name="Path">Forward-slash path of the folder to create relative to the repo root (e.g. "src/utils"). Required.</param>
+public record CreateRepoFolderRequest(string Path);
+
+/// <summary>
+/// Request body for renaming a file or folder.
+/// Used by PATCH /api/hackathons/repositories/{id}/files/{**path}/rename
+/// and PATCH /api/hackathons/repositories/{id}/folders/{**path}/rename.
+/// </summary>
+/// <param name="NewName">
+/// The new name component only (e.g. "helpers.ts"). Must not contain path separators.
+/// The parent directory is inferred from the current path.
+/// </param>
+public record RenameRequest(string NewName);

@@ -10,7 +10,7 @@
 #   docker-compose down -v            # Stop and remove volumes (WARNING: deletes data)
 #
 # Storage: Documents are stored in ./data/ on the host, mounted to /data in the container.
-# The FileStorageService writes JSON files to /data/squads/, /data/artifacts/, /data/comments/.
+ # The FileStorageService writes JSON files to /data/squads/, /data/artifacts/, /data/comments/, and the app persists Data Protection keys to /data/dp-keys/.
 #
 # Observability: Aspire dashboard is optional (ENABLE_ASPIRE=true)
 
@@ -58,11 +58,6 @@ services:
 
 volumes:
   squad-data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./data
 
 networks:
   squad-network:

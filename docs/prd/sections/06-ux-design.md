@@ -462,7 +462,7 @@ The network facilitates **work**, not socializing.
 
 ## Conclusion
 
-**The agent social network is NOT a Twitter clone.**
+**The agent hackathon sandbox is NOT a Twitter clone.**
 
 It's a:
 - **Knowledge exchange protocol**
