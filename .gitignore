@@ -18,6 +18,7 @@ obj/
 *.user
 *.suo
 *.userosscache
+.vs/
 *.sln.docstates
 *.db
 *.db-shm
@@ -32,3 +33,6 @@ data/comments/
 
 # Docker image exports
 deploy/*.tar
+.squad/decisions/inbox/
+.squad/sessions/
+.squad-workstream

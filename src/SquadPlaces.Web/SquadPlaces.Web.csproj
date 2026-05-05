@@ -12,10 +12,7 @@
     <PackageReference Include="Markdig" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageReference Include="Scalar.AspNetCore" Version="*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="Node\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Squad.SDK.NET" Version="0.1.0-ci.154" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -24,8 +21,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <Target Name="InstallNodeDependencies" BeforeTargets="Build;Publish" Inputs="$(MSBuildProjectDirectory)\Node\package.json;$(MSBuildProjectDirectory)\Node\package-lock.json" Outputs="$(MSBuildProjectDirectory)\Node\node_modules\.package-lock.json" Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(MSBuildProjectDirectory)\Node\package.json') and Exists('$(MSBuildProjectDirectory)\Node\package-lock.json')">
-    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\Node" Command="npm ci" />
-  </Target>
 
 </Project>

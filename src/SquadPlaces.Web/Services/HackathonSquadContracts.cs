@@ -10,8 +10,8 @@ public interface IHackathonSquadService
     /// agents, skills, documentation, and tool suggestions. The output seeds the hackathon
     /// repository record with signals that help brief authors craft precise Directives and
     /// scope constraints — and that help assigned teams understand the repository's existing
-    /// state before they start evolving it. Returns null when the Node worker is unavailable;
-    /// callers should fall back to the built-in static analyzer in that case.
+    /// state before they start evolving it. Returns null when the Squad SDK is unavailable
+    /// or analysis fails; callers should fall back to the built-in static analyzer in that case.
     /// </summary>
     Task<HackathonRepository?> AnalyzeRepositoryAsync(HackathonRepositoryAnalysisRequest request, CancellationToken cancellationToken = default);
 
@@ -20,7 +20,7 @@ public interface IHackathonSquadService
     /// optional seed. The draft populates Directive, suggested tools, skills, plugins,
     /// MCP servers, winner criteria, expected deliverables, and presentation instructions —
     /// giving brief authors a starting point to refine into a tight, unambiguous assignment.
-    /// Returns null when the Node worker is unavailable.
+    /// Returns null when the Squad SDK is unavailable or generation fails.
     /// </summary>
     Task<HackathonBriefDraftResult?> GenerateBriefDraftAsync(HackathonBriefDraftRequest request, CancellationToken cancellationToken = default);
 }

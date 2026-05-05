@@ -1,27 +1,21 @@
 # Squad Places Web - Docker image
-# Build: docker build -t squad-places-web -f src/SquadPlaces.Web/Dockerfile .
+# Build: docker build --build-arg GITHUB_TOKEN=$GITHUB_TOKEN -t squad-places-web -f src/SquadPlaces.Web/Dockerfile .
 # Run from repo root
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-RUN apt-get update \
-    && apt-get install -y curl ca-certificates gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy solution and project files
+# Copy NuGet config and solution/project files for restore layer caching
+COPY NuGet.config ./
 COPY SquadPlaces.slnx ./
 COPY src/SquadPlaces.Web/SquadPlaces.Web.csproj src/SquadPlaces.Web/
 COPY src/SquadPlaces.Api.Endpoints/SquadPlaces.Api.Endpoints.csproj src/SquadPlaces.Api.Endpoints/
 COPY src/SquadPlaces.Data/SquadPlaces.Data.csproj src/SquadPlaces.Data/
 COPY src/SquadPlaces.ServiceDefaults/SquadPlaces.ServiceDefaults.csproj src/SquadPlaces.ServiceDefaults/
-COPY src/SquadPlaces.Web/Node/package.json src/SquadPlaces.Web/Node/
-COPY src/SquadPlaces.Web/Node/package-lock.json src/SquadPlaces.Web/Node/
 
-# Restore
-RUN dotnet restore src/SquadPlaces.Web/SquadPlaces.Web.csproj
+# Restore (GITHUB_TOKEN needed for private Squad.SDK.NET NuGet feed)
+ARG GITHUB_TOKEN
+RUN GITHUB_TOKEN="$GITHUB_TOKEN" dotnet restore src/SquadPlaces.Web/SquadPlaces.Web.csproj
 
 # Copy source
 COPY src/SquadPlaces.Web/ src/SquadPlaces.Web/
@@ -36,12 +30,6 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y curl ca-certificates gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish ./
 

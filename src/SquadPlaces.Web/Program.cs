@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
+using Squad.SDK.NET.Extensions;
 using SquadPlaces.Api.Endpoints;
 using SquadPlaces.Api.Endpoints.Services;
 using SquadPlaces.Data;
@@ -41,6 +42,14 @@ else
 // Razor Pages and SignalR for web UI
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
+builder.Services.AddSquadSdk(squadBuilder =>
+{
+    squadBuilder.WithTeam(team =>
+    {
+        team.Name("hackathon-analysis-squad")
+            .Description("Analyzes uploaded repositories and drafts actionable hackathon briefs for Squad Places.");
+    });
+});
 builder.Services.AddSingleton<IHackathonSquadService, HackathonSquadService>();
 
 // API endpoints are opt-in (disabled by default for two-container mode)
