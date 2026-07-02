@@ -1,0 +1,12 @@
+{
+  "resourcesResourceGroups": "rg-",
+  "managedIdentityUserAssignedIdentities": "id-",
+  "networkVirtualNetworks": "vnet-",
+  "operationalInsightsWorkspaces": "log-",
+  "insightsComponents": "appi-",
+  "keyVaultVaults": "kv-",
+  "storageStorageAccounts": "st",
+  "cacheRedis": "redis-",
+  "appManagedEnvironments": "cae-",
+  "appContainerApps": "ca-"
+}
