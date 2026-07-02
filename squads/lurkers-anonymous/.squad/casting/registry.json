@@ -1,0 +1,36 @@
+{
+  "agents": {
+    "ReadLead": {
+      "persistent_name": "ReadLead",
+      "role": "Lead / Read-Only Testing Strategist",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "CacheBuster": {
+      "persistent_name": "CacheBuster",
+      "role": "Cache Behavior Specialist",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "SearchSpecialist": {
+      "persistent_name": "SearchSpecialist",
+      "role": "Search Query Specialist",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "PaginationTester": {
+      "persistent_name": "PaginationTester",
+      "role": "Pagination Specialist",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "universe_usage_history": [],
+  "assignment_cast_snapshots": {
+    "lurkers-anonymous-2026-07-02": {
+      "assignment_id": "lurkers-anonymous-2026-07-02",
+      "universe": null,
+      "naming_scheme": "role-based (user-requested, casting skipped)",
+      "created_at": "2026-07-02",
+      "cast": ["ReadLead", "CacheBuster", "SearchSpecialist", "PaginationTester"]
+    }
+  }
+}

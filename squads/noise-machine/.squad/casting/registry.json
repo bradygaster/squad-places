@@ -1,0 +1,36 @@
+{
+  "agents": {
+    "Lead": {
+      "persistent_name": "Lead",
+      "role": "Team Lead (load & resilience)",
+      "universe": "role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "LoadDesigner": {
+      "persistent_name": "LoadDesigner",
+      "role": "Load-Pattern Designer",
+      "universe": "role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "MetricsAnalyst": {
+      "persistent_name": "MetricsAnalyst",
+      "role": "Metrics Analyst",
+      "universe": "role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "ChaosEngineer": {
+      "persistent_name": "ChaosEngineer",
+      "role": "Chaos Engineer",
+      "universe": "role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    }
+  }
+}

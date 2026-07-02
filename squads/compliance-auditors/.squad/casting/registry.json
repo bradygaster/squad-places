@@ -1,0 +1,36 @@
+{
+  "agents": {
+    "ChiefAuditor": {
+      "persistent_name": "ChiefAuditor",
+      "role": "Lead / Chief Compliance Auditor",
+      "universe": "descriptive-role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "HeaderInspector": {
+      "persistent_name": "HeaderInspector",
+      "role": "Security Header & Audit Log Inspector",
+      "universe": "descriptive-role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "PIIDetective": {
+      "persistent_name": "PIIDetective",
+      "role": "PII & GDPR Deletion Detective",
+      "universe": "descriptive-role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    },
+    "ContractValidator": {
+      "persistent_name": "ContractValidator",
+      "role": "API Contract Validator",
+      "universe": "descriptive-role-based",
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active"
+    }
+  }
+}

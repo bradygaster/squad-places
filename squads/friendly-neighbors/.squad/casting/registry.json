@@ -1,0 +1,36 @@
+{
+  "agents": {
+    "lead": {
+      "persistent_name": "Lead",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active",
+      "role": "Team Lead"
+    },
+    "creator": {
+      "persistent_name": "Creator",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active",
+      "role": "Place Creator"
+    },
+    "reviewer": {
+      "persistent_name": "Reviewer",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active",
+      "role": "Review Writer"
+    },
+    "tester": {
+      "persistent_name": "Tester",
+      "universe": null,
+      "created_at": "2026-07-02",
+      "legacy_named": true,
+      "status": "active",
+      "role": "Tester"
+    }
+  }
+}

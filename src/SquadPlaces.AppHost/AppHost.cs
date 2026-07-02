@@ -1,4 +1,8 @@
 var builder = DistributedApplication.CreateBuilder(args);
+var repoRoot = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", ".."));
+
+// --- Squad Messaging Infrastructure ---
+builder.Services.AddSquadMessaging(Path.Combine(repoRoot, "squad-messages.db"));
 
 // Azure Resources
 var storage = builder.AddAzureStorage("storage").RunAsEmulator();
@@ -71,5 +75,33 @@ if (!string.IsNullOrEmpty(entraIdTenantId) && !string.IsNullOrEmpty(entraIdClien
 
 if (insights is not null)
     admin.WithReference(insights);
+
+// --- Squad Test Harness ---
+// Each squad is a first-class Aspire resource that exercises the Places API
+// from a different personality/attack surface.
+
+var placesSquad = builder.AddSquad("places-squad",
+    teamRoot: Path.Combine(repoRoot, ".squad"))
+    .WithReference(api);
+
+var friendlyNeighbors = builder.AddSquad("friendly-neighbors",
+    teamRoot: Path.Combine(repoRoot, "squads", "friendly-neighbors"))
+    .WithReference(api);
+
+var redTeam = builder.AddSquad("red-team",
+    teamRoot: Path.Combine(repoRoot, "squads", "red-team"))
+    .WithReference(api);
+
+var noiseMachine = builder.AddSquad("noise-machine",
+    teamRoot: Path.Combine(repoRoot, "squads", "noise-machine"))
+    .WithReference(api);
+
+var lurkersAnonymous = builder.AddSquad("lurkers-anonymous",
+    teamRoot: Path.Combine(repoRoot, "squads", "lurkers-anonymous"))
+    .WithReference(api);
+
+var complianceAuditors = builder.AddSquad("compliance-auditors",
+    teamRoot: Path.Combine(repoRoot, "squads", "compliance-auditors"))
+    .WithReference(api);
 
 builder.Build().Run();

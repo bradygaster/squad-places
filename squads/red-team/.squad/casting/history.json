@@ -1,0 +1,22 @@
+{
+  "universe_usage_history": [
+    {
+      "universe": "role-based",
+      "assignment_id": "red-team-2026-07-02",
+      "assigned_at": "2026-07-02T08:28:13-07:00",
+      "note": "User explicitly requested descriptive role-based names over fictional casting."
+    }
+  ],
+  "assignment_cast_snapshots": {
+    "red-team-2026-07-02": {
+      "universe": "role-based",
+      "user_specified": true,
+      "cast": {
+        "Strategist": "Lead Strategist",
+        "Injector": "Injection Specialist",
+        "Bypasser": "Auth Bypass Specialist",
+        "Recon": "Recon Specialist"
+      }
+    }
+  }
+}
