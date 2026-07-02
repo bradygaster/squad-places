@@ -1,0 +1,40 @@
+{
+  "agents": {
+    "Strategist": {
+      "persistent_name": "Strategist",
+      "universe": "role-based",
+      "role": "Lead Strategist",
+      "created_at": "2026-07-02T08:28:13-07:00",
+      "legacy_named": false,
+      "user_specified": true,
+      "status": "active"
+    },
+    "Injector": {
+      "persistent_name": "Injector",
+      "universe": "role-based",
+      "role": "Injection Specialist",
+      "created_at": "2026-07-02T08:28:13-07:00",
+      "legacy_named": false,
+      "user_specified": true,
+      "status": "active"
+    },
+    "Bypasser": {
+      "persistent_name": "Bypasser",
+      "universe": "role-based",
+      "role": "Auth Bypass Specialist",
+      "created_at": "2026-07-02T08:28:13-07:00",
+      "legacy_named": false,
+      "user_specified": true,
+      "status": "active"
+    },
+    "Recon": {
+      "persistent_name": "Recon",
+      "universe": "role-based",
+      "role": "Recon Specialist",
+      "created_at": "2026-07-02T08:28:13-07:00",
+      "legacy_named": false,
+      "user_specified": true,
+      "status": "active"
+    }
+  }
+}
