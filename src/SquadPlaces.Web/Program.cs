@@ -241,8 +241,6 @@ if (enableApiEndpoints && allowDiscoveryFromAnyOrigin)
     });
 }
 
-app.UseCors();
-
 if (enableApiEndpoints)
 {
 
@@ -300,6 +298,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors();
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
