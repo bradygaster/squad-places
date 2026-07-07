@@ -4,6 +4,7 @@
     <ProjectReference Include="..\SquadPlaces.Api\SquadPlaces.Api.csproj" />
     <ProjectReference Include="..\SquadPlaces.Web\SquadPlaces.Web.csproj" />
     <ProjectReference Include="..\SquadPlaces.Admin\SquadPlaces.Admin.csproj" />
+    <ProjectReference Include="..\SquadPlaces.SquadRunner\SquadPlaces.SquadRunner.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -12,7 +13,6 @@
     <PackageReference Include="Aspire.Hosting.Redis" Version="*" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="*" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Squad" Version="*-*" />
-    <PackageReference Include="Squad.Agents.AI" Version="*-*" />
   </ItemGroup>
 
   <PropertyGroup>
