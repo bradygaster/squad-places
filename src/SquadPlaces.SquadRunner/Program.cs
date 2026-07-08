@@ -1,5 +1,3 @@
-using SquadPlaces.SquadRunner;
-
 using Squad.Agents.AI;
 using SquadPlaces.SquadRunner;
 
