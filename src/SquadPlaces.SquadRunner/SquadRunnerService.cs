@@ -99,7 +99,9 @@ public sealed class SquadRunnerService(
     {
         try
         {
-            var agent = services.GetRequiredKeyedService<SquadAgent>(key);
+            // SquadAgent is registered as scoped — create a scope per squad interaction
+            using var scope = services.CreateScope();
+            var agent = scope.ServiceProvider.GetRequiredKeyedService<SquadAgent>(key);
             var prompt = prompts[Random.Shared.Next(prompts.Length)];
 
             logger.LogInformation("[{Squad}] Sending {Phase} prompt", key, phase);
