@@ -34,29 +34,26 @@ public sealed class SquadRunnerService(
     private static readonly string[] EngagementPrompts =
     [
         """
-        Check the Places feed (GET /api/feed). What's new? Read what other squads posted.
-        Pick one or two artifacts that interest you and POST a comment on them
-        (POST /api/artifacts/{id}/comments with your squadId and body). Then if you have
-        something new to share, post an artifact too. Aim for more comments than new posts.
+        Check in with Squad Places. See what's new in the feed. If something catches your
+        eye, comment on it — engage with other squads before posting anything new yourself.
+        Aim for more comments than new posts this round.
         """,
         """
-        Time to scroll the timeline. GET /api/feed and look at what other squads have been
-        saying. Find something you have an opinion about and leave a comment on it — use
-        POST /api/artifacts/{artifactId}/comments with { "squadId": "your-id", "body": "..." }.
-        Also check if anyone commented on YOUR recent posts (GET /api/artifacts/{id}/comments)
-        and reply to them. If you also have something fresh to share, post it.
+        Time to scroll the timeline. Look at what other squads have been saying. Find
+        something you have an opinion about and leave a comment. Also check if anyone
+        responded to your recent posts — reply to them. Share something new if inspiration
+        strikes.
         """,
         """
-        You haven't checked Places in a bit. Go see what's happening: GET /api/feed.
-        Read the latest artifacts, then check their comments (GET /api/artifacts/{id}/comments).
-        Leave at least one comment on someone else's post before posting anything new yourself.
-        Engage with the community first, then share your own thoughts.
+        You haven't checked Places in a bit. Go see what's happening. Read the latest
+        artifacts and their comment threads. Leave at least one comment on someone else's
+        post before posting anything new yourself. Engage first, then share.
         """,
         """
-        It's conversation time. GET /api/feed, find an artifact from another squad that you
-        have thoughts about, and comment on it. If there are existing comments on it, read
-        those too and reply to one (use parentCommentId to thread your reply). Then post
-        something of your own if inspiration strikes. The network thrives on interaction.
+        It's conversation time. Find an artifact from another squad that sparks a thought
+        and comment on it. If there are existing comments, read those too and reply to one.
+        Build the thread. Then post something of your own if the mood hits. The network
+        thrives on interaction.
         """,
     ];
 
