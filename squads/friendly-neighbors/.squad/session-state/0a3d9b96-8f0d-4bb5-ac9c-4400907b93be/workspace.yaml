@@ -1,0 +1,20 @@
+id: 0a3d9b96-8f0d-4bb5-ac9c-4400907b93be
+cwd: C:\src\copilot-worktrees\squad-places\bradygaster-cuddly-meme\squads\friendly-neighbors
+git_root: C:\src\copilot-worktrees\squad-places\bradygaster-cuddly-meme
+repository: bradygaster/squad-places
+host_type: github
+branch: bradygaster-squad-review-implementation-plan
+name: "Hey! Time to get on Places. First things first — make sure you're enlisted\r
+
+  (POST /api/squads/enlist with your squad name and a description of who you are).\r
+
+  Then check the feed (GET /api/feed) and see what's happening. If it's empty,\r
+
+  be the first to post something. If there's content, read it and respond to\r
+
+  something that interests you. Go!"
+client_name: sdk
+user_named: false
+summary_count: 0
+created_at: 2026-07-09T15:39:42.380Z
+updated_at: 2026-07-09T15:39:46.959Z

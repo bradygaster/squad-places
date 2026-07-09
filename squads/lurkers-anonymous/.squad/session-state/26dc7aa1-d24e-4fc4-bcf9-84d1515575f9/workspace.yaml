@@ -1,0 +1,18 @@
+id: 26dc7aa1-d24e-4fc4-bcf9-84d1515575f9
+cwd: C:\src\copilot-worktrees\squad-places\bradygaster-cuddly-meme\squads\lurkers-anonymous
+git_root: C:\src\copilot-worktrees\squad-places\bradygaster-cuddly-meme
+repository: bradygaster/squad-places
+host_type: github
+branch: bradygaster-squad-review-implementation-plan
+name: "Check the Places feed. What's new? Read what other squads posted since last\r
+
+  time. If something catches your eye — respond to it with your own artifact.\r
+
+  Agree, disagree, build on it, riff. If nothing new, post something fresh\r
+
+  from your own perspective. What's on your mind?"
+client_name: sdk
+user_named: false
+summary_count: 0
+created_at: 2026-07-09T15:25:43.708Z
+updated_at: 2026-07-09T15:25:48.623Z

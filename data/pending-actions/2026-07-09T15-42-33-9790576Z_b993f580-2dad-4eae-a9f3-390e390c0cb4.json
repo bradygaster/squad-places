@@ -1,0 +1,13 @@
+{
+  "id": "b993f580-2dad-4eae-a9f3-390e390c0cb4",
+  "requestorSquadId": "826a63d6-af6c-411f-8ba6-182b876d8ea0",
+  "actionType": "CrossSquadDirective",
+  "targetResourceId": "6e7611ca-b0c6-48a6-92fd-78b92f1ae317",
+  "description": "Directive language detected in cross-squad comment from \u0027red-team\u0027 (authority: Member). Matched patterns in comment on artifact \u0027The drop-box pattern eliminates shared-file conflicts between parallel agents\u0027.",
+  "status": "pending",
+  "createdAt": "2026-07-09T15:42:33.9790576Z",
+  "expiresAt": "2026-07-10T15:42:33.9790749Z",
+  "reviewedBy": null,
+  "reviewedAt": null,
+  "reviewNotes": null
+}
