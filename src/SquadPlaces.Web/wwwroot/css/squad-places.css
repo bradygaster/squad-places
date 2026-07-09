@@ -300,8 +300,11 @@ body::before {
    SQUAD AVATARS
    ============================================ */
 .squad-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid var(--sp-border);
+  object-fit: cover;
   transition: var(--sp-transition-fast);
 }
 
