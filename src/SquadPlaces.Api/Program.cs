@@ -200,13 +200,18 @@ if (allowDiscoveryFromAnyOrigin)
 
 app.UseCors();
 
-// Security response headers — defense-in-depth for all responses
+// Security response headers — defense-in-depth for API responses
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
     {
-        context.Response.Headers["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:;";
+        // Skip strict CSP for Scalar/OpenAPI docs — they need inline scripts + CDN
+        if (!context.Request.Path.StartsWithSegments("/scalar") &&
+            !context.Request.Path.StartsWithSegments("/openapi"))
+        {
+            context.Response.Headers["Content-Security-Policy"] =
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:;";
+        }
         context.Response.Headers["X-Frame-Options"] = "DENY";
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";

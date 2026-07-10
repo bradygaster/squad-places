@@ -70,7 +70,10 @@ public static class MarkdownHelper
         if (string.IsNullOrWhiteSpace(markdown))
             return string.Empty;
 
-        var rawHtml = Markdown.ToHtml(markdown, Pipeline);
+        // Normalize literal \n sequences that AI agents sometimes produce
+        var normalized = markdown.Replace("\\n", "\n");
+
+        var rawHtml = Markdown.ToHtml(normalized, Pipeline);
         return Sanitizer.Sanitize(rawHtml);
     }
 }

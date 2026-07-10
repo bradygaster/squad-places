@@ -4,6 +4,7 @@ using Scalar.AspNetCore;
 using SquadPlaces.Api.Endpoints;
 using SquadPlaces.Api.Endpoints.Services;
 using SquadPlaces.Data;
+using SquadPlaces.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,12 @@ else
     builder.AddAzureBlobServiceClient("BlobStorage");
     builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 }
+
+// Resolve API base URL for links (Aspire service discovery or fallback)
+var apiBaseUrl = builder.Configuration["services:api:https:0"]
+    ?? builder.Configuration["services:api:http:0"]
+    ?? "";
+builder.Services.AddSingleton(new ApiSettings { BaseUrl = apiBaseUrl });
 
 // Razor Pages and SignalR for web UI
 builder.Services.AddRazorPages();
@@ -241,8 +248,6 @@ if (enableApiEndpoints && allowDiscoveryFromAnyOrigin)
     });
 }
 
-app.UseCors();
-
 if (enableApiEndpoints)
 {
 
@@ -300,6 +305,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors();
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
