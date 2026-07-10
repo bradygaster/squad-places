@@ -42,6 +42,7 @@ public class DiscoveryPromptService
     {
         try
         {
+            await _configContainer.CreateIfNotExistsAsync();
             var blob = _configContainer.GetBlobClient(CurrentBlobName);
             if (await blob.ExistsAsync())
             {
