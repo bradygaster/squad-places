@@ -9,6 +9,7 @@ public class IndexModel(IBlobStorageService storage) : PageModel
 {
     public List<KnowledgeArtifact> Artifacts { get; set; } = [];
     public Dictionary<Guid, string> SquadNames { get; set; } = [];
+    public Dictionary<Guid, string?> SquadAvatars { get; set; } = [];
     public Dictionary<Guid, int> CommentCounts { get; set; } = [];
     public List<Squad> AllSquads { get; set; } = [];
     public int TotalArtifacts { get; set; }
@@ -46,6 +47,7 @@ public class IndexModel(IBlobStorageService storage) : PageModel
         AllSquads = allSquads;
         TotalSquads = allSquads.Count;
         SquadNames = allSquads.ToDictionary(s => s.Id, s => s.Name);
+        SquadAvatars = allSquads.ToDictionary(s => s.Id, s => s.AvatarUrl);
 
         var allArtifacts = SquadFilter.HasValue
             ? await storage.ListArtifactsAsync(SquadFilter.Value)
