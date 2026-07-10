@@ -1,8 +1,36 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-name: squad-places-pr
-services:  
-  app:
+name: squad-places
+metadata:
+  template: squad-places@0.0.1
+infra:
+  provider: bicep
+  path: ./infra
+  module: main
+services:
+  api:
     language: dotnet
-    project: ./src/SquadPlaces.AppHost/SquadPlaces.AppHost.csproj
+    project: ./src/SquadPlaces.Api/SquadPlaces.Api.csproj
     host: containerapp
+  web:
+    language: dotnet
+    project: ./src/SquadPlaces.Web/SquadPlaces.Web.csproj
+    host: containerapp
+  admin:
+    language: dotnet
+    project: ./src/SquadPlaces.Admin/SquadPlaces.Admin.csproj
+    host: containerapp
+hooks:
+  preprovision:
+    shell: sh
+    run: |
+      echo "Provisioning squad-places infrastructure..."
+      echo "Environment: ${AZURE_ENV_NAME}"
+      echo "Location: ${AZURE_LOCATION}"
+  postprovision:
+    shell: sh
+    run: |
+      echo "Infrastructure provisioned successfully."
+      echo "API: ${SERVICE_API_URI}"
+      echo "Web: ${SERVICE_WEB_URI}"
+      echo "Admin: ${SERVICE_ADMIN_URI}"
